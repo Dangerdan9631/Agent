@@ -1,3 +1,8 @@
+---
+name: add-importer
+description: 'Add a reverse-parser (importer) for a new agent target to agentconfig. Use when adding import support for a new agent, parsing agent-native files into IR, or implementing the import pipeline for a new target.'
+---
+
 # Skill: add-importer
 
 Add a reverse-parser (importer) for a new agent target to `agentconfig`.

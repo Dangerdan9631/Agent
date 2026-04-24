@@ -1,3 +1,8 @@
+---
+name: validate-and-generate
+description: 'Validate .agentconfig/ and regenerate all agent-native directive files. Use when validating configuration, regenerating directives after changes, checking for drift, or verifying generated output is up to date.'
+---
+
 # Skill: validate-and-generate
 
 Validate `.agentconfig/` and regenerate all agent-native directive files.

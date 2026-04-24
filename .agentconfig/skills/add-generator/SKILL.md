@@ -1,3 +1,8 @@
+---
+name: add-generator
+description: 'Add a new built-in generator to agentconfig. Use when adding support for a new agent target, implementing a generator file, or registering a new target with the generator registry.'
+---
+
 # Skill: add-generator
 
 Add a new built-in generator to `agentconfig`.
