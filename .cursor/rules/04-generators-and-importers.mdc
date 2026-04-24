@@ -1,0 +1,38 @@
+---
+globs: "agentconfig/packages/core/src/generators/**, agentconfig/packages/core/src/importers/**"
+alwaysApply: false
+---
+
+## Generator Rules
+
+When adding or modifying a generator in `packages/core/src/generators/`:
+
+1. **Handle all 4 activation types**: `always`, `scoped`, `ai-decided`, `manual`. A generator must never silently drop instructions — if an activation type has no native support, use the closest fallback and document it.
+
+2. **Use `filterForTarget`** from `generators/base.ts` to filter instructions, agents, skills, and commands before processing.
+
+3. **Use `buildInTextCondition`** for `ai-decided` instructions on agents without native ai-decided support. This prepends `> **Apply only when:** {description}` to the body.
+
+4. **Use `buildFrontmatter`** for YAML frontmatter blocks in generated files.
+
+5. **Concatenation order**: when multiple files are concatenated (e.g., Copilot's `.github/copilot-instructions.md`), sort by `inst.name` for deterministic output.
+
+6. **Hooks**: check `HOOK_EVENT_MAPS` in `generators/base.ts` for the correct per-agent event name. Agents that don't support hooks (`copilot`, `copilot-cli`, `antigravity`, `windsurf`) must simply skip hook generation.
+
+7. **Skills**: the shared `.agents/skills/<name>/` path is used by Copilot, Cursor, Antigravity, Codex, and Windsurf. Agent-specific paths are used for Gemini CLI and Cline only.
+
+8. **Register in `generators/index.ts`**: every new generator must be imported and registered there.
+
+## Importer Rules
+
+When adding or modifying an importer in `packages/core/src/importers/`:
+
+1. **Return shape**: always return `{ instructions: InstructionFile[], agents?: AgentDefinition[] }`.
+
+2. **Set `importNote`** on any instruction where activation is inferred/ambiguous. Use the prefix `# TODO: verify activation —` so users can find them.
+
+3. **Set `sourcePath`** to the absolute path of the file being imported. This is used for error reporting.
+
+4. **Never throw** on missing directories — check with `fs.existsSync` and return empty arrays.
+
+5. **In-text condition detection**: use the `> **Apply only when:**` prefix to detect `ai-decided` instructions that were generated without native ai-decided support.

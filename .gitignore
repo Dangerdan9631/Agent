@@ -8,22 +8,6 @@ agentconfig/packages/*/dist/
 # TypeScript incremental build info
 *.tsbuildinfo
 
-# Generated agent directive files
-# (commit these if you want generated files tracked; delete these lines if so)
-.github/copilot-instructions.md
-.github/instructions/
-.github/prompts/
-.cursor/
-.claude/
-.gemini/
-.agents/
-.codex/
-.windsurf/
-.clinerules/
-AGENTS.md
-GEMINI.md
-CLAUDE.md
-
 # OS
 .DS_Store
 Thumbs.db
