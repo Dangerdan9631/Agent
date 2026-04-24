@@ -1,0 +1,16 @@
+version: 1
+targets:
+  - copilot
+  - copilot-cli
+  - cursor
+  - cursor-cli
+  - claude-code
+  - gemini-cli
+  - antigravity
+  - codex
+  - codex-cli
+  - windsurf
+  - cline
+options:
+  overwrite: true
+  output_dir: "."

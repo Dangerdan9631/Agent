@@ -1,0 +1,64 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import matter from 'gray-matter';
+import fg from 'fast-glob';
+import type { InstructionFile, ActivationType } from '../types/ir';
+
+const TRIGGER_MAP: Record<string, ActivationType> = {
+  always_on: 'always',
+  glob: 'scoped',
+  model_decision: 'ai-decided',
+  manual: 'manual',
+};
+
+/**
+ * Import instructions from a Windsurf project.
+ * Reads .windsurf/rules/*.md and maps trigger: frontmatter to IR activation.
+ */
+export async function importWindsurf(
+  sourceDir: string,
+): Promise<{ instructions: InstructionFile[] }> {
+  const instructions: InstructionFile[] = [];
+  const rulesDir = path.join(sourceDir, '.windsurf', 'rules');
+  if (!fs.existsSync(rulesDir)) return { instructions };
+
+  const files = await fg('**/*.md', { cwd: rulesDir, absolute: true });
+
+  for (const filePath of files.sort()) {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const { data, content } = matter(raw);
+    const stem = path.basename(filePath, '.md');
+    const body = content.trim();
+
+    const trigger = typeof data.trigger === 'string' ? data.trigger : 'always_on';
+    const activation: ActivationType = TRIGGER_MAP[trigger] ?? 'always';
+
+    const inst: InstructionFile = {
+      name: stem,
+      sourcePath: filePath,
+      activation,
+      slug: stem,
+      body,
+    };
+
+    if (activation === 'scoped') {
+      const rawGlobs = typeof data.globs === 'string' ? data.globs : '';
+      inst.globs = rawGlobs
+        .split(',')
+        .map((g: string) => g.trim())
+        .filter(Boolean);
+    } else if (activation === 'ai-decided') {
+      inst.description =
+        typeof data.description === 'string' ? data.description : undefined;
+    }
+
+    if (!TRIGGER_MAP[trigger]) {
+      inst.importNote =
+        `# TODO: verify activation — unknown Windsurf trigger "${trigger}"`;
+    }
+
+    instructions.push(inst);
+  }
+
+  return { instructions };
+}

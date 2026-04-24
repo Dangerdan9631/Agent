@@ -1,0 +1,16 @@
+{
+  "name": "agentconfig-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w packages/core && npm run build -w packages/cli",
+    "dev": "npm run dev -w packages/core",
+    "clean": "rimraf packages/*/dist"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5"
+  }
+}
