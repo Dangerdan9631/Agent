@@ -1,8 +1,27 @@
 // Self-register all built-in generators
 import './generators/index';
 
+// ─── Operations (high-level orchestration) ────────────────────────────────────
+export {
+  runGenerate,
+  runValidate,
+  runDiff,
+  runImport,
+  listTargets,
+} from './operations';
+
+export type {
+  GenerateOptions,
+  GenerateResult,
+  ValidateOptions,
+  DiffOptions,
+  DiffResult,
+  RunImportOptions,
+  ImportResult,
+} from './operations';
+
 // ─── Config ───────────────────────────────────────────────────────────────────
-export { findConfigDir, loadConfig } from './config';
+export { findConfigDir, loadConfig, resolveConfigDir } from './config';
 
 // ─── Parsers ──────────────────────────────────────────────────────────────────
 export { parseArtifacts } from './parsers/index';

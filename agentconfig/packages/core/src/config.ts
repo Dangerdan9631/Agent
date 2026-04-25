@@ -24,6 +24,22 @@ export function findConfigDir(startDir: string): string | null {
 }
 
 /**
+ * Locate the `.agentconfig/` directory starting from `startDir` (defaults to
+ * `process.cwd()`). Throws an `Error` if no directory is found.
+ */
+export function resolveConfigDir(startDir?: string): string {
+  const from = startDir ?? process.cwd();
+  const dir = findConfigDir(from);
+  if (!dir) {
+    throw new Error(
+      `No .agentconfig/ directory found starting from ${from}.\n` +
+        `Run in a directory that contains .agentconfig/ or use --config <path>.`,
+    );
+  }
+  return dir;
+}
+
+/**
  * Load and validate `config.yaml` from the given `.agentconfig/` directory.
  * Any properties in `overrides` are merged on top of the file contents.
  */
