@@ -12,7 +12,6 @@ export function registerGenerate(program: Command): void {
     .option('--out <path>', 'Override output_dir from config')
     .option('--target <name>', 'Generate for specific target(s)', (val, prev: string[]) => [...prev, val], [] as string[])
     .option('-v, --verbose', 'Verbose output', false)
-    .option('--format <text|json>', 'Output format', 'text')
     .option('--dry-run', 'Preview changes without writing to disk', false)
     .option('--no-overwrite', 'Skip files that already exist on disk')
     .option('--watch', 'Watch .agentconfig/ for changes and re-generate', false)
@@ -22,7 +21,6 @@ export function registerGenerate(program: Command): void {
         out?: string;
         target: string[];
         verbose: boolean;
-        format: 'text' | 'json';
         dryRun: boolean;
         overwrite: boolean;
         watch: boolean;
@@ -46,7 +44,7 @@ export function registerGenerate(program: Command): void {
         info(opts.verbose, `Targets: ${result.targets.join(', ')}`);
 
         if (opts.dryRun) {
-          printDiff(result.diff, opts.format);
+          printDiff(result.diff, 'text');
           console.log(chalk.cyan('\n(dry run — no files written)'));
         } else {
           console.log(chalk.green(`Generated ${result.fileCount} file(s) → ${result.outputDir}`));

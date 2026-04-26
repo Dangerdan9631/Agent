@@ -6,6 +6,7 @@ export {
   runGenerate,
   runValidate,
   runDiff,
+  runInitialize,
   runImport,
   listTargets,
 } from './operations';
@@ -16,6 +17,8 @@ export type {
   ValidateOptions,
   DiffOptions,
   DiffResult,
+  RunInitializeOptions,
+  InitializeResult,
   RunImportOptions,
   ImportResult,
 } from './operations';

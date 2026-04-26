@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { registerGenerate } from './commands/generate';
 import { registerValidate } from './commands/validate';
 import { registerDiff } from './commands/diff';
+import { registerInitialize } from './commands/initialize';
 import { registerImport } from './commands/import';
 import { registerListTargets } from './commands/list-targets';
 
@@ -14,6 +15,7 @@ program
 registerGenerate(program);
 registerValidate(program);
 registerDiff(program);
+registerInitialize(program);
 registerImport(program);
 registerListTargets(program);
 

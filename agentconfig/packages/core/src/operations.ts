@@ -126,23 +126,23 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   return { diff, outputDir };
 }
 
-// ── Import ────────────────────────────────────────────────────────────────────
+// ── Initialize (agent-native files → .agentconfig/) ──────────────────────────
 
-export interface RunImportOptions {
+export interface RunInitializeOptions {
   sourceDir: string;
   from?: string[];
   overwrite?: boolean;
   dryRun?: boolean;
 }
 
-export interface ImportResult {
+export interface InitializeResult {
   configDir: string;
   detectedAgents: DetectedAgent[];
   instructionCount: number;
   agentCount: number;
 }
 
-export async function runImport(options: RunImportOptions): Promise<ImportResult> {
+export async function runInitialize(options: RunInitializeOptions): Promise<InitializeResult> {
   const { sourceDir, from, overwrite = false, dryRun = false } = options;
   const configDir = path.join(sourceDir, '.agentconfig');
 
@@ -171,6 +171,60 @@ export async function runImport(options: RunImportOptions): Promise<ImportResult
     detectedAgents,
     instructionCount: ir.instructions.length,
     agentCount: ir.agents.length,
+  };
+}
+
+// ── Import (.agentconfig/ → .agentconfig/) ────────────────────────────────────
+
+export interface RunImportOptions {
+  /** Directory containing the source .agentconfig/ to import from. */
+  sourceDir: string;
+  /** Destination directory (default: CWD). A .agentconfig/ will be created here if absent. */
+  destDir?: string;
+  /** Overwrite existing instruction files in the destination (default: skip). */
+  overwrite?: boolean;
+  dryRun?: boolean;
+}
+
+export interface ImportResult {
+  sourceConfigDir: string;
+  destConfigDir: string;
+  instructionCount: number;
+  agentCount: number;
+}
+
+export async function runImport(options: RunImportOptions): Promise<ImportResult> {
+  const { sourceDir, overwrite = false, dryRun = false } = options;
+  const destRoot = options.destDir ? path.resolve(options.destDir) : process.cwd();
+
+  const sourceConfigDir = resolveConfigDir(sourceDir);
+  const sourceConfig = await loadConfig(sourceConfigDir);
+  const sourceIr = await parseArtifacts(sourceConfigDir, sourceConfig);
+
+  const existingDestConfigDir = findConfigDir(destRoot);
+  const destConfigDir = existingDestConfigDir ?? path.join(destRoot, '.agentconfig');
+
+  let mergedTargets = sourceConfig.targets;
+  if (existingDestConfigDir) {
+    const destConfig = await loadConfig(existingDestConfigDir).catch(() => null);
+    if (destConfig) {
+      mergedTargets = Array.from(new Set([...destConfig.targets, ...sourceConfig.targets]));
+    }
+  }
+
+  const mergedConfig: AgentConfig = {
+    version: 1,
+    targets: mergedTargets,
+    options: { overwrite, output_dir: '.' },
+  };
+
+  await writeAgentConfigDir(sourceIr, mergedConfig, destConfigDir, { overwrite, dryRun });
+
+  return {
+    sourceConfigDir,
+    destConfigDir,
+    instructionCount: sourceIr.instructions.length,
+    agentCount: sourceIr.agents.length,
   };
 }
 
