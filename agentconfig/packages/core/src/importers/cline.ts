@@ -3,6 +3,15 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether a Cline configuration is present in `dir`. */
+export function detectCline(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.clinerules'))) {
+    return [{ name: 'cline', confidence: 'high' }];
+  }
+  return [];
+}
 
 const IN_TEXT_PREFIX = '> **Apply only when:**';
 

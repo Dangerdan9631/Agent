@@ -2,6 +2,18 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import fg from 'fast-glob';
 import type { InstructionFile, AgentDefinition } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether a Codex configuration is present in `dir`. */
+export function detectCodex(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.codex'))) {
+    return [{ name: 'codex', confidence: 'high' }];
+  }
+  if (fs.existsSync(path.join(dir, 'AGENTS.md'))) {
+    return [{ name: 'codex', confidence: 'low' }];
+  }
+  return [];
+}
 
 function parseTOMLSimple(content: string): Record<string, unknown> {
   const result: Record<string, unknown> = {};

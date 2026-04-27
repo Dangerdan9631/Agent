@@ -3,6 +3,15 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import type { InstructionFile, ActivationType } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether an Antigravity configuration is present in `dir`. */
+export function detectAntigravity(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.agents', 'rules'))) {
+    return [{ name: 'antigravity', confidence: 'high' }];
+  }
+  return [];
+}
 
 const ACTIVATION_MAP: Record<string, ActivationType> = {
   always: 'always',

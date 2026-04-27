@@ -3,6 +3,15 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import type { InstructionFile, ActivationType } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether a Windsurf configuration is present in `dir`. */
+export function detectWindsurf(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.windsurf', 'rules'))) {
+    return [{ name: 'windsurf', confidence: 'high' }];
+  }
+  return [];
+}
 
 const TRIGGER_MAP: Record<string, ActivationType> = {
   always_on: 'always',

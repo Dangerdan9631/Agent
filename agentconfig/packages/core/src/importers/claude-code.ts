@@ -3,6 +3,18 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import type { InstructionFile, AgentDefinition } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether a Claude Code configuration is present in `dir`. */
+export function detectClaudeCode(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.claude'))) {
+    return [{ name: 'claude-code', confidence: 'high' }];
+  }
+  if (fs.existsSync(path.join(dir, 'CLAUDE.md'))) {
+    return [{ name: 'claude-code', confidence: 'low' }];
+  }
+  return [];
+}
 
 const IN_TEXT_PREFIX = '> **Apply only when:**';
 

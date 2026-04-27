@@ -3,7 +3,19 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
 import { buildInTextCondition } from '../generators/base';
+
+/** Detect whether a Copilot configuration is present in `dir`. */
+export function detectCopilot(dir: string): DetectedAgent[] {
+  if (
+    fs.existsSync(path.join(dir, '.github', 'copilot-instructions.md')) ||
+    fs.existsSync(path.join(dir, '.github', 'instructions'))
+  ) {
+    return [{ name: 'copilot', confidence: 'high' }];
+  }
+  return [];
+}
 
 const IN_TEXT_PREFIX = '> **Apply only when:**';
 

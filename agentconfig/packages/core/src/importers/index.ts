@@ -3,59 +3,61 @@ import * as path from 'node:path';
 import yaml from 'js-yaml';
 import type { IR, InstructionFile, AgentDefinition } from '../types/ir';
 import type { AgentConfig } from '../types/config';
+import type { DetectedAgent } from '../types/generator';
+import { registry } from '../registry';
+
 import { importCopilot } from './copilot';
+import { detectCopilot } from './copilot';
 import { importCursor } from './cursor';
+import { detectCursor } from './cursor';
 import { importClaudeCode } from './claude-code';
+import { detectClaudeCode } from './claude-code';
 import { importGeminiCli } from './gemini-cli';
+import { detectGeminiCli } from './gemini-cli';
 import { importAntigravity } from './antigravity';
+import { detectAntigravity } from './antigravity';
 import { importCodex } from './codex';
+import { detectCodex } from './codex';
 import { importWindsurf } from './windsurf';
+import { detectWindsurf } from './windsurf';
 import { importCline } from './cline';
+import { detectCline } from './cline';
+
+// ─── Register built-in importers and detectors ────────────────────────────────
+// (mirrors the side-effect pattern used by generators/index.ts)
+
+registry.registerImporter('copilot', importCopilot);
+registry.registerDetector(detectCopilot);
+
+registry.registerImporter('cursor', importCursor);
+registry.registerDetector(detectCursor);
+
+registry.registerImporter('claude-code', importClaudeCode);
+registry.registerDetector(detectClaudeCode);
+
+registry.registerImporter('gemini-cli', importGeminiCli);
+registry.registerDetector(detectGeminiCli);
+
+registry.registerImporter('antigravity', importAntigravity);
+registry.registerDetector(detectAntigravity);
+
+registry.registerImporter('codex', importCodex);
+registry.registerDetector(detectCodex);
+
+registry.registerImporter('windsurf', importWindsurf);
+registry.registerDetector(detectWindsurf);
+
+registry.registerImporter('cline', importCline);
+registry.registerDetector(detectCline);
+
+// ─── Re-export DetectedAgent so callers can import from one place ─────────────
+export type { DetectedAgent } from '../types/generator';
 
 // ─── Agent detection ──────────────────────────────────────────────────────────
 
-export interface DetectedAgent {
-  name: string;
-  /** high = sentinel directory found; low = only root file detected */
-  confidence: 'high' | 'low';
-}
-
 /** Probe a project directory for agent-native files and return detected agents. */
 export function detectAgents(dir: string): DetectedAgent[] {
-  const detected: DetectedAgent[] = [];
-  const e = (p: string) => fs.existsSync(p);
-
-  if (e(path.join(dir, '.github', 'copilot-instructions.md')) || e(path.join(dir, '.github', 'instructions'))) {
-    detected.push({ name: 'copilot', confidence: 'high' });
-  }
-  if (e(path.join(dir, '.cursor', 'rules'))) {
-    detected.push({ name: 'cursor', confidence: 'high' });
-  }
-  if (e(path.join(dir, '.claude'))) {
-    detected.push({ name: 'claude-code', confidence: 'high' });
-  } else if (e(path.join(dir, 'CLAUDE.md'))) {
-    detected.push({ name: 'claude-code', confidence: 'low' });
-  }
-  if (e(path.join(dir, '.gemini')) || e(path.join(dir, 'GEMINI.md'))) {
-    detected.push({ name: 'gemini-cli', confidence: 'high' });
-  }
-  if (e(path.join(dir, '.agents', 'rules'))) {
-    detected.push({ name: 'antigravity', confidence: 'high' });
-  }
-  if (e(path.join(dir, '.codex'))) {
-    detected.push({ name: 'codex', confidence: 'high' });
-  } else if (e(path.join(dir, 'AGENTS.md'))) {
-    // AGENTS.md is shared — lower confidence; only add if no other agent used it
-    detected.push({ name: 'codex', confidence: 'low' });
-  }
-  if (e(path.join(dir, '.windsurf', 'rules'))) {
-    detected.push({ name: 'windsurf', confidence: 'high' });
-  }
-  if (e(path.join(dir, '.clinerules'))) {
-    detected.push({ name: 'cline', confidence: 'high' });
-  }
-
-  return detected;
+  return registry.listDetectors().flatMap((fn) => fn(dir));
 }
 
 // ─── Deduplication ────────────────────────────────────────────────────────────
@@ -101,21 +103,6 @@ export interface ImportOptions {
   overwrite?: boolean;
 }
 
-type AgentImporter = (dir: string) => Promise<{
-  instructions: InstructionFile[];
-  agents?: AgentDefinition[];
-}>;
-
-const IMPORTERS: Record<string, AgentImporter> = {
-  copilot: importCopilot,
-  cursor: importCursor,
-  'claude-code': importClaudeCode,
-  'gemini-cli': importGeminiCli,
-  antigravity: importAntigravity,
-  codex: importCodex,
-  windsurf: importWindsurf,
-  cline: importCline,
-};
 
 /**
  * Scan a project directory for agent-native files, reverse-parse them to IR,
@@ -135,7 +122,7 @@ export async function importArtifacts(
   const allAgents: AgentDefinition[] = [];
 
   for (const agentName of targetAgents) {
-    const importer = IMPORTERS[agentName];
+    const importer = registry.getImporter(agentName);
     if (!importer) continue;
 
     const result = await importer(sourceDir);
@@ -149,6 +136,7 @@ export async function importArtifacts(
     skills: [],
     commands: [],
     hooks: [],
+    extensions: {},
   };
 }
 
@@ -232,6 +220,14 @@ export async function writeAgentConfigDir(
     const hooksData = { hooks: ir.hooks };
     const hooksYaml = yaml.dump(hooksData);
     writeFile(path.join(configDir, 'hooks', 'hooks.yaml'), hooksYaml, opts);
+  }
+
+  // directive type extensions contributed by plugins
+  for (const [typeId, items] of Object.entries(ir.extensions)) {
+    const plugin = registry.getDirectiveType(typeId);
+    if (plugin?.write) {
+      plugin.write(items, configDir, opts);
+    }
   }
 }
 

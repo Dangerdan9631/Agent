@@ -1,5 +1,7 @@
 // Self-register all built-in generators
 import './generators/index';
+// Self-register all built-in importers and detectors
+import './importers/index';
 
 // ─── Operations (high-level orchestration) ────────────────────────────────────
 export {
@@ -26,20 +28,22 @@ export type {
 // ─── Config ───────────────────────────────────────────────────────────────────
 export { findConfigDir, loadConfig, resolveConfigDir } from './config';
 
+// ─── Global tool config ───────────────────────────────────────────────────────
+export {
+  BUILT_IN_TARGETS,
+  getGlobalConfigDir,
+  getGlobalConfigPath,
+  loadGlobalConfig,
+  ensureGlobalConfig,
+  loadGlobalPlugins,
+} from './global-config';
+export type { GlobalToolConfig, BuiltInTarget } from './global-config';
+
 // ─── Parsers ──────────────────────────────────────────────────────────────────
 export { parseArtifacts } from './parsers/index';
 
 // ─── Registry & plugins ───────────────────────────────────────────────────────
-export { registry } from './registry';
-
-/** Load all plugin generators listed in config.plugins. */
-export async function loadPlugins(config: import('./types/config').AgentConfig): Promise<void> {
-  if (!config.plugins || config.plugins.length === 0) return;
-  const { registry: reg } = await import('./registry');
-  for (const plugin of config.plugins) {
-    await reg.loadPlugin(plugin);
-  }
-}
+export { registry, PluginRegistry, GeneratorRegistry } from './registry';
 
 // ─── Generate ─────────────────────────────────────────────────────────────────
 import type { IR } from './types/ir';
@@ -87,6 +91,7 @@ export {
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type {
   IR,
+  IRExtensions,
   InstructionFile,
   AgentDefinition,
   SkillDefinition,
@@ -100,6 +105,11 @@ export type {
 
 export type {
   AgentGenerator,
+  AgentTargetPlugin,
+  AgentImportResult,
+  DirectiveTypePlugin,
+  WriteOptions,
+  DetectedAgent,
   FileOutput,
   GeneratorInput,
 } from './types/generator';
@@ -109,14 +119,14 @@ export type {
 } from './types/config';
 
 export type {
+  ValidationLevel,
   ValidationResult,
-} from './validator';
+} from './types/validation';
 
 export type {
   DiffEntry,
 } from './writer';
 
 export type {
-  DetectedAgent,
   ImportOptions,
 } from './importers/index';

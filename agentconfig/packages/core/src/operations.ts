@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { findConfigDir, resolveConfigDir, loadConfig } from './config';
+import { loadGlobalPlugins } from './global-config';
 import { parseArtifacts } from './parsers/index';
 import { validate } from './validator';
 import { write, computeDiff, deduplicateOutputs } from './writer';
@@ -14,13 +15,6 @@ import type { DiffEntry } from './writer';
 import type { DetectedAgent } from './importers/index';
 
 // ── Internal helpers (avoids importing from index.ts to prevent circular deps) ─
-
-async function loadPlugins(config: AgentConfig): Promise<void> {
-  if (!config.plugins || config.plugins.length === 0) return;
-  for (const plugin of config.plugins) {
-    await registry.loadPlugin(plugin);
-  }
-}
 
 function buildFiles(ir: IR, config: AgentConfig, targetFilter?: string[]): FileOutput[] {
   const targets = targetFilter && targetFilter.length > 0 ? targetFilter : config.targets;
@@ -62,7 +56,7 @@ export async function runGenerate(options: GenerateOptions): Promise<GenerateRes
     ? { options: { output_dir: options.outputDirOverride, overwrite: options.overwrite ?? true } }
     : undefined;
   const config = await loadConfig(configDir, overrides);
-  await loadPlugins(config);
+  await loadGlobalPlugins();
 
   const ir = await parseArtifacts(configDir, config);
   const validationErrors = validate(ir, config).filter((r) => r.level === 'error');
@@ -116,7 +110,7 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
     ? { options: { output_dir: options.outputDirOverride, overwrite: false } }
     : undefined;
   const config = await loadConfig(configDir, overrides);
-  await loadPlugins(config);
+  await loadGlobalPlugins();
 
   const ir = await parseArtifacts(configDir, config);
   const files = buildFiles(ir, config, options.targets);
@@ -231,10 +225,6 @@ export async function runImport(options: RunImportOptions): Promise<ImportResult
 // ── List Targets ──────────────────────────────────────────────────────────────
 
 export async function listTargets(configPath?: string): Promise<AgentGenerator[]> {
-  const configDir = configPath ? resolveConfigDir(configPath) : findConfigDir(process.cwd());
-  if (configDir) {
-    const config = await loadConfig(configDir).catch(() => null);
-    if (config) await loadPlugins(config);
-  }
+  await loadGlobalPlugins();
   return registry.list();
 }

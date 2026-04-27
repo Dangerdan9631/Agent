@@ -2,6 +2,15 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether a Gemini CLI configuration is present in `dir`. */
+export function detectGeminiCli(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.gemini')) || fs.existsSync(path.join(dir, 'GEMINI.md'))) {
+    return [{ name: 'gemini-cli', confidence: 'high' }];
+  }
+  return [];
+}
 
 /**
  * Import instructions from a Gemini CLI project.

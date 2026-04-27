@@ -1,14 +1,9 @@
 import type { IR } from './types/ir';
 import type { AgentConfig } from './types/config';
+import { registry } from './registry';
 
-export type ValidationLevel = 'error' | 'warning' | 'info';
-
-export interface ValidationResult {
-  level: ValidationLevel;
-  message: string;
-  /** Absolute path to the source file that triggered this result (if applicable) */
-  file?: string;
-}
+export type { ValidationLevel, ValidationResult } from './types/validation';
+import type { ValidationResult } from './types/validation';
 
 const VALID_ACTIVATIONS = new Set(['always', 'scoped', 'ai-decided', 'manual']);
 
@@ -125,6 +120,14 @@ export function validate(ir: IR, config: AgentConfig): ValidationResult[] {
         "Codex's project_doc_fallback_filenames, Claude Code's always-on instructions may be " +
         'double-loaded by Codex.',
     });
+  }
+
+  // ── Directive type plugin checks ──────────────────────────────────────────
+  for (const plugin of registry.listDirectiveTypes()) {
+    if (plugin.validate) {
+      const items = ir.extensions[plugin.typeId] ?? [];
+      results.push(...plugin.validate(items, config));
+    }
   }
 
   return results;

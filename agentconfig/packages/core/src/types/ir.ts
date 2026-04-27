@@ -102,6 +102,20 @@ export interface HookDefinition {
   excludedTargets?: string[];
 }
 
+/**
+ * Open extension bag for custom directive types contributed by plugins.
+ *
+ * Plugin packages augment this interface via declaration merging to gain
+ * full type safety for their directive data:
+ * @example
+ * declare module 'agentconfig' {
+ *   interface IRExtensions {
+ *     workflows: WorkflowDefinition[];
+ *   }
+ * }
+ */
+export interface IRExtensions extends Record<string, unknown[]> {}
+
 /** Root container — the normalized intermediate representation */
 export interface IR {
   instructions: InstructionFile[];
@@ -109,4 +123,6 @@ export interface IR {
   skills: SkillDefinition[];
   commands: CommandDefinition[];
   hooks: HookDefinition[];
+  /** Directive data contributed by registered DirectiveTypePlugins */
+  extensions: IRExtensions;
 }

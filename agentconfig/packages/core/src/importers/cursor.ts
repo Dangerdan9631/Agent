@@ -3,6 +3,15 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
+import type { DetectedAgent } from '../types/generator';
+
+/** Detect whether a Cursor configuration is present in `dir`. */
+export function detectCursor(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.cursor', 'rules'))) {
+    return [{ name: 'cursor', confidence: 'high' }];
+  }
+  return [];
+}
 
 /**
  * Import instructions from a Cursor project.
