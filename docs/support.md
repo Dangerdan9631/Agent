@@ -16,6 +16,7 @@
 | **Codex** | Web/app | OpenAI Codex (ChatGPT-integrated coding agent) |
 | **Codex CLI** | CLI | OpenAI Codex CLI — `codex` command |
 | **Windsurf** | IDE | Windsurf (Codeium) — [windsurf.com](https://windsurf.com) |
+| **Windsurf CLI** | CLI | Windsurf terminal agent (Devin for Terminal) — `devin` command — [cli.windsurf.com](https://cli.windsurf.com) |
 | **Cline** | IDE extension | Cline VS Code extension — [cline.bot](https://cline.bot) |
 
 
@@ -53,24 +54,24 @@
 > - **`AGENTS.md` standard** — Whether the tool natively supports `AGENTS.md` as a first-class instruction filename without requiring additional configuration
 > - **`agentskills.io` standard** — Whether the tool natively implements the open [agentskills.io](https://agentskills.io) `SKILL.md` standard for portable, cross-tool skills
 
-| Feature | Cursor | Cursor CLI | Copilot | Copilot CLI | Claude Code | Gemini CLI | Antigravity | Codex | Codex CLI | Windsurf | Cline |
-|---------|--------|------------|---------|-------------|-------------|------------|-------------|-------|-----------|----------|-------|
-| **Global instructions** | ✅ User Rules (UI, not file-based) | ✅ Same as IDE | ⚠️ GitHub.com profile only | ❌ | ✅ `~/.claude/CLAUDE.md` | ✅ `~/.gemini/GEMINI.md` | ✅ `~/.gemini/GEMINI.md` | ✅ `~/.codex/AGENTS.md` | ✅ `~/.codex/AGENTS.md` | ✅ `~/.codeium/windsurf/memories/global_rules.md` | ✅ VS Code settings |
-| **Workspace instructions** | ✅ `.cursor/rules/*.mdc` | ✅ `.cursor/rules/*.mdc` | ✅ `.github/copilot-instructions.md` | ✅ `.github/copilot-instructions.md` | ✅ `.claude/CLAUDE.md` | ✅ `./GEMINI.md` (hierarchy) | ✅ `.agents/rules/` | ✅ `.codex/` + `AGENTS.md` | ✅ `.codex/` + `AGENTS.md` | ✅ `.windsurf/rules/*.md` | ✅ `.clinerules` or `.clinerules/` |
-| **Workspace root instructions** | ❌ | ❌ | ❌ | ❌ | ✅ `./CLAUDE.md` | ✅ `./GEMINI.md` | ❌ | ✅ `./AGENTS.md` | ✅ `./AGENTS.md` | ❌ | ✅ `.clinerules` |
-| **Nested instructions** | ✅ AGENTS.md in subdirs | ✅ AGENTS.md in subdirs | ⚠️ AGENTS.md (off by default) | ❌ | ✅ CLAUDE.md hierarchy | ✅ JIT-loaded GEMINI.md | ❓ | ✅ AGENTS.md root→CWD | ✅ AGENTS.md root→CWD | ❓ | ❌ |
-| **Pathed/globbed instructions** | ✅ `globs:` frontmatter | ✅ `globs:` frontmatter | ✅ `applyTo:` frontmatter | ✅ `applyTo:` frontmatter | ✅ `paths:` in `.claude/rules/` | ❌ | ✅ Glob activation mode | ❌ | ❌ | ✅ `glob` activation mode | ✅ `paths:` frontmatter |
-| **Root AGENTS.md** | ✅ | ✅ | ✅ | ✅ | ✅ via `@AGENTS.md` import | 🔧 `context.fileName` config | ❓ | ✅ | ✅ | ✅ | ✅ |
-| **Nested AGENTS.md** | ✅ | ✅ | ⚠️ Off by default | ❌ | ✅ via `@` import | 🔧 `context.fileName` config | ❓ | ✅ | ✅ | ✅ auto-glob scoped | ❓ |
-| **`.agents/rules`** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ Native (primary location) | ❌ | ❌ | ❌ | ❌ |
-| **`@file.md` imports** | ❌ | ❌ | ❌ | ❌ | ✅ `@path/to/file` (5-hop depth) | ✅ `@path/to/file.md` | ✅ `@filename` | ❌ | ❌ | ❓ | ❌ |
-| **Skills** | ✅ `.agents/skills/`, `.cursor/skills/` | ✅ Same as IDE | ✅ `.github/skills/`, `.agents/skills/` | ✅ `.github/skills/`, `.agents/skills/` | ✅ `.claude/agents/` | ✅ `.gemini/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.windsurf/skills/` | ✅ `.cline/skills/` (native) |
-| **`.agent/skills`** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ Legacy compat | ❌ | ❌ | ❌ | ❌ |
-| **Global skills** | ✅ `~/.agents/skills/`, `~/.cursor/skills/` | ✅ Same as IDE | ✅ `~/.copilot/skills/` | ✅ `~/.copilot/skills/` | ✅ `~/.claude/agents/` | ✅ `~/.gemini/skills/` | ✅ `~/.gemini/antigravity/skills/` | ✅ `$HOME/.agents/skills/` | ✅ `$HOME/.agents/skills/` | ❓ | ❓ |
-| **Subagents** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ (experimental) | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Hooks** | ✅ `hooks.json` (command+prompt) | ✅ Same as IDE | ❌ | ❌ | ✅ `settings.json` (command/http/prompt/agent) | ✅ `settings.json` (command) | ❌ | 🔧 `hooks.json` (⚠️ Win disabled) | 🔧 `hooks.json` (⚠️ Win disabled) | ❌ | ✅ `hooks.json` |
-| **`AGENTS.md` standard** | ✅ root+nested | ✅ root+nested | ✅ root, ⚠️ nested off by default | ✅ root only | 🔧 via `@AGENTS.md` import | 🔧 `context.fileName` config | ❓ | ✅ native | ✅ native | ✅ native | ✅ official |
-| **`agentskills.io` standard** | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.github/skills/`, `.agents/skills/` | ✅ `.github/skills/`, `.agents/skills/` | ❌ proprietary `.claude/agents/` | ✅ `.gemini/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.windsurf/skills/` | ❌ native only |
+| Feature | Cursor | Cursor CLI | Copilot | Copilot CLI | Claude Code | Gemini CLI | Antigravity | Codex | Codex CLI | Windsurf | Windsurf CLI | Cline |
+|---------|--------|------------|---------|-------------|-------------|------------|-------------|-------|-----------|----------|-------------|-------|
+| **Global instructions** | ✅ User Rules (UI, not file-based) | ✅ Same as IDE | ⚠️ GitHub.com profile only | ❌ | ✅ `~/.claude/CLAUDE.md` | ✅ `~/.gemini/GEMINI.md` | ✅ `~/.gemini/GEMINI.md` | ✅ `~/.codex/AGENTS.md` | ✅ `~/.codex/AGENTS.md` | ✅ `~/.codeium/windsurf/memories/global_rules.md` | ✅ `~/.codeium/windsurf/memories/global_rules.md` (via windsurf import) | ✅ VS Code settings |
+| **Workspace instructions** | ✅ `.cursor/rules/*.mdc` | ✅ `.cursor/rules/*.mdc` | ✅ `.github/copilot-instructions.md` | ✅ `.github/copilot-instructions.md` | ✅ `.claude/CLAUDE.md` | ✅ `./GEMINI.md` (hierarchy) | ✅ `.agents/rules/` | ✅ `.codex/` + `AGENTS.md` | ✅ `.codex/` + `AGENTS.md` | ✅ `.windsurf/rules/*.md` | ✅ `.windsurf/rules/*.md` (imported) | ✅ `.clinerules` or `.clinerules/` |
+| **Workspace root instructions** | ❌ | ❌ | ❌ | ❌ | ✅ `./CLAUDE.md` | ✅ `./GEMINI.md` | ❌ | ✅ `./AGENTS.md` | ✅ `./AGENTS.md` | ❌ | ✅ `AGENTS.md` / `AGENT.md` / `CLAUDE.md` | ✅ `.clinerules` |
+| **Nested instructions** | ✅ AGENTS.md in subdirs | ✅ AGENTS.md in subdirs | ⚠️ AGENTS.md (off by default) | ❌ | ✅ CLAUDE.md hierarchy | ✅ JIT-loaded GEMINI.md | ❓ | ✅ AGENTS.md root→CWD | ✅ AGENTS.md root→CWD | ❓ | ✅ AGENTS.md lazily loaded | ❌ |
+| **Pathed/globbed instructions** | ✅ `globs:` frontmatter | ✅ `globs:` frontmatter | ✅ `applyTo:` frontmatter | ✅ `applyTo:` frontmatter | ✅ `paths:` in `.claude/rules/` | ❌ | ✅ Glob activation mode | ❌ | ❌ | ✅ `glob` activation mode | ✅ windsurf `glob` trigger (via import) | ✅ `paths:` frontmatter |
+| **Root AGENTS.md** | ✅ | ✅ | ✅ | ✅ | ✅ via `@AGENTS.md` import | 🔧 `context.fileName` config | ❓ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Nested AGENTS.md** | ✅ | ✅ | ⚠️ Off by default | ❌ | ✅ via `@` import | 🔧 `context.fileName` config | ❓ | ✅ | ✅ | ✅ auto-glob scoped | ✅ lazily loaded | ❓ |
+| **`.agents/rules`** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ Native (primary location) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **`@file.md` imports** | ❌ | ❌ | ❌ | ❌ | ✅ `@path/to/file` (5-hop depth) | ✅ `@path/to/file.md` | ✅ `@filename` | ❌ | ❌ | ❓ | ❌ | ❌ |
+| **Skills** | ✅ `.agents/skills/`, `.cursor/skills/` | ✅ Same as IDE | ✅ `.github/skills/`, `.agents/skills/` | ✅ `.github/skills/`, `.agents/skills/` | ✅ `.claude/agents/` | ✅ `.gemini/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.windsurf/skills/` | ✅ `.agents/skills/`, `.devin/skills/`, `.windsurf/skills/` | ✅ `.cline/skills/` (native) |
+| **`.agent/skills`** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ Legacy compat | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Global skills** | ✅ `~/.agents/skills/`, `~/.cursor/skills/` | ✅ Same as IDE | ✅ `~/.copilot/skills/` | ✅ `~/.copilot/skills/` | ✅ `~/.claude/agents/` | ✅ `~/.gemini/skills/` | ✅ `~/.gemini/antigravity/skills/` | ✅ `$HOME/.agents/skills/` | ✅ `$HOME/.agents/skills/` | ❓ | ✅ `~/.config/devin/skills/` | ❓ |
+| **Subagents** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ (experimental) | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Hooks** | ✅ `hooks.json` (command+prompt) | ✅ Same as IDE | ❌ | ❌ | ✅ `settings.json` (command/http/prompt/agent) | ✅ `settings.json` (command) | ❌ | 🔧 `hooks.json` (⚠️ Win disabled) | 🔧 `hooks.json` (⚠️ Win disabled) | ✅ `.windsurf/hooks.json` (command) | ✅ `.devin/hooks.v1.json` (command+prompt) | ✅ `hooks.json` |
+| **`AGENTS.md` standard** | ✅ root+nested | ✅ root+nested | ✅ root, ⚠️ nested off by default | ✅ root only | 🔧 via `@AGENTS.md` import | 🔧 `context.fileName` config | ❓ | ✅ native | ✅ native | ✅ native | ✅ native root+nested | ✅ official |
+| **`agentskills.io` standard** | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.github/skills/`, `.agents/skills/` | ✅ `.github/skills/`, `.agents/skills/` | ❌ proprietary `.claude/agents/` | ✅ `.gemini/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.agents/skills/` | ✅ `.windsurf/skills/` | ✅ `.agents/skills/` | ❌ native only |
 
 ---
 
@@ -224,8 +225,23 @@
 - **Skills**: `.windsurf/skills/<skill-folder>/SKILL.md` — follows the agentskills.io open standard. Also scans `.agents/skills/` for cross-tool compatibility.
 - **Workflows**: `.windsurf/workflows/*.md` — manual-only via `/workflow-name` slash commands.
 - **Memories**: Auto-generated per workspace in `~/.codeium/windsurf/memories/` — not committed to repo.
-- **Hooks**: No hooks support.
-- **Sources**: [docs.windsurf.com](https://docs.windsurf.com)
+- **Hooks**: ✅ Cascade Hooks — launched in Wave 13 (stable Dec 2025). Config at `.windsurf/hooks.json` (workspace), `~/.codeium/windsurf/hooks.json` (user), system-level paths (macOS `/Library/Application Support/Windsurf/hooks.json`, Linux `/etc/windsurf/hooks.json`, Windows `C:\ProgramData\Windsurf\hooks.json`). `command` type only (optional `powershell` field for Windows cross-platform support). 12 events: `pre_read_code`, `post_read_code`, `pre_write_code`, `post_write_code`, `pre_run_command`, `post_run_command`, `pre_mcp_tool_use`, `post_mcp_tool_use`, `pre_user_prompt`, `post_cascade_response`, `post_cascade_response_with_transcript`, `post_setup_worktree`. Exit code 2 blocks pre-hooks. Enterprise: cloud dashboard config or MDM system-level deployment.
+- **Sources**: [docs.windsurf.com](https://docs.windsurf.com), [docs.windsurf.com/windsurf/cascade/hooks](https://docs.windsurf.com/windsurf/cascade/hooks)
+
+---
+
+### Windsurf CLI
+
+- **Site**: [cli.windsurf.com](https://cli.windsurf.com) — "Devin for Terminal", local CLI coding agent included with Windsurf Pro/Max/Teams subscriptions.
+- **Command**: `devin` (installed via `curl -fsSL https://cli.devin.ai/install.sh | bash`; Windows installer also available)
+- **Native rules**: `AGENTS.md`, `AGENT.md`, `CLAUDE.md` at project root (always-on) and subdirectories (lazily loaded when the agent accesses that directory's files). Cannot be disabled.
+- **Imported rules**: Reads `.windsurf/rules/*.md` (Windsurf IDE format), `.cursor/rules/*.md` (Cursor format), and `.claude/` directory by default. Controlled via `read_config_from` in config.
+- **Global instructions**: `~/.codeium/windsurf/memories/global_rules.md` (via Windsurf import).
+- **Skills**: `.devin/skills/`, `.windsurf/skills/`, `.agents/skills/` (project); `~/.config/devin/skills/`, `~/.codeium/<channel>/skills/`, `~/.agents/skills/` (global, where `<channel>` is `windsurf`, `windsurf-next`, or `windsurf-insiders`). Windows global path: `%APPDATA%\devin\skills\`. Supports agentskills.io standard.
+- **Subagents**: ✅ Built-in (`subagent_explore` read-only, `subagent_general` full access) and custom (`.devin/agents/<profile>/AGENT.md`). Foreground and background modes. Also imports `.claude/agents/*.md`.
+- **Hooks**: `.devin/hooks.v1.json` (project, recommended) or `"hooks"` key in `.devin/config.json`. Also reads Claude Code-format hooks from `.claude/settings.json`. Claude Code-compatible format: `command` and `prompt` types. Events: `PreToolUse`, `PostToolUse`, `PermissionRequest`, `UserPromptSubmit`, `Stop`, `SessionStart`, `SessionEnd`. Exit code 2 blocks pre-hooks. Use `/hooks` in REPL to list loaded hooks.
+- **Config**: `.devin/config.json` (project), `~/.config/devin/config.json` (user, or `%APPDATA%\devin\config.json` on Windows), `.devin/config.local.json` (local overrides, gitignored).
+- **Sources**: [cli.windsurf.com](https://cli.windsurf.com)
 
 ---
 
@@ -284,11 +300,19 @@
 | `.gemini/settings.json` (`hooks` key) | Gemini CLI | Project hooks |
 | `~/.codex/hooks.json` | Codex, Codex CLI | User global hooks (feature flag required) |
 | `.codex/hooks.json` | Codex, Codex CLI | Project hooks (feature flag required, Windows disabled) |
-| `~/.codeium/windsurf/memories/global_rules.md` | Windsurf | User global instructions |
-| `.windsurf/rules/*.md` | Windsurf | Project rules |
-| `.windsurf/skills/` | Windsurf | Project skills (agentskills.io) |
+| `~/.codeium/windsurf/memories/global_rules.md` | Windsurf, Windsurf CLI | User global instructions |
+| `.windsurf/rules/*.md` | Windsurf, Windsurf CLI | Project rules |
+| `.windsurf/skills/` | Windsurf, Windsurf CLI | Project skills (agentskills.io) |
 | `.windsurf/workflows/*.md` | Windsurf | Project workflows |
-| `.agents/skills/` | Copilot, Copilot CLI, Cursor, Cursor CLI, Windsurf, Antigravity, Codex, Codex CLI | Project skills (cross-tool) |
+| `.windsurf/hooks.json` | Windsurf | Project hooks (Cascade Hooks) |
+| `~/.codeium/windsurf/hooks.json` | Windsurf | User global hooks |
+| `.devin/hooks.v1.json` | Windsurf CLI | Project hooks (Claude Code-compatible) |
+| `.devin/config.json` | Windsurf CLI | Project config (MCP, permissions, imports) |
+| `.devin/skills/` | Windsurf CLI | Project skills (native) |
+| `.devin/agents/` | Windsurf CLI | Project custom subagent profiles |
+| `~/.config/devin/config.json` | Windsurf CLI | User config (`%APPDATA%\devin\config.json` on Windows) |
+| `~/.config/devin/skills/` | Windsurf CLI | User global skills (`%APPDATA%\devin\skills\` on Windows) |
+| `.agents/skills/` | Copilot, Copilot CLI, Cursor, Cursor CLI, Windsurf, Windsurf CLI, Antigravity, Codex, Codex CLI | Project skills (cross-tool) |
 | `.clinerules` | Cline | Project rules (single file) |
 | `.clinerules/` | Cline | Project rules (directory) |
 | `.cline/skills/` | Cline | Project skills (native) |

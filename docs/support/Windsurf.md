@@ -345,8 +345,106 @@ Invoke with: `/pr-review` in Cascade.
 | Workflows (slash commands) | ✅ | `.windsurf/workflows/*.md`; manual via `/workflow-name` |
 | `@file` imports in rules | ❌ | Rules are standalone files; no cross-file `@import` syntax |
 | Subagents | ❌ | Single-agent model (multiple simultaneous Cascades are independent) |
-| Hooks / event triggers | ❌ | No file-watcher or event-based rule activation |
+| Hooks / event triggers | ✅ | `.windsurf/hooks.json`; Cascade Hooks (Wave 13, stable Dec 2025) |
 | Enterprise system rules | ✅ | OS-level deployment for IT-managed orgs |
+
+---
+
+## Hooks
+
+Windsurf's **Cascade Hooks** feature (launched stable in Wave 13, Dec 2025) lets you execute custom shell commands at key points in Cascade's workflow. Hooks can be used for logging, enforcing security policies, running linters, integrating with external systems, and enterprise governance.
+
+### Configuration Files
+
+Hooks are configured in JSON files at three scope levels. Hooks from all levels are merged and executed in order: system → user → workspace.
+
+| Scope | Location |
+|-------|----------|
+| System (enterprise) | macOS: `/Library/Application Support/Windsurf/hooks.json` |
+| System (enterprise) | Linux/WSL: `/etc/windsurf/hooks.json` |
+| System (enterprise) | Windows: `C:\ProgramData\Windsurf\hooks.json` |
+| User | `~/.codeium/windsurf/hooks.json` (Windsurf IDE); `~/.codeium/hooks.json` (JetBrains plugin) |
+| Workspace | `.windsurf/hooks.json` in your workspace root (version-controlled) |
+
+Enterprise teams can also configure hooks via the **Windsurf cloud dashboard** (requires Enterprise plan), with hooks automatically distributed to all team members.
+
+### Hook Format
+
+```json
+{
+  "hooks": {
+    "pre_run_command": [
+      {
+        "command": "python3 /path/to/check-command.py",
+        "powershell": "python3 C:\\path\\to\\check-command.py",
+        "show_output": true,
+        "working_directory": "/optional/path"
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `command` | Shell command to run on macOS/Linux (via `bash -c`). At least one of `command` or `powershell` required. |
+| `powershell` | Command to run on Windows (via `powershell -Command`). If omitted on Windows, `command` is used as fallback. |
+| `show_output` | Whether to display hook stdout/stderr in the Cascade UI. Useful for debugging. |
+| `working_directory` | Directory to run the command from. Defaults to workspace root. |
+
+### Hook Events
+
+Cascade provides 12 hook events. Pre-hooks (`pre_*`) can block the action by exiting with code 2; post-hooks cannot block.
+
+| Event | When It Fires | Can Block? |
+|-------|--------------|-----------|
+| `pre_read_code` | Before Cascade reads a code file | ✅ |
+| `post_read_code` | After Cascade reads a code file | ❌ |
+| `pre_write_code` | Before Cascade writes/modifies a file | ✅ |
+| `post_write_code` | After Cascade writes/modifies a file | ❌ |
+| `pre_run_command` | Before Cascade executes a terminal command | ✅ |
+| `post_run_command` | After Cascade executes a terminal command | ❌ |
+| `pre_mcp_tool_use` | Before Cascade invokes an MCP tool | ✅ |
+| `post_mcp_tool_use` | After Cascade invokes an MCP tool | ❌ |
+| `pre_user_prompt` | Before Cascade processes a user's prompt | ✅ |
+| `post_cascade_response` | After Cascade completes a response (markdown summary) | ❌ |
+| `post_cascade_response_with_transcript` | After Cascade response; writes full JSONL transcript to `~/.windsurf/transcripts/` | ❌ |
+| `post_setup_worktree` | After a git worktree is created | ❌ |
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success — action proceeds normally |
+| 2 | Block — Cascade sees the error message from stderr; pre-hooks only |
+| Other | Error — action proceeds normally (error logged) |
+
+### Input JSON Structure
+
+All hooks receive JSON on stdin with common fields (`agent_action_name`, `trajectory_id`, `execution_id`, `timestamp`, `model_name`) plus a `tool_info` object specific to the event type.
+
+Example for `pre_run_command`:
+```json
+{
+  "agent_action_name": "pre_run_command",
+  "trajectory_id": "...",
+  "execution_id": "...",
+  "timestamp": "2025-12-01T10:00:00Z",
+  "model_name": "Claude Sonnet 4",
+  "tool_info": {
+    "command_line": "npm install package-name",
+    "cwd": "/Users/yourname/project"
+  }
+}
+```
+
+### Best Practices
+
+- Keep hook scripts fast (< 100ms) to avoid impacting Cascade responsiveness
+- Use absolute paths in hook configurations
+- Validate all JSON inputs in scripts; never trust data without validation
+- Avoid logging sensitive information (API keys, credentials)
+- Start with logging hooks to understand data flow before implementing blocking hooks
 
 ---
 
@@ -356,6 +454,7 @@ Invoke with: `/pr-review` in Cascade.
 - [AGENTS.md](https://docs.windsurf.com/windsurf/cascade/agents-md) — Location-scoped instructions
 - [Skills](https://docs.windsurf.com/windsurf/cascade/skills) — Multi-step procedures with supporting files
 - [Workflows](https://docs.windsurf.com/windsurf/cascade/workflows) — Reusable slash-command task templates
+- [Cascade Hooks](https://docs.windsurf.com/windsurf/cascade/hooks) — Lifecycle hooks for logging, security, and automation
 - [Cascade Overview](https://docs.windsurf.com/windsurf/cascade) — Core agent capabilities
 - [Getting Started](https://docs.windsurf.com/windsurf/getting-started) — Installation and onboarding
 - [Rule Templates Directory](https://windsurf.com/editor/directory) — Community rule templates curated by Windsurf team
