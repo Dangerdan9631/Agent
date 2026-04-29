@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
 import type { DetectedAgent } from '../types/generator';
@@ -67,7 +67,7 @@ export async function importCopilot(
     const files = await fg('**/*.instructions.md', { cwd: instrDir, absolute: true });
     for (const filePath of files.sort()) {
       const raw = fs.readFileSync(filePath, 'utf8');
-      const { data, content } = matter(raw);
+      const { data, content, parseWarning } = matter(raw);
       const body = content.trim();
       const stem = path.basename(filePath, '.instructions.md');
 
@@ -94,7 +94,7 @@ export async function importCopilot(
             activation: 'always',
             slug: stem,
             body,
-            importNote: 'activation inferred from applyTo: **/*; verify if scoped was intended',
+            importNote: parseWarning ?? 'activation inferred from applyTo: **/*; verify if scoped was intended',
           });
         }
       } else {

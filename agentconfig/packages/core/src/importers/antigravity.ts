@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
 import type { InstructionFile, ActivationType } from '../types/ir';
 import type { DetectedAgent } from '../types/generator';
@@ -35,7 +35,7 @@ export async function importAntigravity(
 
   for (const filePath of files.sort()) {
     const raw = fs.readFileSync(filePath, 'utf8');
-    const { data, content } = matter(raw);
+    const { data, content, parseWarning } = matter(raw);
     const stem = path.basename(filePath, '.md');
     const body = content.trim();
 
@@ -61,6 +61,8 @@ export async function importAntigravity(
           '# TODO: verify activation — ai-decided inferred from activation: model but no description found';
       }
     }
+
+    if (parseWarning && !inst.importNote) inst.importNote = parseWarning;
 
     instructions.push(inst);
   }

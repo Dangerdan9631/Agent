@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
 import type { DetectedAgent } from '../types/generator';
@@ -52,10 +52,10 @@ export async function importCline(
     if (rel.startsWith('workflows/') || rel.startsWith('hooks/')) continue;
 
     const raw = fs.readFileSync(filePath, 'utf8');
-    const { data, content } = matter(raw);
+    const { data, content, parseWarning } = matter(raw);
     const stem = path.basename(filePath).replace(/\.(md|txt)$/, '');
     const body = content.trim();
-    const hasFrontmatter = Object.keys(data).length > 0;
+    const hasFrontmatter = Object.keys(data).length > 0 || !!parseWarning;
 
     if (!hasFrontmatter) {
       // No frontmatter → always active (or ai-decided via in-text condition heuristic)
@@ -98,7 +98,7 @@ export async function importCline(
         activation: 'always',
         slug: stem,
         body,
-        importNote: '# TODO: verify activation — unrecognized Cline frontmatter',
+        importNote: parseWarning ?? '# TODO: verify activation — unrecognized Cline frontmatter',
       });
     }
   }

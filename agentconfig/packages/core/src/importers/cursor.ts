@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
 import type { InstructionFile } from '../types/ir';
 import type { DetectedAgent } from '../types/generator';
@@ -32,11 +32,11 @@ export async function importCursor(
 
   for (const filePath of files.sort()) {
     const raw = fs.readFileSync(filePath, 'utf8');
-    const { data, content } = matter(raw);
+    const { data, content, parseWarning } = matter(raw);
     const stem = path.basename(filePath).replace(/\.(mdc|md)$/, '');
     const body = content.trim();
 
-    const hasFrontmatter = Object.keys(data).length > 0;
+    const hasFrontmatter = Object.keys(data).length > 0 || !!parseWarning;
 
     if (!hasFrontmatter) {
       // Manual rule — @mention only
@@ -86,7 +86,7 @@ export async function importCursor(
         activation: 'always',
         slug: stem,
         body,
-        importNote: '# TODO: verify activation — could not determine from Cursor frontmatter',
+        importNote: parseWarning ?? '# TODO: verify activation — could not determine from Cursor frontmatter',
       });
     }
   }

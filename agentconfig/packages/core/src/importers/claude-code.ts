@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
 import type { InstructionFile, AgentDefinition } from '../types/ir';
 import type { DetectedAgent } from '../types/generator';
@@ -79,7 +79,7 @@ export async function importClaudeCode(sourceDir: string): Promise<{
     const files = await fg('**/*.md', { cwd: rulesDir, absolute: true });
     for (const filePath of files.sort()) {
       const raw = fs.readFileSync(filePath, 'utf8');
-      const { data, content } = matter(raw);
+      const { data, content, parseWarning } = matter(raw);
       const stem = path.basename(filePath, '.md');
       const body = content.trim();
 
@@ -120,6 +120,7 @@ export async function importClaudeCode(sourceDir: string): Promise<{
           activation: 'always',
           slug: stem,
           body,
+          ...(parseWarning ? { importNote: parseWarning } : {}),
         });
       }
     }
