@@ -4,7 +4,7 @@ Rebuild the agentconfig tool and reinstall the global CLI binary.
 
 1. Build both packages from the workspace root:
    ```bash
-   cd agentconfig && npm run build
+   cd src && npm run build
    ```
 
 2. Reinstall global CLI:

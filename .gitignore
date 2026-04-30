@@ -1,9 +1,9 @@
 # Dependencies
 node_modules/
-agentconfig/node_modules/
+src/node_modules/
 
 # Build outputs
-agentconfig/packages/*/dist/
+src/packages/*/dist/
 
 # TypeScript incremental build info
 *.tsbuildinfo

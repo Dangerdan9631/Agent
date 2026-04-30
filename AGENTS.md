@@ -5,7 +5,7 @@
 ### Repository Layout
 
 ```
-agentconfig/               ← npm workspaces root
+src/                       ← npm workspaces root
   package.json             ← workspaces: ["packages/*"]
   tsconfig.base.json       ← shared TS config (module: ESNext, moduleResolution: bundler)
   packages/
@@ -134,7 +134,7 @@ agentconfig list-targets [--format text|json]
 
 ```bash
 # Build everything
-cd agentconfig && npm run build
+cd src && npm run build
 
 # Rebuild only core (faster during generator development)
 npm run build -w packages/core
