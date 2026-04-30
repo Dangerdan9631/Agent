@@ -1,12 +1,18 @@
 # Dependencies
 node_modules/
-agentconfig/node_modules/
+src/node_modules/
 
 # Build outputs
-agentconfig/packages/*/dist/
+src/packages/*/dist/
+src/coverage/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Local Ollama runtime config
+ollama/.env
+ollama/.env.*
+!ollama/.env.example
 
 # OS
 .DS_Store
