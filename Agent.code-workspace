@@ -1,0 +1,93 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Start Ollama",
+				"type": "shell",
+				"command": "pwsh",
+				"args": [
+					"-NoProfile",
+					"-ExecutionPolicy",
+					"Bypass",
+					"-File",
+					"${workspaceFolder}/ollama/start-ollama.ps1"
+				],
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "Shutdown Ollama",
+				"type": "shell",
+				"command": "docker",
+				"args": [
+					"compose",
+					"-f",
+					"${workspaceFolder}/ollama/compose.yaml",
+					"down"
+				],
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "Start Graphiti",
+				"type": "shell",
+				"command": "docker",
+				"args": [
+					"compose",
+					"-f",
+					"${workspaceFolder}/graphiti/compose.yaml",
+					"up",
+					"-d"
+				],
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "Shutdown Graphiti",
+				"type": "shell",
+				"command": "docker",
+				"args": [
+					"compose",
+					"-f",
+					"${workspaceFolder}/graphiti/compose.yaml",
+					"down"
+				],
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "Start Ollama + Graphiti",
+				"dependsOrder": "sequence",
+				"dependsOn": [
+					"Start Ollama",
+					"Start Graphiti"
+				],
+				"problemMatcher": []
+			},
+			{
+				"label": "Shutdown Ollama + Graphiti",
+				"dependsOrder": "sequence",
+				"dependsOn": [
+					"Shutdown Graphiti",
+					"Shutdown Ollama"
+				],
+				"problemMatcher": []
+			}
+		]
+	}
+}
