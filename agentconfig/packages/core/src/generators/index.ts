@@ -4,23 +4,24 @@
  */
 import { registry } from '../registry';
 
-import { CopilotGenerator, CopilotCLIGenerator } from './copilot';
-import { CursorGenerator, CursorCLIGenerator } from './cursor';
+import { CopilotGenerator } from './copilot';
+import { CopilotCLIGenerator } from './copilot-cli';
+import { CursorGenerator } from './cursor';
 import { ClaudeCodeGenerator } from './claude-code';
 import { GeminiCliGenerator } from './gemini-cli';
 import { AntigravityGenerator } from './antigravity';
-import { CodexGenerator, CodexCLIGenerator } from './codex';
+import { CodexGenerator } from './codex';
 import { WindsurfGenerator } from './windsurf';
+import { WindsurfCLIGenerator } from './windsurf-cli';
 import { ClineGenerator } from './cline';
 
 registry.register(CopilotGenerator);
 registry.register(CopilotCLIGenerator);
 registry.register(CursorGenerator);
-registry.register(CursorCLIGenerator);
 registry.register(ClaudeCodeGenerator);
 registry.register(GeminiCliGenerator);
 registry.register(AntigravityGenerator);
 registry.register(CodexGenerator);
-registry.register(CodexCLIGenerator);
 registry.register(WindsurfGenerator);
+registry.register(WindsurfCLIGenerator);
 registry.register(ClineGenerator);

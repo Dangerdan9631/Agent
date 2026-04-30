@@ -31,10 +31,9 @@ function buildFiles(ir: IR, config: AgentConfig, targetFilter?: string[]): FileO
 
 export interface GenerateOptions {
   configPath?: string;
-  outputDirOverride?: string;
+  projectRootOverride?: string;
   targets?: string[];
   overwrite?: boolean;
-  dryRun?: boolean;
 }
 
 export interface GenerateResult {
@@ -44,16 +43,14 @@ export interface GenerateResult {
   targets: string[];
   /** Non-empty when config validation failed; no files were written */
   validationErrors: ValidationResult[];
-  /** Populated only when dryRun is true */
-  diff: DiffEntry[];
-  /** Number of files written; 0 for dry runs */
+  /** Number of files written */
   fileCount: number;
 }
 
 export async function runGenerate(options: GenerateOptions): Promise<GenerateResult> {
   const configDir = resolveConfigDir(options.configPath);
-  const overrides = options.outputDirOverride
-    ? { options: { output_dir: options.outputDirOverride, overwrite: options.overwrite ?? true } }
+  const overrides = options.projectRootOverride
+    ? { options: { output_dir: options.projectRootOverride, overwrite: options.overwrite ?? true } }
     : undefined;
   const config = await loadConfig(configDir, overrides);
   await loadGlobalPlugins();
@@ -64,18 +61,13 @@ export async function runGenerate(options: GenerateOptions): Promise<GenerateRes
   const targets = options.targets?.length ? options.targets : config.targets;
 
   if (validationErrors.length > 0) {
-    return { configDir, outputDir, targets, validationErrors, diff: [], fileCount: 0 };
+    return { configDir, outputDir, targets, validationErrors, fileCount: 0 };
   }
 
   const files = buildFiles(ir, config, options.targets);
 
-  if (options.dryRun) {
-    const diff = computeDiff(files, outputDir);
-    return { configDir, outputDir, targets, validationErrors: [], diff, fileCount: 0 };
-  }
-
   await write(files, { outputDir, overwrite: options.overwrite ?? true, dryRun: false });
-  return { configDir, outputDir, targets, validationErrors: [], diff: [], fileCount: files.length };
+  return { configDir, outputDir, targets, validationErrors: [], fileCount: files.length };
 }
 
 // ── Validate ──────────────────────────────────────────────────────────────────
@@ -95,7 +87,7 @@ export async function runValidate(options: ValidateOptions): Promise<ValidationR
 
 export interface DiffOptions {
   configPath?: string;
-  outputDirOverride?: string;
+  projectRootOverride?: string;
   targets?: string[];
 }
 
@@ -106,8 +98,8 @@ export interface DiffResult {
 
 export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   const configDir = resolveConfigDir(options.configPath);
-  const overrides = options.outputDirOverride
-    ? { options: { output_dir: options.outputDirOverride, overwrite: false } }
+  const overrides = options.projectRootOverride
+    ? { options: { output_dir: options.projectRootOverride, overwrite: false } }
     : undefined;
   const config = await loadConfig(configDir, overrides);
   await loadGlobalPlugins();

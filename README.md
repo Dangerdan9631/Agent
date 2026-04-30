@@ -269,7 +269,6 @@ Read `.agentconfig/` and write all agent-native files.
 ```bash
 agentconfig generate
 agentconfig generate --target copilot --target cursor
-agentconfig generate --dry-run          # preview diff, no writes
 agentconfig generate --no-overwrite     # skip files that already exist
 agentconfig generate --watch            # regenerate on change
 ```

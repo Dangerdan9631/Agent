@@ -87,7 +87,7 @@ export function validate(ir: IR, config: AgentConfig): ValidationResult[] {
   }
 
   // ── Hook-level checks ──────────────────────────────────────────────────────
-  const hasCodex = config.targets.some((t) => t === 'codex' || t === 'codex-cli');
+  const hasCodex = config.targets.includes('codex');
 
   if (hasCodex && ir.hooks.length > 0) {
     if (process.platform === 'win32') {
@@ -111,7 +111,7 @@ export function validate(ir: IR, config: AgentConfig): ValidationResult[] {
   // CLAUDE.md may be double-loaded if the user has it in project_doc_fallback_filenames.
   if (
     config.targets.includes('claude-code') &&
-    config.targets.some((t) => t === 'codex' || t === 'codex-cli')
+    config.targets.includes('codex')
   ) {
     results.push({
       level: 'warning',

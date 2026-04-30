@@ -9,19 +9,19 @@ export function registerGenerate(program: Command): void {
     .alias('gen')
     .description('Parse .agentconfig/ and write agent-native directive files.')
     .option('--config <path>', 'Path to .agentconfig/ directory (default: auto-detect)')
-    .option('--out <path>', 'Override output_dir from config')
-    .option('--target <name>', 'Generate for specific target(s)', (val, prev: string[]) => [...prev, val], [] as string[])
+    .option('--project-root <path>', 'Override project root directory (replaces --out)')
+    .option('--out <path>', 'Override output_dir from config (deprecated, use --project-root)')
+    .option('--target <name>', 'Generate for specific target(s)', (val, prev: string[] | undefined) => [...(prev || []), val])
     .option('-v, --verbose', 'Verbose output', false)
-    .option('--dry-run', 'Preview changes without writing to disk', false)
     .option('--no-overwrite', 'Skip files that already exist on disk')
     .option('--watch', 'Watch .agentconfig/ for changes and re-generate', false)
     .action(async (cmdOpts, cmd) => {
       const opts = cmd.opts() as {
         config?: string;
+        projectRoot?: string;
         out?: string;
-        target: string[];
+        target?: string[];
         verbose: boolean;
-        dryRun: boolean;
         overwrite: boolean;
         watch: boolean;
       };
@@ -29,10 +29,9 @@ export function registerGenerate(program: Command): void {
       async function doGenerate(): Promise<string> {
         const result = await runGenerate({
           configPath: opts.config,
-          outputDirOverride: opts.out,
-          targets: opts.target.length > 0 ? opts.target : undefined,
+          projectRootOverride: opts.projectRoot || opts.out,
+          targets: opts.target,
           overwrite: opts.overwrite,
-          dryRun: opts.dryRun,
         });
 
         if (result.validationErrors.length > 0) {
@@ -43,12 +42,7 @@ export function registerGenerate(program: Command): void {
         info(opts.verbose, `Using config dir: ${result.configDir}`);
         info(opts.verbose, `Targets: ${result.targets.join(', ')}`);
 
-        if (opts.dryRun) {
-          printDiff(result.diff, 'text');
-          console.log(chalk.cyan('\n(dry run — no files written)'));
-        } else {
-          console.log(chalk.green(`Generated ${result.fileCount} file(s) → ${result.outputDir}`));
-        }
+        console.log(chalk.green(`Generated ${result.fileCount} file(s) → ${result.outputDir}`));
 
         return result.configDir;
       }

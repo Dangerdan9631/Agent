@@ -87,16 +87,6 @@ export const HOOK_EVENT_MAPS: Record<string, AgentHookEventMap> = {
     PreCompact: 'preCompact',
     UserPromptSubmit: 'beforeSubmitPrompt',
   },
-  'cursor-cli': {
-    SessionStart: 'sessionStart',
-    SessionEnd: 'sessionEnd',
-    PreToolUse: 'preToolUse',
-    PostToolUse: 'postToolUse',
-    SubagentStart: 'subagentStart',
-    SubagentStop: 'subagentStop',
-    PreCompact: 'preCompact',
-    UserPromptSubmit: 'beforeSubmitPrompt',
-  },
   'claude-code': {
     SessionStart: 'SessionStart',
     SessionEnd: 'SessionEnd',
@@ -118,14 +108,6 @@ export const HOOK_EVENT_MAPS: Record<string, AgentHookEventMap> = {
     PreCompact: 'PreCompress',
   },
   codex: {
-    SessionStart: 'SessionStart',
-    SessionEnd: 'Stop',
-    PreToolUse: 'PreToolUse',
-    PostToolUse: 'PostToolUse',
-    UserPromptSubmit: 'UserPromptSubmit',
-    PermissionRequest: 'PermissionRequest',
-  },
-  'codex-cli': {
     SessionStart: 'SessionStart',
     SessionEnd: 'Stop',
     PreToolUse: 'PreToolUse',

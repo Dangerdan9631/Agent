@@ -1,15 +1,11 @@
 import { program } from 'commander';
 import chalk from 'chalk';
-import { ensureGlobalConfig } from 'agentconfig';
 import { registerGenerate } from './commands/generate';
 import { registerValidate } from './commands/validate';
 import { registerDiff } from './commands/diff';
 import { registerInitialize } from './commands/initialize';
 import { registerImport } from './commands/import';
 import { registerListTargets } from './commands/list-targets';
-
-// Create ~/.agentconfig/config.yaml with all built-in plugins on first run.
-ensureGlobalConfig();
 
 program
   .name('agentconfig')

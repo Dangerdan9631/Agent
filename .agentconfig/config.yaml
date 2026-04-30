@@ -3,12 +3,11 @@ targets:
   - copilot
   - copilot-cli
   - cursor
-  - cursor-cli
   - gemini-cli
   - antigravity
   - codex
-  - codex-cli
   - windsurf
+  - windsurf-cli
 options:
   overwrite: true
   output_dir: "."

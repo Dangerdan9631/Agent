@@ -1,9 +1,9 @@
 import type { AgentGenerator, FileOutput, GeneratorInput } from '../types/generator';
 import { filterForTarget, buildFrontmatter, buildInTextCondition } from './base';
 
-class CopilotGeneratorImpl implements AgentGenerator {
-  readonly target = 'copilot';
-  readonly displayName = 'GitHub Copilot';
+class CopilotCLIGeneratorImpl implements AgentGenerator {
+  readonly target = 'copilot-cli';
+  readonly displayName = 'GitHub Copilot CLI';
 
   generate({ ir, target }: GeneratorInput): FileOutput[] {
     const outputs: FileOutput[] = [];
@@ -71,4 +71,4 @@ class CopilotGeneratorImpl implements AgentGenerator {
   }
 }
 
-export const CopilotGenerator = new CopilotGeneratorImpl();
+export const CopilotCLIGenerator = new CopilotCLIGeneratorImpl();

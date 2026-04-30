@@ -94,4 +94,3 @@ class CursorGeneratorImpl implements AgentGenerator {
 }
 
 export const CursorGenerator = new CursorGeneratorImpl('cursor', 'Cursor');
-export const CursorCLIGenerator = new CursorGeneratorImpl('cursor-cli', 'Cursor CLI');

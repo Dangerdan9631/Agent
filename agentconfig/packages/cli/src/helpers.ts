@@ -1,6 +1,8 @@
 import chalk from 'chalk';
 import type { ValidationResult, DiffEntry } from 'agentconfig';
 
+import { OutputFormat } from './output-format';
+
 export function die(msg: string, code = 1): never {
   console.error(chalk.red('error:'), msg);
   process.exit(code);
@@ -12,7 +14,7 @@ export function info(verbose: boolean, msg: string): void {
 
 export function printValidation(
   results: ValidationResult[],
-  format: 'text' | 'json',
+  format: OutputFormat,
   strict: boolean,
 ): void {
   if (format === 'json') {
@@ -42,7 +44,7 @@ export function printValidation(
   }
 }
 
-export function printDiff(diff: DiffEntry[], format: 'text' | 'json'): void {
+export function printDiff(diff: DiffEntry[], format: OutputFormat): void {
   if (format === 'json') {
     console.log(JSON.stringify(diff, null, 2));
     return;

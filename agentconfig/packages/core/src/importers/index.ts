@@ -6,28 +6,24 @@ import type { AgentConfig } from '../types/config';
 import type { DetectedAgent } from '../types/generator';
 import { registry } from '../registry';
 
-import { importCopilot } from './copilot';
-import { detectCopilot } from './copilot';
-import { importCursor } from './cursor';
-import { detectCursor } from './cursor';
-import { importClaudeCode } from './claude-code';
-import { detectClaudeCode } from './claude-code';
-import { importGeminiCli } from './gemini-cli';
-import { detectGeminiCli } from './gemini-cli';
-import { importAntigravity } from './antigravity';
-import { detectAntigravity } from './antigravity';
-import { importCodex } from './codex';
-import { detectCodex } from './codex';
-import { importWindsurf } from './windsurf';
-import { detectWindsurf } from './windsurf';
-import { importCline } from './cline';
-import { detectCline } from './cline';
+import { importCopilot, detectCopilot } from './copilot';
+import { importCopilotCli, detectCopilotCli } from './copilot-cli';
+import { importCursor, detectCursor } from './cursor';
+import { importClaudeCode, detectClaudeCode } from './claude-code';
+import { importGeminiCli, detectGeminiCli } from './gemini-cli';
+import { importAntigravity, detectAntigravity } from './antigravity';
+import { importCodex, detectCodex } from './codex';
+import { importWindsurf, detectWindsurf } from './windsurf';
+import { importWindsurfCli, detectWindsurfCli } from './windsurf-cli';
+import { importCline, detectCline } from './cline';
 
 // ─── Register built-in importers and detectors ────────────────────────────────
 // (mirrors the side-effect pattern used by generators/index.ts)
 
 registry.registerImporter('copilot', importCopilot);
+registry.registerImporter('copilot-cli', importCopilotCli);
 registry.registerDetector(detectCopilot);
+registry.registerDetector(detectCopilotCli);
 
 registry.registerImporter('cursor', importCursor);
 registry.registerDetector(detectCursor);
@@ -46,6 +42,9 @@ registry.registerDetector(detectCodex);
 
 registry.registerImporter('windsurf', importWindsurf);
 registry.registerDetector(detectWindsurf);
+
+registry.registerImporter('windsurf-cli', importWindsurfCli);
+registry.registerDetector(detectWindsurfCli);
 
 registry.registerImporter('cline', importCline);
 registry.registerDetector(detectCline);

@@ -127,4 +127,3 @@ class CodexGeneratorImpl implements AgentGenerator {
 }
 
 export const CodexGenerator = new CodexGeneratorImpl('codex', 'Codex');
-export const CodexCLIGenerator = new CodexGeneratorImpl('codex-cli', 'Codex CLI');

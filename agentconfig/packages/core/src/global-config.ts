@@ -13,13 +13,12 @@ export const BUILT_IN_TARGETS = [
   'copilot',
   'copilot-cli',
   'cursor',
-  'cursor-cli',
   'claude-code',
   'gemini-cli',
   'antigravity',
   'codex',
-  'codex-cli',
   'windsurf',
+  'windsurf-cli',
   'cline',
 ] as const;
 
@@ -53,6 +52,7 @@ export function getGlobalConfigPath(): string {
  * Returns defaults (all built-in plugins listed) if the file does not exist.
  */
 export async function loadGlobalConfig(): Promise<GlobalToolConfig> {
+  ensureGlobalConfig();
   const configPath = getGlobalConfigPath();
 
   let raw: Record<string, unknown> = {};

@@ -1,14 +1,15 @@
-import type { Command } from 'commander';
+import { Option, type Command } from 'commander';
 import chalk from 'chalk';
 import { listTargets } from 'agentconfig';
+import { OutputFormat } from '../output-format';
 
 export function registerListTargets(program: Command): void {
   program
     .command('list-targets')
     .description('List all registered generator targets.')
-    .option('--format <text|json>', 'Output format', 'text')
-    .action(async (cmdOpts, cmd) => {
-      const opts = cmd.opts() as { format: string };
+    .addOption(new Option('--format <format>', 'Output format').choices(['text', 'json']).default('text'))
+    .action(async (_cmdOpts, cmd) => {
+      const opts = cmd.opts() as { format: OutputFormat };
 
       const targets = await listTargets();
 
