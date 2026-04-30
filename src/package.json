@@ -8,9 +8,13 @@
   "scripts": {
     "build": "npm run build -w packages/core && npm run build -w packages/cli",
     "dev": "npm run dev -w packages/core",
+    "lint": "eslint packages/",
+    "lint:fix": "eslint packages/ --fix",
     "clean": "rimraf packages/*/dist"
   },
   "devDependencies": {
-    "rimraf": "^5.0.5"
+    "eslint": "^9.39.4",
+    "rimraf": "^5.0.5",
+    "typescript-eslint": "^8.59.1"
   }
 }
