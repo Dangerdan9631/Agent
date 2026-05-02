@@ -6,7 +6,7 @@ server:
 
 llm:
   provider: "openai"
-  model: ${OLLAMA_CHAT_MODEL:qwen3:4b}
+  model: ${OLLAMA_CHAT_MODEL:qwen3.5:4b}
   max_tokens: 4096
   providers:
     openai:

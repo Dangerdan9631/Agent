@@ -79,6 +79,38 @@ function Wait-ForHttpEndpoint {
   } while ($true)
 }
 
+function Resolve-PythonForVenv {
+  $candidates = @('3.12', '3.11', '3.10')
+  foreach ($version in $candidates) {
+    try {
+      & py -$version -c "import sys" *> $null
+      if ($LASTEXITCODE -eq 0) {
+        return "py -$version"
+      }
+    } catch {
+    }
+  }
+
+  throw 'Python 3.10+ is required for graphiti-core. Install Python 3.11 (recommended), then rerun this script.'
+}
+
+function Test-PythonExeCompatible {
+  param(
+    [string]$PythonPath
+  )
+
+  if (-not (Test-Path $PythonPath)) {
+    return $false
+  }
+
+  try {
+    & $PythonPath -c "import sys; raise SystemExit(0 if (sys.version_info.major, sys.version_info.minor) >= (3, 10) else 1)" *> $null
+    return $LASTEXITCODE -eq 0
+  } catch {
+    return $false
+  }
+}
+
 if (-not (Test-Path $envFile)) {
   $exampleFile = Join-Path $PSScriptRoot '.env.example'
   if (Test-Path $exampleFile) {
@@ -114,9 +146,15 @@ Wait-ForHttpEndpoint -Url "http://${bindIp}:$restPort/healthcheck" -Description 
 Wait-ForHttpEndpoint -Url "http://${bindIp}:$mcpPort/health" -Description 'Graphiti MCP server'
 Wait-ForHttpEndpoint -Url "http://${bindIp}:$wrapperPort/health" -Description 'Graphiti API wrapper'
 
+if ((Test-Path $pythonExe) -and -not (Test-PythonExeCompatible -PythonPath $pythonExe)) {
+  Write-Host 'Existing Graphiti virtual environment uses an unsupported Python version. Recreating .venv with Python 3.10+...'
+  Remove-Item -Recurse -Force $venvDir
+}
+
 if (-not (Test-Path $pythonExe)) {
+  $pythonBootstrap = Resolve-PythonForVenv
   Write-Host 'Creating Graphiti virtual environment...'
-  py -3 -m venv $venvDir
+  Invoke-Expression "$pythonBootstrap -m venv \"$venvDir\""
 }
 
 Write-Host 'Installing Graphiti dependencies...'

@@ -1,10 +1,10 @@
 import asyncio
-import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
+from openai import AsyncOpenAI
 
 from graphiti_core import Graphiti
 from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerClient
@@ -30,7 +30,13 @@ def build_graphiti() -> Graphiti:
 
     base_url = normalize_base_url(os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"))
     api_key = os.getenv("OLLAMA_API_KEY", "ollama")
-    chat_model = os.getenv("OLLAMA_CHAT_MODEL", "qwen3:4b")
+
+    # Graphiti unconditionally initializes OpenAIRerankerClient() in __init__,
+    # which reads OPENAI_API_KEY directly from the environment.
+    # Populate OpenAI-compatible vars from the Ollama settings to prevent startup failure.
+    os.environ.setdefault("OPENAI_API_KEY", api_key)
+    os.environ.setdefault("OPENAI_BASE_URL", base_url)
+    chat_model = os.getenv("OLLAMA_CHAT_MODEL", "qwen3.5:4b")
     small_model = os.getenv("OLLAMA_SMALL_MODEL", chat_model)
     embed_model = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
     embedding_dim = int(os.getenv("OLLAMA_EMBEDDING_DIM", "768"))
@@ -76,55 +82,34 @@ def build_graphiti() -> Graphiti:
 async def main() -> None:
     graphiti = build_graphiti()
 
-    episodes = [
-        {
-            "name": "local-ollama-stack",
-            "content": {
-                "service": "ollama",
-                "base_url": "http://127.0.0.1:11434",
-                "chat_model": os.getenv("OLLAMA_CHAT_MODEL", "qwen3:4b"),
-                "embed_model": os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
-            },
-            "type": EpisodeType.json,
-            "description": "local model server configuration",
-        },
-        {
-            "name": "local-graphiti-stack",
-            "content": "Graphiti uses Neo4j on bolt://127.0.0.1:7687 and reads LLM traffic from the local Ollama OpenAI-compatible API endpoint.",
-            "type": EpisodeType.text,
-            "description": "local graph memory configuration",
-        },
-        {
-            "name": "repo-purpose",
-            "content": "This repository centers on agent configuration and local AI tooling. The Graphiti folder is configured to use Neo4j plus the Ollama stack defined in the sibling ollama folder.",
-            "type": EpisodeType.text,
-            "description": "repository context",
-        },
-    ]
-
     try:
-        for episode in episodes:
-            episode_body = episode["content"]
-            await graphiti.add_episode(
-                name=episode["name"],
-                episode_body=episode_body if isinstance(episode_body, str) else json.dumps(episode_body),
-                source=episode["type"],
-                source_description=episode["description"],
+        print("Checking Graphiti initialization...")
+        await asyncio.wait_for(graphiti.build_indices_and_constraints(), timeout=30)
+        print("Graphiti indices and constraints are ready.")
+
+        print("Checking Ollama chat completion...")
+        client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ["OPENAI_BASE_URL"])
+        response = await asyncio.wait_for(
+            client.chat.completions.create(
+                model=os.getenv("OLLAMA_CHAT_MODEL", "qwen3.5:4b"),
+                messages=[{"role": "user", "content": "Reply with the single word OK."}],
+                max_tokens=8,
+            ),
+            timeout=60,
+        )
+        message = (response.choices[0].message.content or "").strip()
+        print(f"Ollama responded: {message}")
+
+        print("Checking Graphiti episode retrieval...")
+        episodes = await asyncio.wait_for(
+            graphiti.retrieve_episodes(
+                group_ids=["smoke-test"],
+                last_n=1,
                 reference_time=datetime.now(timezone.utc),
-            )
-            print(f"Added episode: {episode['name']}")
-
-        query = "Which local services does Graphiti depend on in this workspace?"
-        print(f"\nSearch query: {query}")
-        results = await graphiti.search(query)
-
-        if not results:
-            print("No results returned.")
-            return
-
-        print("\nTop search results:")
-        for result in results[:5]:
-            print(f"- {result.fact}")
+            ),
+            timeout=30,
+        )
+        print(f"Graphiti retrieval succeeded. Episodes returned: {len(episodes)}")
     finally:
         await graphiti.close()
 

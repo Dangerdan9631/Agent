@@ -1,4 +1,5 @@
 import json
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Literal
@@ -20,8 +21,8 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 class Settings(BaseSettings):
     ollama_openai_base_url: str = 'http://ollama:11434/v1'
     ollama_api_key: str = 'ollama'
-    ollama_chat_model: str = 'qwen3:4b'
-    ollama_small_model: str = 'qwen3:4b'
+    ollama_chat_model: str = 'qwen3.5:4b'
+    ollama_small_model: str = 'qwen3.5:4b'
     ollama_embed_model: str = 'nomic-embed-text'
     ollama_embedding_dim: int = 768
     neo4j_uri: str = 'bolt://neo4j:7687'
@@ -66,6 +67,12 @@ def get_settings() -> Settings:
 
 
 def build_graphiti(settings: Settings) -> Graphiti:
+    # Graphiti may initialize a default OpenAI reranker client internally.
+    # Populate OpenAI-compatible env vars from the Ollama settings to avoid
+    # startup failures when OPENAI_API_KEY is not explicitly set.
+    os.environ.setdefault('OPENAI_API_KEY', settings.ollama_api_key)
+    os.environ.setdefault('OPENAI_BASE_URL', settings.ollama_openai_base_url)
+
     llm_config = LLMConfig(
         api_key=settings.ollama_api_key,
         model=settings.ollama_chat_model,

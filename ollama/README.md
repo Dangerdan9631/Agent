@@ -2,7 +2,7 @@
 
 This folder runs a local Ollama server for this workspace with:
 
-- chat model: `qwen3:4b`
+- chat model: `qwen3.5:4b`
 - embedding model: `nomic-embed-text`
 
 ## Prerequisites
@@ -34,7 +34,7 @@ If you leave `LAN_BIND_IP=0.0.0.0` in `ollama/.env`, the service will also be re
 Use these values in tools that support Ollama-compatible endpoints:
 
 - base URL: `http://127.0.0.1:11434`
-- chat model: `qwen3:4b`
+- chat model: `qwen3.5:4b`
 - embedding model: `nomic-embed-text`
 
 Environment variables:
@@ -43,7 +43,8 @@ Environment variables:
 LAN_BIND_IP=0.0.0.0
 AGENT_DOCKER_NETWORK=agent-services
 OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_CHAT_MODEL=qwen3:4b
+OLLAMA_CONTEXT_LENGTH=1024
+OLLAMA_CHAT_MODEL=qwen3.5:4b
 OLLAMA_EMBED_MODEL=nomic-embed-text
 ```
 

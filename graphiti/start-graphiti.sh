@@ -11,6 +11,7 @@ REQUIREMENTS_FILE="$SCRIPT_DIR/requirements.txt"
 SMOKE_TEST="$SCRIPT_DIR/quickstart_ollama_neo4j.py"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 OLLAMA_SCRIPT="$REPO_ROOT/ollama/start-ollama.sh"
+OLLAMA_ENV_FILE="$REPO_ROOT/ollama/.env"
 DEFAULT_NETWORK_NAME="agent-services"
 
 assert_docker_available() {
@@ -74,23 +75,41 @@ wait_for_http_endpoint() {
 }
 
 resolve_python() {
-  if [[ -x "$PYTHON_EXE" ]]; then
-    echo "$PYTHON_EXE"
-    return
-  fi
+  local candidate
+  for candidate in python3.12 python3.11 python3.10 python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      local candidate_path
+      candidate_path="$(command -v "$candidate")"
+      local version
+      version="$($candidate_path -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
 
-  if command -v python3 >/dev/null 2>&1; then
-    command -v python3
-    return
-  fi
+      if [[ -n "$version" ]]; then
+        local major="${version%%.*}"
+        local minor="${version##*.}"
+        if [[ "$major" -gt 3 || ("$major" -eq 3 && "$minor" -ge 10) ]]; then
+          echo "$candidate_path"
+          return
+        fi
+      fi
+    fi
+  done
 
-  if command -v python >/dev/null 2>&1; then
-    command -v python
-    return
-  fi
-
-  echo "Python 3 is required but was not found on PATH." >&2
+  echo "Python 3.10+ is required for graphiti-core, but no compatible interpreter was found on PATH." >&2
+  echo "Install Python 3.11 (recommended), then rerun this script." >&2
   exit 1
+}
+
+python_is_compatible() {
+  local python_path="$1"
+  local version
+  version="$($python_path -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
+  if [[ -z "$version" ]]; then
+    return 1
+  fi
+
+  local major="${version%%.*}"
+  local minor="${version##*.}"
+  [[ "$major" -gt 3 || ("$major" -eq 3 && "$minor" -ge 10) ]]
 }
 
 if [[ ! -f "$ENV_FILE" && -f "$SCRIPT_DIR/.env.example" ]]; then
@@ -128,6 +147,11 @@ wait_for_http_endpoint "http://$bind_ip:$mcp_port/health" "Graphiti MCP server"
 wait_for_http_endpoint "http://$bind_ip:$wrapper_port/health" "Graphiti API wrapper"
 
 bootstrap_python="$(resolve_python)"
+
+if [[ -x "$PYTHON_EXE" ]] && ! python_is_compatible "$PYTHON_EXE"; then
+  echo "Existing Graphiti virtual environment uses an unsupported Python version. Recreating .venv with Python 3.10+..."
+  rm -rf "$VENV_DIR"
+fi
 
 if [[ ! -x "$PYTHON_EXE" ]]; then
   echo "Creating Graphiti virtual environment..."
