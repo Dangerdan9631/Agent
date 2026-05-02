@@ -1,0 +1,25 @@
+{
+  "name": "overmind-cli",
+  "version": "0.1.0",
+  "description": "CLI for the overmind agent management system.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "overmind": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "overmind": "*",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.3"
+  }
+}
