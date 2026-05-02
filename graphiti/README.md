@@ -1,6 +1,6 @@
 # Local Graphiti setup
 
-This folder now runs a complete local Graphiti stack against the sibling Ollama service:
+This folder now runs a complete local Graphiti stack against a separately running Ollama service:
 
 - Neo4j database
 - Graphiti REST service
@@ -31,7 +31,7 @@ The stack uses Ollama on the shared Docker network for LLM and embedding calls, 
    docker compose -f graphiti/compose.yaml up -d
    ```
 
-   Or use the folder-local start script, which ensures Ollama is running, starts Neo4j plus all Graphiti endpoints, prepares the Python environment, and executes the smoke test:
+   Or use the folder-local start script, which starts Neo4j plus all Graphiti endpoints, prepares the Python environment, and executes the smoke test:
 
    ```powershell
    powershell -ExecutionPolicy Bypass -File graphiti/start-graphiti.ps1
@@ -43,7 +43,7 @@ The stack uses Ollama on the shared Docker network for LLM and embedding calls, 
    bash graphiti/start-graphiti.sh
    ```
 
-3. Ensure the sibling Ollama stack is already running and has the configured models pulled:
+3. Ensure Ollama is already running and has the configured models pulled before starting Graphiti:
 
    ```powershell
    docker compose -f ollama/compose.yaml up -d
@@ -89,11 +89,17 @@ Run the full local startup flow:
 powershell -ExecutionPolicy Bypass -File graphiti/start-graphiti.ps1
 ```
 
+This script does not start Ollama for you.
+
 macOS or Linux full startup flow:
 
 ```bash
 bash graphiti/start-graphiti.sh
 ```
+
+On macOS or Linux, the start script stays attached to the Graphiti Docker logs after startup so you can watch service output in the same terminal.
+
+This script does not start Ollama for you.
 
 Stop Neo4j:
 
@@ -105,6 +111,12 @@ Tail all Graphiti service logs:
 
 ```powershell
 docker compose -f graphiti/compose.yaml logs -f
+```
+
+Tail a specific Graphiti service:
+
+```powershell
+docker compose -f graphiti/compose.yaml logs -f graphiti-rest graphiti-mcp graphiti-api-wrapper neo4j
 ```
 
 ## Notes

@@ -8,8 +8,6 @@ $venvDir = Join-Path $PSScriptRoot '.venv'
 $pythonExe = Join-Path $venvDir 'Scripts\python.exe'
 $requirementsFile = Join-Path $PSScriptRoot 'requirements.txt'
 $smokeTest = Join-Path $PSScriptRoot 'quickstart_ollama_neo4j.py'
-$repoRoot = Split-Path $PSScriptRoot -Parent
-$ollamaScript = Join-Path $repoRoot 'ollama\start-ollama.ps1'
 $networkName = 'agent-services'
 
 function Assert-DockerAvailable {
@@ -119,15 +117,8 @@ if (-not (Test-Path $envFile)) {
   }
 }
 
-if (-not (Test-Path $ollamaScript)) {
-  throw 'Expected sibling ollama/start-ollama.ps1 to exist.'
-}
-
 Assert-DockerAvailable
 Ensure-DockerNetwork
-
-Write-Host 'Ensuring Ollama is running...'
-& $ollamaScript
 
 Write-Host 'Starting Graphiti network services...'
 docker compose -f $composeFile up -d

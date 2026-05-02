@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$SCRIPT_DIR/compose.yaml"
 ENV_FILE="$SCRIPT_DIR/.env"
 DEFAULT_NETWORK_NAME="agent-services"
+NATIVE_LOG_FILE="/opt/homebrew/var/log/ollama.log"
 
 assert_docker_available() {
   command -v docker >/dev/null 2>&1 || {
@@ -38,6 +39,16 @@ get_env_value() {
   printf '%s\n' "${line#*=}"
 }
 
+tail_native_logs() {
+  if [[ ! -f "$NATIVE_LOG_FILE" ]]; then
+    echo "Native Ollama log file not found at $NATIVE_LOG_FILE" >&2
+    return 1
+  fi
+
+  echo "Attaching to native Ollama logs at $NATIVE_LOG_FILE"
+  exec tail -n 50 -f "$NATIVE_LOG_FILE"
+}
+
 ensure_docker_network() {
   local network_name
   network_name="$(get_env_value AGENT_DOCKER_NETWORK "$DEFAULT_NETWORK_NAME")"
@@ -56,6 +67,7 @@ ollama_native="$(get_env_value OLLAMA_NATIVE "false")"
 chat_model="$(get_env_value OLLAMA_CHAT_MODEL "qwen3.5:4b")"
 embed_model="$(get_env_value OLLAMA_EMBED_MODEL "nomic-embed-text")"
 ollama_port="$(get_env_value OLLAMA_PORT "11434")"
+ollama_tail_logs="${OLLAMA_TAIL_LOGS:-true}"
 
 if [[ "$ollama_native" == "true" ]]; then
   # ── Native mode: use host Ollama via Homebrew (gets macOS Metal GPU) ────────
@@ -120,3 +132,7 @@ else
 fi
 
 echo "Ollama is ready at http://127.0.0.1:$ollama_port"
+
+if [[ "$ollama_native" == "true" && "$ollama_tail_logs" == "true" ]]; then
+  tail_native_logs
+fi

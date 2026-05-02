@@ -9,10 +9,12 @@ VENV_DIR="$SCRIPT_DIR/.venv"
 PYTHON_EXE="$VENV_DIR/bin/python"
 REQUIREMENTS_FILE="$SCRIPT_DIR/requirements.txt"
 SMOKE_TEST="$SCRIPT_DIR/quickstart_ollama_neo4j.py"
-REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
-OLLAMA_SCRIPT="$REPO_ROOT/ollama/start-ollama.sh"
-OLLAMA_ENV_FILE="$REPO_ROOT/ollama/.env"
 DEFAULT_NETWORK_NAME="agent-services"
+
+tail_graphiti_logs() {
+  echo "Attaching to Graphiti logs..."
+  exec docker compose -f "$COMPOSE_FILE" logs -f
+}
 
 assert_docker_available() {
   command -v docker >/dev/null 2>&1 || {
@@ -117,16 +119,8 @@ if [[ ! -f "$ENV_FILE" && -f "$SCRIPT_DIR/.env.example" ]]; then
   echo "Created graphiti/.env from .env.example"
 fi
 
-[[ -f "$OLLAMA_SCRIPT" ]] || {
-  echo "Expected sibling ollama/start-ollama.sh to exist." >&2
-  exit 1
-}
-
 assert_docker_available
 ensure_docker_network
-
-echo "Ensuring Ollama is running..."
-bash "$OLLAMA_SCRIPT"
 
 echo "Starting Graphiti network services..."
 docker compose -f "$COMPOSE_FILE" up -d
@@ -169,3 +163,5 @@ echo "Graphiti REST: http://$bind_ip:$rest_port"
 echo "Graphiti MCP: http://$bind_ip:$mcp_port/mcp/"
 echo "Graphiti API Wrapper: http://$bind_ip:$wrapper_port"
 echo "Graphiti services are running and the smoke test completed."
+
+tail_graphiti_logs

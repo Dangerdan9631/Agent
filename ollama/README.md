@@ -70,6 +70,10 @@ On macOS or Linux:
 bash ollama/start-ollama.sh
 ```
 
+In native mode on macOS, the script stays attached to the Homebrew service log after startup so you can watch Ollama output in the same terminal.
+
+Set `OLLAMA_TAIL_LOGS=false` if you need the script to return immediately, for example when another startup script calls it.
+
 Stop the stack:
 
 ```powershell
@@ -80,6 +84,12 @@ Tail logs:
 
 ```powershell
 docker compose -f ollama/compose.yaml logs -f ollama
+```
+
+For native macOS Ollama started through Homebrew:
+
+```bash
+tail -f /opt/homebrew/var/log/ollama.log
 ```
 
 Pull the models again:
