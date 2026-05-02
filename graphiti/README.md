@@ -10,7 +10,7 @@ This folder now runs a complete local Graphiti stack against the sibling Ollama 
 
 The stack uses Ollama on the shared Docker network for LLM and embedding calls, with these defaults:
 
-- chat model: `qwen2.5:14b`
+- chat model: `qwen3:4b`
 - embedding model: `nomic-embed-text`
 - internal Docker URL: `http://ollama:11434/v1`
 

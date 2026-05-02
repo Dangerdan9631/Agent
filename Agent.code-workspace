@@ -11,13 +11,9 @@
 			{
 				"label": "Start Ollama",
 				"type": "shell",
-				"command": "pwsh",
+				"command": "bash",
 				"args": [
-					"-NoProfile",
-					"-ExecutionPolicy",
-					"Bypass",
-					"-File",
-					"${workspaceFolder}/ollama/start-ollama.ps1"
+					"${workspaceFolder}/ollama/start-ollama.sh"
 				],
 				"options": {
 					"cwd": "${workspaceFolder}"
@@ -42,13 +38,9 @@
 			{
 				"label": "Start Graphiti",
 				"type": "shell",
-				"command": "docker",
+				"command": "bash",
 				"args": [
-					"compose",
-					"-f",
-					"${workspaceFolder}/graphiti/compose.yaml",
-					"up",
-					"-d"
+					"${workspaceFolder}/graphiti/start-graphiti.sh"
 				],
 				"options": {
 					"cwd": "${workspaceFolder}"

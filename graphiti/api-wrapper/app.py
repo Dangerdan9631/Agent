@@ -20,8 +20,8 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 class Settings(BaseSettings):
     ollama_openai_base_url: str = 'http://ollama:11434/v1'
     ollama_api_key: str = 'ollama'
-    ollama_chat_model: str = 'qwen2.5:14b'
-    ollama_small_model: str = 'qwen2.5:14b'
+    ollama_chat_model: str = 'qwen3:4b'
+    ollama_small_model: str = 'qwen3:4b'
     ollama_embed_model: str = 'nomic-embed-text'
     ollama_embedding_dim: int = 768
     neo4j_uri: str = 'bolt://neo4j:7687'

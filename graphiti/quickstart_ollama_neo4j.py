@@ -30,7 +30,7 @@ def build_graphiti() -> Graphiti:
 
     base_url = normalize_base_url(os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"))
     api_key = os.getenv("OLLAMA_API_KEY", "ollama")
-    chat_model = os.getenv("OLLAMA_CHAT_MODEL", "qwen2.5:14b")
+    chat_model = os.getenv("OLLAMA_CHAT_MODEL", "qwen3:4b")
     small_model = os.getenv("OLLAMA_SMALL_MODEL", chat_model)
     embed_model = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
     embedding_dim = int(os.getenv("OLLAMA_EMBEDDING_DIM", "768"))
@@ -82,7 +82,7 @@ async def main() -> None:
             "content": {
                 "service": "ollama",
                 "base_url": "http://127.0.0.1:11434",
-                "chat_model": os.getenv("OLLAMA_CHAT_MODEL", "qwen2.5:14b"),
+                "chat_model": os.getenv("OLLAMA_CHAT_MODEL", "qwen3:4b"),
                 "embed_model": os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
             },
             "type": EpisodeType.json,
