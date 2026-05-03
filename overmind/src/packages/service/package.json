@@ -13,6 +13,7 @@
     "dev": "tsup --watch"
   },
   "dependencies": {
+    "overmind-api": "*",
     "overmind": "*",
     "robot3": "^1.2.0"
   },
