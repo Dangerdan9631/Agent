@@ -1,4 +1,4 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from '../types/generator';
+import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
 import { filterForTarget, buildFrontmatter, HOOK_EVENT_MAPS } from './base';
 
 class CursorGeneratorImpl implements AgentGenerator {

@@ -1,15 +1,15 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { findConfigDir, resolveConfigDir, loadConfig } from './config';
+import { findConfigDir, resolveConfigDir, loadConfig, saveConfig } from './config';
 import { loadGlobalPlugins } from './global-config';
 import { parseArtifacts } from './parsers/index';
 import { validate } from './validator';
 import { write, computeDiff, deduplicateOutputs } from './writer';
 import { importArtifacts, detectAgents, writeAgentConfigDir } from './importers/index';
 import { registry } from './registry';
-import type { IR } from './types/ir';
-import type { AgentConfig } from './types/config';
-import type { FileOutput, AgentGenerator } from './types/generator';
+import type { IR } from 'agentconfig-api';
+import type { AgentConfig } from 'agentconfig-api';
+import type { FileOutput, AgentGenerator } from 'agentconfig-api';
 import type { DetectedAgent } from './importers/index';
 import type { DiffEntry } from './writer';
 import type {
@@ -66,6 +66,10 @@ async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
 
   const files = buildFiles(ir, config, options.targets);
   await write(files, { outputDir, overwrite: true, dryRun: false });
+  
+  config.last_generated = new Date().toISOString();
+  await saveConfig(configDir, config);
+  
   return { configDir, outputDir, targets, validationErrors: [], fileCount: files.length };
 }
 

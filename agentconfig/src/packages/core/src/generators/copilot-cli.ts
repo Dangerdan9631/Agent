@@ -1,4 +1,4 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from '../types/generator';
+import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
 import { filterForTarget, buildFrontmatter, buildInTextCondition } from './base';
 
 class CopilotCLIGeneratorImpl implements AgentGenerator {

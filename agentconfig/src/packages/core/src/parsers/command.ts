@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
-import type { CommandDefinition } from '../types/ir';
+import type { CommandDefinition } from 'agentconfig-api';
 import { slugify } from '../utils';
 
 export async function parseCommands(configDir: string): Promise<CommandDefinition[]> {

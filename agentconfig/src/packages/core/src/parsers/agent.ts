@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
-import type { AgentDefinition } from '../types/ir';
+import type { AgentDefinition } from 'agentconfig-api';
 
 const VALID_SANDBOX_MODES = new Set(['read-only', 'workspace-write', 'danger-full-access']);
 const VALID_REASONING = new Set(['low', 'medium', 'high']);

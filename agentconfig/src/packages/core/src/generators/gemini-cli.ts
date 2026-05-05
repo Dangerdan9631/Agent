@@ -1,5 +1,5 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from '../types/generator';
-import type { HookDefinition } from '../types/ir';
+import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
+import type { HookDefinition } from 'agentconfig-api';
 import { filterForTarget, buildInTextCondition, HOOK_EVENT_MAPS, AgentHookEventMap } from './base';
 
 function buildGeminiHooksObject(

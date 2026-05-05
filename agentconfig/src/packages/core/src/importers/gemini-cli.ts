@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import fg from 'fast-glob';
-import type { InstructionFile } from '../types/ir';
-import type { DetectedAgent } from '../types/generator';
+import type { InstructionFile } from 'agentconfig-api';
+import type { DetectedAgent } from 'agentconfig-api';
 
 /** Detect whether a Gemini CLI configuration is present in `dir`. */
 export function detectGeminiCli(dir: string): DetectedAgent[] {

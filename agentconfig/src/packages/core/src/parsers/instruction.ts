@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
-import type { InstructionFile, ActivationType } from '../types/ir';
+import type { InstructionFile, ActivationType } from 'agentconfig-api';
 
 const VALID_ACTIVATIONS = new Set<ActivationType>(['always', 'scoped', 'ai-decided', 'manual']);
 

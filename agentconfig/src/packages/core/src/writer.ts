@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { createPatch } from 'diff';
-import type { FileOutput } from './types/generator';
+import type { FileOutput } from 'agentconfig-api';
 import type { DiffEntry } from 'agentconfig-api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

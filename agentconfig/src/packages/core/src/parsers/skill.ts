@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { SkillDefinition, SkillFile } from '../types/ir';
+import type { SkillDefinition, SkillFile } from 'agentconfig-api';
 
 function readDirRecursive(dir: string, baseDir: string): SkillFile[] {
   const files: SkillFile[] = [];

@@ -2,8 +2,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
-import type { InstructionFile, ActivationType } from '../types/ir';
-import type { DetectedAgent } from '../types/generator';
+import type { InstructionFile, ActivationType } from 'agentconfig-api';
+import type { DetectedAgent } from 'agentconfig-api';
 
 /** Detect whether a Windsurf CLI configuration is present in `dir`. */
 export function detectWindsurfCli(dir: string): DetectedAgent[] {

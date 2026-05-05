@@ -1,4 +1,4 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from '../types/generator';
+import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
 import { filterForTarget, buildFrontmatter } from './base';
 
 export const WindsurfCLIGenerator: AgentGenerator = {

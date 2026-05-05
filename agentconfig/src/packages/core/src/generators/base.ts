@@ -1,4 +1,4 @@
-import type { HookEventName } from '../types/ir';
+import type { HookEventName } from 'agentconfig-api';
 
 // ─── Target / exclude filtering ─────────────────────────────────────────────
 

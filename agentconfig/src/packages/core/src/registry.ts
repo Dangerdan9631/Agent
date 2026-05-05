@@ -3,8 +3,8 @@ import type {
   AgentTargetPlugin,
   DetectedAgent,
   DirectiveTypePlugin,
-} from './types/generator';
-import type { InstructionFile, AgentDefinition } from './types/ir';
+} from 'agentconfig-api';
+import type { InstructionFile, AgentDefinition } from 'agentconfig-api';
 
 type AgentImportFn = (sourceDir: string) => Promise<{
   instructions: InstructionFile[];

@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import yaml from 'js-yaml';
 import { z } from 'zod';
-import type { HookDefinition } from '../types/ir';
+import type { HookDefinition } from 'agentconfig-api';
 
 const HOOK_EVENTS = [
   'SessionStart',

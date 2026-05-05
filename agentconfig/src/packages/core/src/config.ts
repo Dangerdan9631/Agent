@@ -1,7 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import yaml from 'js-yaml';
-import { AgentConfigSchema, type AgentConfig } from './types/config';
+import { AgentConfigSchema } from './config-schema';
+import type { AgentConfig } from 'agentconfig-api';
 
 /**
  * Walk upward from `startDir` to find the `.agentconfig/` directory.
@@ -55,4 +56,26 @@ export async function loadConfig(
   }
 
   return AgentConfigSchema.parse({ ...raw, ...overrides });
+}
+
+/**
+ * Save the given `AgentConfig` to `config.yaml` in the given `.agentconfig/` directory.
+ */
+export async function saveConfig(
+  configDir: string,
+  config: AgentConfig,
+): Promise<void> {
+  const configPath = path.join(configDir, 'config.yaml');
+  const configData: Record<string, unknown> = {
+    version: config.version,
+    targets: config.targets,
+    options: config.options,
+  };
+  
+  if (config.last_generated) {
+    configData.last_generated = config.last_generated;
+  }
+  
+  const configYaml = yaml.dump(configData);
+  fs.writeFileSync(configPath, configYaml, 'utf8');
 }

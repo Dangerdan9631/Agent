@@ -1,5 +1,5 @@
-import type { IR, IRExtensions } from '../types/ir';
-import type { AgentConfig } from '../types/config';
+import type { IR, IRExtensions } from 'agentconfig-api';
+import type { AgentConfig } from 'agentconfig-api';
 import { registry } from '../registry';
 import { parseInstructions } from './instruction';
 import { parseAgents } from './agent';

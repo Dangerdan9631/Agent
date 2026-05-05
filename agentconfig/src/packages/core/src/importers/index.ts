@@ -1,9 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import yaml from 'js-yaml';
-import type { IR, InstructionFile, AgentDefinition } from '../types/ir';
-import type { AgentConfig } from '../types/config';
-import type { DetectedAgent } from '../types/generator';
+import type { IR, InstructionFile, AgentDefinition } from 'agentconfig-api';
+import type { AgentConfig } from 'agentconfig-api';
+import type { DetectedAgent } from 'agentconfig-api';
 import { registry } from '../registry';
 
 import { importCopilot, detectCopilot } from './copilot';
@@ -50,7 +50,7 @@ registry.registerImporter('cline', importCline);
 registry.registerDetector(detectCline);
 
 // ─── Re-export DetectedAgent so callers can import from one place ─────────────
-export type { DetectedAgent } from '../types/generator';
+export type { DetectedAgent } from 'agentconfig-api';
 
 // ─── Agent detection ──────────────────────────────────────────────────────────
 
@@ -152,11 +152,15 @@ export async function writeAgentConfigDir(
   }
 
   // config.yaml
-  const configYaml = yaml.dump({
+  const configData: Record<string, unknown> = {
     version: 1,
     targets: config.targets,
     options: config.options,
-  });
+  };
+  if (config.last_generated) {
+    configData.last_generated = config.last_generated;
+  }
+  const configYaml = yaml.dump(configData);
   writeFile(path.join(configDir, 'config.yaml'), configYaml, opts);
 
   // instructions/

@@ -5,4 +5,5 @@ export interface AgentConfig {
   options: {
     output_dir: string;
   };
+  last_generated?: string;
 }

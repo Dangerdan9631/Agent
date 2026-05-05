@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import fg from 'fast-glob';
-import type { InstructionFile, AgentDefinition } from '../types/ir';
-import type { DetectedAgent } from '../types/generator';
+import type { InstructionFile, AgentDefinition } from 'agentconfig-api';
+import type { DetectedAgent } from 'agentconfig-api';
 
 /** Detect whether a Codex configuration is present in `dir`. */
 export function detectCodex(dir: string): DetectedAgent[] {

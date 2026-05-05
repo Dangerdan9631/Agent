@@ -1,9 +1,9 @@
-import type { IR } from './types/ir';
-import type { AgentConfig } from './types/config';
+import type { IR } from 'agentconfig-api';
+import type { AgentConfig } from 'agentconfig-api';
 import { registry } from './registry';
 
-export type { ValidationLevel, ValidationResult } from './types/validation';
-import type { ValidationResult } from './types/validation';
+export type { ValidationLevel, ValidationResult } from 'agentconfig-api';
+import type { ValidationResult } from 'agentconfig-api';
 
 const VALID_ACTIVATIONS = new Set(['always', 'scoped', 'ai-decided', 'manual']);
 
