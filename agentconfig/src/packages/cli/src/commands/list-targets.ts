@@ -1,9 +1,9 @@
 import { Option, type Command } from 'commander';
 import chalk from 'chalk';
-import { listTargets } from 'agentconfig';
+import type { IAgentConfigApi } from 'agentconfig-api';
 import { OutputFormat } from '../output-format';
 
-export function registerListTargets(program: Command): void {
+export function registerListTargets(program: Command, api: IAgentConfigApi): void {
   program
     .command('list-targets')
     .description('List all registered generator targets.')
@@ -11,7 +11,7 @@ export function registerListTargets(program: Command): void {
     .action(async (_cmdOpts, cmd) => {
       const opts = cmd.opts() as { format: OutputFormat };
 
-      const targets = await listTargets();
+      const { targets } = await api.listTargets();
 
       if (opts.format === 'json') {
         console.log(JSON.stringify(targets, null, 2));

@@ -1,8 +1,2 @@
-export type ValidationLevel = 'error' | 'warning' | 'info';
-
-export interface ValidationResult {
-  level: ValidationLevel;
-  message: string;
-  /** Absolute path to the source file that triggered this result (if applicable) */
-  file?: string;
-}
+// Re-exported from agentconfig-api — the canonical source of truth for validation types.
+export type { ValidationLevel, ValidationResult } from 'agentconfig-api';

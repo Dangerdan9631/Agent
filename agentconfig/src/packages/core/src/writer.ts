@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { createPatch } from 'diff';
 import type { FileOutput } from './types/generator';
+import type { DiffEntry } from 'agentconfig-api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -14,14 +15,9 @@ export interface WriteOptions {
   dryRun?: boolean;
 }
 
-export type DiffAction = 'create' | 'update' | 'unchanged';
-
-export interface DiffEntry {
-  path: string;
-  action: DiffAction;
-  /** Unified diff string (present for 'create' and 'update' only) */
-  diff?: string;
-}
+// DiffAction and DiffEntry are the canonical api-package types; re-exported
+// here so all internal imports from './writer' continue to resolve correctly.
+export type { DiffAction, DiffEntry } from 'agentconfig-api';
 
 // ─── Content hash cache (used in --watch mode) ───────────────────────────────
 

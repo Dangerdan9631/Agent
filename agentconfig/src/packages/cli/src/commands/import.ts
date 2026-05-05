@@ -2,9 +2,9 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { runImport } from 'agentconfig';
+import type { IAgentConfigApi } from 'agentconfig-api';
 
-export function registerImport(program: Command): void {
+export function registerImport(program: Command, api: IAgentConfigApi): void {
   program
     .command('import <source-dir>')
     .description('Import instructions from another .agentconfig/ directory into this project.')
@@ -22,7 +22,7 @@ export function registerImport(program: Command): void {
         process.exit(1);
       }
 
-      const result = await runImport({
+      const result = await api.import({
         sourceDir,
         configPath: opts.config,
       }).catch((err: unknown) => {

@@ -1,8 +1,8 @@
 import type { Command } from 'commander';
 import chalk from 'chalk';
-import { runTranslate } from 'agentconfig';
+import type { IAgentConfigApi } from 'agentconfig-api';
 
-export function registerTranslate(program: Command): void {
+export function registerTranslate(program: Command, api: IAgentConfigApi): void {
   program
     .command('translate')
     .description('Translate agent-native directive files from one target format to another.')
@@ -18,7 +18,7 @@ export function registerTranslate(program: Command): void {
         verbose: boolean;
       };
 
-      const result = await runTranslate({
+      const result = await api.translate({
         sourceTarget: opts.sourceTarget,
         destTarget: opts.destTarget,
         projectRoot: opts.projectRoot,

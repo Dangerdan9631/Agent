@@ -1,8 +1,9 @@
 import type { Command } from 'commander';
 import chalk from 'chalk';
-import { runGenerate, type GenerateEvent } from 'agentconfig';
+import type { IAgentConfigApi } from 'agentconfig-api';
+import type { GenerateEvent } from 'agentconfig-api';
 
-export function registerGenerate(program: Command): void {
+export function registerGenerate(program: Command, api: IAgentConfigApi): void {
   program
     .command('generate')
     .alias('gen')
@@ -43,7 +44,7 @@ export function registerGenerate(program: Command): void {
         }
       }
 
-      await runGenerate({
+      await api.generate({
         configPath: opts.config,
         projectRootOverride: opts.projectRoot,
         targets: opts.target,

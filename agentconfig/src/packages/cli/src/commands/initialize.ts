@@ -1,9 +1,9 @@
 import type { Command } from 'commander';
 import chalk from 'chalk';
 import * as path from 'node:path';
-import { runInitialize } from 'agentconfig';
+import type { IAgentConfigApi } from 'agentconfig-api';
 
-export function registerInitialize(program: Command): void {
+export function registerInitialize(program: Command, api: IAgentConfigApi): void {
   program
     .command('initialize [project-root]')
     .alias('init')
@@ -20,7 +20,7 @@ export function registerInitialize(program: Command): void {
 
       const projectRoot = projectRootArg ? path.resolve(projectRootArg) : process.cwd();
 
-      const result = await runInitialize({
+      const result = await api.initialize({
         projectRoot,
         configPath: opts.config,
         target: opts.target,

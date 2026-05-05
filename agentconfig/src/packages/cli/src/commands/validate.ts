@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Option, type Command } from 'commander';
-import { runValidate, type ValidationResult } from 'agentconfig';
+import type { IAgentConfigApi, ValidationResult } from 'agentconfig-api';
 import { OutputFormat } from '../output-format';
 
 export function printValidation(
@@ -35,7 +35,7 @@ export function printValidation(
   }
 }
 
-export function registerValidate(program: Command): void {
+export function registerValidate(program: Command, api: IAgentConfigApi): void {
   program
     .command('validate')
     .description('Validate .agentconfig/ without generating files.')
@@ -51,7 +51,7 @@ export function registerValidate(program: Command): void {
         strict: boolean;
       };
 
-      const results = await runValidate({ configPath: opts.config });
+      const { results } = await api.validate({ configPath: opts.config });
 
       if (opts.verbose && opts.format !== 'json') console.log(chalk.gray(`Validated ${results.length} issue(s).`));
       printValidation(results, opts.format, opts.strict);

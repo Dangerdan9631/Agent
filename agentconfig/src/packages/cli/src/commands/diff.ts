@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Option, type Command } from 'commander';
-import { runDiff, type DiffEntry } from 'agentconfig';
+import type { IAgentConfigApi, DiffEntry } from 'agentconfig-api';
 import { OutputFormat } from '../output-format';
 
 export function printDiff(diff: DiffEntry[], format: OutputFormat): void {
@@ -30,12 +30,12 @@ export function printDiff(diff: DiffEntry[], format: OutputFormat): void {
   }
 }
 
-export function registerDiff(program: Command): void {
+export function registerDiff(program: Command, api: IAgentConfigApi): void {
   program
     .command('diff')
     .description('Show diff between .agentconfig/ source and current on-disk generated files.')
     .option('--config <path>', 'Path to .agentconfig/ directory (default: auto-detect)')
-    .option('--project-root <path>', 'The path to the project root where the generated files are output. Defaults to current directory (\'.\')')
+    .option('--project-root <path>', "The path to the project root where the generated files are output. Defaults to current directory ('.')")
     .option('--target <name>', 'Generate for specific target(s)', (val, prev: string[] | undefined) => [...(prev || []), val])
     .addOption(new Option('--format <format>', 'Output format').choices(['text', 'json']).default('text'))
     .option('-v, --verbose', 'Verbose output', false)
@@ -48,7 +48,7 @@ export function registerDiff(program: Command): void {
         verbose: boolean;
       };
 
-      const { diff, outputDir } = await runDiff({
+      const { diff, outputDir } = await api.diff({
         configPath: opts.config,
         projectRootOverride: opts.projectRoot,
         targets: opts.target,

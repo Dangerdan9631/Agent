@@ -10,11 +10,26 @@ import { registry } from './registry';
 import type { IR } from './types/ir';
 import type { AgentConfig } from './types/config';
 import type { FileOutput, AgentGenerator } from './types/generator';
-import type { ValidationResult } from './validator';
-import type { DiffEntry } from './writer';
 import type { DetectedAgent } from './importers/index';
+import type { DiffEntry } from './writer';
+import type {
+  GenerateOptions,
+  GenerateResult,
+  ValidateOptions,
+  ValidateResult,
+  DiffOptions,
+  DiffResult,
+  InitializeOptions,
+  InitializeResult,
+  ImportOptions,
+  ImportResult,
+  TranslateOptions,
+  TranslateResult,
+  ListTargetsOptions,
+  ListTargetsResult,
+} from 'agentconfig-api';
 
-// ── Internal helpers (avoids importing from index.ts to prevent circular deps) ─
+// ── Internal helpers ──────────────────────────────────────────────────────────
 
 function buildFiles(ir: IR, config: AgentConfig, targetFilter?: string[]): FileOutput[] {
   const targets = targetFilter && targetFilter.length > 0 ? targetFilter : config.targets;
@@ -28,32 +43,6 @@ function buildFiles(ir: IR, config: AgentConfig, targetFilter?: string[]): FileO
 }
 
 // ── Generate ──────────────────────────────────────────────────────────────────
-
-export interface GenerateOptions {
-  configPath?: string;
-  projectRootOverride?: string;
-  targets?: string[];
-  watch?: boolean;
-  onEvent?: (event: GenerateEvent) => void;
-}
-
-export interface GenerateResult {
-  configDir: string;
-  outputDir: string;
-  /** Effective target list (from options or config) */
-  targets: string[];
-  /** Non-empty when config validation failed; no files were written */
-  validationErrors: ValidationResult[];
-  /** Number of files written */
-  fileCount: number;
-}
-
-export type GenerateEvent =
-  | { type: 'generated'; result: GenerateResult }
-  | { type: 'validation-error'; error: ValidationResult }
-  | { type: 'watching'; configDir: string }
-  | { type: 'change'; path: string }
-  | { type: 'error'; error: unknown };
 
 async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
   const configDir = resolveConfigDir(options.configPath);
@@ -76,7 +65,6 @@ async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
   }
 
   const files = buildFiles(ir, config, options.targets);
-
   await write(files, { outputDir, overwrite: true, dryRun: false });
   return { configDir, outputDir, targets, validationErrors: [], fileCount: files.length };
 }
@@ -109,29 +97,15 @@ export async function runGenerate(options: GenerateOptions): Promise<void> {
 
 // ── Validate ──────────────────────────────────────────────────────────────────
 
-export interface ValidateOptions {
-  configPath?: string;
-}
-
-export async function runValidate(options: ValidateOptions): Promise<ValidationResult[]> {
+export async function runValidate(options: ValidateOptions): Promise<ValidateResult> {
   const configDir = resolveConfigDir(options.configPath);
   const config = await loadConfig(configDir);
   const ir = await parseArtifacts(configDir, config);
-  return validate(ir, config);
+  const results = validate(ir, config);
+  return { results };
 }
 
 // ── Diff ──────────────────────────────────────────────────────────────────────
-
-export interface DiffOptions {
-  configPath?: string;
-  projectRootOverride?: string;
-  targets?: string[];
-}
-
-export interface DiffResult {
-  diff: DiffEntry[];
-  outputDir: string;
-}
 
 export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   const configDir = resolveConfigDir(options.configPath);
@@ -144,28 +118,14 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   const ir = await parseArtifacts(configDir, config);
   const files = buildFiles(ir, config, options.targets);
   const outputDir = path.resolve(path.dirname(configDir), config.options.output_dir);
-  const diff = computeDiff(files, outputDir);
+  const diff: DiffEntry[] = computeDiff(files, outputDir);
 
   return { diff, outputDir };
 }
 
-// ── Initialize (agent-native files → .agentconfig/) ──────────────────────────
+// ── Initialize ────────────────────────────────────────────────────────────────
 
-export interface RunInitializeOptions {
-  projectRoot: string;
-  configPath?: string;
-  target?: string[];
-}
-
-export interface InitializeResult {
-  sourceDir: string;
-  configDir: string;
-  detectedAgents: DetectedAgent[];
-  instructionCount: number;
-  agentCount: number;
-}
-
-export async function runInitialize(options: RunInitializeOptions): Promise<InitializeResult> {
+export async function runInitialize(options: InitializeOptions): Promise<InitializeResult> {
   const { target } = options;
   const sourceDir = path.resolve(options.projectRoot);
   const configDir = options.configPath
@@ -175,16 +135,14 @@ export async function runInitialize(options: RunInitializeOptions): Promise<Init
   if (!fs.existsSync(sourceDir)) {
     throw new Error(`Source directory not found: ${sourceDir}`);
   }
-
   if (!fs.statSync(sourceDir).isDirectory()) {
     throw new Error(`Source path is not a directory: ${sourceDir}`);
   }
 
-  const detectedAgents = detectAgents(sourceDir);
+  const detectedAgents: DetectedAgent[] = detectAgents(sourceDir);
   if (detectedAgents.length === 0) {
     return { sourceDir, configDir, detectedAgents: [], instructionCount: 0, agentCount: 0 };
   }
-
   if (fs.existsSync(configDir)) {
     throw new Error(`.agentconfig/ already exists at ${configDir}.`);
   }
@@ -195,7 +153,6 @@ export async function runInitialize(options: RunInitializeOptions): Promise<Init
     targets: detectedAgents.map((a) => a.name),
     options: { output_dir: '.' },
   };
-
   await writeAgentConfigDir(ir, config, configDir);
 
   return {
@@ -207,37 +164,26 @@ export async function runInitialize(options: RunInitializeOptions): Promise<Init
   };
 }
 
-// ── Import (.agentconfig/ → .agentconfig/) ────────────────────────────────────
+// ── Import ────────────────────────────────────────────────────────────────────
 
-export interface RunImportOptions {
-  /** Directory containing the source .agentconfig/ to import from. */
-  sourceDir: string;
-  /** Destination .agentconfig/ directory. */
-  configPath?: string;
-}
-
-export interface ImportResult {
-  sourceConfigDir: string;
-  destConfigDir: string;
-  instructionCount: number;
-  agentCount: number;
-}
-
-export async function runImport(options: RunImportOptions): Promise<ImportResult> {
+export async function runImport(options: ImportOptions): Promise<ImportResult> {
   const { sourceDir } = options;
-  const destRoot = options.configPath ? path.dirname(path.resolve(options.configPath)) : process.cwd();
+  const destRoot = options.configPath
+    ? path.dirname(path.resolve(options.configPath))
+    : process.cwd();
 
   const sourceConfigDir = resolveConfigDir(sourceDir);
   const sourceConfig = await loadConfig(sourceConfigDir);
   const sourceIr = await parseArtifacts(sourceConfigDir, sourceConfig);
 
-  const requestedDestConfigDir = options.configPath ? path.resolve(options.configPath) : undefined;
+  const requestedDestConfigDir = options.configPath
+    ? path.resolve(options.configPath)
+    : undefined;
   const existingDestConfigDir = requestedDestConfigDir
-    ? fs.existsSync(requestedDestConfigDir)
-      ? requestedDestConfigDir
-      : undefined
+    ? fs.existsSync(requestedDestConfigDir) ? requestedDestConfigDir : undefined
     : findConfigDir(destRoot);
-  const destConfigDir = requestedDestConfigDir ?? existingDestConfigDir ?? path.join(destRoot, '.agentconfig');
+  const destConfigDir =
+    requestedDestConfigDir ?? existingDestConfigDir ?? path.join(destRoot, '.agentconfig');
 
   let mergedTargets = sourceConfig.targets;
   if (existingDestConfigDir) {
@@ -252,7 +198,6 @@ export async function runImport(options: RunImportOptions): Promise<ImportResult
     targets: mergedTargets,
     options: { output_dir: '.' },
   };
-
   await writeAgentConfigDir(sourceIr, mergedConfig, destConfigDir, {
     overwrite: false,
     dryRun: false,
@@ -266,30 +211,14 @@ export async function runImport(options: RunImportOptions): Promise<ImportResult
   };
 }
 
-// ── Translate (agent-native files → agent-native files) ──────────────────────
+// ── Translate ─────────────────────────────────────────────────────────────────
 
-export interface RunTranslateOptions {
-  sourceTarget: string;
-  destTarget: string;
-  projectRoot?: string;
-}
-
-export interface TranslateResult {
-  projectRoot: string;
-  sourceTarget: string;
-  destTarget: string;
-  instructionCount: number;
-  agentCount: number;
-  fileCount: number;
-}
-
-export async function runTranslate(options: RunTranslateOptions): Promise<TranslateResult> {
+export async function runTranslate(options: TranslateOptions): Promise<TranslateResult> {
   const projectRoot = path.resolve(options.projectRoot ?? '.');
 
   if (!fs.existsSync(projectRoot)) {
     throw new Error(`Project root not found: ${projectRoot}`);
   }
-
   if (!fs.statSync(projectRoot).isDirectory()) {
     throw new Error(`Project root is not a directory: ${projectRoot}`);
   }
@@ -299,7 +228,6 @@ export async function runTranslate(options: RunTranslateOptions): Promise<Transl
   if (!registry.getImporter(options.sourceTarget)) {
     throw new Error(`Unknown source target: ${options.sourceTarget}`);
   }
-
   if (!registry.get(options.destTarget)) {
     throw new Error(`Unknown destination target: ${options.destTarget}`);
   }
@@ -311,7 +239,6 @@ export async function runTranslate(options: RunTranslateOptions): Promise<Transl
     options: { output_dir: '.' },
   };
   const files = buildFiles(ir, config, [options.destTarget]);
-
   await write(files, { outputDir: projectRoot, overwrite: true, dryRun: false });
 
   return {
@@ -326,7 +253,8 @@ export async function runTranslate(options: RunTranslateOptions): Promise<Transl
 
 // ── List Targets ──────────────────────────────────────────────────────────────
 
-export async function listTargets(_configPath?: string): Promise<AgentGenerator[]> {
+export async function listTargets(_options?: ListTargetsOptions): Promise<ListTargetsResult> {
   await loadGlobalPlugins();
-  return registry.list();
+  const targets: AgentGenerator[] = registry.list();
+  return { targets };
 }
