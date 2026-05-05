@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTempDir, readText, removeDir, withTempHome, writeTree } from '../test-utils';
 import { runCli } from './cli-test-utils';

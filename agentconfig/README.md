@@ -36,6 +36,45 @@ npx agentconfig <command>
 
 ---
 
+## Development
+
+Use Node.js 24 LTS or newer.
+
+```bash
+cd agentconfig/src
+npm install
+npm run build
+npm test
+```
+
+Run the CLI locally without installing it globally:
+
+```bash
+node packages/cli/dist/index.js --help
+```
+
+Make the local CLI available on your PATH while developing:
+
+```bash
+cd agentconfig/src/packages/cli
+npm link
+agentconfig --help
+```
+
+After changing CLI or core code, rebuild from `agentconfig/src`:
+
+```bash
+npm run build
+```
+
+Remove the global development link when you are done:
+
+```bash
+npm unlink -g agentconfig-cli
+```
+
+---
+
 ## Quick Start
 
 **New project** — create a `.agentconfig/` folder and generate:

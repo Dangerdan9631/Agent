@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createTempDir, removeDir, withTempHome } from '../test-utils';
 import { runCli } from './cli-test-utils';
 import { defineCliTargetSuite } from './cli-target-suite';
-import { writeGeneratorFixture } from './fixtures';
 
 defineCliTargetSuite({
   target: 'cline',

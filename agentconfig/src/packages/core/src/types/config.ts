@@ -8,7 +8,7 @@ export const AgentConfigSchema = z.object({
       overwrite: z.boolean().default(true),
       output_dir: z.string().default('.'),
     })
-    .default({}),
+    .default({ overwrite: true, output_dir: '.' }),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

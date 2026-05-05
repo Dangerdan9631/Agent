@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "CLI for agentconfig — generate native AI agent directive files from a unified source",
   "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
   "bin": {
     "agentconfig": "dist/index.js"
   },
@@ -12,14 +15,14 @@
     "dev": "tsup --watch"
   },
   "dependencies": {
-    "agentconfig": "*",
-    "commander": "^11.0.0",
-    "chalk": "^4.1.2",
-    "chokidar": "^3.5.3"
+    "agentconfig": "0.1.0",
+    "chalk": "^5.6.2",
+    "chokidar": "^5.0.0",
+    "commander": "^14.0.3"
   },
   "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.3.3",
-    "@types/node": "^20.0.0"
+    "@types/node": "^25.6.0",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
   }
 }

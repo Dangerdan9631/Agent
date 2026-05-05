@@ -1,4 +1,4 @@
-export interface ShutdownRequest {}
+export type ShutdownRequest = Record<string, never>;
 
 export interface ShutdownResponse {
     success: true;

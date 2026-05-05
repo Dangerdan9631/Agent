@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 afterEach(() => {
   vi.resetModules();
-  vi.unmock('node:fs');
-  vi.unmock('node:path');
+  vi.doUnmock('node:fs');
+  vi.doUnmock('node:path');
 });
 
 describe('config edge branches', () => {
