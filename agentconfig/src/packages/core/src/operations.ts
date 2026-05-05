@@ -147,7 +147,7 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   const outputDir = path.resolve(path.dirname(configDir), config.options.output_dir);
   
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentconfig-diff-'));
-  let diff: DiffEntry[] = [];
+  let diff: DiffEntry[];
   try {
     generateToTempDir(irList, config, tempDir, options.targets);
     diff = await computeDiff(tempDir, outputDir);

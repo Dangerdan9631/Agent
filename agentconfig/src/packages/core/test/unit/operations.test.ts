@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runGenerate, runInitialize, runTranslate, type GenerateEvent } from '../../src/index';
+import { runGenerate, runInitialize, runTranslate } from '../../src/operations';
+import type { GenerateEvent } from 'agentconfig-api';
 import { createTempDir, readText, removeDir, writeTree } from '../test-utils';
 
 const chokidarMock = vi.hoisted(() => {

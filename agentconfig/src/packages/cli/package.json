@@ -6,6 +6,7 @@
   "engines": {
     "node": ">=24"
   },
+  "type": "module",
   "bin": {
     "agentconfig": "dist/index.js"
   },

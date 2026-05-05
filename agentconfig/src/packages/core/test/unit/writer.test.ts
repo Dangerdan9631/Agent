@@ -1,8 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearHashCache, computeDiff, deduplicateOutputs, write } from '../../src/writer';
-import type { FileOutput } from '../../src/types/generator';
+import { clearHashCache, computeDiff, write } from '../../src/writer';
 import { createTempDir, removeDir, writeTree } from '../test-utils';
 
 const tempDirs: string[] = [];
@@ -19,60 +18,48 @@ afterEach(() => {
 });
 
 describe('writer helpers', () => {
-  it('deduplicates file outputs by keeping the first path occurrence', () => {
-    const files: FileOutput[] = [
-      { path: 'one.txt', content: 'first' },
-      { path: 'one.txt', content: 'second' },
-      { path: 'two.txt', content: 'third' },
-    ];
-
-    expect(deduplicateOutputs(files)).toEqual([
-      { path: 'one.txt', content: 'first' },
-      { path: 'two.txt', content: 'third' },
-    ]);
-  });
-
-  it('reports create actions for files that do not exist yet', () => {
+  it('reports create actions for files that do not exist yet', async () => {
+    const tempDir = createTempDir('agentconfig-diff-temp-');
     const outputDir = createTempDir('agentconfig-diff-create-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'create.txt': 'new file' });
 
-    const diff = computeDiff([{ path: 'create.txt', content: 'new file' }], outputDir);
+    const diff = await computeDiff(tempDir, outputDir);
 
     expect(diff).toEqual([{ path: 'create.txt', action: 'create', diff: 'new file' }]);
   });
 
-  it('reports unchanged actions when content matches disk', () => {
+  it('reports unchanged actions when content matches disk', async () => {
+    const tempDir = createTempDir('agentconfig-diff-temp-');
     const outputDir = createTempDir('agentconfig-diff-unchanged-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'unchanged.txt': 'same' });
+    writeTree(outputDir, { 'unchanged.txt': 'same' });
 
-    writeTree(outputDir, {
-      'unchanged.txt': 'same',
-    });
-
-    const diff = computeDiff([{ path: 'unchanged.txt', content: 'same' }], outputDir);
+    const diff = await computeDiff(tempDir, outputDir);
 
     expect(diff).toEqual([{ path: 'unchanged.txt', action: 'unchanged' }]);
   });
 
-  it('reports update actions when content differs from disk', () => {
+  it('reports update actions when content differs from disk', async () => {
+    const tempDir = createTempDir('agentconfig-diff-temp-');
     const outputDir = createTempDir('agentconfig-diff-update-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'update.txt': 'new' });
+    writeTree(outputDir, { 'update.txt': 'old' });
 
-    writeTree(outputDir, {
-      'update.txt': 'old',
-    });
-
-    const diff = computeDiff([{ path: 'update.txt', content: 'new' }], outputDir);
+    const diff = await computeDiff(tempDir, outputDir);
 
     expect(diff).toEqual([expect.objectContaining({ path: 'update.txt', action: 'update' })]);
   });
 
   it('skips disk writes in dry-run mode', async () => {
+    const tempDir = createTempDir('agentconfig-write-temp-');
     const outputDir = createTempDir('agentconfig-write-dry-run-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'dry-run.txt': 'preview' });
 
-    await write([{ path: 'dry-run.txt', content: 'preview' }], {
-      outputDir,
+    await write(tempDir, outputDir, {
       dryRun: true,
       overwrite: true,
     });
@@ -81,16 +68,13 @@ describe('writer helpers', () => {
   });
 
   it('does not overwrite existing files when overwrite is false', async () => {
+    const tempDir = createTempDir('agentconfig-write-temp-');
     const outputDir = createTempDir('agentconfig-write-no-overwrite-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'file.txt': 'replacement' });
+    writeTree(outputDir, { 'file.txt': 'original' });
 
-    await write([{ path: 'file.txt', content: 'original' }], {
-      outputDir,
-      overwrite: true,
-    });
-
-    await write([{ path: 'file.txt', content: 'replacement' }], {
-      outputDir,
+    await write(tempDir, outputDir, {
       overwrite: false,
     });
 
@@ -98,17 +82,17 @@ describe('writer helpers', () => {
   });
 
   it('skips rewrites when the cached hash already matches the generated content', async () => {
+    const tempDir = createTempDir('agentconfig-write-temp-');
     const outputDir = createTempDir('agentconfig-write-cache-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'file.txt': 'original' });
 
-    await write([{ path: 'file.txt', content: 'original' }], {
-      outputDir,
+    await write(tempDir, outputDir, {
       overwrite: true,
     });
 
     fs.writeFileSync(path.join(outputDir, 'file.txt'), 'mutated', 'utf8');
-    await write([{ path: 'file.txt', content: 'original' }], {
-      outputDir,
+    await write(tempDir, outputDir, {
       overwrite: true,
     });
 
@@ -116,23 +100,22 @@ describe('writer helpers', () => {
   });
 
   it('rewrites files after the hash cache is cleared', async () => {
+    const tempDir = createTempDir('agentconfig-write-temp-');
     const outputDir = createTempDir('agentconfig-write-cache-clear-');
-    tempDirs.push(outputDir);
+    tempDirs.push(tempDir, outputDir);
+    writeTree(tempDir, { 'file.txt': 'original' });
 
-    await write([{ path: 'file.txt', content: 'original' }], {
-      outputDir,
+    await write(tempDir, outputDir, {
       overwrite: true,
     });
 
     fs.writeFileSync(path.join(outputDir, 'file.txt'), 'mutated', 'utf8');
-    await write([{ path: 'file.txt', content: 'original' }], {
-      outputDir,
-      overwrite: true,
-    });
+    
+    // Simulate re-generating the content
+    writeTree(tempDir, { 'file.txt': 'restored' });
 
     clearHashCache();
-    await write([{ path: 'file.txt', content: 'restored' }], {
-      outputDir,
+    await write(tempDir, outputDir, {
       overwrite: true,
     });
 
