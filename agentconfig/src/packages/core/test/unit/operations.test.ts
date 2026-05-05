@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runGenerate, runInitialize, type GenerateEvent } from '../../src/index';
+import { runGenerate, runInitialize, runTranslate, type GenerateEvent } from '../../src/index';
 import { createTempDir, readText, removeDir, writeTree } from '../test-utils';
 
 const chokidarMock = vi.hoisted(() => {
@@ -87,7 +87,7 @@ describe('operations', () => {
     });
   });
 
-  it('initializes without overwrite or dry-run options', async () => {
+  it('initializes from a project root', async () => {
     const projectDir = createTempDir('agentconfig-run-initialize-');
     tempDirs.push(projectDir);
 
@@ -96,8 +96,8 @@ describe('operations', () => {
     });
 
     const result = await runInitialize({
-      sourceDir: projectDir,
-      from: ['copilot'],
+      projectRoot: projectDir,
+      target: ['copilot'],
     });
 
     expect(result).toEqual(expect.objectContaining({
@@ -120,8 +120,8 @@ describe('operations', () => {
     });
 
     await expect(runInitialize({
-      sourceDir: projectDir,
-      from: ['copilot'],
+      projectRoot: projectDir,
+      target: ['copilot'],
     })).rejects.toThrow(`.agentconfig/ already exists at ${path.join(projectDir, '.agentconfig')}.`);
   });
 
@@ -130,8 +130,68 @@ describe('operations', () => {
     tempDirs.push(path.dirname(missingDir));
 
     await expect(runInitialize({
-      sourceDir: missingDir,
-      from: ['copilot'],
+      projectRoot: missingDir,
+      target: ['copilot'],
     })).rejects.toThrow(`Source directory not found: ${missingDir}`);
+  });
+
+  it('initializes to an explicit config directory', async () => {
+    const projectDir = createTempDir('agentconfig-run-initialize-config-source-');
+    const outputDir = createTempDir('agentconfig-run-initialize-config-output-');
+    tempDirs.push(projectDir, outputDir);
+    const configDir = path.join(outputDir, '.agentconfig');
+
+    writeTree(projectDir, {
+      '.github/copilot-instructions.md': 'Always keep changes reviewable.\n',
+    });
+
+    const result = await runInitialize({
+      projectRoot: projectDir,
+      configPath: configDir,
+      target: ['copilot'],
+    });
+
+    expect(result.configDir).toBe(configDir);
+    expect(readText(outputDir, '.agentconfig/instructions/copilot-instructions.md')).toContain(
+      'Always keep changes reviewable.',
+    );
+  });
+
+  it('translates agent-native files from one target to another', async () => {
+    const projectDir = createTempDir('agentconfig-run-translate-');
+    tempDirs.push(projectDir);
+
+    writeTree(projectDir, {
+      '.github/copilot-instructions.md': 'Always keep changes reviewable.\n',
+    });
+
+    const result = await runTranslate({
+      projectRoot: projectDir,
+      sourceTarget: 'copilot',
+      destTarget: 'cursor',
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      projectRoot: projectDir,
+      sourceTarget: 'copilot',
+      destTarget: 'cursor',
+      instructionCount: 1,
+      agentCount: 0,
+      fileCount: 1,
+    }));
+    expect(readText(projectDir, '.cursor/rules/copilot-instructions.mdc')).toContain(
+      'Always keep changes reviewable.',
+    );
+  });
+
+  it('rejects translate when the project root does not exist', async () => {
+    const missingDir = path.join(createTempDir('agentconfig-run-translate-missing-parent-'), 'missing');
+    tempDirs.push(path.dirname(missingDir));
+
+    await expect(runTranslate({
+      projectRoot: missingDir,
+      sourceTarget: 'copilot',
+      destTarget: 'cursor',
+    })).rejects.toThrow(`Project root not found: ${missingDir}`);
   });
 });

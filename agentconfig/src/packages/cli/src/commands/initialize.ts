@@ -2,37 +2,43 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import * as path from 'node:path';
 import { runInitialize } from 'agentconfig';
-import { die, info } from '../helpers';
 
 export function registerInitialize(program: Command): void {
   program
-    .command('initialize [source-dir]')
+    .command('initialize [project-root]')
     .alias('init')
-    .description('Create a .agentconfig/ directory by importing from existing agent-native files.')
+    .description('Create an .agentconfig/ directory initialized from existing agent-native files.')
+    .option('--config <path>', 'Output .agentconfig/ directory (default: <project-root>/.agentconfig)')
     .option('-v, --verbose', 'Verbose output', false)
-    .option('--from <agent>', 'Import only from a specific agent', (v, p: string[]) => [...p, v], [] as string[])
-    .action(async (sourceArg: string | undefined, cmdOpts: Record<string, unknown>, cmd) => {
+    .option('--target <agent>', 'Import only from a specific agent', (v, p: string[]) => [...p, v], [] as string[])
+    .action(async (projectRootArg: string | undefined, _cmdOpts: Record<string, unknown>, cmd) => {
       const opts = cmd.opts() as {
+        config?: string;
         verbose: boolean;
-        from: string[];
+        target: string[];
       };
 
-      const sourceDir = sourceArg ? path.resolve(sourceArg) : process.cwd();
+      const projectRoot = projectRootArg ? path.resolve(projectRootArg) : process.cwd();
 
       const result = await runInitialize({
-        sourceDir,
-        from: opts.from,
-      }).catch((err: unknown) => die(err instanceof Error ? err.message : String(err)));
+        projectRoot,
+        configPath: opts.config,
+        target: opts.target,
+      }).catch((err: unknown) => {
+        console.error(chalk.red('error:'), err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      });
 
       if (result.detectedAgents.length === 0) {
         console.log(chalk.yellow('No agent-native files detected in ' + result.sourceDir));
         return;
       }
 
-      info(
-        opts.verbose,
-        'Detected agents: ' + result.detectedAgents.map((a) => `${a.name} (${a.confidence})`).join(', '),
-      );
+      if (opts.verbose) {
+        console.log(chalk.gray(
+          'Detected agents: ' + result.detectedAgents.map((a) => `${a.name} (${a.confidence})`).join(', '),
+        ));
+      }
 
       const summary = `Initialized ${result.instructionCount} instruction(s), ${result.agentCount} agent(s)`;
       console.log(chalk.green(`${summary} → ${result.configDir}`));

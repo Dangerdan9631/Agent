@@ -95,9 +95,7 @@ function deduplicateInstructions(instructions: InstructionFile[]): InstructionFi
 
 export interface ImportOptions {
   /** Only import from these specific agents (default: all detected) */
-  from?: string[];
-  /** Merge into an existing .agentconfig/ rather than erroring */
-  merge?: boolean;
+  target?: string[];
 }
 
 
@@ -111,8 +109,8 @@ export async function importArtifacts(
 ): Promise<IR> {
   const detected = detectAgents(sourceDir);
   const targetAgents =
-    opts?.from && opts.from.length > 0
-      ? opts.from
+    opts?.target && opts.target.length > 0
+      ? opts.target
       : detected.map((a) => a.name);
 
   const allInstructions: InstructionFile[] = [];

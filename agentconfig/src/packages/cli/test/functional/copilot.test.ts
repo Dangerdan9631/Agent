@@ -61,29 +61,20 @@ describe('copilot additional CLI commands', () => {
     const result = await runCli([
       'import',
       sourceDir,
-      '--dest',
-      destDir,
+      '--config',
+      `${destDir}/.agentconfig`,
     ]);
 
     expect(result.exitCode).toBe(0);
     expect(readText(destDir, '.agentconfig/instructions/always-rule.md')).toContain('Always keep changes reviewable.');
   });
 
-  it('does not expose removed import flags', async () => {
+  it('exposes current import options', async () => {
     useTempHome();
 
     const helpResult = await runCli(['import', '--help']);
     expect(helpResult.exitCode).toBe(0);
-    expect(helpResult.stdout).not.toContain('--overwrite');
-    expect(helpResult.stdout).not.toContain('--dry-run');
-
-    const overwriteResult = await runCli(['import', 'D:\\missing-agentconfig-source', '--overwrite']);
-    expect(overwriteResult.exitCode).not.toBe(0);
-    expect(overwriteResult.stderr).toContain("unknown option '--overwrite'");
-
-    const dryRunResult = await runCli(['import', 'D:\\missing-agentconfig-source', '--dry-run']);
-    expect(dryRunResult.exitCode).not.toBe(0);
-    expect(dryRunResult.stderr).toContain("unknown option '--dry-run'");
+    expect(helpResult.stdout).toContain('--config <path>');
   });
 
   it('lists targets in json format through the CLI', async () => {

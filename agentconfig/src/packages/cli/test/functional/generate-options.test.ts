@@ -2,50 +2,53 @@ import { describe, expect, it } from 'vitest';
 import { runCli } from './cli-test-utils';
 
 describe('generate CLI options', () => {
-  it('does not expose deprecated --out', async () => {
+  it('exposes current output options', async () => {
     const result = await runCli(['generate', '--help']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('--project-root <path>');
-    expect(result.stdout).not.toContain('--out <path>');
-    expect(result.stdout).not.toContain('--no-overwrite');
-  });
-
-  it('rejects deprecated --out', async () => {
-    const result = await runCli(['generate', '--out', '.']);
-
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("unknown option '--out'");
-  });
-
-  it('rejects removed --no-overwrite', async () => {
-    const result = await runCli(['generate', '--no-overwrite']);
-
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("unknown option '--no-overwrite'");
   });
 });
 
 describe('initialize CLI options', () => {
-  it('does not expose removed overwrite or dry-run flags', async () => {
+  it('exposes current initialize options', async () => {
     const result = await runCli(['initialize', '--help']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).not.toContain('--overwrite');
-    expect(result.stdout).not.toContain('--dry-run');
+    expect(result.stdout).toContain('[options] [project-root]');
+    expect(result.stdout).toContain('--config <path>');
+    expect(result.stdout).toContain('--target <agent>');
   });
+});
 
-  it('rejects removed --overwrite', async () => {
-    const result = await runCli(['initialize', '--overwrite']);
+describe('translate CLI options', () => {
+  it('exposes current translate options', async () => {
+    const result = await runCli(['translate', '--help']);
 
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("unknown option '--overwrite'");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('--source-target <name>');
+    expect(result.stdout).toContain('--dest-target <name>');
+    expect(result.stdout).toContain('--project-root <path>');
   });
+});
 
-  it('rejects removed --dry-run', async () => {
-    const result = await runCli(['initialize', '--dry-run']);
+describe('verbose CLI options', () => {
+  it('exposes --verbose on validate, diff, import, and translate', async () => {
+    const validateHelp = await runCli(['validate', '--help']);
+    const diffHelp = await runCli(['diff', '--help']);
+    const importHelp = await runCli(['import', '--help']);
+    const translateHelp = await runCli(['translate', '--help']);
 
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("unknown option '--dry-run'");
+    expect(validateHelp.exitCode).toBe(0);
+    expect(validateHelp.stdout).toContain('-v, --verbose');
+
+    expect(diffHelp.exitCode).toBe(0);
+    expect(diffHelp.stdout).toContain('-v, --verbose');
+
+    expect(importHelp.exitCode).toBe(0);
+    expect(importHelp.stdout).toContain('-v, --verbose');
+
+    expect(translateHelp.exitCode).toBe(0);
+    expect(translateHelp.stdout).toContain('-v, --verbose');
   });
 });

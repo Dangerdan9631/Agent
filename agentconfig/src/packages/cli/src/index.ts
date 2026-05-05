@@ -7,6 +7,7 @@ import { registerDiff } from './commands/diff';
 import { registerInitialize } from './commands/initialize';
 import { registerImport } from './commands/import';
 import { registerListTargets } from './commands/list-targets';
+import { registerTranslate } from './commands/translate';
 
 program
   .name('agentconfig')
@@ -18,6 +19,7 @@ registerValidate(program);
 registerDiff(program);
 registerInitialize(program);
 registerImport(program);
+registerTranslate(program);
 registerListTargets(program);
 
 program.parseAsync(process.argv).catch((err) => {

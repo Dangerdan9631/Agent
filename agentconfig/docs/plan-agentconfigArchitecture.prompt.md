@@ -82,10 +82,11 @@ Each generator handles all 4 activation types for instructions, plus agents, ski
 ## CLI Commands & Options
 
 ```
-agentconfig generate   [--target <name>]... [--dry-run] [--watch]
+agentconfig generate   [--target <name>]... [--watch]
 agentconfig validate   [--strict] [--format text|json]
 agentconfig diff       [--target <name>]...
-agentconfig import     <source-dir> [--from <agent>]... [--merge]
+agentconfig initialize [project-root] [--target <agent>]... [--config <path>]
+agentconfig import     <source-dir> [--config <path>]
 agentconfig list-targets [--format text|json]
 ```
 
@@ -97,14 +98,16 @@ agentconfig list-targets [--format text|json]
 - `--format <text|json>` — machine-readable output for CI
 
 **`generate`-specific:**
-- `--dry-run` — equivalent to `diff`; prints a unified diff of what would change without writing any files
 - `--watch` — regenerate on change
 
 **`diff`** — computes and prints a unified diff between the current on-disk state and what `generate` would produce; exits non-zero if any changes are pending (useful as a CI lint gate)
 
-**`import <source-dir>`** — scans `<source-dir>` for agent-native directive files, reverse-parses them into IR, and writes a bootstrapped `.agentconfig/` folder
-- `--from <agent>` — only import directives from the named agent (repeatable); default: all detected agents
-- `--merge` — merge imported content into an existing `.agentconfig/` (default: error if folder already exists)
+**`initialize [project-root]`** — scans `<project-root>` for agent-native directive files, reverse-parses them into IR, and writes a bootstrapped `.agentconfig/` folder
+- `--target <agent>` — only import directives from the named agent (repeatable); default: all detected agents
+- `--config <path>` — output `.agentconfig/` directory (default: `<project-root>/.agentconfig`)
+
+**`import <source-dir>`** — imports instructions from another `.agentconfig/` directory into this project
+- `--config <path>` — destination `.agentconfig/` directory
 
 **`validate --strict`** — exits non-zero on warnings (CI gate)
 
@@ -146,7 +149,7 @@ agentconfig list-targets [--format text|json]
 ## Verification
 
 1. `agentconfig validate` exits 0 on a well-formed `.agentconfig/`
-2. `agentconfig generate --dry-run` prints a unified diff and writes no files
+2. `agentconfig diff` prints a unified diff and writes no files
 3. `agentconfig diff` exits non-zero when generated output differs from on-disk state; exits 0 after a clean `generate`
 4. `agentconfig generate` produces correct output per agent (at minimum: always + scoped instruction per target)
 5. `agentconfig import <dir>` run against a project with Copilot + Cursor directives produces a valid `.agentconfig/` with matching instructions

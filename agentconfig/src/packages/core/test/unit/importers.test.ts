@@ -128,7 +128,7 @@ describe('importers API', () => {
       '.github/prompts/migrate.prompt.md': 'Run the migration plan.\n',
     });
 
-    const ir = await importArtifacts(sourceDir, { from: ['copilot'] });
+    const ir = await importArtifacts(sourceDir, { target: ['copilot'] });
 
     expect(ir.instructions).toHaveLength(4);
   });

@@ -71,7 +71,7 @@ export function defineCliTargetSuite(testCase: CliTargetCase): void {
       const result = await runCli([
         'initialize',
         projectDir,
-        '--from',
+        '--target',
         testCase.target,
         '--verbose',
       ]);

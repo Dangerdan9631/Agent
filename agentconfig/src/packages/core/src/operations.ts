@@ -152,8 +152,9 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
 // ── Initialize (agent-native files → .agentconfig/) ──────────────────────────
 
 export interface RunInitializeOptions {
-  sourceDir: string;
-  from?: string[];
+  projectRoot: string;
+  configPath?: string;
+  target?: string[];
 }
 
 export interface InitializeResult {
@@ -165,9 +166,11 @@ export interface InitializeResult {
 }
 
 export async function runInitialize(options: RunInitializeOptions): Promise<InitializeResult> {
-  const { from } = options;
-  const sourceDir = path.resolve(options.sourceDir);
-  const configDir = path.join(sourceDir, '.agentconfig');
+  const { target } = options;
+  const sourceDir = path.resolve(options.projectRoot);
+  const configDir = options.configPath
+    ? path.resolve(options.configPath)
+    : path.join(sourceDir, '.agentconfig');
 
   if (!fs.existsSync(sourceDir)) {
     throw new Error(`Source directory not found: ${sourceDir}`);
@@ -186,7 +189,7 @@ export async function runInitialize(options: RunInitializeOptions): Promise<Init
     throw new Error(`.agentconfig/ already exists at ${configDir}.`);
   }
 
-  const ir = await importArtifacts(sourceDir, { from: from?.length ? from : undefined });
+  const ir = await importArtifacts(sourceDir, { target: target?.length ? target : undefined });
   const config: AgentConfig = {
     version: 1,
     targets: detectedAgents.map((a) => a.name),
@@ -209,8 +212,8 @@ export async function runInitialize(options: RunInitializeOptions): Promise<Init
 export interface RunImportOptions {
   /** Directory containing the source .agentconfig/ to import from. */
   sourceDir: string;
-  /** Destination directory (default: CWD). A .agentconfig/ will be created here if absent. */
-  destDir?: string;
+  /** Destination .agentconfig/ directory. */
+  configPath?: string;
 }
 
 export interface ImportResult {
@@ -222,14 +225,19 @@ export interface ImportResult {
 
 export async function runImport(options: RunImportOptions): Promise<ImportResult> {
   const { sourceDir } = options;
-  const destRoot = options.destDir ? path.resolve(options.destDir) : process.cwd();
+  const destRoot = options.configPath ? path.dirname(path.resolve(options.configPath)) : process.cwd();
 
   const sourceConfigDir = resolveConfigDir(sourceDir);
   const sourceConfig = await loadConfig(sourceConfigDir);
   const sourceIr = await parseArtifacts(sourceConfigDir, sourceConfig);
 
-  const existingDestConfigDir = findConfigDir(destRoot);
-  const destConfigDir = existingDestConfigDir ?? path.join(destRoot, '.agentconfig');
+  const requestedDestConfigDir = options.configPath ? path.resolve(options.configPath) : undefined;
+  const existingDestConfigDir = requestedDestConfigDir
+    ? fs.existsSync(requestedDestConfigDir)
+      ? requestedDestConfigDir
+      : undefined
+    : findConfigDir(destRoot);
+  const destConfigDir = requestedDestConfigDir ?? existingDestConfigDir ?? path.join(destRoot, '.agentconfig');
 
   let mergedTargets = sourceConfig.targets;
   if (existingDestConfigDir) {
@@ -255,6 +263,64 @@ export async function runImport(options: RunImportOptions): Promise<ImportResult
     destConfigDir,
     instructionCount: sourceIr.instructions.length,
     agentCount: sourceIr.agents.length,
+  };
+}
+
+// ── Translate (agent-native files → agent-native files) ──────────────────────
+
+export interface RunTranslateOptions {
+  sourceTarget: string;
+  destTarget: string;
+  projectRoot?: string;
+}
+
+export interface TranslateResult {
+  projectRoot: string;
+  sourceTarget: string;
+  destTarget: string;
+  instructionCount: number;
+  agentCount: number;
+  fileCount: number;
+}
+
+export async function runTranslate(options: RunTranslateOptions): Promise<TranslateResult> {
+  const projectRoot = path.resolve(options.projectRoot ?? '.');
+
+  if (!fs.existsSync(projectRoot)) {
+    throw new Error(`Project root not found: ${projectRoot}`);
+  }
+
+  if (!fs.statSync(projectRoot).isDirectory()) {
+    throw new Error(`Project root is not a directory: ${projectRoot}`);
+  }
+
+  await loadGlobalPlugins();
+
+  if (!registry.getImporter(options.sourceTarget)) {
+    throw new Error(`Unknown source target: ${options.sourceTarget}`);
+  }
+
+  if (!registry.get(options.destTarget)) {
+    throw new Error(`Unknown destination target: ${options.destTarget}`);
+  }
+
+  const ir = await importArtifacts(projectRoot, { target: [options.sourceTarget] });
+  const config: AgentConfig = {
+    version: 1,
+    targets: [options.destTarget],
+    options: { output_dir: '.' },
+  };
+  const files = buildFiles(ir, config, [options.destTarget]);
+
+  await write(files, { outputDir: projectRoot, overwrite: true, dryRun: false });
+
+  return {
+    projectRoot,
+    sourceTarget: options.sourceTarget,
+    destTarget: options.destTarget,
+    instructionCount: ir.instructions.length,
+    agentCount: ir.agents.length,
+    fileCount: files.length,
   };
 }
 

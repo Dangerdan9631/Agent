@@ -1,7 +1,6 @@
 import type { Command } from 'commander';
 import chalk from 'chalk';
 import { runGenerate, type GenerateEvent } from 'agentconfig';
-import { die, info } from '../helpers';
 
 export function registerGenerate(program: Command): void {
   program
@@ -25,8 +24,8 @@ export function registerGenerate(program: Command): void {
       function onEvent(event: GenerateEvent): void {
         switch (event.type) {
           case 'generated':
-            info(opts.verbose, `Using config dir: ${event.result.configDir}`);
-            info(opts.verbose, `Targets: ${event.result.targets.join(', ')}`);
+            if (opts.verbose) console.log(chalk.gray(`Using config dir: ${event.result.configDir}`));
+            if (opts.verbose) console.log(chalk.gray(`Targets: ${event.result.targets.join(', ')}`));
             console.log(chalk.green(`Generated ${event.result.fileCount} file(s) → ${event.result.outputDir}`));
             break;
           case 'validation-error':
@@ -36,7 +35,7 @@ export function registerGenerate(program: Command): void {
             console.log(chalk.cyan(`\nWatching ${event.configDir} for changes...`));
             break;
           case 'change':
-            info(opts.verbose, `Change detected: ${event.path}`);
+            if (opts.verbose) console.log(chalk.gray(`Change detected: ${event.path}`));
             break;
           case 'error':
             console.error(chalk.red('Generate error:'), event.error);
@@ -50,8 +49,9 @@ export function registerGenerate(program: Command): void {
         targets: opts.target,
         watch: opts.watch,
         onEvent,
-      }).catch((err) =>
-        die(err instanceof Error ? err.message : String(err)),
-      );
+      }).catch((err) => {
+        console.error(chalk.red('error:'), err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      });
     });
 }

@@ -341,15 +341,24 @@ agentconfig diff --target cursor
 
 ### `agentconfig import`
 
-Scan an existing project directory for agent-native directive files, reverse-parse them into the normalized IR, and write a bootstrapped `.agentconfig/` folder. Useful for migrating an existing project onto `agentconfig`.
+Import instructions from another `.agentconfig/` directory into this project.
 
 ```bash
-agentconfig import .                    # scan current directory, detect all agents
-agentconfig import . --from copilot --from cursor   # only import from these agents
-agentconfig import . --merge            # merge into an existing .agentconfig/
+agentconfig import ../other-project
+agentconfig import ../other-project --config .agentconfig
 ```
 
-When multiple agents contain the same logical instruction, the importer merges them into a single file using content-similarity comparison. Ambiguous `activation` types are inferred from each agent's frontmatter and annotated with `# TODO: verify activation` when the heuristic is uncertain.
+### `agentconfig initialize`
+
+Scan an existing project root for agent-native directive files, reverse-parse them into the normalized IR, and write a bootstrapped `.agentconfig/` folder. Useful for migrating an existing project onto `agentconfig`.
+
+```bash
+agentconfig initialize .                              # scan current project root, detect all agents
+agentconfig initialize . --target copilot --target cursor
+agentconfig initialize . --config ../out/.agentconfig # write to an explicit config directory
+```
+
+When multiple agents contain the same logical instruction, the initializer merges them into a single file using content-similarity comparison. Ambiguous `activation` types are inferred from each agent's frontmatter and annotated with `# TODO: verify activation` when the heuristic is uncertain.
 
 ### `agentconfig list-targets`
 

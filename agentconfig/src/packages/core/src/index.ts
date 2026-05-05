@@ -10,6 +10,7 @@ export {
   runDiff,
   runInitialize,
   runImport,
+  runTranslate,
   listTargets,
 } from './operations';
 
@@ -24,6 +25,8 @@ export type {
   InitializeResult,
   RunImportOptions,
   ImportResult,
+  RunTranslateOptions,
+  TranslateResult,
 } from './operations';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
