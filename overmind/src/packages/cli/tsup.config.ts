@@ -4,7 +4,7 @@ export default defineConfig({
   entry: {
     bin: 'src/bin.ts',
   },
-  format: ['cjs'],
+  format: ['esm'],
   dts: true,
   clean: true,
   target: 'node24',

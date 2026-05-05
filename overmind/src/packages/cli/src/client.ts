@@ -1,4 +1,7 @@
+import { spawn } from 'node:child_process';
 import net from 'node:net';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type {
   GetServiceStatsRequest,
   GetServiceStatsResponse,
@@ -10,6 +13,13 @@ import type {
   ShutdownResponse,
 } from 'overmind-api';
 import { getDefaultOvermindPipePath } from 'overmind-service';
+
+export type StartServiceRequest = Record<string, never>;
+
+export interface StartServiceResponse {
+  started: boolean;
+  message: string;
+}
 
 interface OvermindIpcSuccessResponse<TMethod extends OvermindApiMethod> {
   method: TMethod;
@@ -34,6 +44,32 @@ export class OvermindIpcClient implements OvermindApi {
 
   shutdown(request: ShutdownRequest): Promise<ShutdownResponse> {
     return this.#send('service.shutdown', request);
+  }
+
+  async startService(_request: StartServiceRequest): Promise<StartServiceResponse> {
+    if (await this.isRunning()) {
+      return {
+        started: false,
+        message: 'Service is already running.',
+      };
+    }
+
+    const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
+    const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
+
+    const child = spawn(process.execPath, [serviceBinPath], {
+      detached: true,
+      stdio: 'ignore',
+    });
+
+    child.unref();
+
+    await this.#waitForService();
+
+    return {
+      started: true,
+      message: 'Service started.',
+    };
   }
 
   async isRunning(): Promise<boolean> {
@@ -94,4 +130,25 @@ export class OvermindIpcClient implements OvermindApi {
 
     return response.result;
   }
+
+  async #waitForService(): Promise<void> {
+    const startedAt = Date.now();
+    const timeoutMs = 5_000;
+
+    while (Date.now() - startedAt < timeoutMs) {
+      if (await this.isRunning()) {
+        return;
+      }
+
+      await delay(100);
+    }
+
+    throw new Error('Timed out waiting for service startup.');
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
