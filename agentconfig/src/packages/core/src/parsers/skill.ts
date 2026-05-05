@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { SkillDefinition, SkillFile } from 'agentconfig-api';
+import { SkillDefinition, type SkillFile } from '../types/skill';
 
 function readDirRecursive(dir: string, baseDir: string): SkillFile[] {
   const files: SkillFile[] = [];
@@ -49,7 +49,7 @@ export function parseSkills(configDir: string): SkillDefinition[] {
     if (!entry.isDirectory()) continue;
     const skillPath = path.join(dir, entry.name);
     const files = readDirRecursive(skillPath, skillPath);
-    skills.push({ name: entry.name, sourcePath: skillPath, files });
+    skills.push(new SkillDefinition(entry.name, skillPath, files));
   }
 
   return skills;

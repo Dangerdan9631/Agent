@@ -1,8 +1,114 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
-import type { HookDefinition } from 'agentconfig-api';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import type { GeneratorPlugin, ValidationResult } from 'agentconfig-api';
+import type { InstructionFile, CommandDefinition, AgentDefinition, SkillDefinition, HookDefinition } from '../types';
 import { filterForTarget, buildFrontmatter, buildInTextCondition, HOOK_EVENT_MAPS, AgentHookEventMap } from './base';
 
-/** Build the nested hooks object used by both Claude Code settings.json */
+export class ClaudeCodeInstructionGenerator implements GeneratorPlugin<InstructionFile> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'instruction';
+
+  validate(_items: InstructionFile[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: InstructionFile[]): void {
+    const instructions = filterForTarget(items, this.agent);
+
+    // always -> .claude/CLAUDE.md
+    const always = instructions.filter((i) => i.activation === 'always');
+    if (always.length > 0) {
+      const dest = path.join(projectRoot, '.claude', 'CLAUDE.md');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, always.map((i) => i.body).join('\n\n'));
+    }
+
+    // scoped -> .claude/rules/<slug>.md with paths: frontmatter
+    for (const inst of instructions.filter((i) => i.activation === 'scoped')) {
+      const fm = buildFrontmatter({ paths: inst.globs ?? [] });
+      const dest = path.join(projectRoot, '.claude', 'rules', `${inst.slug}.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `${fm}\n\n${inst.body}`);
+    }
+
+    // ai-decided -> .claude/rules/<slug>.md (no paths) + in-text condition
+    for (const inst of instructions.filter((i) => i.activation === 'ai-decided')) {
+      const body = inst.description ? buildInTextCondition(inst.description, inst.body) : inst.body;
+      const dest = path.join(projectRoot, '.claude', 'rules', `${inst.slug}.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, body);
+    }
+
+    // manual -> .claude/rules/<slug>.md with paths: []
+    for (const inst of instructions.filter((i) => i.activation === 'manual')) {
+      const fm = buildFrontmatter({ paths: [] });
+      const dest = path.join(projectRoot, '.claude', 'rules', `${inst.slug}.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `${fm}\n\n${inst.body}`);
+    }
+  }
+}
+
+export class ClaudeCodeCommandGenerator implements GeneratorPlugin<CommandDefinition> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'command';
+
+  validate(_items: CommandDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: CommandDefinition[]): void {
+    for (const cmd of filterForTarget(items, this.agent)) {
+      const dest = path.join(projectRoot, '.claude', 'agents', `${cmd.slug}.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `---\nname: ${cmd.slug}\n---\n\n${cmd.body}`);
+    }
+  }
+}
+
+export class ClaudeCodeAgentGenerator implements GeneratorPlugin<AgentDefinition> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'agent';
+
+  validate(_items: AgentDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: AgentDefinition[]): void {
+    for (const agent of filterForTarget(items, this.agent)) {
+      const fmFields: Record<string, unknown> = { name: agent.name };
+      if (agent.description) fmFields.description = agent.description;
+      if (agent.model) fmFields.model = agent.model;
+      if (agent.tools && agent.tools.length > 0) fmFields.tools = agent.tools;
+      if (agent.isolation) fmFields.isolation = agent.isolation;
+
+      const fm = buildFrontmatter(fmFields);
+      const dest = path.join(projectRoot, '.claude', 'agents', `${agent.name}.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `${fm}\n\n${agent.body}`);
+    }
+  }
+}
+
+export class ClaudeCodeSkillGenerator implements GeneratorPlugin<SkillDefinition> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'skill';
+
+  validate(_items: SkillDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: SkillDefinition[]): void {
+    for (const skill of items) {
+      for (const file of skill.files) {
+        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, file.content);
+      }
+    }
+  }
+}
+
 function buildNestedHooksObject(
   hooks: HookDefinition[],
   hookMap: AgentHookEventMap,
@@ -29,93 +135,31 @@ function buildNestedHooksObject(
   return result;
 }
 
-export const ClaudeCodeGenerator: AgentGenerator = {
-  target: 'claude-code',
-  displayName: 'Claude Code',
+export class ClaudeCodeHookGenerator implements GeneratorPlugin<HookDefinition> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'hook';
 
-  generate({ ir, target }: GeneratorInput): FileOutput[] {
-    const outputs: FileOutput[] = [];
+  validate(_items: HookDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: HookDefinition[]): void {
+    const hooks = filterForTarget(items, this.agent);
     const hookMap = HOOK_EVENT_MAPS['claude-code']!;
-    const instructions = filterForTarget(ir.instructions, target);
-
-    // always → .claude/CLAUDE.md (all always instructions concatenated)
-    const always = instructions.filter((i) => i.activation === 'always');
-    if (always.length > 0) {
-      outputs.push({
-        path: '.claude/CLAUDE.md',
-        content: always.map((i) => i.body).join('\n\n'),
-      });
-    }
-
-    // scoped → .claude/rules/<slug>.md with paths: frontmatter
-    for (const inst of instructions.filter((i) => i.activation === 'scoped')) {
-      const fm = buildFrontmatter({ paths: inst.globs ?? [] });
-      outputs.push({
-        path: `.claude/rules/${inst.slug}.md`,
-        content: `${fm}\n\n${inst.body}`,
-      });
-    }
-
-    // ai-decided → .claude/rules/<slug>.md (no paths) + in-text condition
-    for (const inst of instructions.filter((i) => i.activation === 'ai-decided')) {
-      const body = inst.description
-        ? buildInTextCondition(inst.description, inst.body)
-        : inst.body;
-      outputs.push({ path: `.claude/rules/${inst.slug}.md`, content: body });
-    }
-
-    // manual → .claude/rules/<slug>.md with paths: [] (blocks auto-load)
-    for (const inst of instructions.filter((i) => i.activation === 'manual')) {
-      const fm = buildFrontmatter({ paths: [] });
-      outputs.push({
-        path: `.claude/rules/${inst.slug}.md`,
-        content: `${fm}\n\n${inst.body}`,
-      });
-    }
-
-    // commands → .claude/agents/<slug>.md (invokable subagent)
-    for (const cmd of filterForTarget(ir.commands, target)) {
-      outputs.push({
-        path: `.claude/agents/${cmd.slug}.md`,
-        content: `---\nname: ${cmd.slug}\n---\n\n${cmd.body}`,
-      });
-    }
-
-    // agents → .claude/agents/<name>.md
-    for (const agent of filterForTarget(ir.agents, target)) {
-      const fmFields: Record<string, unknown> = { name: agent.name };
-      if (agent.description) fmFields.description = agent.description;
-      if (agent.model) fmFields.model = agent.model;
-      if (agent.tools && agent.tools.length > 0) fmFields.tools = agent.tools;
-      if (agent.isolation) fmFields.isolation = agent.isolation;
-
-      const fm = buildFrontmatter(fmFields);
-      outputs.push({
-        path: `.claude/agents/${agent.name}.md`,
-        content: `${fm}\n\n${agent.body}`,
-      });
-    }
-
-    // skills → .agents/skills/<name>/ (passthrough; Claude Code can @-reference)
-    for (const skill of ir.skills) {
-      for (const file of skill.files) {
-        outputs.push({
-          path: `.agents/skills/${skill.name}/${file.relativePath}`,
-          content: file.content,
-        });
-      }
-    }
-
-    // hooks → .claude/settings.json
-    const hooks = filterForTarget(ir.hooks, target);
+    
     if (hooks.length > 0) {
       const hooksObj = buildNestedHooksObject(hooks, hookMap);
-      outputs.push({
-        path: '.claude/settings.json',
-        content: JSON.stringify({ hooks: hooksObj }, null, 2),
-      });
+      const dest = path.join(projectRoot, '.claude', 'settings.json');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, JSON.stringify({ hooks: hooksObj }, null, 2));
     }
+  }
+}
 
-    return outputs;
-  },
-};
+export default [
+  new ClaudeCodeInstructionGenerator(),
+  new ClaudeCodeCommandGenerator(),
+  new ClaudeCodeAgentGenerator(),
+  new ClaudeCodeSkillGenerator(),
+  new ClaudeCodeHookGenerator(),
+];

@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import yaml from 'js-yaml';
 import { z } from 'zod';
-import type { HookDefinition } from 'agentconfig-api';
+import { HookDefinition } from '../types/hook';
 
 const HOOK_EVENTS = [
   'SessionStart',
@@ -39,5 +39,19 @@ export function parseHooks(configDir: string): HookDefinition[] {
 
   const raw = yaml.load(fs.readFileSync(hooksFile, 'utf8')) as unknown;
   const parsed = HooksYamlSchema.parse(raw);
-  return parsed.hooks as HookDefinition[];
+  return parsed.hooks.map(
+    (h) =>
+      new HookDefinition(
+        h.name,
+        h.event,
+        h.type as any,
+        h.matcher,
+        h.command,
+        h.timeout,
+        h.blocking,
+        h.async,
+        h.targets,
+        h.excludedTargets
+      )
+  );
 }

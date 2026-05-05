@@ -44,31 +44,26 @@ export interface GeneratorPlugin<T extends InstructionType> {
   readonly agent: string;
 
   /**
-   * Validates that the given IR item is valid for generation targeting
-   * {@link agent}.
-   *
-   * This method performs **agent-specific** validation on top of any
-   * structural validation already enforced by
-   * {@link InstructionType.validate}. Typical checks include verifying that
-   * agent-required fields are set, that unsupported features are absent, or
-   * that values are within the constraints imposed by the target agent.
-   *
-   * Returns an array of {@link ValidationResult} objects. An empty array
-   * indicates the item is ready for generation.
-   *
-   * @param item - The IR item to validate for this agent target.
+   * The typeId of the InstructionType this plugin generates (e.g. 'instruction', 'agent').
    */
-  validate(item: T): ValidationResult[];
+  readonly instructionType: string;
 
   /**
-   * Generates agent-native output for the given IR item and writes it into
-   * `folderPath`.
+   * Validates that the given instruction items are valid for generation targeting
+   * {@link agent}.
    *
-   * Implementations should write all files produced from `item` directly into
-   * (or beneath) `folderPath` using the agent's expected directory layout.
-   *
-   * @param folderPath - Absolute path to the root output directory.
-   * @param item       - The IR item to generate output from.
+   * @param items - The instruction items to validate for this agent target.
    */
-  generate(folderPath: string, item: T): void;
+  validate(items: T[]): ValidationResult[];
+
+  /**
+   * Generates agent-native output for the given instruction items and writes it to disk.
+   *
+   * Implementations should write all files produced from `items` directly into
+   * (or beneath) `projectRoot` using the agent's expected directory layout.
+   *
+   * @param projectRoot - Absolute path to the root output directory.
+   * @param items       - The instruction items to generate output from.
+   */
+  generate(projectRoot: string, items: T[]): void;
 }

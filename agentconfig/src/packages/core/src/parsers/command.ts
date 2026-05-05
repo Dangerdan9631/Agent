@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
-import type { CommandDefinition } from 'agentconfig-api';
+import { CommandDefinition } from '../types/command';
 import { slugify } from '../utils';
 
 export async function parseCommands(configDir: string): Promise<CommandDefinition[]> {
@@ -20,15 +20,13 @@ export async function parseCommands(configDir: string): Promise<CommandDefinitio
     const slug =
       typeof data.name === 'string' ? slugify(data.name) : slugify(name);
 
-    return {
+    return new CommandDefinition(
       name,
       slug,
-      sourcePath: filePath,
-      body: content.trim(),
-      targets: Array.isArray(data.targets) ? (data.targets as string[]) : undefined,
-      excludedTargets: Array.isArray(data.excludedTargets)
-        ? (data.excludedTargets as string[])
-        : undefined,
-    };
+      filePath,
+      content.trim(),
+      Array.isArray(data.targets) ? (data.targets as string[]) : undefined,
+      Array.isArray(data.excludedTargets) ? (data.excludedTargets as string[]) : undefined
+    );
   });
 }

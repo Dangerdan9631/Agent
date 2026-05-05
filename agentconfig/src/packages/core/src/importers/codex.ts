@@ -1,10 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import fg from 'fast-glob';
-import type { InstructionFile, AgentDefinition } from 'agentconfig-api';
-import type { DetectedAgent } from 'agentconfig-api';
+import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
+import { InstructionFile, AgentDefinition } from '../types';
 
-/** Detect whether a Codex configuration is present in `dir`. */
 export function detectCodex(dir: string): DetectedAgent[] {
   if (fs.existsSync(path.join(dir, '.codex'))) {
     return [{ name: 'codex', confidence: 'high' }];
@@ -70,84 +69,96 @@ function parseTOMLSimple(content: string): Record<string, unknown> {
   return result;
 }
 
-/**
- * Import instructions and agents from a Codex project.
- * Reads:
- *   AGENTS.md                      → always instruction
- *   .codex/instructions/*.md       → manual instruction
- *   .codex/agents/*.toml           → AgentDefinition
- */
-export async function importCodex(sourceDir: string): Promise<{
-  instructions: InstructionFile[];
-  agents: AgentDefinition[];
-}> {
-  const instructions: InstructionFile[] = [];
-  const agents: AgentDefinition[] = [];
+export class CodexInstructionImporter implements ImporterPlugin<InstructionFile> {
+  readonly agent = 'codex';
+  readonly instructionType = 'instruction';
 
-  // Always: AGENTS.md at repo root
-  const agentsMd = path.join(sourceDir, 'AGENTS.md');
-  if (fs.existsSync(agentsMd)) {
-    const body = fs.readFileSync(agentsMd, 'utf8').trim();
-    if (body) {
-      instructions.push({
-        name: 'agents',
-        sourcePath: agentsMd,
-        activation: 'always',
-        slug: 'agents',
-        body,
-        importNote:
-          '# TODO: verify activation — AGENTS.md may contain mixed always + ai-decided sections',
-      });
-    }
+  validate(_projectRoot: string): ValidationResult[] {
+    return [];
   }
 
-  // Manual: .codex/instructions/
-  const instrDir = path.join(sourceDir, '.codex', 'instructions');
-  if (fs.existsSync(instrDir)) {
-    const files = await fg('**/*.md', { cwd: instrDir, absolute: true });
-    for (const filePath of files.sort()) {
-      const body = fs.readFileSync(filePath, 'utf8').trim();
-      const stem = path.basename(filePath, '.md');
-      instructions.push({
-        name: stem,
-        sourcePath: filePath,
-        activation: 'manual',
-        slug: stem,
-        body,
-      });
-    }
-  }
+  async import(projectRoot: string): Promise<InstructionFile[]> {
+    const instructions: InstructionFile[] = [];
 
-  // Agents: .codex/agents/*.toml
-  const agentsDir = path.join(sourceDir, '.codex', 'agents');
-  if (fs.existsSync(agentsDir)) {
-    const files = await fg('**/*.toml', { cwd: agentsDir, absolute: true });
-    for (const filePath of files.sort()) {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      const data = parseTOMLSimple(raw);
-      const name =
-        typeof data.name === 'string' ? data.name : path.basename(filePath, '.toml');
-      agents.push({
-        name,
-        sourcePath: filePath,
-        description: typeof data.description === 'string' ? data.description : undefined,
-        model: typeof data.model === 'string' ? data.model : undefined,
-        reasoning_effort: (
-          ['low', 'medium', 'high'] as const
-        ).includes(data.model_reasoning_effort as 'low' | 'medium' | 'high')
-          ? (data.model_reasoning_effort as 'low' | 'medium' | 'high')
-          : undefined,
-        sandbox_mode: (
-          ['read-only', 'workspace-write', 'danger-full-access'] as const
-        ).includes(data.sandbox_mode as AgentDefinition['sandbox_mode'])
-          ? (data.sandbox_mode as AgentDefinition['sandbox_mode'])
-          : undefined,
-        targets: ['codex'],
-        body:
-          typeof data.developer_instructions === 'string' ? data.developer_instructions : '',
-      });
+    // Always: AGENTS.md at repo root
+    const agentsMd = path.join(projectRoot, 'AGENTS.md');
+    if (fs.existsSync(agentsMd)) {
+      const body = fs.readFileSync(agentsMd, 'utf8').trim();
+      if (body) {
+        instructions.push(new InstructionFile(
+          'agents',
+          agentsMd,
+          'always',
+          body,
+          'agents',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          '# TODO: verify activation — AGENTS.md may contain mixed always + ai-decided sections'
+        ));
+      }
     }
-  }
 
-  return { instructions, agents };
+    // Manual: .codex/instructions/
+    const instrDir = path.join(projectRoot, '.codex', 'instructions');
+    if (fs.existsSync(instrDir)) {
+      const files = await fg('**/*.md', { cwd: instrDir, absolute: true });
+      for (const filePath of files.sort()) {
+        const body = fs.readFileSync(filePath, 'utf8').trim();
+        const stem = path.basename(filePath, '.md');
+        instructions.push(new InstructionFile(
+          stem,
+          filePath,
+          'manual',
+          body,
+          stem,
+        ));
+      }
+    }
+
+    return instructions;
+  }
 }
+
+export class CodexAgentImporter implements ImporterPlugin<AgentDefinition> {
+  readonly agent = 'codex';
+  readonly instructionType = 'agent';
+
+  validate(_projectRoot: string): ValidationResult[] {
+    return [];
+  }
+
+  async import(projectRoot: string): Promise<AgentDefinition[]> {
+    const agents: AgentDefinition[] = [];
+    const agentsDir = path.join(projectRoot, '.codex', 'agents');
+    if (fs.existsSync(agentsDir)) {
+      const files = await fg('**/*.toml', { cwd: agentsDir, absolute: true });
+      for (const filePath of files.sort()) {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const data = parseTOMLSimple(raw);
+        const name = typeof data.name === 'string' ? data.name : path.basename(filePath, '.toml');
+        
+        agents.push(new AgentDefinition(
+          name,
+          filePath,
+          typeof data.developer_instructions === 'string' ? data.developer_instructions : '',
+          typeof data.description === 'string' ? data.description : undefined,
+          typeof data.model === 'string' ? data.model : undefined,
+          undefined, // tools
+          ['codex'], // targets
+          undefined, // excludedTargets
+          undefined, // isolation
+          (['read-only', 'workspace-write', 'danger-full-access'] as const).includes(data.sandbox_mode as any) ? data.sandbox_mode as any : undefined,
+          (['low', 'medium', 'high'] as const).includes(data.model_reasoning_effort as any) ? data.model_reasoning_effort as any : undefined,
+        ));
+      }
+    }
+    return agents;
+  }
+}
+
+export default [
+  new CodexInstructionImporter(),
+  new CodexAgentImporter(),
+];

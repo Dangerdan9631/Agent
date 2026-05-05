@@ -1,61 +1,55 @@
 import type {
-  AgentGenerator,
-  AgentTargetPlugin,
+  GeneratorPlugin,
+  ImporterPlugin,
   DetectedAgent,
   DirectiveTypePlugin,
+  InstructionType,
 } from 'agentconfig-api';
-import type { InstructionFile, AgentDefinition } from 'agentconfig-api';
-
-type AgentImportFn = (sourceDir: string) => Promise<{
-  instructions: InstructionFile[];
-  agents?: AgentDefinition[];
-}>;
 
 type DetectFn = (dir: string) => DetectedAgent[];
 
 /**
  * Central plugin registry — stores generators, importers, detectors, and
- * directive type plugins. All built-in agents register themselves here on
- * module load; third-party plugins register via `loadPlugin()`.
+ * directive type plugins.
  */
 export class PluginRegistry {
-  private readonly generators = new Map<string, AgentGenerator>();
-  private readonly importers = new Map<string, AgentImportFn>();
+  private readonly generators: GeneratorPlugin<InstructionType>[] = [];
+  private readonly importers: ImporterPlugin<InstructionType>[] = [];
   private readonly detectors: DetectFn[] = [];
   private readonly directiveTypes = new Map<string, DirectiveTypePlugin>();
 
-  // ── Generator methods (primary, unchanged interface) ─────────────────────
+  // ── Generator methods ──────────────────────────────────────────────────────
 
-  /** Register a generator. Overwrites any existing entry for the same target. */
-  register(generator: AgentGenerator): void {
-    this.generators.set(generator.target, generator);
+  /** Register a generator. */
+  registerGenerator(generator: GeneratorPlugin<InstructionType>): void {
+    this.generators.push(generator);
   }
 
-  /** Look up a generator by target ID. Returns `undefined` if not registered. */
-  get(target: string): AgentGenerator | undefined {
-    return this.generators.get(target);
+  /** Look up all generators for a specific target ID. */
+  getGenerators(target: string): GeneratorPlugin<InstructionType>[] {
+    return this.generators.filter((g) => g.agent === target);
   }
 
-  /** Return all registered generators in insertion order. */
-  list(): AgentGenerator[] {
-    return Array.from(this.generators.values());
+  /** Return all registered generators. */
+  listGenerators(): GeneratorPlugin<InstructionType>[] {
+    return [...this.generators];
   }
 
   // ── Importer methods ──────────────────────────────────────────────────────
 
-  /** Register an importer function for a target. Overwrites existing entry. */
-  registerImporter(target: string, fn: AgentImportFn): void {
-    this.importers.set(target, fn);
+  /** Register an importer plugin. */
+  registerImporter(importer: ImporterPlugin<InstructionType>): void {
+    this.importers.push(importer);
   }
 
-  /** Look up an importer by target ID. Returns `undefined` if not registered. */
-  getImporter(target: string): AgentImportFn | undefined {
-    return this.importers.get(target);
+  /** Look up all importers for a specific target ID. */
+  getImporters(target: string): ImporterPlugin<InstructionType>[] {
+    return this.importers.filter((i) => i.agent === target);
   }
 
-  /** Return all registered importer entries as an array of `[target, fn]` pairs. */
-  listImporters(): Array<[string, AgentImportFn]> {
-    return Array.from(this.importers.entries());
+  /** Return all registered importers. */
+  listImporters(): ImporterPlugin<InstructionType>[] {
+    return [...this.importers];
   }
 
   // ── Detector methods ──────────────────────────────────────────────────────
@@ -92,13 +86,13 @@ export class PluginRegistry {
   /**
    * Dynamically load a plugin module by its Node module identifier and
    * register whatever it exports. Supports:
-   * - `AgentTargetPlugin` (`{ target, generate, importSource }`)
-   * - `DirectiveTypePlugin` (`{ typeId, parse }`)
-   * - Legacy `AgentGenerator` (`{ target, generate }`) — backward compatible
+   * - `GeneratorPlugin`
+   * - `ImporterPlugin`
+   * - `DirectiveTypePlugin`
+   * - `detect` function export
    * - An array of any of the above
    */
   async loadPlugin(moduleId: string): Promise<void> {
-     
     const mod = (await import(moduleId)) as Record<string, unknown>;
     const exported = mod.default ?? mod;
 
@@ -108,6 +102,11 @@ export class PluginRegistry {
       }
     } else {
       this._registerOne(exported, moduleId);
+    }
+    
+    // Also check for named detect function
+    if (typeof mod['detect'] === 'function') {
+      this.registerDetector(mod['detect'] as DetectFn);
     }
   }
 
@@ -124,43 +123,40 @@ export class PluginRegistry {
       return;
     }
 
-    // AgentTargetPlugin: has target (string) + generate (function) + importSource (function)
+    let registered = false;
+
+    // GeneratorPlugin: has agent, instructionType, validate, generate
     if (
-      typeof p['target'] === 'string' &&
-      typeof p['generate'] === 'function' &&
-      typeof p['importSource'] === 'function'
+      typeof p['agent'] === 'string' &&
+      typeof p['instructionType'] === 'string' &&
+      typeof p['validate'] === 'function' &&
+      typeof p['generate'] === 'function'
     ) {
-      const agentPlugin = plugin as AgentTargetPlugin;
-      this.register(agentPlugin);
-      this.registerImporter(agentPlugin.target, (dir) => agentPlugin.importSource(dir));
-      if (typeof agentPlugin.detect === 'function') {
-        const detect = agentPlugin.detect.bind(agentPlugin);
-        this.registerDetector((dir) => {
-          const result = detect(dir);
-          return result ? [{ name: agentPlugin.target, confidence: result.confidence }] : [];
-        });
-      }
-      return;
+      this.registerGenerator(plugin as GeneratorPlugin<InstructionType>);
+      registered = true;
     }
 
-    // Legacy AgentGenerator: has target (string) + generate (function) — backward compat
-    if (typeof p['target'] === 'string' && typeof p['generate'] === 'function') {
-      this.register(plugin as AgentGenerator);
-      return;
+    // ImporterPlugin: has agent, instructionType, validate, import
+    if (
+      typeof p['agent'] === 'string' &&
+      typeof p['instructionType'] === 'string' &&
+      typeof p['validate'] === 'function' &&
+      typeof p['import'] === 'function'
+    ) {
+      this.registerImporter(plugin as ImporterPlugin<InstructionType>);
+      registered = true;
     }
 
-    throw new Error(
-      `Plugin "${moduleId}" does not export a valid plugin. ` +
-        `Expected AgentTargetPlugin ({ target, generate, importSource }), ` +
-        `DirectiveTypePlugin ({ typeId, parse }), or ` +
-        `AgentGenerator ({ target, generate }).`,
-    );
+    if (!registered) {
+      throw new Error(
+        `Plugin "${moduleId}" does not export a valid plugin. ` +
+          `Expected GeneratorPlugin, ImporterPlugin, or DirectiveTypePlugin.`
+      );
+    }
   }
 }
 
 /** Singleton registry — all built-in plugins self-register here on import */
 export const registry = new PluginRegistry();
 
-/** @deprecated Use `PluginRegistry` instead */
-export { PluginRegistry as GeneratorRegistry };
 

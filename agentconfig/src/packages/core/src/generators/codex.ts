@@ -1,6 +1,61 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
-import type { AgentDefinition, HookDefinition } from 'agentconfig-api';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import type { GeneratorPlugin, ValidationResult } from 'agentconfig-api';
+import type { InstructionFile, CommandDefinition, AgentDefinition, SkillDefinition, HookDefinition } from '../types';
 import { filterForTarget, buildInTextCondition, HOOK_EVENT_MAPS, AgentHookEventMap } from './base';
+
+export class CodexInstructionGenerator implements GeneratorPlugin<InstructionFile> {
+  readonly agent = 'codex';
+  readonly instructionType = 'instruction';
+
+  validate(_items: InstructionFile[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: InstructionFile[]): void {
+    const instructions = filterForTarget(items, this.agent);
+
+    // always + ai-decided -> AGENTS.md
+    const always = instructions.filter((i) => i.activation === 'always');
+    const aiDecided = instructions.filter((i) => i.activation === 'ai-decided');
+
+    const agentsParts = [
+      ...always.map((i) => i.body),
+      ...aiDecided.map((i) =>
+        i.description ? buildInTextCondition(i.description, i.body) : i.body,
+      ),
+    ];
+
+    if (agentsParts.length > 0) {
+      const dest = path.join(projectRoot, 'AGENTS.md');
+      fs.writeFileSync(dest, agentsParts.join('\n\n'));
+    }
+
+    // manual -> .codex/instructions/<slug>.md
+    for (const inst of instructions.filter((i) => i.activation === 'manual')) {
+      const dest = path.join(projectRoot, '.codex', 'instructions', `${inst.slug}.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, inst.body);
+    }
+  }
+}
+
+export class CodexCommandGenerator implements GeneratorPlugin<CommandDefinition> {
+  readonly agent = 'codex';
+  readonly instructionType = 'command';
+
+  validate(_items: CommandDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: CommandDefinition[]): void {
+    for (const cmd of filterForTarget(items, this.agent)) {
+      const dest = path.join(projectRoot, '.agents', 'skills', cmd.slug, 'SKILL.md');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `---\nname: ${cmd.slug}\ndisable-model-invocation: true\n---\n\n${cmd.body}`);
+    }
+  }
+}
 
 function buildCodexToml(agent: AgentDefinition): string {
   const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -25,6 +80,42 @@ function buildCodexToml(agent: AgentDefinition): string {
   }
 
   return lines.join('\n');
+}
+
+export class CodexAgentGenerator implements GeneratorPlugin<AgentDefinition> {
+  readonly agent = 'codex';
+  readonly instructionType = 'agent';
+
+  validate(_items: AgentDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: AgentDefinition[]): void {
+    for (const agent of filterForTarget(items, this.agent)) {
+      const dest = path.join(projectRoot, '.codex', 'agents', `${agent.name}.toml`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, buildCodexToml(agent));
+    }
+  }
+}
+
+export class CodexSkillGenerator implements GeneratorPlugin<SkillDefinition> {
+  readonly agent = 'codex';
+  readonly instructionType = 'skill';
+
+  validate(_items: SkillDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: SkillDefinition[]): void {
+    for (const skill of items) {
+      for (const file of skill.files) {
+        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, file.content);
+      }
+    }
+  }
 }
 
 function buildCodexHooksObject(
@@ -52,78 +143,31 @@ function buildCodexHooksObject(
   return result;
 }
 
-class CodexGeneratorImpl implements AgentGenerator {
-  constructor(
-    readonly target: string,
-    readonly displayName: string,
-  ) {}
+export class CodexHookGenerator implements GeneratorPlugin<HookDefinition> {
+  readonly agent = 'codex';
+  readonly instructionType = 'hook';
 
-  generate({ ir, target }: GeneratorInput): FileOutput[] {
-    const outputs: FileOutput[] = [];
-    const hookMap = HOOK_EVENT_MAPS[target] ?? HOOK_EVENT_MAPS['codex']!;
-    const instructions = filterForTarget(ir.instructions, target);
+  validate(_items: HookDefinition[]): ValidationResult[] {
+    return [];
+  }
 
-    // always + ai-decided → AGENTS.md (concatenated; ai-decided gets in-text condition)
-    const always = instructions.filter((i) => i.activation === 'always');
-    const aiDecided = instructions.filter((i) => i.activation === 'ai-decided');
-
-    const agentsParts = [
-      ...always.map((i) => i.body),
-      ...aiDecided.map((i) =>
-        i.description ? buildInTextCondition(i.description, i.body) : i.body,
-      ),
-    ];
-
-    if (agentsParts.length > 0) {
-      outputs.push({ path: 'AGENTS.md', content: agentsParts.join('\n\n') });
-    }
-
-    // scoped → skipped (Codex has no native glob-scoped rules)
-
-    // manual → .codex/instructions/<slug>.md
-    for (const inst of instructions.filter((i) => i.activation === 'manual')) {
-      outputs.push({
-        path: `.codex/instructions/${inst.slug}.md`,
-        content: inst.body,
-      });
-    }
-
-    // commands → .agents/skills/<slug>/SKILL.md (explicit invocation only)
-    for (const cmd of filterForTarget(ir.commands, target)) {
-      const skillMd = `---\nname: ${cmd.slug}\ndisable-model-invocation: true\n---\n\n${cmd.body}`;
-      outputs.push({ path: `.agents/skills/${cmd.slug}/SKILL.md`, content: skillMd });
-    }
-
-    // agents → .codex/agents/<name>.toml
-    for (const agent of filterForTarget(ir.agents, target)) {
-      outputs.push({
-        path: `.codex/agents/${agent.name}.toml`,
-        content: buildCodexToml(agent),
-      });
-    }
-
-    // skills → .agents/skills/<name>/ (shared path)
-    for (const skill of ir.skills) {
-      for (const file of skill.files) {
-        outputs.push({
-          path: `.agents/skills/${skill.name}/${file.relativePath}`,
-          content: file.content,
-        });
-      }
-    }
-
-    // hooks → .codex/hooks.json
-    const hooks = filterForTarget(ir.hooks, target);
+  generate(projectRoot: string, items: HookDefinition[]): void {
+    const hooks = filterForTarget(items, this.agent);
+    const hookMap = HOOK_EVENT_MAPS['codex']!;
+    
     if (hooks.length > 0) {
       const hooksObj = buildCodexHooksObject(hooks, hookMap);
-      outputs.push({
-        path: '.codex/hooks.json',
-        content: JSON.stringify({ hooks: hooksObj }, null, 2),
-      });
+      const dest = path.join(projectRoot, '.codex', 'hooks.json');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, JSON.stringify({ hooks: hooksObj }, null, 2));
     }
-
-    return outputs;
   }
 }
 
-export const CodexGenerator = new CodexGeneratorImpl('codex', 'Codex');
+export default [
+  new CodexInstructionGenerator(),
+  new CodexCommandGenerator(),
+  new CodexAgentGenerator(),
+  new CodexSkillGenerator(),
+  new CodexHookGenerator(),
+];

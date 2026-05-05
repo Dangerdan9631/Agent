@@ -2,26 +2,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { createPatch } from 'diff';
-import type { FileOutput } from 'agentconfig-api';
-import type { DiffEntry } from 'agentconfig-api';
+import fg from 'fast-glob';
+import type { WriteOptions, DiffEntry } from 'agentconfig-api';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export interface WriteOptions {
-  outputDir: string;
-  /** When false, skip files that already exist on disk. Default: true */
-  overwrite?: boolean;
-  /** When true, do not write any files (dry-run mode). Default: false */
-  dryRun?: boolean;
-}
-
-// DiffAction and DiffEntry are the canonical api-package types; re-exported
-// here so all internal imports from './writer' continue to resolve correctly.
 export type { DiffAction, DiffEntry } from 'agentconfig-api';
 
-// ─── Content hash cache (used in --watch mode) ───────────────────────────────
-
-/** Maps absolute file path → sha256 hash of last written content */
 const contentHashCache = new Map<string, string>();
 
 function hashContent(content: string): string {
@@ -32,79 +17,69 @@ export function clearHashCache(): void {
   contentHashCache.clear();
 }
 
-// ─── Deduplication ───────────────────────────────────────────────────────────
-
 /**
- * Deduplicate a list of FileOutput entries by path (first-write-wins).
- * This handles the case where multiple generators emit to the same shared path
- * (e.g. `.agents/skills/<name>/` emitted by copilot, cursor, antigravity, etc.).
+ * Compare generated files in a temporary directory against the current on-disk state.
+ * Returns a DiffEntry for every file.
  */
-export function deduplicateOutputs(files: FileOutput[]): FileOutput[] {
-  const seen = new Set<string>();
-  const deduped: FileOutput[] = [];
-  for (const f of files) {
-    if (!seen.has(f.path)) {
-      seen.add(f.path);
-      deduped.push(f);
+export async function computeDiff(tempDir: string, outputDir: string): Promise<DiffEntry[]> {
+  const files = await fg('**/*', { cwd: tempDir, absolute: false, dot: true });
+  const entries: DiffEntry[] = [];
+
+  for (const file of files) {
+    const tempPath = path.resolve(tempDir, file);
+    const outPath = path.resolve(outputDir, file);
+
+    if (fs.statSync(tempPath).isDirectory()) continue;
+
+    const content = fs.readFileSync(tempPath, 'utf8');
+
+    if (!fs.existsSync(outPath)) {
+      entries.push({ path: file, action: 'create', diff: content });
+      continue;
     }
+
+    const existing = fs.readFileSync(outPath, 'utf8');
+    if (existing === content) {
+      entries.push({ path: file, action: 'unchanged' });
+      continue;
+    }
+
+    entries.push({
+      path: file,
+      action: 'update',
+      diff: createPatch(file, existing, content, 'current', 'generated'),
+    });
   }
-  return deduped;
+
+  return entries;
 }
 
-// ─── Diff ─────────────────────────────────────────────────────────────────────
-
 /**
- * Compare a list of FileOutput entries against the current on-disk state.
- * Returns a DiffEntry for every file.  Input is deduplicated before comparison.
- */
-export function computeDiff(files: FileOutput[], outputDir: string): DiffEntry[] {
-  return deduplicateOutputs(files).map((file) => {
-    const abs = path.resolve(outputDir, file.path);
-
-    if (!fs.existsSync(abs)) {
-      return { path: file.path, action: 'create' as const, diff: file.content };
-    }
-
-    const existing = fs.readFileSync(abs, 'utf8');
-    if (existing === file.content) {
-      return { path: file.path, action: 'unchanged' as const };
-    }
-
-    return {
-      path: file.path,
-      action: 'update' as const,
-      diff: createPatch(file.path, existing, file.content, 'current', 'generated'),
-    };
-  });
-}
-
-// ─── Writer ───────────────────────────────────────────────────────────────────
-
-/**
- * Write a list of FileOutput entries to disk.
+ * Write files from a temporary directory to the final output directory.
  *
- * - Deduplicates by path (first-write-wins).
  * - Skips files whose content matches the last-written hash (useful in --watch mode).
  * - Respects `overwrite: false` and `dryRun: true` options.
  */
-export async function write(files: FileOutput[], opts: WriteOptions): Promise<void> {
-  const deduped = deduplicateOutputs(files);
+export async function write(tempDir: string, outputDir: string, opts: WriteOptions): Promise<void> {
+  const files = await fg('**/*', { cwd: tempDir, absolute: false, dot: true });
 
-  for (const file of deduped) {
-    const abs = path.resolve(opts.outputDir, file.path);
+  for (const file of files) {
+    const tempPath = path.resolve(tempDir, file);
+    const outPath = path.resolve(outputDir, file);
 
-    if (opts.overwrite === false && fs.existsSync(abs)) continue;
+    if (fs.statSync(tempPath).isDirectory()) continue;
 
-    // Content unchanged since last write — skip (avoids spurious "file changed" prompts)
-    const hash = hashContent(file.content);
-    if (contentHashCache.get(abs) === hash) continue;
+    if (opts.overwrite === false && fs.existsSync(outPath)) continue;
+
+    const content = fs.readFileSync(tempPath, 'utf8');
+    const hash = hashContent(content);
+    if (contentHashCache.get(outPath) === hash) continue;
 
     if (!opts.dryRun) {
-      fs.mkdirSync(path.dirname(abs), { recursive: true });
-      fs.writeFileSync(abs, file.content, 'utf8');
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, content, 'utf8');
     }
 
-    // Update cache even in dry-run so repeated calls remain consistent
-    contentHashCache.set(abs, hash);
+    contentHashCache.set(outPath, hash);
   }
 }

@@ -1,74 +1,93 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import type { GeneratorPlugin, ValidationResult } from 'agentconfig-api';
+import type { InstructionFile, CommandDefinition, SkillDefinition } from '../types';
 import { filterForTarget, buildFrontmatter, buildInTextCondition } from './base';
 
-class CopilotGeneratorImpl implements AgentGenerator {
-  readonly target = 'copilot';
-  readonly displayName = 'GitHub Copilot';
+export class CopilotInstructionGenerator implements GeneratorPlugin<InstructionFile> {
+  readonly agent = 'copilot';
+  readonly instructionType = 'instruction';
 
-  generate({ ir, target }: GeneratorInput): FileOutput[] {
-    const outputs: FileOutput[] = [];
-    const instructions = filterForTarget(ir.instructions, target);
+  validate(_items: InstructionFile[]): ValidationResult[] {
+    return [];
+  }
 
-    // always → concatenated into .github/copilot-instructions.md
+  generate(projectRoot: string, items: InstructionFile[]): void {
+    const instructions = filterForTarget(items, this.agent);
+
+    // always -> concatenated into .github/copilot-instructions.md
     const always = instructions.filter((i) => i.activation === 'always');
     if (always.length > 0) {
-      outputs.push({
-        path: '.github/copilot-instructions.md',
-        content: always.map((i) => i.body).join('\n\n'),
-      });
+      const dest = path.join(projectRoot, '.github', 'copilot-instructions.md');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, always.map((i) => i.body).join('\n\n'));
     }
 
-    // scoped → .github/instructions/<slug>.instructions.md with applyTo:
+    // scoped -> .github/instructions/<slug>.instructions.md
     for (const inst of instructions.filter((i) => i.activation === 'scoped')) {
       const applyTo = (inst.globs ?? ['**/*']).join(', ');
       const fm = buildFrontmatter({ applyTo });
-      outputs.push({
-        path: `.github/instructions/${inst.slug}.instructions.md`,
-        content: `${fm}\n\n${inst.body}`,
-      });
+      const dest = path.join(projectRoot, '.github', 'instructions', `${inst.slug}.instructions.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `${fm}\n\n${inst.body}`);
     }
 
-    // ai-decided → .github/instructions/<slug>.instructions.md, applyTo: **/* + in-text condition
+    // ai-decided -> .github/instructions/<slug>.instructions.md
     for (const inst of instructions.filter((i) => i.activation === 'ai-decided')) {
       const fm = buildFrontmatter({ applyTo: '**/*' });
-      const body = inst.description
-        ? buildInTextCondition(inst.description, inst.body)
-        : inst.body;
-      outputs.push({
-        path: `.github/instructions/${inst.slug}.instructions.md`,
-        content: `${fm}\n\n${body}`,
-      });
+      const body = inst.description ? buildInTextCondition(inst.description, inst.body) : inst.body;
+      const dest = path.join(projectRoot, '.github', 'instructions', `${inst.slug}.instructions.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, `${fm}\n\n${body}`);
     }
 
-    // manual → .github/prompts/<slug>.prompt.md
+    // manual -> .github/prompts/<slug>.prompt.md
     for (const inst of instructions.filter((i) => i.activation === 'manual')) {
-      outputs.push({
-        path: `.github/prompts/${inst.slug}.prompt.md`,
-        content: inst.body,
-      });
+      const dest = path.join(projectRoot, '.github', 'prompts', `${inst.slug}.prompt.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, inst.body);
     }
-
-    // commands → .github/prompts/<slug>.prompt.md
-    for (const cmd of filterForTarget(ir.commands, target)) {
-      outputs.push({
-        path: `.github/prompts/${cmd.slug}.prompt.md`,
-        content: cmd.body,
-      });
-    }
-
-    // skills → .agents/skills/<name>/ (shared path)
-    for (const skill of ir.skills) {
-      for (const file of skill.files) {
-        outputs.push({
-          path: `.agents/skills/${skill.name}/${file.relativePath}`,
-          content: file.content,
-        });
-      }
-    }
-
-    // hooks: not supported for Copilot
-    return outputs;
   }
 }
 
-export const CopilotGenerator = new CopilotGeneratorImpl();
+export class CopilotCommandGenerator implements GeneratorPlugin<CommandDefinition> {
+  readonly agent = 'copilot';
+  readonly instructionType = 'command';
+
+  validate(_items: CommandDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: CommandDefinition[]): void {
+    for (const cmd of filterForTarget(items, this.agent)) {
+      const dest = path.join(projectRoot, '.github', 'prompts', `${cmd.slug}.prompt.md`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, cmd.body);
+    }
+  }
+}
+
+export class CopilotSkillGenerator implements GeneratorPlugin<SkillDefinition> {
+  readonly agent = 'copilot';
+  readonly instructionType = 'skill';
+
+  validate(_items: SkillDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: SkillDefinition[]): void {
+    for (const skill of items) {
+      for (const file of skill.files) {
+        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, file.content);
+      }
+    }
+  }
+}
+
+export default [
+  new CopilotInstructionGenerator(),
+  new CopilotCommandGenerator(),
+  new CopilotSkillGenerator(),
+];

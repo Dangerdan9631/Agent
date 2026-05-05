@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
-import type { InstructionFile, ActivationType } from 'agentconfig-api';
+import { InstructionFile, type ActivationType } from '../types/instruction';
 
 const VALID_ACTIVATIONS = new Set<ActivationType>(['always', 'scoped', 'ai-decided', 'manual']);
 
@@ -22,18 +22,16 @@ export async function parseInstructions(configDir: string): Promise<InstructionF
       ? (data.activation as ActivationType)
       : 'always';
 
-    return {
+    return new InstructionFile(
       name,
-      sourcePath: filePath,
+      filePath,
       activation,
-      globs: Array.isArray(data.globs) ? (data.globs as string[]) : undefined,
-      description: typeof data.description === 'string' ? data.description : undefined,
-      slug: typeof data.name === 'string' ? data.name : name,
-      targets: Array.isArray(data.targets) ? (data.targets as string[]) : undefined,
-      excludedTargets: Array.isArray(data.excludedTargets)
-        ? (data.excludedTargets as string[])
-        : undefined,
-      body: content.trim(),
-    };
+      content.trim(),
+      typeof data.name === 'string' ? data.name : name,
+      Array.isArray(data.globs) ? (data.globs as string[]) : undefined,
+      typeof data.description === 'string' ? data.description : undefined,
+      Array.isArray(data.targets) ? (data.targets as string[]) : undefined,
+      Array.isArray(data.excludedTargets) ? (data.excludedTargets as string[]) : undefined
+    );
   });
 }

@@ -32,6 +32,11 @@ import type { ValidationResult } from '../types/validation';
  */
 export interface InstructionType {
   /**
+   * Unique identifier for this instruction type (e.g. 'instruction', 'agent', 'skill').
+   */
+  readonly typeId: string;
+
+  /**
    * Validates that this IR representation is internally self-consistent.
    *
    * Returns an array of {@link ValidationResult} objects. An empty array

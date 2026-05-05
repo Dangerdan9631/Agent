@@ -1,17 +1,4 @@
-// ─── IR types ─────────────────────────────────────────────────────────────────
-export type {
-  IR,
-  IRExtensions,
-  InstructionFile,
-  AgentDefinition,
-  SkillDefinition,
-  SkillFile,
-  CommandDefinition,
-  HookDefinition,
-  HookType,
-  HookEventName,
-  ActivationType,
-} from './ir';
+
 
 // ─── Validation types ─────────────────────────────────────────────────────────
 export type {
@@ -24,12 +11,7 @@ export type { AgentConfig } from './config';
 
 // ─── Generator / plugin types ─────────────────────────────────────────────────
 export type {
-  FileOutput,
-  GeneratorInput,
-  AgentGenerator,
   DetectedAgent,
-  AgentImportResult,
-  AgentTargetPlugin,
   WriteOptions,
   DirectiveTypePlugin,
 } from './generator';

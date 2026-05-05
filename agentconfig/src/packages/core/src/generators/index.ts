@@ -1,27 +1,29 @@
-/**
- * Import this module to register all built-in generators with the singleton registry.
- * This happens automatically when the public `agentconfig` package is imported via index.ts.
- */
 import { registry } from '../registry';
 
-import { CopilotGenerator } from './copilot';
-import { CopilotCLIGenerator } from './copilot-cli';
-import { CursorGenerator } from './cursor';
-import { ClaudeCodeGenerator } from './claude-code';
-import { GeminiCliGenerator } from './gemini-cli';
-import { AntigravityGenerator } from './antigravity';
-import { CodexGenerator } from './codex';
-import { WindsurfGenerator } from './windsurf';
-import { WindsurfCLIGenerator } from './windsurf-cli';
-import { ClineGenerator } from './cline';
+import CopilotPlugins from './copilot';
+import CopilotCLIPlugins from './copilot-cli';
+import CursorPlugins from './cursor';
+import ClaudeCodePlugins from './claude-code';
+import GeminiCliPlugins from './gemini-cli';
+import AntigravityPlugins from './antigravity';
+import CodexPlugins from './codex';
+import WindsurfPlugins from './windsurf';
+import WindsurfCLIPlugins from './windsurf-cli';
+import ClinePlugins from './cline';
 
-registry.register(CopilotGenerator);
-registry.register(CopilotCLIGenerator);
-registry.register(CursorGenerator);
-registry.register(ClaudeCodeGenerator);
-registry.register(GeminiCliGenerator);
-registry.register(AntigravityGenerator);
-registry.register(CodexGenerator);
-registry.register(WindsurfGenerator);
-registry.register(WindsurfCLIGenerator);
-registry.register(ClineGenerator);
+const allPlugins = [
+  ...CopilotPlugins,
+  ...CopilotCLIPlugins,
+  ...CursorPlugins,
+  ...ClaudeCodePlugins,
+  ...GeminiCliPlugins,
+  ...AntigravityPlugins,
+  ...CodexPlugins,
+  ...WindsurfPlugins,
+  ...WindsurfCLIPlugins,
+  ...ClinePlugins,
+];
+
+for (const plugin of allPlugins) {
+  registry.registerGenerator(plugin);
+}

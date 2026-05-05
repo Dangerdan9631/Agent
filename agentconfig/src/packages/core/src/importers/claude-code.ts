@@ -2,10 +2,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { safeMatter as matter } from '../utils';
 import fg from 'fast-glob';
-import type { InstructionFile, AgentDefinition } from 'agentconfig-api';
-import type { DetectedAgent } from 'agentconfig-api';
+import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
+import { InstructionFile, AgentDefinition } from '../types';
 
-/** Detect whether a Claude Code configuration is present in `dir`. */
 export function detectClaudeCode(dir: string): DetectedAgent[] {
   if (fs.existsSync(path.join(dir, '.claude'))) {
     return [{ name: 'claude-code', confidence: 'high' }];
@@ -37,115 +36,133 @@ function stripInTextCondition(body: string): string {
     .trimStart();
 }
 
-/**
- * Import instructions and agents from a Claude Code project.
- * Reads:
- *   .claude/CLAUDE.md              → always instruction
- *   .claude/rules/*.md             → scoped / ai-decided / manual / always
- *   .claude/agents/*.md            → AgentDefinition
- */
-export async function importClaudeCode(sourceDir: string): Promise<{
-  instructions: InstructionFile[];
-  agents: AgentDefinition[];
-}> {
-  const instructions: InstructionFile[] = [];
-  const agents: AgentDefinition[] = [];
+export class ClaudeCodeInstructionImporter implements ImporterPlugin<InstructionFile> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'instruction';
 
-  // Always: .claude/CLAUDE.md (or root CLAUDE.md)
-  for (const p of [
-    path.join(sourceDir, '.claude', 'CLAUDE.md'),
-    path.join(sourceDir, 'CLAUDE.md'),
-  ]) {
-    if (fs.existsSync(p)) {
-      const body = fs.readFileSync(p, 'utf8').trim();
-      if (body && !body.startsWith('@')) {
-        // Skip pure @-import files
-        const stem = p.includes('.claude') ? 'claude-always' : 'claude-root';
-        instructions.push({
-          name: stem,
-          sourcePath: p,
-          activation: 'always',
-          slug: stem,
-          body,
-        });
-      }
-      break; // use the first found
-    }
+  validate(_projectRoot: string): ValidationResult[] {
+    return [];
   }
 
-  // Rules
-  const rulesDir = path.join(sourceDir, '.claude', 'rules');
-  if (fs.existsSync(rulesDir)) {
-    const files = await fg('**/*.md', { cwd: rulesDir, absolute: true });
-    for (const filePath of files.sort()) {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      const { data, content, parseWarning } = matter(raw);
-      const stem = path.basename(filePath, '.md');
-      const body = content.trim();
+  async import(projectRoot: string): Promise<InstructionFile[]> {
+    const instructions: InstructionFile[] = [];
 
-      const paths: string[] = Array.isArray(data.paths) ? (data.paths as string[]) : [];
-
-      if (Array.isArray(data.paths) && paths.length === 0) {
-        // paths: [] → manual (blocks auto-load)
-        instructions.push({
-          name: stem,
-          sourcePath: filePath,
-          activation: 'manual',
-          slug: stem,
-          body,
-        });
-      } else if (paths.length > 0) {
-        instructions.push({
-          name: stem,
-          sourcePath: filePath,
-          activation: 'scoped',
-          globs: paths,
-          slug: stem,
-          body,
-        });
-      } else if (isAiDecidedBody(body)) {
-        const description = extractDescription(body);
-        instructions.push({
-          name: stem,
-          sourcePath: filePath,
-          activation: 'ai-decided',
-          description,
-          slug: stem,
-          body: stripInTextCondition(body),
-        });
-      } else {
-        instructions.push({
-          name: stem,
-          sourcePath: filePath,
-          activation: 'always',
-          slug: stem,
-          body,
-          ...(parseWarning ? { importNote: parseWarning } : {}),
-        });
+    // Always: .claude/CLAUDE.md (or root CLAUDE.md)
+    for (const p of [
+      path.join(projectRoot, '.claude', 'CLAUDE.md'),
+      path.join(projectRoot, 'CLAUDE.md'),
+    ]) {
+      if (fs.existsSync(p)) {
+        const body = fs.readFileSync(p, 'utf8').trim();
+        if (body && !body.startsWith('@')) {
+          const stem = p.includes('.claude') ? 'claude-always' : 'claude-root';
+          instructions.push(new InstructionFile(
+            stem,
+            p,
+            'always',
+            body,
+            stem,
+          ));
+        }
+        break; // use the first found
       }
     }
-  }
 
-  // Agents
-  const agentsDir = path.join(sourceDir, '.claude', 'agents');
-  if (fs.existsSync(agentsDir)) {
-    const files = await fg('**/*.md', { cwd: agentsDir, absolute: true });
-    for (const filePath of files.sort()) {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      const { data, content } = matter(raw);
-      const name =
-        typeof data.name === 'string' ? data.name : path.basename(filePath, '.md');
-      agents.push({
-        name,
-        sourcePath: filePath,
-        description: typeof data.description === 'string' ? data.description : undefined,
-        model: typeof data.model === 'string' ? data.model : undefined,
-        tools: Array.isArray(data.tools) ? (data.tools as string[]) : undefined,
-        targets: ['claude-code'],
-        body: content.trim(),
-      });
+    // Rules
+    const rulesDir = path.join(projectRoot, '.claude', 'rules');
+    if (fs.existsSync(rulesDir)) {
+      const files = await fg('**/*.md', { cwd: rulesDir, absolute: true });
+      for (const filePath of files.sort()) {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const { data, content, parseWarning } = matter(raw);
+        const stem = path.basename(filePath, '.md');
+        const body = content.trim();
+
+        const paths: string[] = Array.isArray(data.paths) ? (data.paths as string[]) : [];
+
+        if (Array.isArray(data.paths) && paths.length === 0) {
+          // paths: [] -> manual (blocks auto-load)
+          instructions.push(new InstructionFile(
+            stem,
+            filePath,
+            'manual',
+            body,
+            stem,
+          ));
+        } else if (paths.length > 0) {
+          instructions.push(new InstructionFile(
+            stem,
+            filePath,
+            'scoped',
+            body,
+            stem,
+            paths,
+          ));
+        } else if (isAiDecidedBody(body)) {
+          const description = extractDescription(body);
+          instructions.push(new InstructionFile(
+            stem,
+            filePath,
+            'ai-decided',
+            stripInTextCondition(body),
+            stem,
+            undefined,
+            description,
+          ));
+        } else {
+          instructions.push(new InstructionFile(
+            stem,
+            filePath,
+            'always',
+            body,
+            stem,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            parseWarning,
+          ));
+        }
+      }
     }
-  }
 
-  return { instructions, agents };
+    return instructions;
+  }
 }
+
+export class ClaudeCodeAgentImporter implements ImporterPlugin<AgentDefinition> {
+  readonly agent = 'claude-code';
+  readonly instructionType = 'agent';
+
+  validate(_projectRoot: string): ValidationResult[] {
+    return [];
+  }
+
+  async import(projectRoot: string): Promise<AgentDefinition[]> {
+    const agents: AgentDefinition[] = [];
+    const agentsDir = path.join(projectRoot, '.claude', 'agents');
+    if (fs.existsSync(agentsDir)) {
+      const files = await fg('**/*.md', { cwd: agentsDir, absolute: true });
+      for (const filePath of files.sort()) {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const { data, content } = matter(raw);
+        const name = typeof data.name === 'string' ? data.name : path.basename(filePath, '.md');
+        agents.push(new AgentDefinition(
+          name,
+          filePath,
+          content.trim(),
+          typeof data.description === 'string' ? data.description : undefined,
+          typeof data.model === 'string' ? data.model : undefined,
+          Array.isArray(data.tools) ? (data.tools as string[]) : undefined,
+          ['claude-code'], // targets
+        ));
+      }
+    }
+    return agents;
+  }
+}
+
+export default [
+  new ClaudeCodeInstructionImporter(),
+  new ClaudeCodeAgentImporter(),
+];

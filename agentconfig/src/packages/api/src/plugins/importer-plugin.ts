@@ -53,6 +53,11 @@ export interface ImporterPlugin<T extends InstructionType> {
   readonly agent: string;
 
   /**
+   * The typeId of the InstructionType this plugin imports (e.g. 'instruction', 'agent').
+   */
+  readonly instructionType: string;
+
+  /**
    * Validates that the given folder path contains the source files required
    * for import targeting {@link agent}.
    *
@@ -77,8 +82,8 @@ export interface ImporterPlugin<T extends InstructionType> {
    * `folderPath` and map them into the IR shape described by `T`.
    *
    * @param folderPath - Absolute path to the folder to import from.
-   * @returns An array of normalized IR items parsed from the agent's files.
+   * @returns An array of normalized instruction items parsed from the agent's files.
    */
-  import(folderPath: string): T[];
+  import(folderPath: string): Promise<T[]>;
 }
 

@@ -1,6 +1,6 @@
-import type { IR } from 'agentconfig-api';
 import type { AgentConfig } from 'agentconfig-api';
 import { registry } from './registry';
+import type { IR } from './types';
 
 export type { ValidationLevel, ValidationResult } from 'agentconfig-api';
 import type { ValidationResult } from 'agentconfig-api';

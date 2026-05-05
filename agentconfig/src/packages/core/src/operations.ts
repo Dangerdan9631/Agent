@@ -1,15 +1,15 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import { findConfigDir, resolveConfigDir, loadConfig, saveConfig } from './config';
 import { loadGlobalPlugins } from './global-config';
 import { parseArtifacts } from './parsers/index';
 import { validate } from './validator';
-import { write, computeDiff, deduplicateOutputs } from './writer';
+import { write, computeDiff } from './writer';
 import { importArtifacts, detectAgents, writeAgentConfigDir } from './importers/index';
 import { registry } from './registry';
-import type { IR } from 'agentconfig-api';
-import type { AgentConfig } from 'agentconfig-api';
-import type { FileOutput, AgentGenerator } from 'agentconfig-api';
+import type { InstructionType, AgentConfig } from 'agentconfig-api';
+import type { IR } from './types';
 import type { DetectedAgent } from './importers/index';
 import type { DiffEntry } from './writer';
 import type {
@@ -31,15 +31,32 @@ import type {
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
-function buildFiles(ir: IR, config: AgentConfig, targetFilter?: string[]): FileOutput[] {
+function generateToTempDir(ir: InstructionType[], config: AgentConfig, tempDir: string, targetFilter?: string[]): void {
   const targets = targetFilter && targetFilter.length > 0 ? targetFilter : config.targets;
-  const outputs: FileOutput[] = [];
   for (const target of targets) {
-    const gen = registry.get(target);
-    if (!gen) continue;
-    outputs.push(...gen.generate({ ir, config, target }));
+    const plugins = registry.getGenerators(target);
+    for (const plugin of plugins) {
+      const items = ir.filter(i => i.typeId === plugin.instructionType);
+      plugin.generate(tempDir, items);
+    }
   }
-  return deduplicateOutputs(outputs);
+}
+
+// We still map InstructionType[] to IR for legacy compatibility in validation
+function buildLegacyIR(irList: InstructionType[]): IR {
+  const ir: IR = { instructions: [], agents: [], skills: [], commands: [], hooks: [], extensions: {} };
+  for (const item of irList) {
+    if (item.typeId === 'instruction') ir.instructions.push(item as any);
+    else if (item.typeId === 'agent') ir.agents.push(item as any);
+    else if (item.typeId === 'skill') ir.skills.push(item as any);
+    else if (item.typeId === 'command') ir.commands.push(item as any);
+    else if (item.typeId === 'hook') ir.hooks.push(item as any);
+    else {
+      if (!ir.extensions[item.typeId]) ir.extensions[item.typeId] = [];
+      ir.extensions[item.typeId].push(item);
+    }
+  }
+  return ir;
 }
 
 // ── Generate ──────────────────────────────────────────────────────────────────
@@ -52,7 +69,8 @@ async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
   const config = await loadConfig(configDir, overrides);
   await loadGlobalPlugins();
 
-  const ir = await parseArtifacts(configDir, config);
+  const irList = await parseArtifacts(configDir, config);
+  const ir = buildLegacyIR(irList);
   const validationErrors = validate(ir, config).filter((r) => r.level === 'error');
   const outputDir = path.resolve(path.dirname(configDir), config.options.output_dir);
   const targets = options.targets?.length ? options.targets : config.targets;
@@ -64,13 +82,18 @@ async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
     throw new Error('Validation errors found. Fix them before generating.');
   }
 
-  const files = buildFiles(ir, config, options.targets);
-  await write(files, { outputDir, overwrite: true, dryRun: false });
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentconfig-gen-'));
+  try {
+    generateToTempDir(irList, config, tempDir, options.targets);
+    await write(tempDir, outputDir, { overwrite: true, dryRun: false });
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
   
   config.last_generated = new Date().toISOString();
   await saveConfig(configDir, config);
   
-  return { configDir, outputDir, targets, validationErrors: [], fileCount: files.length };
+  return { configDir, outputDir, targets, validationErrors: [], fileCount: 0 };
 }
 
 export async function runGenerate(options: GenerateOptions): Promise<void> {
@@ -104,7 +127,8 @@ export async function runGenerate(options: GenerateOptions): Promise<void> {
 export async function runValidate(options: ValidateOptions): Promise<ValidateResult> {
   const configDir = resolveConfigDir(options.configPath);
   const config = await loadConfig(configDir);
-  const ir = await parseArtifacts(configDir, config);
+  const irList = await parseArtifacts(configDir, config);
+  const ir = buildLegacyIR(irList);
   const results = validate(ir, config);
   return { results };
 }
@@ -119,10 +143,17 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   const config = await loadConfig(configDir, overrides);
   await loadGlobalPlugins();
 
-  const ir = await parseArtifacts(configDir, config);
-  const files = buildFiles(ir, config, options.targets);
+  const irList = await parseArtifacts(configDir, config);
   const outputDir = path.resolve(path.dirname(configDir), config.options.output_dir);
-  const diff: DiffEntry[] = computeDiff(files, outputDir);
+  
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentconfig-diff-'));
+  let diff: DiffEntry[] = [];
+  try {
+    generateToTempDir(irList, config, tempDir, options.targets);
+    diff = await computeDiff(tempDir, outputDir);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 
   return { diff, outputDir };
 }
@@ -178,7 +209,8 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
 
   const sourceConfigDir = resolveConfigDir(sourceDir);
   const sourceConfig = await loadConfig(sourceConfigDir);
-  const sourceIr = await parseArtifacts(sourceConfigDir, sourceConfig);
+  const sourceIrList = await parseArtifacts(sourceConfigDir, sourceConfig);
+  const sourceIr = buildLegacyIR(sourceIrList);
 
   const requestedDestConfigDir = options.configPath
     ? path.resolve(options.configPath)
@@ -229,10 +261,12 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
 
   await loadGlobalPlugins();
 
-  if (!registry.getImporter(options.sourceTarget)) {
+  const importers = registry.getImporters(options.sourceTarget);
+  if (importers.length === 0) {
     throw new Error(`Unknown source target: ${options.sourceTarget}`);
   }
-  if (!registry.get(options.destTarget)) {
+  const generators = registry.getGenerators(options.destTarget);
+  if (generators.length === 0) {
     throw new Error(`Unknown destination target: ${options.destTarget}`);
   }
 
@@ -242,8 +276,22 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
     targets: [options.destTarget],
     options: { output_dir: '.' },
   };
-  const files = buildFiles(ir, config, [options.destTarget]);
-  await write(files, { outputDir: projectRoot, overwrite: true, dryRun: false });
+  
+  const irList: InstructionType[] = [
+    ...ir.instructions,
+    ...ir.agents,
+    ...ir.skills,
+    ...ir.commands,
+    ...ir.hooks,
+  ];
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentconfig-trans-'));
+  try {
+    generateToTempDir(irList, config, tempDir, [options.destTarget]);
+    await write(tempDir, projectRoot, { overwrite: true, dryRun: false });
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 
   return {
     projectRoot,
@@ -251,7 +299,7 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
     destTarget: options.destTarget,
     instructionCount: ir.instructions.length,
     agentCount: ir.agents.length,
-    fileCount: files.length,
+    fileCount: 0,
   };
 }
 
@@ -259,6 +307,7 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
 
 export async function listTargets(_options?: ListTargetsOptions): Promise<ListTargetsResult> {
   await loadGlobalPlugins();
-  const targets: AgentGenerator[] = registry.list();
-  return { targets };
+  const generators = registry.listGenerators();
+  const targets = Array.from(new Set(generators.map(g => g.agent)));
+  return { targets: targets as any[] };
 }

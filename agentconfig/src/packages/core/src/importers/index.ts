@@ -1,65 +1,56 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import yaml from 'js-yaml';
-import type { IR, InstructionFile, AgentDefinition } from 'agentconfig-api';
-import type { AgentConfig } from 'agentconfig-api';
-import type { DetectedAgent } from 'agentconfig-api';
+import type { InstructionType, AgentConfig, DetectedAgent } from 'agentconfig-api';
 import { registry } from '../registry';
+import type { IR } from '../types';
 
-import { importCopilot, detectCopilot } from './copilot';
-import { importCopilotCli, detectCopilotCli } from './copilot-cli';
-import { importCursor, detectCursor } from './cursor';
-import { importClaudeCode, detectClaudeCode } from './claude-code';
-import { importGeminiCli, detectGeminiCli } from './gemini-cli';
-import { importAntigravity, detectAntigravity } from './antigravity';
-import { importCodex, detectCodex } from './codex';
-import { importWindsurf, detectWindsurf } from './windsurf';
-import { importWindsurfCli, detectWindsurfCli } from './windsurf-cli';
-import { importCline, detectCline } from './cline';
+import CopilotPlugins, { detectCopilot } from './copilot';
+import CopilotCliPlugins, { detectCopilotCli } from './copilot-cli';
+import CursorPlugins, { detectCursor } from './cursor';
+import ClaudeCodePlugins, { detectClaudeCode } from './claude-code';
+import GeminiCliPlugins, { detectGeminiCli } from './gemini-cli';
+import AntigravityPlugins, { detectAntigravity } from './antigravity';
+import CodexPlugins, { detectCodex } from './codex';
+import WindsurfPlugins, { detectWindsurf } from './windsurf';
+import WindsurfCliPlugins, { detectWindsurfCli } from './windsurf-cli';
+import ClinePlugins, { detectCline } from './cline';
 
-// ─── Register built-in importers and detectors ────────────────────────────────
-// (mirrors the side-effect pattern used by generators/index.ts)
+import { InstructionFile, AgentDefinition, SkillDefinition, CommandDefinition, HookDefinition } from '../types';
 
-registry.registerImporter('copilot', importCopilot);
-registry.registerImporter('copilot-cli', importCopilotCli);
+const allPlugins = [
+  ...CopilotPlugins,
+  ...CopilotCliPlugins,
+  ...CursorPlugins,
+  ...ClaudeCodePlugins,
+  ...GeminiCliPlugins,
+  ...AntigravityPlugins,
+  ...CodexPlugins,
+  ...WindsurfPlugins,
+  ...WindsurfCliPlugins,
+  ...ClinePlugins,
+];
+
+for (const plugin of allPlugins) {
+  registry.registerImporter(plugin as any);
+}
+
 registry.registerDetector(detectCopilot);
 registry.registerDetector(detectCopilotCli);
-
-registry.registerImporter('cursor', importCursor);
 registry.registerDetector(detectCursor);
-
-registry.registerImporter('claude-code', importClaudeCode);
 registry.registerDetector(detectClaudeCode);
-
-registry.registerImporter('gemini-cli', importGeminiCli);
 registry.registerDetector(detectGeminiCli);
-
-registry.registerImporter('antigravity', importAntigravity);
 registry.registerDetector(detectAntigravity);
-
-registry.registerImporter('codex', importCodex);
 registry.registerDetector(detectCodex);
-
-registry.registerImporter('windsurf', importWindsurf);
 registry.registerDetector(detectWindsurf);
-
-registry.registerImporter('windsurf-cli', importWindsurfCli);
 registry.registerDetector(detectWindsurfCli);
-
-registry.registerImporter('cline', importCline);
 registry.registerDetector(detectCline);
 
-// ─── Re-export DetectedAgent so callers can import from one place ─────────────
 export type { DetectedAgent } from 'agentconfig-api';
 
-// ─── Agent detection ──────────────────────────────────────────────────────────
-
-/** Probe a project directory for agent-native files and return detected agents. */
 export function detectAgents(dir: string): DetectedAgent[] {
   return registry.listDetectors().flatMap((fn) => fn(dir));
 }
-
-// ─── Deduplication ────────────────────────────────────────────────────────────
 
 function normalizeBody(body: string): string {
   return body
@@ -70,7 +61,6 @@ function normalizeBody(body: string): string {
     .trim();
 }
 
-/** Merge imported instructions by content — exact match first, then normalized whitespace. */
 function deduplicateInstructions(instructions: InstructionFile[]): InstructionFile[] {
   const exactMap = new Map<string, InstructionFile>();
   const normalMap = new Map<string, InstructionFile>();
@@ -91,18 +81,10 @@ function deduplicateInstructions(instructions: InstructionFile[]): InstructionFi
   return result;
 }
 
-// ─── Import orchestrator ──────────────────────────────────────────────────────
-
 export interface ImportOptions {
-  /** Only import from these specific agents (default: all detected) */
   target?: string[];
 }
 
-
-/**
- * Scan a project directory for agent-native files, reverse-parse them to IR,
- * deduplicate instructions by content similarity, and return a normalized IR.
- */
 export async function importArtifacts(
   sourceDir: string,
   opts?: ImportOptions,
@@ -113,34 +95,34 @@ export async function importArtifacts(
       ? opts.target
       : detected.map((a) => a.name);
 
-  const allInstructions: InstructionFile[] = [];
-  const allAgents: AgentDefinition[] = [];
+  const allItems: InstructionType[] = [];
 
   for (const agentName of targetAgents) {
-    const importer = registry.getImporter(agentName);
-    if (!importer) continue;
-
-    const result = await importer(sourceDir);
-    allInstructions.push(...result.instructions);
-    if (result.agents) allAgents.push(...result.agents);
+    const importers = registry.getImporters(agentName);
+    for (const importer of importers) {
+      const items = await importer.import(sourceDir);
+      allItems.push(...items);
+    }
   }
 
+  // We are keeping the legacy IR structure returned by importArtifacts since
+  // other operations currently depend on it. We'll extract arrays based on prototype.
+  const instructions = allItems.filter(i => i instanceof InstructionFile) as InstructionFile[];
+  const agents = allItems.filter(i => i instanceof AgentDefinition) as AgentDefinition[];
+  const skills = allItems.filter(i => i instanceof SkillDefinition) as SkillDefinition[];
+  const commands = allItems.filter(i => i instanceof CommandDefinition) as CommandDefinition[];
+  const hooks = allItems.filter(i => i instanceof HookDefinition) as HookDefinition[];
+
   return {
-    instructions: deduplicateInstructions(allInstructions),
-    agents: allAgents,
-    skills: [],
-    commands: [],
-    hooks: [],
+    instructions: deduplicateInstructions(instructions),
+    agents,
+    skills,
+    commands,
+    hooks,
     extensions: {},
   };
 }
 
-// ─── Write .agentconfig/ from IR ─────────────────────────────────────────────
-
-/**
- * Write a normalized IR back to a `.agentconfig/` directory structure.
- * Used by the `import` CLI command.
- */
 export async function writeAgentConfigDir(
   ir: IR,
   config: AgentConfig,
@@ -151,7 +133,6 @@ export async function writeAgentConfigDir(
     fs.mkdirSync(configDir, { recursive: true });
   }
 
-  // config.yaml
   const configData: Record<string, unknown> = {
     version: 1,
     targets: config.targets,
@@ -163,7 +144,6 @@ export async function writeAgentConfigDir(
   const configYaml = yaml.dump(configData);
   writeFile(path.join(configDir, 'config.yaml'), configYaml, opts);
 
-  // instructions/
   for (const inst of ir.instructions) {
     const fm: Record<string, unknown> = { activation: inst.activation };
     if (inst.globs && inst.globs.length > 0) fm.globs = inst.globs;
@@ -182,7 +162,6 @@ export async function writeAgentConfigDir(
     writeFile(path.join(configDir, 'instructions', `${inst.name}.md`), content, opts);
   }
 
-  // agents/
   for (const agent of ir.agents) {
     const fm: Record<string, unknown> = { name: agent.name };
     if (agent.description) fm.description = agent.description;
@@ -198,7 +177,6 @@ export async function writeAgentConfigDir(
     writeFile(path.join(configDir, 'agents', `${agent.name}.md`), content, opts);
   }
 
-  // skills/ (copy files)
   for (const skill of ir.skills) {
     for (const file of skill.files) {
       writeFile(
@@ -209,19 +187,16 @@ export async function writeAgentConfigDir(
     }
   }
 
-  // commands/
   for (const cmd of ir.commands) {
     writeFile(path.join(configDir, 'commands', `${cmd.name}.md`), cmd.body + '\n', opts);
   }
 
-  // hooks/hooks.yaml
   if (ir.hooks.length > 0) {
     const hooksData = { hooks: ir.hooks };
     const hooksYaml = yaml.dump(hooksData);
     writeFile(path.join(configDir, 'hooks', 'hooks.yaml'), hooksYaml, opts);
   }
 
-  // directive type extensions contributed by plugins
   for (const [typeId, items] of Object.entries(ir.extensions)) {
     const plugin = registry.getDirectiveType(typeId);
     if (plugin?.write) {

@@ -1,18 +1,20 @@
-import type { AgentGenerator, FileOutput, GeneratorInput } from 'agentconfig-api';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import type { GeneratorPlugin, ValidationResult } from 'agentconfig-api';
+import type { InstructionFile, CommandDefinition, SkillDefinition, HookDefinition } from '../types';
 import { filterForTarget, buildFrontmatter, HOOK_EVENT_MAPS } from './base';
 
-class CursorGeneratorImpl implements AgentGenerator {
-  constructor(
-    readonly target: string,
-    readonly displayName: string,
-  ) {}
+export class CursorInstructionGenerator implements GeneratorPlugin<InstructionFile> {
+  readonly agent = 'cursor';
+  readonly instructionType = 'instruction';
 
-  generate({ ir, target }: GeneratorInput): FileOutput[] {
-    const outputs: FileOutput[] = [];
-    const hookMap = HOOK_EVENT_MAPS[target] ?? HOOK_EVENT_MAPS['cursor']!;
-    const instructions = filterForTarget(ir.instructions, target);
+  validate(_items: InstructionFile[]): ValidationResult[] {
+    return [];
+  }
 
-    // All activation types → .cursor/rules/<slug>.mdc with appropriate frontmatter
+  generate(projectRoot: string, items: InstructionFile[]): void {
+    const instructions = filterForTarget(items, this.agent);
+
     for (const inst of instructions) {
       let content: string;
 
@@ -40,32 +42,66 @@ class CursorGeneratorImpl implements AgentGenerator {
         }
         case 'manual':
         default:
-          // No frontmatter = manual @-mention only
           content = inst.body;
           break;
       }
 
-      outputs.push({ path: `.cursor/rules/${inst.slug}.mdc`, content });
+      const dest = path.join(projectRoot, '.cursor', 'rules', `${inst.slug}.mdc`);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, content);
     }
+  }
+}
 
-    // commands → .cursor/skills/<slug>/ with disable-model-invocation: true
-    for (const cmd of filterForTarget(ir.commands, target)) {
+export class CursorCommandGenerator implements GeneratorPlugin<CommandDefinition> {
+  readonly agent = 'cursor';
+  readonly instructionType = 'command';
+
+  validate(_items: CommandDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: CommandDefinition[]): void {
+    for (const cmd of filterForTarget(items, this.agent)) {
       const skillMd = `---\nname: ${cmd.slug}\ndisable-model-invocation: true\n---\n\n${cmd.body}`;
-      outputs.push({ path: `.cursor/skills/${cmd.slug}/SKILL.md`, content: skillMd });
+      const dest = path.join(projectRoot, '.cursor', 'skills', cmd.slug, 'SKILL.md');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, skillMd);
     }
+  }
+}
 
-    // skills → .agents/skills/<name>/ (shared path)
-    for (const skill of ir.skills) {
+export class CursorSkillGenerator implements GeneratorPlugin<SkillDefinition> {
+  readonly agent = 'cursor';
+  readonly instructionType = 'skill';
+
+  validate(_items: SkillDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: SkillDefinition[]): void {
+    for (const skill of items) {
       for (const file of skill.files) {
-        outputs.push({
-          path: `.agents/skills/${skill.name}/${file.relativePath}`,
-          content: file.content,
-        });
+        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, file.content);
       }
     }
+  }
+}
 
-    // hooks → .cursor/hooks.json
-    const hooks = filterForTarget(ir.hooks, target);
+export class CursorHookGenerator implements GeneratorPlugin<HookDefinition> {
+  readonly agent = 'cursor';
+  readonly instructionType = 'hook';
+
+  validate(_items: HookDefinition[]): ValidationResult[] {
+    return [];
+  }
+
+  generate(projectRoot: string, items: HookDefinition[]): void {
+    const hooks = filterForTarget(items, this.agent);
+    const hookMap = HOOK_EVENT_MAPS[this.agent] ?? HOOK_EVENT_MAPS['cursor']!;
+    
     if (hooks.length > 0) {
       const hooksObj: Record<string, Array<Record<string, unknown>>> = {};
 
@@ -83,14 +119,16 @@ class CursorGeneratorImpl implements AgentGenerator {
         hooksObj[eventName].push(entry);
       }
 
-      outputs.push({
-        path: '.cursor/hooks.json',
-        content: JSON.stringify({ version: 1, hooks: hooksObj }, null, 2),
-      });
+      const dest = path.join(projectRoot, '.cursor', 'hooks.json');
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, JSON.stringify({ version: 1, hooks: hooksObj }, null, 2));
     }
-
-    return outputs;
   }
 }
 
-export const CursorGenerator = new CursorGeneratorImpl('cursor', 'Cursor');
+export default [
+  new CursorInstructionGenerator(),
+  new CursorCommandGenerator(),
+  new CursorSkillGenerator(),
+  new CursorHookGenerator(),
+];
