@@ -6,8 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/core && npm run build -w packages/service && npm run build -w packages/cli && npm run build -w packages/mcp && npm run build -w packages/ui",
-    "build:node": "npm run build -w packages/core && npm run build -w packages/service && npm run build -w packages/cli && npm run build -w packages/mcp",
+    "build": "npm run build -w packages/api && npm run build -w packages/service && npm run build -w packages/cli",
+    "build:node": "npm run build -w packages/service && npm run build -w packages/cli",
     "test": "vitest run --config vitest.unit.config.ts",
     "test:watch": "vitest --config vitest.unit.config.ts",
     "lint": "eslint packages/",

@@ -3,11 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "overmind-api": ["../api/src/index.ts"]
-    }
+    "types": ["node"]
   },
   "include": ["src/**/*"]
 }

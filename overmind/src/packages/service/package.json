@@ -1,21 +1,26 @@
 {
   "name": "overmind-service",
   "version": "0.1.0",
-  "description": "Overmind service process — manages agent state machines.",
+  "description": "Overmind scaffold service implementation over IPC.",
   "license": "MIT",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "overmind-service": "dist/index.js"
+    "overmind-service": "dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch"
+    "build": "tsup src/index.ts src/bin.ts --dts --format cjs --clean",
+    "dev": "tsup src/index.ts src/bin.ts --dts --format cjs --watch"
   },
   "dependencies": {
-    "overmind-api": "*",
-    "overmind": "*",
-    "robot3": "^1.2.0"
+    "overmind-api": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
