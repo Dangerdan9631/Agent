@@ -14,6 +14,7 @@ export {
 } from './operations';
 
 export type {
+  GenerateEvent,
   GenerateOptions,
   GenerateResult,
   ValidateOptions,

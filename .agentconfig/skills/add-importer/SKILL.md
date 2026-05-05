@@ -33,7 +33,7 @@ Add a reverse-parser (importer) for a new agent target to `agentconfig`.
 
 4. Test with dry-run:
    ```bash
-   agentconfig import <project-dir> --from <target> --dry-run
+   agentconfig import <project-dir> --from <target>
    ```
 
 ## References

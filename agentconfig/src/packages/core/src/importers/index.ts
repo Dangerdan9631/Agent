@@ -98,8 +98,6 @@ export interface ImportOptions {
   from?: string[];
   /** Merge into an existing .agentconfig/ rather than erroring */
   merge?: boolean;
-  /** Overwrite the existing .agentconfig/ without prompting */
-  overwrite?: boolean;
 }
 
 

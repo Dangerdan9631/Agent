@@ -6,7 +6,6 @@ function configYaml(target: string): string {
     'targets:',
     `  - ${target}`,
     'options:',
-    '  overwrite: true',
     '  output_dir: generated',
     '',
   ].join('\n');

@@ -82,7 +82,6 @@ function createConfig(): AgentConfig {
     version: 1,
     targets: ['copilot'],
     options: {
-      overwrite: true,
       output_dir: '.',
     },
   };

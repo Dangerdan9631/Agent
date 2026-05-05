@@ -33,7 +33,8 @@ export interface GenerateOptions {
   configPath?: string;
   projectRootOverride?: string;
   targets?: string[];
-  overwrite?: boolean;
+  watch?: boolean;
+  onEvent?: (event: GenerateEvent) => void;
 }
 
 export interface GenerateResult {
@@ -47,10 +48,17 @@ export interface GenerateResult {
   fileCount: number;
 }
 
-export async function runGenerate(options: GenerateOptions): Promise<GenerateResult> {
+export type GenerateEvent =
+  | { type: 'generated'; result: GenerateResult }
+  | { type: 'validation-error'; error: ValidationResult }
+  | { type: 'watching'; configDir: string }
+  | { type: 'change'; path: string }
+  | { type: 'error'; error: unknown };
+
+async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
   const configDir = resolveConfigDir(options.configPath);
   const overrides = options.projectRootOverride
-    ? { options: { output_dir: options.projectRootOverride, overwrite: options.overwrite ?? true } }
+    ? { options: { output_dir: options.projectRootOverride } }
     : undefined;
   const config = await loadConfig(configDir, overrides);
   await loadGlobalPlugins();
@@ -61,13 +69,42 @@ export async function runGenerate(options: GenerateOptions): Promise<GenerateRes
   const targets = options.targets?.length ? options.targets : config.targets;
 
   if (validationErrors.length > 0) {
-    return { configDir, outputDir, targets, validationErrors, fileCount: 0 };
+    for (const error of validationErrors) {
+      options.onEvent?.({ type: 'validation-error', error });
+    }
+    throw new Error('Validation errors found. Fix them before generating.');
   }
 
   const files = buildFiles(ir, config, options.targets);
 
-  await write(files, { outputDir, overwrite: options.overwrite ?? true, dryRun: false });
+  await write(files, { outputDir, overwrite: true, dryRun: false });
   return { configDir, outputDir, targets, validationErrors: [], fileCount: files.length };
+}
+
+export async function runGenerate(options: GenerateOptions): Promise<void> {
+  const result = await generateOnce(options);
+  options.onEvent?.({ type: 'generated', result });
+
+  if (!options.watch) return;
+
+  options.onEvent?.({ type: 'watching', configDir: result.configDir });
+  const { default: chokidar } = await import('chokidar');
+  const watcher = chokidar.watch(result.configDir, { ignoreInitial: true });
+  let busy = false;
+  const onChange = async (p: string) => {
+    if (busy) return;
+    busy = true;
+    options.onEvent?.({ type: 'change', path: p });
+    try {
+      const nextResult = await generateOnce(options);
+      options.onEvent?.({ type: 'generated', result: nextResult });
+    } catch (error) {
+      options.onEvent?.({ type: 'error', error });
+    } finally {
+      busy = false;
+    }
+  };
+  watcher.on('add', onChange).on('change', onChange).on('unlink', onChange);
 }
 
 // ── Validate ──────────────────────────────────────────────────────────────────
@@ -99,7 +136,7 @@ export interface DiffResult {
 export async function runDiff(options: DiffOptions): Promise<DiffResult> {
   const configDir = resolveConfigDir(options.configPath);
   const overrides = options.projectRootOverride
-    ? { options: { output_dir: options.projectRootOverride, overwrite: false } }
+    ? { options: { output_dir: options.projectRootOverride } }
     : undefined;
   const config = await loadConfig(configDir, overrides);
   await loadGlobalPlugins();
@@ -117,11 +154,10 @@ export async function runDiff(options: DiffOptions): Promise<DiffResult> {
 export interface RunInitializeOptions {
   sourceDir: string;
   from?: string[];
-  overwrite?: boolean;
-  dryRun?: boolean;
 }
 
 export interface InitializeResult {
+  sourceDir: string;
   configDir: string;
   detectedAgents: DetectedAgent[];
   instructionCount: number;
@@ -129,30 +165,38 @@ export interface InitializeResult {
 }
 
 export async function runInitialize(options: RunInitializeOptions): Promise<InitializeResult> {
-  const { sourceDir, from, overwrite = false, dryRun = false } = options;
+  const { from } = options;
+  const sourceDir = path.resolve(options.sourceDir);
   const configDir = path.join(sourceDir, '.agentconfig');
+
+  if (!fs.existsSync(sourceDir)) {
+    throw new Error(`Source directory not found: ${sourceDir}`);
+  }
+
+  if (!fs.statSync(sourceDir).isDirectory()) {
+    throw new Error(`Source path is not a directory: ${sourceDir}`);
+  }
 
   const detectedAgents = detectAgents(sourceDir);
   if (detectedAgents.length === 0) {
-    return { configDir, detectedAgents: [], instructionCount: 0, agentCount: 0 };
+    return { sourceDir, configDir, detectedAgents: [], instructionCount: 0, agentCount: 0 };
   }
 
-  if (fs.existsSync(configDir) && !overwrite && !dryRun) {
-    throw new Error(
-      `.agentconfig/ already exists at ${configDir}. Use --overwrite to replace or --dry-run to preview.`,
-    );
+  if (fs.existsSync(configDir)) {
+    throw new Error(`.agentconfig/ already exists at ${configDir}.`);
   }
 
   const ir = await importArtifacts(sourceDir, { from: from?.length ? from : undefined });
   const config: AgentConfig = {
     version: 1,
     targets: detectedAgents.map((a) => a.name),
-    options: { overwrite, output_dir: '.' },
+    options: { output_dir: '.' },
   };
 
-  await writeAgentConfigDir(ir, config, configDir, { overwrite, dryRun });
+  await writeAgentConfigDir(ir, config, configDir);
 
   return {
+    sourceDir,
     configDir,
     detectedAgents,
     instructionCount: ir.instructions.length,
@@ -167,9 +211,6 @@ export interface RunImportOptions {
   sourceDir: string;
   /** Destination directory (default: CWD). A .agentconfig/ will be created here if absent. */
   destDir?: string;
-  /** Overwrite existing instruction files in the destination (default: skip). */
-  overwrite?: boolean;
-  dryRun?: boolean;
 }
 
 export interface ImportResult {
@@ -180,7 +221,7 @@ export interface ImportResult {
 }
 
 export async function runImport(options: RunImportOptions): Promise<ImportResult> {
-  const { sourceDir, overwrite = false, dryRun = false } = options;
+  const { sourceDir } = options;
   const destRoot = options.destDir ? path.resolve(options.destDir) : process.cwd();
 
   const sourceConfigDir = resolveConfigDir(sourceDir);
@@ -201,10 +242,13 @@ export async function runImport(options: RunImportOptions): Promise<ImportResult
   const mergedConfig: AgentConfig = {
     version: 1,
     targets: mergedTargets,
-    options: { overwrite, output_dir: '.' },
+    options: { output_dir: '.' },
   };
 
-  await writeAgentConfigDir(sourceIr, mergedConfig, destConfigDir, { overwrite, dryRun });
+  await writeAgentConfigDir(sourceIr, mergedConfig, destConfigDir, {
+    overwrite: false,
+    dryRun: false,
+  });
 
   return {
     sourceConfigDir,

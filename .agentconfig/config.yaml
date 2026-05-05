@@ -9,5 +9,4 @@ targets:
   - windsurf
   - windsurf-cli
 options:
-  overwrite: true
   output_dir: "."

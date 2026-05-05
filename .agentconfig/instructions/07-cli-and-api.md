@@ -5,10 +5,10 @@ activation: always
 ## agentconfig CLI Usage
 
 ```
-agentconfig generate [--target <name>]... [--dry-run] [--no-overwrite] [--watch]
+agentconfig generate [--target <name>]... [--dry-run] [--watch]
 agentconfig validate [--strict] [--format text|json]
 agentconfig diff     [--target <name>]...
-agentconfig import   [source-dir] [--from <agent>]... [--overwrite] [--dry-run]
+agentconfig import   [source-dir] [--from <agent>]...
 agentconfig list-targets [--format text|json]
 ```
 
@@ -17,7 +17,7 @@ agentconfig list-targets [--format text|json]
 | Flag | Description |
 |---|---|
 | `--config <path>` | Path to `.agentconfig/` (default: auto-discovered upward from CWD) |
-| `--out <path>` | Output root directory override |
+| `--project-root <path>` | Output root directory override |
 | `--target <name>` | Restrict to one target (repeatable) |
 | `-v, --verbose` | Verbose logging |
 | `--format text\|json` | Output format (default: text) |
@@ -51,5 +51,5 @@ const config = await loadConfig(configDir);
 const ir = await parseArtifacts(configDir, config);
 const errors = validate(ir, config);
 const files = generate(ir, config);
-await write(files, { outputDir: '.', overwrite: true });
+await write(files, { outputDir: '.' });
 ```

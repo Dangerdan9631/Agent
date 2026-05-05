@@ -97,7 +97,6 @@ export async function write(files: FileOutput[], opts: WriteOptions): Promise<vo
   for (const file of deduped) {
     const abs = path.resolve(opts.outputDir, file.path);
 
-    // --no-overwrite: skip existing files
     if (opts.overwrite === false && fs.existsSync(abs)) continue;
 
     // Content unchanged since last write — skip (avoids spurious "file changed" prompts)

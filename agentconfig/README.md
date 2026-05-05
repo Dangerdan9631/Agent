@@ -131,7 +131,6 @@ targets:
   - gemini-cli
   - codex
 options:
-  overwrite: true       # overwrite existing generated files (default: true)
   output_dir: "."       # where generated files are written (default: project root)
 ```
 
@@ -308,7 +307,6 @@ Read `.agentconfig/` and write all agent-native files.
 ```bash
 agentconfig generate
 agentconfig generate --target copilot --target cursor
-agentconfig generate --no-overwrite     # skip files that already exist
 agentconfig generate --watch            # regenerate on change
 ```
 
@@ -348,9 +346,7 @@ Scan an existing project directory for agent-native directive files, reverse-par
 ```bash
 agentconfig import .                    # scan current directory, detect all agents
 agentconfig import . --from copilot --from cursor   # only import from these agents
-agentconfig import . --dry-run          # preview .agentconfig/ writes, no file I/O
 agentconfig import . --merge            # merge into an existing .agentconfig/
-agentconfig import . --overwrite        # replace an existing .agentconfig/
 ```
 
 When multiple agents contain the same logical instruction, the importer merges them into a single file using content-similarity comparison. Ambiguous `activation` types are inferred from each agent's frontmatter and annotated with `# TODO: verify activation` when the heuristic is uncertain.
@@ -373,7 +369,7 @@ All commands accept these flags:
 | Flag | Description |
 |---|---|
 | `--config <path>` | Path to `.agentconfig/` directory. Default: auto-discovered upward from CWD. |
-| `--out <path>` | Output root directory. Default: project root containing `.agentconfig/`. |
+| `--project-root <path>` | Output root directory. Default: project root containing `.agentconfig/`. |
 | `--target <name>` | Restrict to one target (repeatable). |
 | `-v, --verbose` | Verbose logging. |
 | `--format <text\|json>` | Output format (default: `text`). |
@@ -389,7 +385,7 @@ const config = await loadConfig('.agentconfig');
 const ir     = await parseArtifacts('.agentconfig', config);
 const errors = validate(ir, config);
 const files  = generate(ir, config);
-await write(files, { outputDir: '.', overwrite: true });
+await write(files, { outputDir: '.' });
 ```
 
 ---

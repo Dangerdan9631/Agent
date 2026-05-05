@@ -30,7 +30,6 @@ function createConfig(targets: string[]): AgentConfig {
     version: 1,
     targets,
     options: {
-      overwrite: true,
       output_dir: '.',
     },
   };

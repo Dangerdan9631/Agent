@@ -45,7 +45,6 @@ targets:
   - windsurf
   - cline
 options:
-  overwrite: true
   output_dir: "."   # project root
 ```
 

@@ -73,7 +73,6 @@ export function defineCliTargetSuite(testCase: CliTargetCase): void {
         projectDir,
         '--from',
         testCase.target,
-        '--overwrite',
         '--verbose',
       ]);
 

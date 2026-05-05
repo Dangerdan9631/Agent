@@ -79,7 +79,6 @@ describe('config helpers', () => {
         'targets:',
         '  - copilot',
         'options:',
-        '  overwrite: true',
         '  output_dir: generated',
         '',
       ].join('\n'),
@@ -91,7 +90,6 @@ describe('config helpers', () => {
       version: 1,
       targets: ['copilot'],
       options: {
-        overwrite: true,
         output_dir: 'generated',
       },
     });
@@ -107,7 +105,6 @@ describe('config helpers', () => {
         'targets:',
         '  - copilot',
         'options:',
-        '  overwrite: true',
         '  output_dir: generated',
         '',
       ].join('\n'),
@@ -115,7 +112,6 @@ describe('config helpers', () => {
 
     const config = await loadConfig(path.join(projectDir, '.agentconfig'), {
       options: {
-        overwrite: false,
         output_dir: 'preview',
       },
     });
@@ -124,7 +120,6 @@ describe('config helpers', () => {
       version: 1,
       targets: ['copilot'],
       options: {
-        overwrite: false,
         output_dir: 'preview',
       },
     });
@@ -144,7 +139,6 @@ describe('config helpers', () => {
       version: 1,
       targets: [],
       options: {
-        overwrite: true,
         output_dir: '.',
       },
     });
@@ -164,7 +158,6 @@ describe('config helpers', () => {
       version: 1,
       targets: [],
       options: {
-        overwrite: true,
         output_dir: '.',
       },
     });
