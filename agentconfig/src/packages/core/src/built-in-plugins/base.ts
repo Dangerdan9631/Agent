@@ -4,11 +4,18 @@ import type { HookEventName } from '../types';
 
 export function filterForTarget<T extends { targets?: string[]; excludedTargets?: string[] }>(
   items: T[],
-  target: string,
+  target: string | string[],
 ): T[] {
+  const targetArray = Array.isArray(target) ? target : [target];
   return items.filter((item) => {
-    if (item.targets && item.targets.length > 0 && !item.targets.includes(target)) return false;
-    if (item.excludedTargets && item.excludedTargets.includes(target)) return false;
+    // If item has specific targets, it must include at least one of our targets
+    if (item.targets && item.targets.length > 0) {
+      if (!targetArray.some((t) => item.targets!.includes(t))) return false;
+    }
+    // If item has excluded targets, none of our targets should be in that list
+    if (item.excludedTargets && item.excludedTargets.length > 0) {
+      if (targetArray.some((t) => item.excludedTargets!.includes(t))) return false;
+    }
     return true;
   });
 }
