@@ -67,7 +67,7 @@ export class OvermindService implements OvermindApi {
     }
 
     const resolvedConfig = loadResolvedCerebrateConfig(definitionDir);
-    const cerebrate = new Cerebrate(name, resolvedConfig);
+    const cerebrate = new Cerebrate(name, resolvedConfig, this.#configDir);
 
     this.#cerebrates.set(name, cerebrate);
     cerebrate.start();

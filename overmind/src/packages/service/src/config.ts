@@ -11,6 +11,8 @@ const cerebrateCommandRawSchema = z.object({
 
 const cerebrateConfigRawSchema = z.object({
   description: z.string(),
+  taskId: z.string().regex(/^[A-Z]{4}$/),
+  nextTaskNumber: z.number().int().min(1).optional(),
   responsibilities: z.string(),
   commands: z.array(cerebrateCommandRawSchema),
 });
@@ -27,6 +29,8 @@ export interface ResolvedCerebrateCommand {
 
 export interface ResolvedCerebrateConfig {
   description: string;
+  taskId: string;
+  nextTaskNumber: number;
   responsibilities: string;
   commands: ResolvedCerebrateCommand[];
 }
@@ -38,6 +42,8 @@ version: 1
 `;
 
 export const DEFAULT_HELLO_CEREBRATE_YAML = `description: "says hello"
+taskId: HELO
+nextTaskNumber: 1
 responsibilities: "say hello"
 commands:
   - name: hello
@@ -99,10 +105,12 @@ export function loadResolvedCerebrateConfig(cerebrateDir: string): ResolvedCereb
     throw new Error(`Invalid cerebrate-config.yaml at ${configPath}: ${parsed.error.message}`);
   }
 
-  const { description, responsibilities, commands } = parsed.data;
+  const { description, taskId, nextTaskNumber = 1, responsibilities, commands } = parsed.data;
 
   return {
     description,
+    taskId,
+    nextTaskNumber,
     responsibilities: resolveCerebrateValue(cerebrateDir, responsibilities),
     commands: commands.map((cmd) => ({
       name: cmd.name,

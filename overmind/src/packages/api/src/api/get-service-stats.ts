@@ -4,7 +4,7 @@ export interface CerebrateStats {
   name: string;
   idleLoopCount: number;
   runtime: number;
-  state: 'initialize' | 'idle' | 'shutting down';
+  state: 'initialize' | 'idle' | 'check-tasks' | 'post-check' | 'work' | 'validate' | 'shutting down';
 }
 
 export interface GetServiceStatsResponse {
