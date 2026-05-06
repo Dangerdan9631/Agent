@@ -57,25 +57,6 @@ export class ClineCommandGenerator implements GeneratorPlugin<CommandDefinition>
   }
 }
 
-export class ClineSkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'cline';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.cline', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 export class ClineHookGenerator implements GeneratorPlugin<HookDefinition> {
   readonly agent = 'cline';
   readonly instructionType = 'hook';

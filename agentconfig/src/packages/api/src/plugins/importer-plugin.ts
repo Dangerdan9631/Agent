@@ -51,7 +51,7 @@ export interface ImporterPlugin<T extends InstructionType> {
    * Must match the target identifier used in the importer registry
    * (e.g. `"copilot"`, `"cursor-cli"`, `"codex"`).
    */
-  readonly agent: string;
+  readonly agent: string | string[];
 
   /**
    * The typeId of the InstructionType this plugin imports (e.g. 'instruction', 'agent').

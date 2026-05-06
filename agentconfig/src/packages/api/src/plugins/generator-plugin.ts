@@ -42,7 +42,7 @@ export interface GeneratorPlugin<T extends InstructionType> {
    * Must match the target identifier used in the generator registry
    * (e.g. `"copilot"`, `"cursor-cli"`, `"codex"`).
    */
-  readonly agent: string;
+  readonly agent: string | string[];
 
   /**
    * The typeId of the InstructionType this plugin generates (e.g. 'instruction', 'agent').

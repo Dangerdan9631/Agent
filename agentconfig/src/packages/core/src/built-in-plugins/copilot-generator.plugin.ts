@@ -5,7 +5,7 @@ import type { InstructionFile, CommandDefinition, SkillDefinition } from '../typ
 import { filterForTarget, buildFrontmatter, buildInTextCondition } from './base';
 
 export class CopilotInstructionGenerator implements GeneratorPlugin<InstructionFile> {
-  readonly agent = 'copilot';
+  readonly agent = ['copilot', 'copilot-cli'];
   readonly instructionType = 'instruction';
 
   validate(_items: InstructionFile[]): ValidationResult[] {
@@ -51,7 +51,7 @@ export class CopilotInstructionGenerator implements GeneratorPlugin<InstructionF
 }
 
 export class CopilotCommandGenerator implements GeneratorPlugin<CommandDefinition> {
-  readonly agent = 'copilot';
+  readonly agent = ['copilot', 'copilot-cli'];
   readonly instructionType = 'command';
 
   validate(_items: CommandDefinition[]): ValidationResult[] {
@@ -67,27 +67,7 @@ export class CopilotCommandGenerator implements GeneratorPlugin<CommandDefinitio
   }
 }
 
-export class CopilotSkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'copilot';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 export default [
   new CopilotInstructionGenerator(),
   new CopilotCommandGenerator(),
-  new CopilotSkillGenerator(),
 ];

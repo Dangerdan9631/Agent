@@ -99,25 +99,6 @@ export class CodexAgentGenerator implements GeneratorPlugin<AgentDefinition> {
   }
 }
 
-export class CodexSkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'codex';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 function buildCodexHooksObject(
   hooks: HookDefinition[],
   hookMap: AgentHookEventMap,
@@ -168,6 +149,5 @@ export default [
   new CodexInstructionGenerator(),
   new CodexCommandGenerator(),
   new CodexAgentGenerator(),
-  new CodexSkillGenerator(),
   new CodexHookGenerator(),
 ];

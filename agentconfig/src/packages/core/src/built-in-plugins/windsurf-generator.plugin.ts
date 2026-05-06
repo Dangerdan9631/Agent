@@ -5,7 +5,7 @@ import type { InstructionFile, CommandDefinition, SkillDefinition } from '../typ
 import { filterForTarget, buildFrontmatter } from './base';
 
 export class WindsurfInstructionGenerator implements GeneratorPlugin<InstructionFile> {
-  readonly agent = 'windsurf';
+  readonly agent = ['windsurf', 'windsurf-cli'];
   readonly instructionType = 'instruction';
 
   validate(_items: InstructionFile[]): ValidationResult[] {
@@ -42,7 +42,7 @@ export class WindsurfInstructionGenerator implements GeneratorPlugin<Instruction
 }
 
 export class WindsurfCommandGenerator implements GeneratorPlugin<CommandDefinition> {
-  readonly agent = 'windsurf';
+  readonly agent = ['windsurf', 'windsurf-cli'];
   readonly instructionType = 'command';
 
   validate(_items: CommandDefinition[]): ValidationResult[] {
@@ -58,27 +58,7 @@ export class WindsurfCommandGenerator implements GeneratorPlugin<CommandDefiniti
   }
 }
 
-export class WindsurfSkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'windsurf';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 export default [
   new WindsurfInstructionGenerator(),
   new WindsurfCommandGenerator(),
-  new WindsurfSkillGenerator(),
 ];

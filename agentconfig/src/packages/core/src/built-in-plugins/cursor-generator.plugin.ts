@@ -71,25 +71,6 @@ export class CursorCommandGenerator implements GeneratorPlugin<CommandDefinition
   }
 }
 
-export class CursorSkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'cursor';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 export class CursorHookGenerator implements GeneratorPlugin<HookDefinition> {
   readonly agent = 'cursor';
   readonly instructionType = 'hook';
@@ -129,6 +110,5 @@ export class CursorHookGenerator implements GeneratorPlugin<HookDefinition> {
 export default [
   new CursorInstructionGenerator(),
   new CursorCommandGenerator(),
-  new CursorSkillGenerator(),
   new CursorHookGenerator(),
 ];

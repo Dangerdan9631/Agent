@@ -6,13 +6,19 @@ import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfi
 import { InstructionFile } from '../types';
 
 export function detect(dir: string): DetectedAgent[] {
+  const result: DetectedAgent[] = [];
   if (
     fs.existsSync(path.join(dir, '.github', 'copilot-instructions.md')) ||
     fs.existsSync(path.join(dir, '.github', 'instructions'))
   ) {
-    return [{ name: 'copilot', confidence: 'high' }];
+    result.push({ name: 'copilot', confidence: 'high' });
   }
-  return [];
+  if (
+    fs.existsSync(path.join(dir, '.github', 'CopilotCLI-instructions.md'))
+  ) {
+    result.push({ name: 'copilot-cli', confidence: 'high' });
+  }
+  return result;
 }
 
 const IN_TEXT_PREFIX = '> **Apply only when:**';
@@ -32,7 +38,7 @@ function stripInTextCondition(body: string): string {
 }
 
 export class CopilotInstructionImporter implements ImporterPlugin<InstructionFile> {
-  readonly agent = 'copilot';
+  readonly agent = ['copilot', 'copilot-cli'];
   readonly instructionType = 'instruction';
 
   validate(_projectRoot: string): ValidationResult[] {
@@ -43,17 +49,23 @@ export class CopilotInstructionImporter implements ImporterPlugin<InstructionFil
     const instructions: InstructionFile[] = [];
 
     // Always: repository-wide instructions
-    const globalFile = path.join(projectRoot, '.github', 'copilot-instructions.md');
-    if (fs.existsSync(globalFile)) {
-      const body = fs.readFileSync(globalFile, 'utf8').trim();
-      if (body) {
-        instructions.push(new InstructionFile(
-          'copilot-instructions',
-          globalFile,
-          'always',
-          body,
-          'copilot-instructions',
-        ));
+    const globalFiles = [
+      path.join(projectRoot, '.github', 'copilot-instructions.md'),
+      path.join(projectRoot, '.github', 'CopilotCLI-instructions.md'),
+    ];
+    
+    for (const globalFile of globalFiles) {
+      if (fs.existsSync(globalFile)) {
+        const body = fs.readFileSync(globalFile, 'utf8').trim();
+        if (body) {
+          instructions.push(new InstructionFile(
+            path.basename(globalFile, '.md'),
+            globalFile,
+            'always',
+            body,
+            path.basename(globalFile, '.md'),
+          ));
+        }
       }
     }
 

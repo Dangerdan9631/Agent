@@ -90,25 +90,6 @@ export class ClaudeCodeAgentGenerator implements GeneratorPlugin<AgentDefinition
   }
 }
 
-export class ClaudeCodeSkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'claude-code';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 function buildNestedHooksObject(
   hooks: HookDefinition[],
   hookMap: AgentHookEventMap,
@@ -160,6 +141,5 @@ export default [
   new ClaudeCodeInstructionGenerator(),
   new ClaudeCodeCommandGenerator(),
   new ClaudeCodeAgentGenerator(),
-  new ClaudeCodeSkillGenerator(),
   new ClaudeCodeHookGenerator(),
 ];

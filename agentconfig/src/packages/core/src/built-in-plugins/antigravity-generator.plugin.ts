@@ -58,27 +58,7 @@ export class AntigravityCommandGenerator implements GeneratorPlugin<CommandDefin
   }
 }
 
-export class AntigravitySkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'antigravity';
-  readonly instructionType = 'skill';
-
-  validate(_items: SkillDefinition[]): ValidationResult[] {
-    return [];
-  }
-
-  generate(projectRoot: string, items: SkillDefinition[]): void {
-    for (const skill of items) {
-      for (const file of skill.files) {
-        const dest = path.join(projectRoot, '.agents', 'skills', skill.name, file.relativePath);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.content);
-      }
-    }
-  }
-}
-
 export default [
   new AntigravityInstructionGenerator(),
   new AntigravityCommandGenerator(),
-  new AntigravitySkillGenerator(),
 ];

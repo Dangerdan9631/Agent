@@ -28,7 +28,9 @@ export class PluginRegistry implements ReadonlyRegistry {
 
   /** Look up all generators for a specific target ID. */
   getGenerators(target: string): GeneratorPlugin<InstructionType>[] {
-    return this.generators.filter((g) => g.agent === target);
+    return this.generators.filter((g) =>
+      Array.isArray(g.agent) ? g.agent.includes(target) : g.agent === target,
+    );
   }
 
   /** Return all registered generators. */
@@ -45,7 +47,9 @@ export class PluginRegistry implements ReadonlyRegistry {
 
   /** Look up all importers for a specific target ID. */
   getImporters(target: string): ImporterPlugin<InstructionType>[] {
-    return this.importers.filter((i) => i.agent === target);
+    return this.importers.filter((i) =>
+      Array.isArray(i.agent) ? i.agent.includes(target) : i.agent === target,
+    );
   }
 
   /** Return all registered importers. */
@@ -132,7 +136,7 @@ export class PluginRegistry implements ReadonlyRegistry {
 
     // GeneratorPlugin: has agent, instructionType, validate, generate
     if (
-      typeof p['agent'] === 'string' &&
+      (typeof p['agent'] === 'string' || Array.isArray(p['agent'])) &&
       typeof p['instructionType'] === 'string' &&
       typeof p['validate'] === 'function' &&
       typeof p['generate'] === 'function'
@@ -143,7 +147,7 @@ export class PluginRegistry implements ReadonlyRegistry {
 
     // ImporterPlugin: has agent, instructionType, validate, import
     if (
-      typeof p['agent'] === 'string' &&
+      (typeof p['agent'] === 'string' || Array.isArray(p['agent'])) &&
       typeof p['instructionType'] === 'string' &&
       typeof p['validate'] === 'function' &&
       typeof p['import'] === 'function'

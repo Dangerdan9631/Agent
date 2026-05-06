@@ -312,6 +312,13 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
 export async function listTargets(_options?: ListTargetsOptions): Promise<ListTargetsResult> {
   await loadGlobalPlugins();
   const generators = registry.listGenerators();
-  const targets = Array.from(new Set(generators.map(g => g.agent)));
-  return { targets: targets as any[] };
+  const targets = new Set<string>();
+  for (const g of generators) {
+    if (Array.isArray(g.agent)) {
+      for (const a of g.agent) targets.add(a);
+    } else {
+      targets.add(g.agent);
+    }
+  }
+  return { targets: Array.from(targets) as any[] };
 }
