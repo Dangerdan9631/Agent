@@ -11,6 +11,10 @@ import type {
   OvermindApiResponseMap,
   ShutdownRequest,
   ShutdownResponse,
+  StartCerebrateRequest,
+  StartCerebrateResponse,
+  StopCerebrateRequest,
+  StopCerebrateResponse,
 } from 'overmind-api';
 import { getDefaultOvermindPipePath } from 'overmind-service';
 
@@ -44,6 +48,14 @@ export class OvermindIpcClient implements OvermindApi {
 
   shutdown(request: ShutdownRequest): Promise<ShutdownResponse> {
     return this.#send('service.shutdown', request);
+  }
+
+  startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
+    return this.#send('cerebrate.start', request);
+  }
+
+  stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
+    return this.#send('cerebrate.stop', request);
   }
 
   async startService(_request: StartServiceRequest): Promise<StartServiceResponse> {

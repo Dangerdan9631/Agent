@@ -6,10 +6,22 @@ import type {
   OvermindApi,
   ShutdownIpcRequest,
   ShutdownIpcResponse,
+  StartCerebrateIpcRequest,
+  StartCerebrateIpcResponse,
+  StopCerebrateIpcRequest,
+  StopCerebrateIpcResponse,
 } from 'overmind-api';
 
-export type OvermindIpcRequest = GetServiceStatsIpcRequest | ShutdownIpcRequest;
-export type OvermindIpcResponse = GetServiceStatsIpcResponse | ShutdownIpcResponse;
+export type OvermindIpcRequest =
+  | GetServiceStatsIpcRequest
+  | ShutdownIpcRequest
+  | StartCerebrateIpcRequest
+  | StopCerebrateIpcRequest;
+export type OvermindIpcResponse =
+  | GetServiceStatsIpcResponse
+  | ShutdownIpcResponse
+  | StartCerebrateIpcResponse
+  | StopCerebrateIpcResponse;
 
 interface OvermindIpcErrorResponse {
   method: string;
@@ -114,6 +126,20 @@ export class OvermindIpcServer {
       return {
         method: request.method,
         result: await this.#service.shutdown(request.params),
+      };
+    }
+
+    if (request.method === 'cerebrate.start') {
+      return {
+        method: request.method,
+        result: await this.#service.startCerebrate(request.params),
+      };
+    }
+
+    if (request.method === 'cerebrate.stop') {
+      return {
+        method: request.method,
+        result: await this.#service.stopCerebrate(request.params),
       };
     }
 

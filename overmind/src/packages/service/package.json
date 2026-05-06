@@ -18,13 +18,16 @@
   "bin": {
     "overmind-service": "dist/bin.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch"
   },
   "dependencies": {
-    "overmind-api": "0.1.0"
+    "overmind-api": "0.1.0",
+    "robot3": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

@@ -5,7 +5,9 @@ import packageJson from '../package.json';
 import { OvermindIpcClient } from './client.js';
 import { registerShutdown } from './commands/shutdown.js';
 import { registerStart } from './commands/start.js';
+import { registerStartCerebrate } from './commands/start-cerebrate.js';
 import { registerStats } from './commands/stats.js';
+import { registerStopCerebrate } from './commands/stop-cerebrate.js';
 
 async function main(): Promise<void> {
   const program = new Command();
@@ -17,7 +19,9 @@ async function main(): Promise<void> {
     .version(packageJson.version);
 
   registerStart(program, client);
+  registerStartCerebrate(program, client);
   registerStats(program, client);
+  registerStopCerebrate(program, client);
   registerShutdown(program, client);
 
   await program.parseAsync(process.argv);
