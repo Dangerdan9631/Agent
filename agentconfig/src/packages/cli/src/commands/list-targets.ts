@@ -18,8 +18,9 @@ export function registerListTargets(program: Command, api: IAgentConfigApi): voi
         return;
       }
 
-      for (const t of targets) {
-        console.log(`  ${chalk.cyan(t.target.padEnd(20))} ${t.displayName}`);
+      console.log(chalk.bold('Registered generator targets:'));
+      for (const t of targets.sort()) {
+        console.log(`  ${chalk.cyan(t)}`);
       }
     });
 }

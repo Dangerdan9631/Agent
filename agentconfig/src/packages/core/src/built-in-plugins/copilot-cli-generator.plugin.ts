@@ -5,7 +5,7 @@ import type { InstructionFile, CommandDefinition, SkillDefinition } from '../typ
 import { filterForTarget, buildFrontmatter, buildInTextCondition } from './base';
 
 export class CopilotCLIInstructionGenerator implements GeneratorPlugin<InstructionFile> {
-  readonly agent = 'CopilotCLI';
+  readonly agent = 'copilot-cli';
   readonly instructionType = 'instruction';
 
   validate(_items: InstructionFile[]): ValidationResult[] {
@@ -18,7 +18,7 @@ export class CopilotCLIInstructionGenerator implements GeneratorPlugin<Instructi
     // always -> concatenated into .github/CopilotCLI-instructions.md
     const always = instructions.filter((i) => i.activation === 'always');
     if (always.length > 0) {
-      const dest = path.join(projectRoot, '.github', 'CopilotCLI-instructions.md');
+      const dest = path.join(projectRoot, '.github', 'copilot-instructions.md');
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, always.map((i) => i.body).join('\n\n'));
     }
@@ -51,7 +51,7 @@ export class CopilotCLIInstructionGenerator implements GeneratorPlugin<Instructi
 }
 
 export class CopilotCLICommandGenerator implements GeneratorPlugin<CommandDefinition> {
-  readonly agent = 'CopilotCLI';
+  readonly agent = 'copilot-cli';
   readonly instructionType = 'command';
 
   validate(_items: CommandDefinition[]): ValidationResult[] {
@@ -68,7 +68,7 @@ export class CopilotCLICommandGenerator implements GeneratorPlugin<CommandDefini
 }
 
 export class CopilotCLISkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'CopilotCLI';
+  readonly agent = 'copilot-cli';
   readonly instructionType = 'skill';
 
   validate(_items: SkillDefinition[]): ValidationResult[] {

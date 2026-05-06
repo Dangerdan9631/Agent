@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFrontmatter, buildInTextCondition, filterForTarget } from '../../src/generators/base';
+import { buildFrontmatter, buildInTextCondition, filterForTarget } from '../../src/built-in-plugins/base';
 
 describe('generator base helpers', () => {
   it('keeps items without target filters', () => {

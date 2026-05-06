@@ -5,22 +5,22 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile } from '../types';
 
-export function detectAntigravity(dir: string): DetectedAgent[] {
-  if (fs.existsSync(path.join(dir, '.agents', 'rules'))) {
-    return [{ name: 'antigravity', confidence: 'high' }];
+export function detect(dir: string): DetectedAgent[] {
+  if (fs.existsSync(path.join(dir, '.windsurf', 'rules'))) {
+    return [{ name: 'windsurf', confidence: 'high' }];
   }
   return [];
 }
 
-const ACTIVATION_MAP: Record<string, string> = {
-  always: 'always',
+const TRIGGER_MAP: Record<string, string> = {
+  always_on: 'always',
   glob: 'scoped',
-  model: 'ai-decided',
+  model_decision: 'ai-decided',
   manual: 'manual',
 };
 
-export class AntigravityInstructionImporter implements ImporterPlugin<InstructionFile> {
-  readonly agent = 'antigravity';
+export class WindsurfInstructionImporter implements ImporterPlugin<InstructionFile> {
+  readonly agent = 'windsurf';
   readonly instructionType = 'instruction';
 
   validate(_projectRoot: string): ValidationResult[] {
@@ -29,7 +29,7 @@ export class AntigravityInstructionImporter implements ImporterPlugin<Instructio
 
   async import(projectRoot: string): Promise<InstructionFile[]> {
     const instructions: InstructionFile[] = [];
-    const rulesDir = path.join(projectRoot, '.agents', 'rules');
+    const rulesDir = path.join(projectRoot, '.windsurf', 'rules');
     if (!fs.existsSync(rulesDir)) return instructions;
 
     const files = await fg('**/*.md', { cwd: rulesDir, absolute: true });
@@ -40,8 +40,8 @@ export class AntigravityInstructionImporter implements ImporterPlugin<Instructio
       const stem = path.basename(filePath, '.md');
       const body = content.trim();
 
-      const rawActivation = typeof data.activation === 'string' ? data.activation : 'always';
-      const activation = (ACTIVATION_MAP[rawActivation] ?? 'always') as any;
+      const trigger = typeof data.trigger === 'string' ? data.trigger : 'always_on';
+      const activation = (TRIGGER_MAP[trigger] ?? 'always') as any;
 
       const inst = new InstructionFile(
         stem,
@@ -52,13 +52,19 @@ export class AntigravityInstructionImporter implements ImporterPlugin<Instructio
       );
 
       if (activation === 'scoped') {
-        const glob = typeof data.glob === 'string' ? data.glob : '**/*';
-        inst.globs = [glob];
+        const rawGlobs = typeof data.globs === 'string' ? data.globs : '';
+        inst.globs = rawGlobs
+          .split(',')
+          .map((g: string) => g.trim())
+          .filter(Boolean);
       } else if (activation === 'ai-decided') {
-        inst.description = typeof data.description === 'string' ? data.description : undefined;
-        if (!inst.description) {
-          inst.importNote = '# TODO: verify activation — ai-decided inferred from activation: model but no description found';
-        }
+        inst.description =
+          typeof data.description === 'string' ? data.description : undefined;
+      }
+
+      if (!TRIGGER_MAP[trigger]) {
+        inst.importNote =
+          `# TODO: verify activation — unknown Windsurf trigger "${trigger}"`;
       }
 
       if (parseWarning && !inst.importNote) inst.importNote = parseWarning;
@@ -71,5 +77,5 @@ export class AntigravityInstructionImporter implements ImporterPlugin<Instructio
 }
 
 export default [
-  new AntigravityInstructionImporter(),
+  new WindsurfInstructionImporter(),
 ];

@@ -83,6 +83,6 @@ describe('copilot additional CLI commands', () => {
     const result = await runCli(['list-targets', '--format', 'json']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('"target": "copilot"');
+    expect(result.stdout).toContain('"copilot"');
   });
 });

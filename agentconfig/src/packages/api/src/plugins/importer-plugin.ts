@@ -1,5 +1,6 @@
 import type { ValidationResult } from '../types/validation';
 import type { InstructionType } from './instruction-type';
+import type { AgentConfigContext } from './context';
 
 /**
  * Plugin interface for importing agent-native source files into an IR
@@ -34,7 +35,7 @@ import type { InstructionType } from './instruction-type';
  *     return results;
  *   },
  *
- *   import(sourceDir) {
+ *   import(sourceDir, context) {
  *     const raw = fs.readFileSync(
  *       path.join(sourceDir, '.github', 'copilot-instructions.md'),
  *       'utf8',
@@ -70,8 +71,9 @@ export interface ImporterPlugin<T extends InstructionType> {
    * indicates the folder is ready for import.
    *
    * @param sourceDir - Absolute path to the folder to be imported.
+   * @param context   - The execution context containing the plugin registry.
    */
-  validate(sourceDir: string): ValidationResult[];
+  validate(sourceDir: string, context: AgentConfigContext): ValidationResult[];
 
   /**
    * Imports agent-native files from `folderPath` and returns them as
@@ -82,8 +84,9 @@ export interface ImporterPlugin<T extends InstructionType> {
    * `folderPath` and map them into the IR shape described by `T`.
    *
    * @param folderPath - Absolute path to the folder to import from.
+   * @param context    - The execution context containing the plugin registry.
    * @returns An array of normalized instruction items parsed from the agent's files.
    */
-  import(folderPath: string): Promise<T[]>;
+  import(folderPath: string, context: AgentConfigContext): Promise<T[]>;
 }
 

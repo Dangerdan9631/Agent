@@ -60,14 +60,17 @@ export async function computeDiff(tempDir: string, outputDir: string): Promise<D
  * - Skips files whose content matches the last-written hash (useful in --watch mode).
  * - Respects `overwrite: false` and `dryRun: true` options.
  */
-export async function write(tempDir: string, outputDir: string, opts: WriteOptions): Promise<void> {
+export async function write(tempDir: string, outputDir: string, opts: WriteOptions): Promise<number> {
   const files = await fg('**/*', { cwd: tempDir, absolute: false, dot: true });
+  let fileCount = 0;
 
   for (const file of files) {
     const tempPath = path.resolve(tempDir, file);
     const outPath = path.resolve(outputDir, file);
 
     if (fs.statSync(tempPath).isDirectory()) continue;
+    
+    fileCount++;
 
     if (opts.overwrite === false && fs.existsSync(outPath)) continue;
 
@@ -82,4 +85,6 @@ export async function write(tempDir: string, outputDir: string, opts: WriteOptio
 
     contentHashCache.set(outPath, hash);
   }
+
+  return fileCount;
 }

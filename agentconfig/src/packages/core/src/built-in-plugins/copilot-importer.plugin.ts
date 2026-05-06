@@ -5,7 +5,7 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile } from '../types';
 
-export function detectCopilot(dir: string): DetectedAgent[] {
+export function detect(dir: string): DetectedAgent[] {
   if (
     fs.existsSync(path.join(dir, '.github', 'copilot-instructions.md')) ||
     fs.existsSync(path.join(dir, '.github', 'instructions'))

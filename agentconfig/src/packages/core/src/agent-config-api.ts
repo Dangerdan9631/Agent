@@ -1,6 +1,3 @@
-// Self-register all built-in generators and importers
-import './generators/index';
-import './importers/index';
 
 import type { IAgentConfigApi } from 'agentconfig-api';
 import type {

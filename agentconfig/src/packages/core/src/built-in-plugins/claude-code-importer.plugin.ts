@@ -5,7 +5,7 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile, AgentDefinition } from '../types';
 
-export function detectClaudeCode(dir: string): DetectedAgent[] {
+export function detect(dir: string): DetectedAgent[] {
   if (fs.existsSync(path.join(dir, '.claude'))) {
     return [{ name: 'claude-code', confidence: 'high' }];
   }

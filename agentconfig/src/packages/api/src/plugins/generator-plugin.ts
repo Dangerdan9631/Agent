@@ -1,5 +1,6 @@
 import type { ValidationResult } from '../types/validation';
 import type { InstructionType } from './instruction-type';
+import type { AgentConfigContext } from './context';
 
 /**
  * Plugin interface for generating agent-native output from an IR instruction type.
@@ -28,9 +29,9 @@ import type { InstructionType } from './instruction-type';
  *     return results;
  *   },
  *
- *   generate(folderPath, instruction) {
- *     const dest = path.join(folderPath, '.github', 'copilot-instructions.md');
- *     fs.writeFileSync(dest, instruction.body);
+ *   generate(projectRoot, items, context) {
+ *     const dest = path.join(projectRoot, '.github', 'copilot-instructions.md');
+ *     fs.writeFileSync(dest, items[0].body);
  *   },
  * };
  */
@@ -52,9 +53,10 @@ export interface GeneratorPlugin<T extends InstructionType> {
    * Validates that the given instruction items are valid for generation targeting
    * {@link agent}.
    *
-   * @param items - The instruction items to validate for this agent target.
+   * @param items       - The instruction items to validate for this agent target.
+   * @param context     - The execution context containing the plugin registry.
    */
-  validate(items: T[]): ValidationResult[];
+  validate(items: T[], context: AgentConfigContext): ValidationResult[];
 
   /**
    * Generates agent-native output for the given instruction items and writes it to disk.
@@ -64,6 +66,7 @@ export interface GeneratorPlugin<T extends InstructionType> {
    *
    * @param projectRoot - Absolute path to the root output directory.
    * @param items       - The instruction items to generate output from.
+   * @param context     - The execution context containing the plugin registry.
    */
-  generate(projectRoot: string, items: T[]): void;
+  generate(projectRoot: string, items: T[], context: AgentConfigContext): void;
 }

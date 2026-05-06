@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { importArtifacts, writeAgentConfigDir } from '../../src/importers/index';
+import { importArtifacts, writeAgentConfigDir } from '../../src/import-utils';
 import type { AgentConfig } from '../../src/types/config';
 import type { IR } from '../../src/types/ir';
 import { createTempDir, readText, removeDir, writeTree } from '../test-utils';

@@ -5,7 +5,7 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile } from '../types';
 
-export function detectCline(dir: string): DetectedAgent[] {
+export function detect(dir: string): DetectedAgent[] {
   if (fs.existsSync(path.join(dir, '.clinerules'))) {
     return [{ name: 'cline', confidence: 'high' }];
   }

@@ -5,9 +5,13 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile } from '../types';
 
-export function detectWindsurf(dir: string): DetectedAgent[] {
-  if (fs.existsSync(path.join(dir, '.windsurf', 'rules'))) {
-    return [{ name: 'windsurf', confidence: 'high' }];
+export function detect(dir: string): DetectedAgent[] {
+  if (
+    fs.existsSync(path.join(dir, '.windsurf-cli', 'rules')) ||
+    fs.existsSync(path.join(dir, '.WindsurfCLI', 'rules')) ||
+    fs.existsSync(path.join(dir, '.devin', 'rules'))
+  ) {
+    return [{ name: 'windsurf-cli', confidence: 'high' }];
   }
   return [];
 }
@@ -19,8 +23,8 @@ const TRIGGER_MAP: Record<string, string> = {
   manual: 'manual',
 };
 
-export class WindsurfInstructionImporter implements ImporterPlugin<InstructionFile> {
-  readonly agent = 'windsurf';
+export class WindsurfCLIInstructionImporter implements ImporterPlugin<InstructionFile> {
+  readonly agent = 'windsurf-cli';
   readonly instructionType = 'instruction';
 
   validate(_projectRoot: string): ValidationResult[] {
@@ -29,7 +33,13 @@ export class WindsurfInstructionImporter implements ImporterPlugin<InstructionFi
 
   async import(projectRoot: string): Promise<InstructionFile[]> {
     const instructions: InstructionFile[] = [];
-    const rulesDir = path.join(projectRoot, '.windsurf', 'rules');
+    let rulesDir = path.join(projectRoot, '.windsurf-cli', 'rules');
+    if (!fs.existsSync(rulesDir)) {
+      rulesDir = path.join(projectRoot, '.WindsurfCLI', 'rules');
+    }
+    if (!fs.existsSync(rulesDir)) {
+      rulesDir = path.join(projectRoot, '.devin', 'rules');
+    }
     if (!fs.existsSync(rulesDir)) return instructions;
 
     const files = await fg('**/*.md', { cwd: rulesDir, absolute: true });
@@ -64,7 +74,7 @@ export class WindsurfInstructionImporter implements ImporterPlugin<InstructionFi
 
       if (!TRIGGER_MAP[trigger]) {
         inst.importNote =
-          `# TODO: verify activation — unknown Windsurf trigger "${trigger}"`;
+          `# TODO: verify activation — unknown WindsurfCLI trigger "${trigger}"`;
       }
 
       if (parseWarning && !inst.importNote) inst.importNote = parseWarning;
@@ -77,5 +87,7 @@ export class WindsurfInstructionImporter implements ImporterPlugin<InstructionFi
 }
 
 export default [
-  new WindsurfInstructionImporter(),
+  new WindsurfCLIInstructionImporter(),
 ];
+
+

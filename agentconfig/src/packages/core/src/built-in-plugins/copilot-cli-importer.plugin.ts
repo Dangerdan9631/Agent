@@ -5,12 +5,13 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile } from '../types';
 
-export function detectCopilotCli(dir: string): DetectedAgent[] {
+export function detect(dir: string): DetectedAgent[] {
   if (
+    fs.existsSync(path.join(dir, '.github', 'copilot-instructions.md')) ||
     fs.existsSync(path.join(dir, '.github', 'CopilotCLI-instructions.md')) ||
     fs.existsSync(path.join(dir, '.github', 'instructions'))
   ) {
-    return [{ name: 'CopilotCLI', confidence: 'high' }];
+    return [{ name: 'copilot-cli', confidence: 'high' }];
   }
   return [];
 }
@@ -32,7 +33,7 @@ function stripInTextCondition(body: string): string {
 }
 
 export class CopilotCLIInstructionImporter implements ImporterPlugin<InstructionFile> {
-  readonly agent = 'CopilotCLI';
+  readonly agent = 'copilot-cli';
   readonly instructionType = 'instruction';
 
   validate(_projectRoot: string): ValidationResult[] {
@@ -43,16 +44,20 @@ export class CopilotCLIInstructionImporter implements ImporterPlugin<Instruction
     const instructions: InstructionFile[] = [];
 
     // Always: repository-wide instructions
-    const globalFile = path.join(projectRoot, '.github', 'CopilotCLI-instructions.md');
+    let globalFile = path.join(projectRoot, '.github', 'copilot-instructions.md');
+    if (!fs.existsSync(globalFile)) {
+      globalFile = path.join(projectRoot, '.github', 'CopilotCLI-instructions.md');
+    }
+    
     if (fs.existsSync(globalFile)) {
       const body = fs.readFileSync(globalFile, 'utf8').trim();
       if (body) {
         instructions.push(new InstructionFile(
-          'CopilotCLI-instructions',
+          'copilot-instructions',
           globalFile,
           'always',
           body,
-          'CopilotCLI-instructions',
+          'copilot-instructions',
         ));
       }
     }

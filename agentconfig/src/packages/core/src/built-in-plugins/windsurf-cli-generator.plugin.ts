@@ -5,7 +5,7 @@ import type { InstructionFile, CommandDefinition, SkillDefinition } from '../typ
 import { filterForTarget, buildFrontmatter } from './base';
 
 export class WindsurfCLIInstructionGenerator implements GeneratorPlugin<InstructionFile> {
-  readonly agent = 'WindsurfCLI';
+  readonly agent = 'windsurf-cli';
   readonly instructionType = 'instruction';
 
   validate(_items: InstructionFile[]): ValidationResult[] {
@@ -34,7 +34,7 @@ export class WindsurfCLIInstructionGenerator implements GeneratorPlugin<Instruct
       }
 
       const fm = buildFrontmatter(fmFields);
-      const dest = path.join(projectRoot, '.WindsurfCLI', 'rules', `${inst.slug}.md`);
+      const dest = path.join(projectRoot, '.windsurf', 'rules', `${inst.slug}.md`);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, `${fm}\n\n${inst.body}`);
     }
@@ -42,7 +42,7 @@ export class WindsurfCLIInstructionGenerator implements GeneratorPlugin<Instruct
 }
 
 export class WindsurfCLICommandGenerator implements GeneratorPlugin<CommandDefinition> {
-  readonly agent = 'WindsurfCLI';
+  readonly agent = 'windsurf-cli';
   readonly instructionType = 'command';
 
   validate(_items: CommandDefinition[]): ValidationResult[] {
@@ -51,7 +51,7 @@ export class WindsurfCLICommandGenerator implements GeneratorPlugin<CommandDefin
 
   generate(projectRoot: string, items: CommandDefinition[]): void {
     for (const cmd of filterForTarget(items, this.agent)) {
-      const dest = path.join(projectRoot, '.WindsurfCLI', 'workflows', `${cmd.slug}.md`);
+      const dest = path.join(projectRoot, '.windsurf', 'workflows', `${cmd.slug}.md`);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, cmd.body);
     }
@@ -59,7 +59,7 @@ export class WindsurfCLICommandGenerator implements GeneratorPlugin<CommandDefin
 }
 
 export class WindsurfCLISkillGenerator implements GeneratorPlugin<SkillDefinition> {
-  readonly agent = 'WindsurfCLI';
+  readonly agent = 'windsurf-cli';
   readonly instructionType = 'skill';
 
   validate(_items: SkillDefinition[]): ValidationResult[] {

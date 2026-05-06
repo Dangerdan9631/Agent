@@ -1,50 +1,13 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import yaml from 'js-yaml';
+import { loadGlobalPlugins } from './global-config';
 import type { InstructionType, AgentConfig, DetectedAgent } from 'agentconfig-api';
-import { registry } from '../registry';
-import type { IR } from '../types';
+import { registry } from './registry';
+import type { IR } from './types';
 
-import CopilotPlugins, { detectCopilot } from './copilot';
-import CopilotCliPlugins, { detectCopilotCli } from './copilot-cli';
-import CursorPlugins, { detectCursor } from './cursor';
-import ClaudeCodePlugins, { detectClaudeCode } from './claude-code';
-import GeminiCliPlugins, { detectGeminiCli } from './gemini-cli';
-import AntigravityPlugins, { detectAntigravity } from './antigravity';
-import CodexPlugins, { detectCodex } from './codex';
-import WindsurfPlugins, { detectWindsurf } from './windsurf';
-import WindsurfCliPlugins, { detectWindsurfCli } from './windsurf-cli';
-import ClinePlugins, { detectCline } from './cline';
 
-import { InstructionFile, AgentDefinition, SkillDefinition, CommandDefinition, HookDefinition } from '../types';
-
-const allPlugins = [
-  ...CopilotPlugins,
-  ...CopilotCliPlugins,
-  ...CursorPlugins,
-  ...ClaudeCodePlugins,
-  ...GeminiCliPlugins,
-  ...AntigravityPlugins,
-  ...CodexPlugins,
-  ...WindsurfPlugins,
-  ...WindsurfCliPlugins,
-  ...ClinePlugins,
-];
-
-for (const plugin of allPlugins) {
-  registry.registerImporter(plugin as any);
-}
-
-registry.registerDetector(detectCopilot);
-registry.registerDetector(detectCopilotCli);
-registry.registerDetector(detectCursor);
-registry.registerDetector(detectClaudeCode);
-registry.registerDetector(detectGeminiCli);
-registry.registerDetector(detectAntigravity);
-registry.registerDetector(detectCodex);
-registry.registerDetector(detectWindsurf);
-registry.registerDetector(detectWindsurfCli);
-registry.registerDetector(detectCline);
+import { InstructionFile, AgentDefinition, SkillDefinition, CommandDefinition, HookDefinition } from './types';
 
 export type { DetectedAgent } from 'agentconfig-api';
 
@@ -89,6 +52,7 @@ export async function importArtifacts(
   sourceDir: string,
   opts?: ImportOptions,
 ): Promise<IR> {
+  await loadGlobalPlugins();
   const detected = detectAgents(sourceDir);
   const targetAgents =
     opts?.target && opts.target.length > 0
@@ -100,18 +64,18 @@ export async function importArtifacts(
   for (const agentName of targetAgents) {
     const importers = registry.getImporters(agentName);
     for (const importer of importers) {
-      const items = await importer.import(sourceDir);
+      const items = await importer.import(sourceDir, { registry });
       allItems.push(...items);
     }
   }
 
   // We are keeping the legacy IR structure returned by importArtifacts since
-  // other operations currently depend on it. We'll extract arrays based on prototype.
-  const instructions = allItems.filter(i => i instanceof InstructionFile) as InstructionFile[];
-  const agents = allItems.filter(i => i instanceof AgentDefinition) as AgentDefinition[];
-  const skills = allItems.filter(i => i instanceof SkillDefinition) as SkillDefinition[];
-  const commands = allItems.filter(i => i instanceof CommandDefinition) as CommandDefinition[];
-  const hooks = allItems.filter(i => i instanceof HookDefinition) as HookDefinition[];
+  // other operations currently depend on it. We'll extract arrays based on typeId.
+  const instructions = allItems.filter(i => i.typeId === 'instruction') as any[];
+  const agents = allItems.filter(i => i.typeId === 'agent') as any[];
+  const skills = allItems.filter(i => i.typeId === 'skill') as any[];
+  const commands = allItems.filter(i => i.typeId === 'command') as any[];
+  const hooks = allItems.filter(i => i.typeId === 'hook') as any[];
 
   return {
     instructions: deduplicateInstructions(instructions),

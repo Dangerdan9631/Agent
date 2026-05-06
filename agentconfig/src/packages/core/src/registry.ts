@@ -4,6 +4,7 @@ import type {
   DetectedAgent,
   DirectiveTypePlugin,
   InstructionType,
+  ReadonlyRegistry,
 } from 'agentconfig-api';
 
 type DetectFn = (dir: string) => DetectedAgent[];
@@ -12,7 +13,7 @@ type DetectFn = (dir: string) => DetectedAgent[];
  * Central plugin registry — stores generators, importers, detectors, and
  * directive type plugins.
  */
-export class PluginRegistry {
+export class PluginRegistry implements ReadonlyRegistry {
   private readonly generators: GeneratorPlugin<InstructionType>[] = [];
   private readonly importers: ImporterPlugin<InstructionType>[] = [];
   private readonly detectors: DetectFn[] = [];
@@ -94,7 +95,11 @@ export class PluginRegistry {
    */
   async loadPlugin(moduleId: string): Promise<void> {
     const mod = (await import(moduleId)) as Record<string, unknown>;
-    const exported = mod.default ?? mod;
+    let exported: any = mod;
+    while (exported && typeof exported === 'object' && 'default' in exported) {
+      // In some ESM/CJS interop scenarios (like Vitest), default exports get double-wrapped.
+      exported = exported.default;
+    }
 
     if (Array.isArray(exported)) {
       for (const item of exported) {
@@ -110,9 +115,9 @@ export class PluginRegistry {
     }
   }
 
-  private _registerOne(plugin: unknown, moduleId: string): void {
+  private _registerOne(plugin: unknown, moduleId: string): boolean {
     if (typeof plugin !== 'object' || plugin === null) {
-      throw new Error(`Plugin "${moduleId}" does not export a valid plugin object.`);
+      return false;
     }
 
     const p = plugin as Record<string, unknown>;
@@ -120,7 +125,7 @@ export class PluginRegistry {
     // DirectiveTypePlugin: has typeId (string) + parse (function)
     if (typeof p['typeId'] === 'string' && typeof p['parse'] === 'function') {
       this.registerDirectiveType(plugin as DirectiveTypePlugin);
-      return;
+      return true;
     }
 
     let registered = false;
@@ -148,11 +153,10 @@ export class PluginRegistry {
     }
 
     if (!registered) {
-      throw new Error(
-        `Plugin "${moduleId}" does not export a valid plugin. ` +
-          `Expected GeneratorPlugin, ImporterPlugin, or DirectiveTypePlugin.`
-      );
+      // Just return false so dynamic discovery doesn't crash on non-plugin modules.
+      return false;
     }
+    return true;
   }
 }
 

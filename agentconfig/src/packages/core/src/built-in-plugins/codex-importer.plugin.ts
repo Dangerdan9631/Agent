@@ -4,7 +4,7 @@ import fg from 'fast-glob';
 import type { ImporterPlugin, ValidationResult, DetectedAgent } from 'agentconfig-api';
 import { InstructionFile, AgentDefinition } from '../types';
 
-export function detectCodex(dir: string): DetectedAgent[] {
+export function detect(dir: string): DetectedAgent[] {
   if (fs.existsSync(path.join(dir, '.codex'))) {
     return [{ name: 'codex', confidence: 'high' }];
   }

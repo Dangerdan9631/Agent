@@ -6,11 +6,11 @@ import { loadGlobalPlugins } from './global-config';
 import { parseArtifacts } from './parsers/index';
 import { validate } from './validator';
 import { write, computeDiff } from './writer';
-import { importArtifacts, detectAgents, writeAgentConfigDir } from './importers/index';
+import { importArtifacts, detectAgents, writeAgentConfigDir } from './import-utils';
 import { registry } from './registry';
 import type { InstructionType, AgentConfig } from 'agentconfig-api';
 import type { IR } from './types';
-import type { DetectedAgent } from './importers/index';
+import type { DetectedAgent } from './import-utils';
 import type { DiffEntry } from './writer';
 import type {
   GenerateOptions,
@@ -37,7 +37,7 @@ function generateToTempDir(ir: InstructionType[], config: AgentConfig, tempDir: 
     const plugins = registry.getGenerators(target);
     for (const plugin of plugins) {
       const items = ir.filter(i => i.typeId === plugin.instructionType);
-      plugin.generate(tempDir, items);
+      plugin.generate(tempDir, items, { registry });
     }
   }
 }
@@ -82,10 +82,11 @@ async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
     throw new Error('Validation errors found. Fix them before generating.');
   }
 
+  let fileCount = 0;
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentconfig-gen-'));
   try {
     generateToTempDir(irList, config, tempDir, options.targets);
-    await write(tempDir, outputDir, { overwrite: true, dryRun: false });
+    fileCount = await write(tempDir, outputDir, { overwrite: true, dryRun: false });
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
@@ -93,7 +94,7 @@ async function generateOnce(options: GenerateOptions): Promise<GenerateResult> {
   config.last_generated = new Date().toISOString();
   await saveConfig(configDir, config);
   
-  return { configDir, outputDir, targets, validationErrors: [], fileCount: 0 };
+  return { configDir, outputDir, targets, validationErrors: [], fileCount };
 }
 
 export async function runGenerate(options: GenerateOptions): Promise<void> {
@@ -174,6 +175,7 @@ export async function runInitialize(options: InitializeOptions): Promise<Initial
     throw new Error(`Source path is not a directory: ${sourceDir}`);
   }
 
+  await loadGlobalPlugins();
   const detectedAgents: DetectedAgent[] = detectAgents(sourceDir);
   if (detectedAgents.length === 0) {
     return { sourceDir, configDir, detectedAgents: [], instructionCount: 0, agentCount: 0 };
@@ -207,6 +209,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     ? path.dirname(path.resolve(options.configPath))
     : process.cwd();
 
+  await loadGlobalPlugins();
   const sourceConfigDir = resolveConfigDir(sourceDir);
   const sourceConfig = await loadConfig(sourceConfigDir);
   const sourceIrList = await parseArtifacts(sourceConfigDir, sourceConfig);
@@ -285,10 +288,11 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
     ...ir.hooks,
   ];
 
+  let fileCount = 0;
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentconfig-trans-'));
   try {
     generateToTempDir(irList, config, tempDir, [options.destTarget]);
-    await write(tempDir, projectRoot, { overwrite: true, dryRun: false });
+    fileCount = await write(tempDir, projectRoot, { overwrite: true, dryRun: false });
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
@@ -299,7 +303,7 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
     destTarget: options.destTarget,
     instructionCount: ir.instructions.length,
     agentCount: ir.agents.length,
-    fileCount: 0,
+    fileCount,
   };
 }
 
