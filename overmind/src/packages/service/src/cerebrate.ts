@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events';
 import {
   createMachine,
   immediate,
@@ -8,11 +9,12 @@ import {
   type Machine,
   type Service,
 } from 'robot3';
+import type { ResolvedCerebrateConfig } from './config.js';
 
 export type CerebrateState = 'initialize' | 'idle' | 'shutting down';
 
 export interface CerebrateStats {
-  id: string;
+  name: string;
   idleLoopCount: number;
   runtime: number;
   state: CerebrateState;
@@ -24,15 +26,18 @@ type CerebrateMachine = Machine<any, Record<string, never>>;
 type CerebrateMachineService = Service<CerebrateMachine>;
 
 export class Cerebrate {
-  readonly id: string;
+  readonly name: string;
   readonly #abortController = new AbortController();
   readonly #startedAt = Date.now();
   #idleLoopCount = 0;
   #service: CerebrateMachineService | undefined;
   readonly #machine: CerebrateMachine;
+  readonly #config: ResolvedCerebrateConfig;
+  readonly #output = new EventEmitter();
 
-  constructor(id: string) {
-    this.id = id;
+  constructor(name: string, config: ResolvedCerebrateConfig) {
+    this.name = name;
+    this.#config = config;
     this.#machine = createMachine(
       'initialize',
       {
@@ -49,21 +54,40 @@ export class Cerebrate {
   }
 
   start(): void {
-    this.#service ??= interpret(this.#machine, () => {});
+    this.#service ??= interpret(this.#machine, () => { });
   }
 
   async stop(): Promise<void> {
     this.#abortController.abort();
     this.#service?.send('stop');
+    this.#output.removeAllListeners('line');
   }
 
   getStats(): CerebrateStats {
     return {
-      id: this.id,
+      name: this.name,
       idleLoopCount: this.#idleLoopCount,
       runtime: (Date.now() - this.#startedAt) / 1000,
       state: this.#state,
     };
+  }
+
+  subscribeOutput(listener: (line: string) => void): () => void {
+    this.#output.on('line', listener);
+    return () => {
+      this.#output.off('line', listener);
+    };
+  }
+
+  sendCommand(commandName: string): string {
+    const cmd = this.#config.commands.find((c) => c.name === commandName);
+    if (!cmd) {
+      throw new Error(`Unknown command for cerebrate "${this.name}": ${commandName}`);
+    }
+
+    const output = cmd.value;
+    this.#output.emit('line', output);
+    return output;
   }
 
   get #state(): CerebrateState {

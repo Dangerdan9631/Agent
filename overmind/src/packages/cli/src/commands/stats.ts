@@ -14,7 +14,7 @@ export function registerStats(program: Command, client: OvermindIpcClient): void
       for (const cerebrate of stats.cerebrates) {
         console.log(
           chalk.cyan(
-            `- ${cerebrate.id}: runtime ${cerebrate.runtime.toFixed(2)}s, idle loops ${cerebrate.idleLoopCount}`,
+            `- ${cerebrate.name}: runtime ${cerebrate.runtime.toFixed(2)}s, idle loops ${cerebrate.idleLoopCount}`,
           ),
         );
       }

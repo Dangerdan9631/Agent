@@ -27,7 +27,9 @@
   },
   "dependencies": {
     "overmind-api": "0.1.0",
-    "robot3": "^1.2.0"
+    "robot3": "^1.2.0",
+    "yaml": "^2.8.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

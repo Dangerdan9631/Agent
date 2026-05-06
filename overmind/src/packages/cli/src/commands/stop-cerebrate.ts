@@ -6,9 +6,9 @@ export function registerStopCerebrate(program: Command, client: OvermindIpcClien
   program
     .command('stop-cerebrate')
     .description('Stop a cerebrate state machine instance.')
-    .argument('<id>', 'Cerebrate ID to stop.')
-    .action(async (id: string) => {
-      const result = await client.stopCerebrate({ id });
+    .argument('<name>', 'Cerebrate name.')
+    .action(async (name: string) => {
+      const result = await client.stopCerebrate({ name });
       console.log(result.stopped ? chalk.green(result.message) : chalk.yellow(result.message));
     });
 }

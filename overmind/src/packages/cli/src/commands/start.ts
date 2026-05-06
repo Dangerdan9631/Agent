@@ -6,8 +6,10 @@ export function registerStart(program: Command, client: OvermindIpcClient): void
   program
     .command('start')
     .description('Start the service process.')
-    .action(async () => {
-      const result = await client.startService({});
+    .requiredOption('--config-dir <path>', 'Path to Overmind configuration directory.')
+    .action(async function (this: Command) {
+      const opts = this.opts<{ configDir: string }>();
+      const result = await client.startService({ configDir: opts.configDir });
       console.log(result.started ? chalk.green(result.message) : chalk.yellow(result.message));
     });
 }

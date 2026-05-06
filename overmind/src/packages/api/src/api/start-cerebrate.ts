@@ -1,5 +1,7 @@
-export type StartCerebrateRequest = Record<string, never>;
+export interface StartCerebrateRequest {
+  name: string;
+}
 
 export interface StartCerebrateResponse {
-  id: string;
+  name: string;
 }

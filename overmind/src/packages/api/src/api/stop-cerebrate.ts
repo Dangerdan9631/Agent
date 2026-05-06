@@ -1,5 +1,5 @@
 export interface StopCerebrateRequest {
-  id: string;
+  name: string;
 }
 
 export interface StopCerebrateResponse {

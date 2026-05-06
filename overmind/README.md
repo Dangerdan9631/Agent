@@ -10,6 +10,21 @@ Overmind is a local TypeScript workspace for a scaffold service, a CLI client, a
 | `overmind-service` | IPC service process and service implementation. |
 | `overmind-cli` | `overmind` command for starting and controlling the service. |
 
+## Configuration
+
+The service requires a **config directory** passed on startup:
+
+```bash
+node packages/cli/dist/bin.js start --config-dir /path/to/overmind-config
+```
+
+On first start, Overmind creates:
+
+- `overmind-config.yaml` – service settings (minimum: `version: 1`)
+- `cerebrates/hello/cerebrate-config.yaml` – example cerebrate (description, responsibilities, commands)
+
+Each cerebrate lives under `cerebrates/<name>/` with `cerebrate-config.yaml`. Only one running instance is allowed per name.
+
 ## Development
 
 Use Node.js 24 LTS or newer.
@@ -25,7 +40,10 @@ Run the CLI locally without installing it globally:
 
 ```bash
 node packages/cli/dist/bin.js --help
-node packages/cli/dist/bin.js start
+node packages/cli/dist/bin.js start --config-dir ./my-overmind-config
+node packages/cli/dist/bin.js start-cerebrate hello
+node packages/cli/dist/bin.js send-command hello hello
+node packages/cli/dist/bin.js attach hello   # streams command output (use another terminal with send-command)
 node packages/cli/dist/bin.js stats
 node packages/cli/dist/bin.js shutdown
 ```

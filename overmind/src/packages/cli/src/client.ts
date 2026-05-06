@@ -9,6 +9,8 @@ import type {
   OvermindApiMethod,
   OvermindApiRequestMap,
   OvermindApiResponseMap,
+  SendCerebrateCommandRequest,
+  SendCerebrateCommandResponse,
   ShutdownRequest,
   ShutdownResponse,
   StartCerebrateRequest,
@@ -18,7 +20,9 @@ import type {
 } from 'overmind-api';
 import { getDefaultOvermindPipePath } from 'overmind-service';
 
-export type StartServiceRequest = Record<string, never>;
+export interface StartServiceRequest {
+  configDir: string;
+}
 
 export interface StartServiceResponse {
   started: boolean;
@@ -34,6 +38,8 @@ interface OvermindIpcErrorResponse {
   method: string;
   error: string;
 }
+
+type RpcOvermindMethod = Exclude<OvermindApiMethod, 'cerebrate.attach'>;
 
 export class OvermindIpcClient implements OvermindApi {
   readonly #pipePath: string;
@@ -58,7 +64,11 @@ export class OvermindIpcClient implements OvermindApi {
     return this.#send('cerebrate.stop', request);
   }
 
-  async startService(_request: StartServiceRequest): Promise<StartServiceResponse> {
+  sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse> {
+    return this.#send('cerebrate.command', request);
+  }
+
+  async startService(request: StartServiceRequest): Promise<StartServiceResponse> {
     if (await this.isRunning()) {
       return {
         started: false,
@@ -69,7 +79,9 @@ export class OvermindIpcClient implements OvermindApi {
     const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
     const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
 
-    const child = spawn(process.execPath, [serviceBinPath], {
+    const resolvedConfigDir = path.resolve(request.configDir);
+
+    const child = spawn(process.execPath, [serviceBinPath, '--config-dir', resolvedConfigDir], {
       detached: true,
       stdio: 'ignore',
     });
@@ -93,7 +105,69 @@ export class OvermindIpcClient implements OvermindApi {
     }
   }
 
-  async #send<TMethod extends OvermindApiMethod>(
+  async attachCerebrate(name: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      const socket = net.createConnection(this.#pipePath);
+      let buffer = '';
+      let ackSeen = false;
+
+      socket.setEncoding('utf8');
+
+      socket.once('connect', () => {
+        socket.write(`${JSON.stringify({ method: 'cerebrate.attach', params: { name } })}\n`);
+      });
+
+      socket.on('data', (chunk: string) => {
+        buffer += chunk;
+
+        let newlineIdx: number;
+        while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+          const rawLine = buffer.slice(0, newlineIdx);
+          buffer = buffer.slice(newlineIdx + 1);
+
+          const trimmed = rawLine.trimEnd();
+          if (!trimmed) {
+            continue;
+          }
+
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(trimmed);
+          } catch (error) {
+            reject(error instanceof Error ? error : new Error(String(error)));
+            socket.destroy();
+            return;
+          }
+
+          const obj = parsed as Record<string, unknown>;
+
+          if (!ackSeen) {
+            ackSeen = true;
+            if (typeof obj.error === 'string') {
+              reject(new Error(obj.error));
+              socket.destroy();
+              return;
+            }
+            if (obj.method === 'cerebrate.attach' && obj.ack === true) {
+              continue;
+            }
+            reject(new Error('Unexpected attach handshake response.'));
+            socket.destroy();
+            return;
+          }
+
+          if (obj.type === 'output' && typeof obj.line === 'string') {
+            console.log(obj.line);
+          }
+        }
+      });
+
+      socket.once('error', reject);
+      socket.once('close', () => resolve());
+    });
+  }
+
+  async #send<TMethod extends RpcOvermindMethod>(
     method: TMethod,
     params: OvermindApiRequestMap[TMethod],
   ): Promise<OvermindApiResponseMap[TMethod]> {
@@ -118,7 +192,7 @@ export class OvermindIpcClient implements OvermindApi {
 
         try {
           const [rawResponse] = buffer.split('\n', 1);
-          resolve(JSON.parse(rawResponse) as OvermindIpcSuccessResponse<TMethod> | OvermindIpcErrorResponse);
+          resolve(JSON.parse(rawResponse as string) as OvermindIpcSuccessResponse<TMethod> | OvermindIpcErrorResponse);
           socket.end();
         } catch (error) {
           reject(error);

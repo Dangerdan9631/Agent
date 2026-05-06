@@ -3,7 +3,9 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import packageJson from '../package.json';
 import { OvermindIpcClient } from './client.js';
+import { registerAttach } from './commands/attach.js';
 import { registerShutdown } from './commands/shutdown.js';
+import { registerSendCommand } from './commands/send-command.js';
 import { registerStart } from './commands/start.js';
 import { registerStartCerebrate } from './commands/start-cerebrate.js';
 import { registerStats } from './commands/stats.js';
@@ -22,6 +24,8 @@ async function main(): Promise<void> {
   registerStartCerebrate(program, client);
   registerStats(program, client);
   registerStopCerebrate(program, client);
+  registerSendCommand(program, client);
+  registerAttach(program, client);
   registerShutdown(program, client);
 
   await program.parseAsync(process.argv);

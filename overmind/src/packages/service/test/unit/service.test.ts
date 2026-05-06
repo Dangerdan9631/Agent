@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_PIPE_NAME, getDefaultOvermindPipePath } from '../../src/constants.js';
 import { OvermindService } from '../../src/service.js';
@@ -6,9 +9,13 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+function makeTestConfigDir(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'overmind-test-'));
+}
+
 describe('OvermindService', () => {
   it('reports service stats', async () => {
-    const service = new OvermindService();
+    const service = new OvermindService(makeTestConfigDir());
 
     await expect(service.getServiceStats({})).resolves.toMatchObject({
       cerebrates: [],
@@ -18,7 +25,7 @@ describe('OvermindService', () => {
   });
 
   it('returns a shutdown acknowledgement', async () => {
-    const service = new OvermindService();
+    const service = new OvermindService(makeTestConfigDir());
 
     await expect(service.shutdown({})).resolves.toEqual({
       success: true,
@@ -27,15 +34,15 @@ describe('OvermindService', () => {
   });
 
   it('starts and stops a cerebrate', async () => {
-    const service = new OvermindService();
+    const service = new OvermindService(makeTestConfigDir());
 
-    const { id } = await service.startCerebrate({});
+    const { name } = await service.startCerebrate({ name: 'hello' });
 
     await expect(service.getServiceStats({})).resolves.toMatchObject({
       runningCerebrateCount: 1,
       cerebrates: [
         {
-          id,
+          name: 'hello',
           idleLoopCount: 1,
           runtime: expect.any(Number),
           state: 'idle',
@@ -43,9 +50,11 @@ describe('OvermindService', () => {
       ],
     });
 
-    await expect(service.stopCerebrate({ id })).resolves.toEqual({
+    expect(name).toBe('hello');
+
+    await expect(service.stopCerebrate({ name: 'hello' })).resolves.toEqual({
       stopped: true,
-      message: `Cerebrate stopped: ${id}`,
+      message: 'Cerebrate stopped: hello',
     });
 
     await expect(service.getServiceStats({})).resolves.toMatchObject({
@@ -56,27 +65,27 @@ describe('OvermindService', () => {
 
   it('increments the cerebrate idle loop count each time idle sleeps', async () => {
     vi.useFakeTimers();
-    const service = new OvermindService();
+    const service = new OvermindService(makeTestConfigDir());
 
-    const { id } = await service.startCerebrate({});
+    await service.startCerebrate({ name: 'hello' });
     await vi.advanceTimersByTimeAsync(10_000);
 
     await expect(service.getServiceStats({})).resolves.toMatchObject({
       cerebrates: [
         {
-          id,
+          name: 'hello',
           idleLoopCount: 2,
         },
       ],
     });
 
-    await service.stopCerebrate({ id });
+    await service.stopCerebrate({ name: 'hello' });
   });
 
   it('reports when a cerebrate does not exist', async () => {
-    const service = new OvermindService();
+    const service = new OvermindService(makeTestConfigDir());
 
-    await expect(service.stopCerebrate({ id: 'missing' })).resolves.toEqual({
+    await expect(service.stopCerebrate({ name: 'missing' })).resolves.toEqual({
       stopped: false,
       message: 'Cerebrate not found: missing',
     });
