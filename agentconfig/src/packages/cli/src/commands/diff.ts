@@ -1,34 +1,7 @@
 import chalk from 'chalk';
 import { Option, type Command } from 'commander';
-import type { IAgentConfigApi, DiffEntry } from 'agentconfig-api';
+import type { IAgentConfigApi } from 'agentconfig-api';
 import { OutputFormat } from '../output-format';
-
-export function printDiff(diff: DiffEntry[], format: OutputFormat): void {
-  if (format === 'json') {
-    console.log(JSON.stringify(diff, null, 2));
-    return;
-  }
-  for (const entry of diff) {
-    const label =
-      entry.action === 'create'
-        ? chalk.green('+ ' + entry.path)
-        : entry.action === 'update'
-          ? chalk.yellow('~ ' + entry.path)
-          : chalk.gray('  ' + entry.path);
-    console.log(label);
-    if (entry.diff) {
-      const lines = entry.diff.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('+')) console.log(chalk.green(line));
-        else if (line.startsWith('-')) console.log(chalk.red(line));
-        else console.log(chalk.gray(line));
-      }
-    }
-  }
-  if (diff.length === 0) {
-    console.log(chalk.green('No changes.'));
-  }
-}
 
 export function registerDiff(program: Command, api: IAgentConfigApi): void {
   program
@@ -56,7 +29,32 @@ export function registerDiff(program: Command, api: IAgentConfigApi): void {
 
       if (opts.verbose && opts.format !== 'json') console.log(chalk.gray(`Output dir: ${outputDir}`));
       if (opts.verbose && opts.format !== 'json') console.log(chalk.gray(`Diff entries: ${diff.length}`));
-      printDiff(diff, opts.format);
+
+      if (opts.format === 'json') {
+        console.log(JSON.stringify(diff, null, 2));
+      } else {
+        for (const entry of diff) {
+          const label =
+            entry.action === 'create'
+              ? chalk.green('+ ' + entry.path)
+              : entry.action === 'update'
+                ? chalk.yellow('~ ' + entry.path)
+                : chalk.gray('  ' + entry.path);
+          console.log(label);
+          if (entry.diff) {
+            const lines = entry.diff.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('+')) console.log(chalk.green(line));
+              else if (line.startsWith('-')) console.log(chalk.red(line));
+              else console.log(chalk.gray(line));
+            }
+          }
+        }
+        if (diff.length === 0) {
+          console.log(chalk.green('No changes.'));
+        }
+      }
+
       if (diff.length > 0) process.exit(1);
     });
 }

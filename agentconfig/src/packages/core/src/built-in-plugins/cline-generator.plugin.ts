@@ -101,6 +101,5 @@ export class ClineHookGenerator implements GeneratorPlugin<HookDefinition> {
 export default [
   new ClineInstructionGenerator(),
   new ClineCommandGenerator(),
-  new ClineSkillGenerator(),
   new ClineHookGenerator(),
 ];
