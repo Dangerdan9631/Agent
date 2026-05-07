@@ -17,8 +17,13 @@ const cerebrateConfigRawSchema = z.object({
   commands: z.array(cerebrateCommandRawSchema),
 });
 
+const llmConfigSchema = z.object({
+  chain: z.array(z.string()).default([]),
+});
+
 const overmindConfigRawSchema = z.object({
   version: z.number().optional(),
+  llm: llmConfigSchema.default({ chain: [] }),
 });
 
 export interface ResolvedCerebrateCommand {
@@ -36,9 +41,12 @@ export interface ResolvedCerebrateConfig {
 }
 
 export type OvermindConfig = z.infer<typeof overmindConfigRawSchema>;
+export type LlmConfig = OvermindConfig['llm'];
 
 export const DEFAULT_OVERMIND_CONFIG_YAML = `# Overmind service configuration.
 version: 1
+llm:
+  chain: []
 `;
 
 export const DEFAULT_HELLO_CEREBRATE_YAML = `description: "says hello"

@@ -11,6 +11,7 @@ import {
   type Service,
 } from 'robot3';
 import type { ResolvedCerebrateConfig } from './config.js';
+import type { LlmChain } from './llm/index.js';
 import { completeTask, getAvailableTasks, saveTask, startTask, type Task } from './tasks.js';
 
 export type CerebrateState = 'initialize' | 'idle' | 'check-tasks' | 'post-check' | 'work' | 'validate' | 'shutting down';
@@ -36,13 +37,15 @@ export class Cerebrate {
   readonly #machine: CerebrateMachine;
   readonly #config: ResolvedCerebrateConfig;
   readonly #configDir: string;
+  readonly #llmChain: LlmChain;
   readonly #output = new EventEmitter();
   #currentTask: Task | undefined;
 
-  constructor(name: string, config: ResolvedCerebrateConfig, configDir: string) {
+  constructor(name: string, config: ResolvedCerebrateConfig, configDir: string, llmChain: LlmChain) {
     this.name = name;
     this.#config = config;
     this.#configDir = configDir;
+    this.#llmChain = llmChain;
     this.#machine = createMachine(
       'initialize',
       {
@@ -104,14 +107,22 @@ export class Cerebrate {
     };
   }
 
-  sendCommand(commandName: string): string {
+  async sendCommand(commandName: string): Promise<string> {
     if (commandName === 'check-tasks') {
       return this.#sendCheckTasksCommand();
     }
 
     const cmd = this.#config.commands.find((c) => c.name === commandName);
     if (!cmd) {
-      throw new Error(`Unknown command for cerebrate "${this.name}": ${commandName}`);
+      this.#emit(`[${this.name}] >>> ${commandName}`);
+      const output = await this.#llmChain.run({
+        prompt: commandName,
+        context: '',
+        difficulty: 'low',
+        thinking: 'none',
+      });
+      this.#emit(`[${this.name}] <<< ${output}`);
+      return output;
     }
 
     const output = cmd.value;

@@ -19,15 +19,18 @@ import {
   loadResolvedCerebrateConfig,
   scaffoldDefaultConfig,
 } from './config.js';
+import { createLlmChain, type LlmChain } from './llm/index.js';
 
 export class OvermindService implements OvermindApi {
   readonly #configDir: string;
+  readonly #llmChain: LlmChain;
   readonly #cerebrates = new Map<string, Cerebrate>();
 
   constructor(configDir: string) {
     this.#configDir = configDir;
     scaffoldDefaultConfig(configDir);
-    loadOvermindConfig(configDir);
+    const config = loadOvermindConfig(configDir);
+    this.#llmChain = createLlmChain(config.llm);
   }
 
   get configDir(): string {
@@ -67,7 +70,7 @@ export class OvermindService implements OvermindApi {
     }
 
     const resolvedConfig = loadResolvedCerebrateConfig(definitionDir);
-    const cerebrate = new Cerebrate(name, resolvedConfig, this.#configDir);
+    const cerebrate = new Cerebrate(name, resolvedConfig, this.#configDir, this.#llmChain);
 
     this.#cerebrates.set(name, cerebrate);
     cerebrate.start();
@@ -101,7 +104,7 @@ export class OvermindService implements OvermindApi {
       throw new Error(`Cerebrate "${request.name}" is not running.`);
     }
 
-    const output = cerebrate.sendCommand(request.command);
+    const output = await cerebrate.sendCommand(request.command);
 
     return { output };
   }
