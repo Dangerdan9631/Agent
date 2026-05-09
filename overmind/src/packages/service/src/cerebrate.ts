@@ -10,7 +10,7 @@ import {
   type Machine,
   type Service,
 } from 'robot3';
-import type { ResolvedCerebrateConfig } from './config.js';
+import type { CerebrateConfig } from './config/cerebrate-config.js';
 import type { LlmChain } from './llm/index.js';
 import { completeTask, getAvailableTasks, saveTask, startTask, type Task } from './tasks.js';
 
@@ -35,13 +35,13 @@ export class Cerebrate {
   #idleLoopCount = 0;
   #service: CerebrateMachineService | undefined;
   readonly #machine: CerebrateMachine;
-  readonly #config: ResolvedCerebrateConfig;
+  readonly #config: CerebrateConfig;
   readonly #configDir: string;
   readonly #llmChain: LlmChain;
   readonly #output = new EventEmitter();
   #currentTask: Task | undefined;
 
-  constructor(name: string, config: ResolvedCerebrateConfig, configDir: string, llmChain: LlmChain) {
+  constructor(name: string, config: CerebrateConfig, configDir: string, llmChain: LlmChain) {
     this.name = name;
     this.#config = config;
     this.#configDir = configDir;
@@ -126,8 +126,8 @@ export class Cerebrate {
     }
 
     const output = cmd.value;
-    this.#emit(output);
-    return output;
+    this.#emit(JSON.stringify(output));
+    return JSON.stringify(output);
   }
 
   get #state(): CerebrateState {

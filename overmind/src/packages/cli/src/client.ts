@@ -18,11 +18,7 @@ import type {
   StopCerebrateRequest,
   StopCerebrateResponse,
 } from 'overmind-api';
-import { getDefaultOvermindPipePath } from 'overmind-service';
-
-export interface StartServiceRequest {
-  configDir: string;
-}
+import { getOvermindPipePath } from 'overmind-service';
 
 export interface StartServiceResponse {
   started: boolean;
@@ -42,10 +38,12 @@ interface OvermindIpcErrorResponse {
 type RpcOvermindMethod = Exclude<OvermindApiMethod, 'cerebrate.attach'>;
 
 export class OvermindIpcClient implements OvermindApi {
+  readonly #configDir: string;
   readonly #pipePath: string;
 
-  constructor(pipePath = getDefaultOvermindPipePath()) {
-    this.#pipePath = pipePath;
+  constructor(configDir: string) {
+    this.#configDir = path.resolve(configDir);
+    this.#pipePath = getOvermindPipePath(this.#configDir);
   }
 
   getServiceStats(request: GetServiceStatsRequest): Promise<GetServiceStatsResponse> {
@@ -68,7 +66,7 @@ export class OvermindIpcClient implements OvermindApi {
     return this.#send('cerebrate.command', request);
   }
 
-  async startService(request: StartServiceRequest): Promise<StartServiceResponse> {
+  async startService(): Promise<StartServiceResponse> {
     if (await this.isRunning()) {
       return {
         started: false,
@@ -79,11 +77,13 @@ export class OvermindIpcClient implements OvermindApi {
     const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
     const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
 
-    const resolvedConfigDir = path.resolve(request.configDir);
-
-    const child = spawn(process.execPath, [serviceBinPath, '--config-dir', resolvedConfigDir], {
+    const child = spawn(process.execPath, [serviceBinPath, this.#configDir], {
       detached: true,
-      stdio: 'ignore',
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
+
+    child.stderr?.on('data', (chunk: Buffer) => {
+      process.stderr.write(chunk);
     });
 
     child.unref();

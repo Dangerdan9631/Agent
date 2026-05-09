@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import type {
   GetServiceStatsRequest,
   GetServiceStatsResponse,
@@ -12,109 +11,45 @@ import type {
   StopCerebrateRequest,
   StopCerebrateResponse,
 } from 'overmind-api';
-import { Cerebrate } from './cerebrate.js';
-import {
-  cerebrateDefinitionDir,
-  loadOvermindConfig,
-  loadResolvedCerebrateConfig,
-  scaffoldDefaultConfig,
-} from './config.js';
-import { createLlmChain, type LlmChain } from './llm/index.js';
+import { inject, singleton } from 'tsyringe';
+import { CerebrateController } from './controllers/cerebrate.controller.js';
+import { ServiceController } from './controllers/service.controller.js';
+import type { OvermindConfig } from './config/overmind-config.js';
+import { OvermindConfigToken } from './container.js';
 
+@singleton()
 export class OvermindService implements OvermindApi {
-  readonly #configDir: string;
-  readonly #llmChain: LlmChain;
-  readonly #cerebrates = new Map<string, Cerebrate>();
-
-  constructor(configDir: string) {
-    this.#configDir = configDir;
-    scaffoldDefaultConfig(configDir);
-    const config = loadOvermindConfig(configDir);
-    this.#llmChain = createLlmChain(config.llm);
-  }
+  constructor(
+    @inject(OvermindConfigToken) private readonly config: OvermindConfig,
+    @inject(ServiceController) private readonly serviceController: ServiceController,
+    @inject(CerebrateController) private readonly cerebrateController: CerebrateController,
+  ) {}
 
   get configDir(): string {
-    return this.#configDir;
+    return this.config.configDir;
   }
 
-  async getServiceStats(_request: GetServiceStatsRequest): Promise<GetServiceStatsResponse> {
-    const cerebrates = Array.from(this.#cerebrates.values(), (cerebrate) => cerebrate.getStats());
-
-    return {
-      uptime: process.uptime(),
-      runningCerebrateCount: cerebrates.length,
-      cerebrates,
-    };
+  getServiceStats(request: GetServiceStatsRequest): Promise<GetServiceStatsResponse> {
+    return this.serviceController.getServiceStats(request);
   }
 
-  async shutdown(_request: ShutdownRequest): Promise<ShutdownResponse> {
-    await Promise.all(Array.from(this.#cerebrates.values(), (cerebrate) => cerebrate.stop()));
-    this.#cerebrates.clear();
-
-    return {
-      success: true,
-      message: 'Service shutdown requested.',
-    };
+  shutdown(request: ShutdownRequest): Promise<ShutdownResponse> {
+    return this.serviceController.shutdown(request);
   }
 
-  async startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
-    const { name } = request;
-
-    if (this.#cerebrates.has(name)) {
-      throw new Error(`Cerebrate "${name}" is already running. Only one instance per name is allowed.`);
-    }
-
-    const definitionDir = cerebrateDefinitionDir(this.#configDir, name);
-    if (!fs.existsSync(definitionDir) || !fs.statSync(definitionDir).isDirectory()) {
-      throw new Error(`No cerebrate definition folder for "${name}" under cerebrates/.`);
-    }
-
-    const resolvedConfig = loadResolvedCerebrateConfig(definitionDir);
-    const cerebrate = new Cerebrate(name, resolvedConfig, this.#configDir, this.#llmChain);
-
-    this.#cerebrates.set(name, cerebrate);
-    cerebrate.start();
-
-    return { name };
+  startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
+    return this.cerebrateController.startCerebrate(request);
   }
 
-  async stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
-    const cerebrate = this.#cerebrates.get(request.name);
-
-    if (!cerebrate) {
-      return {
-        stopped: false,
-        message: `Cerebrate not found: ${request.name}`,
-      };
-    }
-
-    await cerebrate.stop();
-    this.#cerebrates.delete(request.name);
-
-    return {
-      stopped: true,
-      message: `Cerebrate stopped: ${request.name}`,
-    };
+  stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
+    return this.cerebrateController.stopCerebrate(request);
   }
 
-  async sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse> {
-    const cerebrate = this.#cerebrates.get(request.name);
-
-    if (!cerebrate) {
-      throw new Error(`Cerebrate "${request.name}" is not running.`);
-    }
-
-    const output = await cerebrate.sendCommand(request.command);
-
-    return { output };
+  sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse> {
+    return this.cerebrateController.sendCerebrateCommand(request);
   }
 
   subscribeCerebrateOutput(name: string, listener: (line: string) => void): () => void {
-    const cerebrate = this.#cerebrates.get(name);
-    if (!cerebrate) {
-      throw new Error(`Cerebrate "${name}" is not running.`);
-    }
-
-    return cerebrate.subscribeOutput(listener);
+    return this.cerebrateController.subscribeCerebrateOutput(name, listener);
   }
 }

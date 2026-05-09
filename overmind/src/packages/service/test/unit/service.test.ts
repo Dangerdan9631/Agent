@@ -1,7 +1,9 @@
+import 'reflect-metadata';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { buildContainer } from '../../src/container.js';
 import { DEFAULT_PIPE_NAME, getDefaultOvermindPipePath } from '../../src/constants.js';
 import { OvermindService } from '../../src/service.js';
 
@@ -15,7 +17,7 @@ function makeTestConfigDir(): string {
 
 describe('OvermindService', () => {
   it('reports service stats', async () => {
-    const service = new OvermindService(makeTestConfigDir());
+    const service = buildContainer(makeTestConfigDir()).resolve(OvermindService);
 
     await expect(service.getServiceStats({})).resolves.toMatchObject({
       cerebrates: [],
@@ -25,7 +27,7 @@ describe('OvermindService', () => {
   });
 
   it('returns a shutdown acknowledgement', async () => {
-    const service = new OvermindService(makeTestConfigDir());
+    const service = buildContainer(makeTestConfigDir()).resolve(OvermindService);
 
     await expect(service.shutdown({})).resolves.toEqual({
       success: true,
@@ -34,7 +36,7 @@ describe('OvermindService', () => {
   });
 
   it('starts and stops a cerebrate', async () => {
-    const service = new OvermindService(makeTestConfigDir());
+    const service = buildContainer(makeTestConfigDir()).resolve(OvermindService);
 
     const { name } = await service.startCerebrate({ name: 'hello' });
 
@@ -65,7 +67,7 @@ describe('OvermindService', () => {
 
   it('increments the cerebrate idle loop count each time idle sleeps', async () => {
     vi.useFakeTimers();
-    const service = new OvermindService(makeTestConfigDir());
+    const service = buildContainer(makeTestConfigDir()).resolve(OvermindService);
 
     await service.startCerebrate({ name: 'hello' });
     await vi.advanceTimersByTimeAsync(10_000);
@@ -83,7 +85,7 @@ describe('OvermindService', () => {
   });
 
   it('reports when a cerebrate does not exist', async () => {
-    const service = new OvermindService(makeTestConfigDir());
+    const service = buildContainer(makeTestConfigDir()).resolve(OvermindService);
 
     await expect(service.stopCerebrate({ name: 'missing' })).resolves.toEqual({
       stopped: false,

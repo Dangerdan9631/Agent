@@ -1,18 +1,32 @@
 #!/usr/bin/env node
+import 'reflect-metadata';
+import { Command } from 'commander';
 import path from 'node:path';
-import { runOvermindService } from './run-service.js';
+import packageJson from '../package.json';
+import { runOvermindService } from './service/run-service.js';
 
-function parseConfigDir(argv: string[]): string {
-  const idx = argv.indexOf('--config-dir');
-  if (idx === -1 || idx + 1 >= argv.length) {
-    throw new Error('Missing required argument: --config-dir <path>');
-  }
-
-  return path.resolve(argv[idx + 1] as string);
-}
+type ServiceOptions = {
+  configDir?: string;
+};
 
 async function main(): Promise<void> {
-  const configDir = parseConfigDir(process.argv.slice(2));
+  const program = new Command()
+    .name('overmind-service')
+    .description('Run the Overmind service.')
+    .version(packageJson.version)
+    .argument('[config-dir]', 'Path to the Overmind service configuration directory.')
+    .option('--config-dir <path>', 'Path to the Overmind service configuration directory.');
+  program.parse(process.argv);
+
+  const options = program.opts<ServiceOptions>();
+  const positionalConfigDir = program.args[0] as string | undefined;
+  const configDirArg = options.configDir ?? positionalConfigDir;
+  if (configDirArg === undefined) {
+    program.error('Missing required argument: config-dir');
+    return;
+  }
+
+  const configDir = path.resolve(configDirArg);
   await runOvermindService({ configDir });
 }
 
