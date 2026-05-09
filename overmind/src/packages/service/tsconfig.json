@@ -5,7 +5,10 @@
     "rootDir": "src",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node", "reflect-metadata"]
+    "types": ["node", "reflect-metadata"],
+    "paths": {
+      "@overmind/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*"]
 }

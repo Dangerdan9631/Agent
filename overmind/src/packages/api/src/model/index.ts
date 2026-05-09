@@ -1,1 +1,1 @@
-export * from './iso-timestamp.js';
+export * from './iso-timestamp';

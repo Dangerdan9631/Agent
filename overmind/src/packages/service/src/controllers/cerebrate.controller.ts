@@ -12,8 +12,7 @@ import { inject, singleton } from 'tsyringe';
 import { Cerebrate, type CerebrateStats } from '../cerebrate.js';
 import { loadCerebrateConfig } from '../config/cerebrate-config.js';
 import { LlmChain } from '../llm/index.js';
-import { OvermindConfigToken } from '../container.js';
-import type { OvermindConfig } from '../config/overmind-config.js';
+import { type OvermindConfig, OvermindConfigToken } from '../config/overmind-config.js';
 
 @singleton()
 export class CerebrateController {

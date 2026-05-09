@@ -2,23 +2,23 @@ import { spawn } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type {
-  GetServiceStatsRequest,
-  GetServiceStatsResponse,
-  OvermindApi,
-  OvermindApiMethod,
-  OvermindApiRequestMap,
-  OvermindApiResponseMap,
-  SendCerebrateCommandRequest,
-  SendCerebrateCommandResponse,
-  ShutdownRequest,
-  ShutdownResponse,
-  StartCerebrateRequest,
-  StartCerebrateResponse,
-  StopCerebrateRequest,
-  StopCerebrateResponse,
+import {
+  type GetServiceStatsRequest,
+  type GetServiceStatsResponse,
+  type OvermindApi,
+  type OvermindApiMethod,
+  type OvermindApiRequestMap,
+  type OvermindApiResponseMap,
+  type SendCerebrateCommandRequest,
+  type SendCerebrateCommandResponse,
+  type ShutdownRequest,
+  type ShutdownResponse,
+  type StartCerebrateRequest,
+  type StartCerebrateResponse,
+  type StopCerebrateRequest,
+  type StopCerebrateResponse,
+  getOvermindPipePath
 } from 'overmind-api';
-import { getOvermindPipePath } from 'overmind-service';
 
 export interface StartServiceResponse {
   started: boolean;

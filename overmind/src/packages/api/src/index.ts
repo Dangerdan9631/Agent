@@ -1,3 +1,3 @@
-export * from './api/index.js';
-export * from './model/index.js';
-export * from './ipc/index.js';
+export * from './api';
+export * from './model';
+export * from './ipc';

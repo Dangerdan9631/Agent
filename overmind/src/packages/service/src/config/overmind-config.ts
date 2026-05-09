@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { InjectionToken } from 'tsyringe';
 import yaml from 'yaml';
 import { z } from 'zod';
+
+export const OvermindConfigToken: InjectionToken<OvermindConfig> = Symbol.for('OvermindService.CONFIG_DIR');
 
 //
 // *RawSchema types are used for parsing config files. Changes should be

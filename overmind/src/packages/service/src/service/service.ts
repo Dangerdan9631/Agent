@@ -11,23 +11,15 @@ import type {
   StopCerebrateRequest,
   StopCerebrateResponse,
 } from 'overmind-api';
-import { inject, singleton } from 'tsyringe';
-import { CerebrateController } from './controllers/cerebrate.controller.js';
-import { ServiceController } from './controllers/service.controller.js';
-import type { OvermindConfig } from './config/overmind-config.js';
-import { OvermindConfigToken } from './container.js';
+import { singleton } from 'tsyringe';
+import { CerebrateController, ServiceController } from '@overmind/controllers';
 
 @singleton()
 export class OvermindService implements OvermindApi {
   constructor(
-    @inject(OvermindConfigToken) private readonly config: OvermindConfig,
-    @inject(ServiceController) private readonly serviceController: ServiceController,
-    @inject(CerebrateController) private readonly cerebrateController: CerebrateController,
+    private readonly serviceController: ServiceController,
+    private readonly cerebrateController: CerebrateController,
   ) {}
-
-  get configDir(): string {
-    return this.config.configDir;
-  }
 
   getServiceStats(request: GetServiceStatsRequest): Promise<GetServiceStatsResponse> {
     return this.serviceController.getServiceStats(request);
