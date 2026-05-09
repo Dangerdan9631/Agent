@@ -1,4 +1,5 @@
 export * from './attach-cerebrate';
+export * from './error';
 export * from './get-service-stats';
 export * from './overmind-ipc';
 export * from './pipe';

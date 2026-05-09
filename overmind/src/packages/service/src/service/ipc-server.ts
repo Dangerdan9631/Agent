@@ -5,52 +5,27 @@ import {
   type AttachCerebrateAckResponse,
   type AttachCerebrateParams,
   type CerebrateAttachOutputEvent,
-  type GetServiceStatsIpcRequest,
-  type GetServiceStatsIpcResponse,
-  type SendCerebrateCommandIpcRequest,
-  type SendCerebrateCommandIpcResponse,
-  type ShutdownIpcRequest,
-  type ShutdownIpcResponse,
-  type StartCerebrateIpcRequest,
-  type StartCerebrateIpcResponse,
-  type StopCerebrateIpcRequest,
-  type StopCerebrateIpcResponse,
+  type OvermindIpcErrorResponse,
+  type OvermindIpcRequest,
+  type OvermindIpcResponse,
   getOvermindPipePath,
 } from 'overmind-api';
-import { OvermindService } from './service.js';
-import { inject, singleton } from 'tsyringe';
-import { type OvermindConfig, OvermindConfigToken } from '@overmind/config';
-
-export type OvermindIpcRequest =
-  | GetServiceStatsIpcRequest
-  | ShutdownIpcRequest
-  | StartCerebrateIpcRequest
-  | StopCerebrateIpcRequest
-  | SendCerebrateCommandIpcRequest
-  | { method: 'cerebrate.attach'; params: AttachCerebrateParams };
-
-export type OvermindIpcResponse =
-  | GetServiceStatsIpcResponse
-  | ShutdownIpcResponse
-  | StartCerebrateIpcResponse
-  | StopCerebrateIpcResponse
-  | SendCerebrateCommandIpcResponse;
-
-interface OvermindIpcErrorResponse {
-  method: string;
-  error: string;
-}
+import { singleton } from 'tsyringe';
+import { type OvermindConfig } from '@overmind/config';
 
 @singleton()
 export class OvermindIpcServer {
-  readonly pipePath: string;
-  readonly server: net.Server;
+  pipePath?: string;
+  server?: net.Server;
+  onDispatch?: (request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>) => Promise<OvermindIpcResponse>;
+  onSubscribeCerebrateOutput?: (name: string, listener: (line: string) => void) => () => void;
   stopping = false;
 
-  constructor(
-    private readonly service: OvermindService,
-    @inject(OvermindConfigToken) config: OvermindConfig,
-  ) {
+  async listen(
+    config: OvermindConfig,
+    listener: (request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>) => Promise<OvermindIpcResponse>,
+    attachListener: (name: string, lineListener: (line: string) => void) => () => void,
+  ): Promise<void> {
     this.pipePath = getOvermindPipePath(config.configDir)
     this.server = net.createServer((socket) => {
       let buffer = '';
@@ -72,15 +47,16 @@ export class OvermindIpcServer {
         socket.destroy();
       });
     });
-  }
 
-  async listen(): Promise<void> {
+    this.onDispatch = listener;
+    this.onSubscribeCerebrateOutput = attachListener;
+
     await this.#removeSocketFileIfNeeded();
 
     await new Promise<void>((resolve, reject) => {
-      this.server.once('error', reject);
-      this.server.listen(this.pipePath, () => {
-        this.server.off('error', reject);
+      this.server?.once('error', reject);
+      this.server?.listen(this.pipePath, () => {
+        this.server?.off('error', reject);
         resolve();
       });
     });
@@ -94,7 +70,7 @@ export class OvermindIpcServer {
     this.stopping = true;
 
     await new Promise<void>((resolve, reject) => {
-      this.server.close((error) => {
+      this.server?.close((error) => {
         if (error) {
           reject(error);
           return;
@@ -145,7 +121,7 @@ export class OvermindIpcServer {
     socket.once('error', cleanup);
 
     try {
-      unsubscribe = this.service.subscribeCerebrateOutput(params.name, (line: string) => {
+      unsubscribe = this.onSubscribeCerebrateOutput?.(params.name, (line: string) => {
         const event: CerebrateAttachOutputEvent = { type: 'output', line };
         socket.write(`${JSON.stringify(event)}\n`);
       });
@@ -163,42 +139,11 @@ export class OvermindIpcServer {
   }
 
   async #dispatch(request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>): Promise<OvermindIpcResponse> {
-    if (request.method === 'service.stats') {
-      return {
-        method: request.method,
-        result: await this.service.getServiceStats(request.params),
-      };
+    if (this.onDispatch) {
+      return this.onDispatch(request);
     }
 
-    if (request.method === 'service.shutdown') {
-      return {
-        method: request.method,
-        result: await this.service.shutdown(request.params),
-      };
-    }
-
-    if (request.method === 'cerebrate.start') {
-      return {
-        method: request.method,
-        result: await this.service.startCerebrate(request.params),
-      };
-    }
-
-    if (request.method === 'cerebrate.stop') {
-      return {
-        method: request.method,
-        result: await this.service.stopCerebrate(request.params),
-      };
-    }
-
-    if (request.method === 'cerebrate.command') {
-      return {
-        method: request.method,
-        result: await this.service.sendCerebrateCommand(request.params),
-      };
-    }
-
-    throw new Error(`Unsupported method: ${(request as { method: string }).method}`);
+    throw new Error(`Internal IPC dispatch error: no dispatch listener registered for method ${request.method}`);
   }
 
   async #removeSocketFileIfNeeded(): Promise<void> {
@@ -207,7 +152,9 @@ export class OvermindIpcServer {
     }
 
     try {
-      await fs.rm(this.pipePath, { force: true });
+      if (this.pipePath) {
+        await fs.rm(this.pipePath, { force: true });
+      }
     } catch {
       // Best-effort cleanup for Unix domain sockets.
     }

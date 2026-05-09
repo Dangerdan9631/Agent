@@ -6,7 +6,7 @@ import packageJson from '../package.json';
 import { container, type DependencyContainer } from 'tsyringe';
 import { createLlmChain, LlmChain } from './llm/index.js';
 import { loadCerebrateConfig, loadOvermindConfig, OvermindConfigToken } from '@overmind/config';
-import { OvermindIpcServer } from '@overmind/service';
+import { OvermindService } from '@overmind/service';
 import { exit } from 'node:process';
 
 type ServiceOptions = {
@@ -46,8 +46,8 @@ try {
   loadCerebrateConfig(helloDir, true);
 
   const di = buildContainer(configDir);
-  const server = di.resolve(OvermindIpcServer);
-  await server.listen();
+  const server = di.resolve(OvermindService);
+  await server.start();
 } catch(error: unknown) {
   const message = error instanceof Error ? error.message : 'Failed to start service.';
   console.error(message);

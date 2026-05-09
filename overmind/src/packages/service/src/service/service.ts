@@ -1,47 +1,56 @@
 import type {
-  GetServiceStatsRequest,
-  GetServiceStatsResponse,
-  OvermindApi,
-  SendCerebrateCommandRequest,
-  SendCerebrateCommandResponse,
-  ShutdownRequest,
-  ShutdownResponse,
-  StartCerebrateRequest,
-  StartCerebrateResponse,
-  StopCerebrateRequest,
-  StopCerebrateResponse,
+  OvermindIpcRequest,
+  OvermindIpcResponse,
 } from 'overmind-api';
-import { singleton } from 'tsyringe';
+import { inject, singleton } from 'tsyringe';
 import { CerebrateController, ServiceController } from '@overmind/controllers';
+import { OvermindIpcServer } from './ipc-server';
+import { type OvermindConfig, OvermindConfigToken } from '@overmind/config';
 
 @singleton()
-export class OvermindService implements OvermindApi {
+export class OvermindService {
   constructor(
+    @inject(OvermindConfigToken) private readonly config: OvermindConfig,
+    private readonly ipcServer: OvermindIpcServer,
     private readonly serviceController: ServiceController,
     private readonly cerebrateController: CerebrateController,
-  ) {}
-
-  getServiceStats(request: GetServiceStatsRequest): Promise<GetServiceStatsResponse> {
-    return this.serviceController.getServiceStats(request);
-  }
-
-  shutdown(request: ShutdownRequest): Promise<ShutdownResponse> {
-    return this.serviceController.shutdown(request);
-  }
-
-  startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
-    return this.cerebrateController.startCerebrate(request);
-  }
-
-  stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
-    return this.cerebrateController.stopCerebrate(request);
-  }
-
-  sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse> {
-    return this.cerebrateController.sendCerebrateCommand(request);
-  }
-
-  subscribeCerebrateOutput(name: string, listener: (line: string) => void): () => void {
-    return this.cerebrateController.subscribeCerebrateOutput(name, listener);
+  ) {  }
+  
+  async start(): Promise<void> {
+    await this.ipcServer.listen(
+      this.config,
+      (async (request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>): Promise<OvermindIpcResponse> => {
+        switch (request.method) {
+          case 'service.stats':
+            return {
+              method: request.method,
+              result: await this.serviceController.getServiceStats(request.params),
+            };
+          case 'service.shutdown':
+            return {
+              method: request.method,
+              result: await this.serviceController.shutdown(request.params),
+            };
+          case 'cerebrate.start':
+            return {
+              method: request.method,
+              result: await this.cerebrateController.startCerebrate(request.params),
+            };
+          case 'cerebrate.stop':
+            return {
+              method: request.method,
+              result: await this.cerebrateController.stopCerebrate(request.params),
+            };
+          case 'cerebrate.command':
+            return {
+              method: request.method,
+              result: await this.cerebrateController.sendCerebrateCommand(request.params),
+            };
+          default:
+            throw new Error(`Unsupported method: ${(request as { method: string }).method}`);
+        }
+      }),
+      this.cerebrateController.subscribeCerebrateOutput.bind(this.cerebrateController),
+    );
   }
 }
