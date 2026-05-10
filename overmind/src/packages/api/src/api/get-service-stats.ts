@@ -12,3 +12,7 @@ export interface GetServiceStatsResponse {
   runningCerebrateCount: number;
   cerebrates: CerebrateStats[];
 }
+
+export interface GetServiceStatsError {
+  errorMessage: string;
+}

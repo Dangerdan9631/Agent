@@ -1,13 +1,28 @@
 import type { Command } from 'commander';
-import chalk from 'chalk';
-import type { OvermindIpcClient } from '../client.js';
+import { OvermindCliCommand } from './overmind-cli-command.js';
+import { inject, injectable } from 'tsyringe';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
+import { StartServiceHelper } from '../core/start-service.js';
 
-export function registerStart(program: Command, client: OvermindIpcClient): void {
-  program
-    .command('start')
-    .description('Start the service process.')
-    .action(async () => {
-      const result = await client.startService();
-      console.log(result.started ? chalk.green(result.message) : chalk.yellow(result.message));
-    });
+@injectable()
+export class StartCommand implements OvermindCliCommand {
+  private readonly logger: Logger;
+
+  constructor(
+    private readonly serviceStarter: StartServiceHelper,
+    @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
+  ) {
+    this.logger = loggerFactory.create('StartCommand');
+  }
+
+  register(program: Command): void {
+    program
+      .command('start')
+      .description('Start the service process.')
+      .option('--config-dir <path>', 'Path to Overmind configuration directory.', process.env['OVERMIND_CONFIG_DIR'])
+      .action(async (options) => {
+        await this.serviceStarter.startService(options.configDir);
+        this.logger.info("Service started successfully.");
+      });
+  }
 }

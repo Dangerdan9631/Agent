@@ -1,13 +1,17 @@
-import type { GetServiceStatsRequest, GetServiceStatsResponse } from './get-service-stats.js';
-import type { ShutdownRequest, ShutdownResponse } from './shutdown.js';
-import type { SendCerebrateCommandRequest, SendCerebrateCommandResponse } from './send-cerebrate-command.js';
-import type { StartCerebrateRequest, StartCerebrateResponse } from './start-cerebrate.js';
-import type { StopCerebrateRequest, StopCerebrateResponse } from './stop-cerebrate.js';
+import type { GetServiceStatsError, GetServiceStatsRequest, GetServiceStatsResponse } from './get-service-stats.js';
+import type { ShutdownError, ShutdownRequest, ShutdownResponse } from './shutdown.js';
+import type { SendCerebrateCommandError, SendCerebrateCommandRequest, SendCerebrateCommandResponse } from './send-cerebrate-command.js';
+import type { StartCerebrateError, StartCerebrateRequest, StartCerebrateResponse } from './start-cerebrate.js';
+import type { StopCerebrateError, StopCerebrateRequest, StopCerebrateResponse } from './stop-cerebrate.js';
+
+export type OvermindResponse<TResponse, TError> =
+  { success: true; result: TResponse }
+  | { success: false; error: TError };
 
 export interface OvermindApi {
-  getServiceStats(request: GetServiceStatsRequest): Promise<GetServiceStatsResponse>;
-  shutdown(request: ShutdownRequest): Promise<ShutdownResponse>;
-  startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse>;
-  stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse>;
-  sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse>;
+  getServiceStats(request: GetServiceStatsRequest): Promise<OvermindResponse<GetServiceStatsResponse, GetServiceStatsError>>;
+  shutdown(request: ShutdownRequest): Promise<OvermindResponse<ShutdownResponse, ShutdownError>>;
+  startCerebrate(request: StartCerebrateRequest): Promise<OvermindResponse<StartCerebrateResponse, StartCerebrateError>>;
+  stopCerebrate(request: StopCerebrateRequest): Promise<OvermindResponse<StopCerebrateResponse, StopCerebrateError>>;
+  sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<OvermindResponse<SendCerebrateCommandResponse, SendCerebrateCommandError>>;
 }

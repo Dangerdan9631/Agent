@@ -1,10 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  OvermindResponse,
+  SendCerebrateCommandError,
   SendCerebrateCommandRequest,
   SendCerebrateCommandResponse,
+  StartCerebrateError,
   StartCerebrateRequest,
   StartCerebrateResponse,
+  StopCerebrateError,
   StopCerebrateRequest,
   StopCerebrateResponse,
 } from 'overmind-api';
@@ -32,16 +36,22 @@ export class CerebrateController {
     this.#cerebrates.clear();
   }
 
-  async startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
+  async startCerebrate(request: StartCerebrateRequest): Promise<OvermindResponse<StartCerebrateResponse, StartCerebrateError>> {
     const { name } = request;
 
     if (this.#cerebrates.has(name)) {
-      throw new Error(`Cerebrate "${name}" is already running. Only one instance per name is allowed.`);
+      return {
+        success: false,
+        error: { errorMessage: `Cerebrate "${name}" is already running. Only one instance per name is allowed.` },
+      };
     }
 
     const definitionDir = path.join(this.config.configDir, 'cerebrates', name);
     if (!fs.existsSync(definitionDir) || !fs.statSync(definitionDir).isDirectory()) {
-      throw new Error(`No cerebrate definition folder for "${name}" under cerebrates/.`);
+      return {
+        success: false,
+        error: { errorMessage: `No cerebrate definition folder for "${name}" under cerebrates/.` },
+      };
     }
 
     const cerebrateConfig = loadCerebrateConfig(definitionDir, false);
@@ -50,16 +60,22 @@ export class CerebrateController {
     this.#cerebrates.set(name, cerebrate);
     cerebrate.start();
 
-    return { name };
+    return {
+      success: true,
+      result: { name }
+    };
   }
 
-  async stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
+  async stopCerebrate(request: StopCerebrateRequest): Promise<OvermindResponse<StopCerebrateResponse, StopCerebrateError>> {
     const cerebrate = this.#cerebrates.get(request.name);
 
     if (!cerebrate) {
       return {
-        stopped: false,
-        message: `Cerebrate not found: ${request.name}`,
+        success: true,
+        result: {
+          stopped: false,
+          message: `Cerebrate not found: ${request.name}`,
+        }
       };
     }
 
@@ -67,23 +83,32 @@ export class CerebrateController {
     this.#cerebrates.delete(request.name);
 
     return {
-      stopped: true,
-      message: `Cerebrate stopped: ${request.name}`,
+      success: true,
+      result: {
+        stopped: true,
+        message: `Cerebrate stopped: ${request.name}`,
+      },
     };
   }
 
   async sendCerebrateCommand(
     request: SendCerebrateCommandRequest,
-  ): Promise<SendCerebrateCommandResponse> {
+  ): Promise<OvermindResponse<SendCerebrateCommandResponse, SendCerebrateCommandError>> {
     const cerebrate = this.#cerebrates.get(request.name);
 
     if (!cerebrate) {
-      throw new Error(`Cerebrate "${request.name}" is not running.`);
+      return {
+        success: false,
+        error: { errorMessage: `Cerebrate "${request.name}" is not running.` },
+      };
     }
 
     const output = await cerebrate.sendCommand(request.command);
 
-    return { output };
+    return {
+      success: true,
+      result: { output }
+    };
   }
 
   subscribeCerebrateOutput(name: string, listener: (line: string) => void): () => void {

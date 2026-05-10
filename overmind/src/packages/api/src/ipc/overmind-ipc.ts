@@ -1,37 +1,17 @@
-import type { GetServiceStatsRequest, GetServiceStatsResponse } from '../api/get-service-stats.js';
-import type { ShutdownRequest, ShutdownResponse } from '../api/shutdown.js';
-import type { SendCerebrateCommandRequest, SendCerebrateCommandResponse } from '../api/send-cerebrate-command.js';
-import type { StartCerebrateRequest, StartCerebrateResponse } from '../api/start-cerebrate.js';
-import type { StopCerebrateRequest, StopCerebrateResponse } from '../api/stop-cerebrate.js';
-import type { AttachCerebrateIpcRequest, AttachCerebrateParams } from './attach-cerebrate.js';
-import { GetServiceStatsIpcRequest, GetServiceStatsIpcResponse } from './get-service-stats.js';
-import { SendCerebrateCommandIpcRequest, SendCerebrateCommandIpcResponse } from './send-cerebrate-command.js';
-import { ShutdownIpcRequest, ShutdownIpcResponse } from './shutdown.js';
-import { StartCerebrateIpcRequest, StartCerebrateIpcResponse } from './start-cerebrate.js';
-import { StopCerebrateIpcRequest, StopCerebrateIpcResponse } from './stop-cerebrate.js';
+import type { GetServiceStatsError, GetServiceStatsRequest, GetServiceStatsResponse } from '../api/get-service-stats.js';
+import type { ShutdownError, ShutdownRequest, ShutdownResponse } from '../api/shutdown.js';
+import type { SendCerebrateCommandError, SendCerebrateCommandRequest, SendCerebrateCommandResponse } from '../api/send-cerebrate-command.js';
+import type { StartCerebrateError, StartCerebrateRequest, StartCerebrateResponse } from '../api/start-cerebrate.js';
+import type { StopCerebrateError, StopCerebrateRequest, StopCerebrateResponse } from '../api/stop-cerebrate.js';
+import type { OvermindResponse } from '../api/overmind-api.js';
+import type { AttachCerebrateParams } from './attach-cerebrate.js';
 
 export type OvermindApiMethod =
   | 'service.stats'
   | 'service.shutdown'
   | 'cerebrate.start'
   | 'cerebrate.stop'
-  | 'cerebrate.command'
-  | 'cerebrate.attach';
-
-export type OvermindIpcRequest =
-  | GetServiceStatsIpcRequest
-  | ShutdownIpcRequest
-  | StartCerebrateIpcRequest
-  | StopCerebrateIpcRequest
-  | SendCerebrateCommandIpcRequest
-  | AttachCerebrateIpcRequest;
-
-export type OvermindIpcResponse =
-  | GetServiceStatsIpcResponse
-  | ShutdownIpcResponse
-  | StartCerebrateIpcResponse
-  | StopCerebrateIpcResponse
-  | SendCerebrateCommandIpcResponse;
+  | 'cerebrate.command';
 
 export interface OvermindApiRequestMap {
   'service.stats': GetServiceStatsRequest;
@@ -39,7 +19,6 @@ export interface OvermindApiRequestMap {
   'cerebrate.start': StartCerebrateRequest;
   'cerebrate.stop': StopCerebrateRequest;
   'cerebrate.command': SendCerebrateCommandRequest;
-  'cerebrate.attach': AttachCerebrateParams;
 }
 
 export interface OvermindApiResponseMap {
@@ -48,4 +27,25 @@ export interface OvermindApiResponseMap {
   'cerebrate.start': StartCerebrateResponse;
   'cerebrate.stop': StopCerebrateResponse;
   'cerebrate.command': SendCerebrateCommandResponse;
+}
+
+export interface OvermindApiErrorMap {
+  'service.stats': GetServiceStatsError;
+  'service.shutdown': ShutdownError;
+  'cerebrate.start': StartCerebrateError;
+  'cerebrate.stop': StopCerebrateError;
+  'cerebrate.command': SendCerebrateCommandError;
+}
+
+export type OvermindIpcRequest =
+  | { [M in OvermindApiMethod]: { method: M; params: OvermindApiRequestMap[M] } }[OvermindApiMethod]
+  | { method: 'cerebrate.attach'; params: AttachCerebrateParams };
+
+export type OvermindIpcResponse = {
+  [M in OvermindApiMethod]: { method: M; result: OvermindResponse<OvermindApiResponseMap[M], OvermindApiErrorMap[M]> }
+}[OvermindApiMethod];
+
+export interface OvermindIpcErrorResponse {
+  method: string;
+  error: string;
 }

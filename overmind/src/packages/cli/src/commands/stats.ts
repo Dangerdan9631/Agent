@@ -1,22 +1,46 @@
-import type { Command } from 'commander';
 import chalk from 'chalk';
-import type { OvermindIpcClient } from '../client.js';
+import type { Command } from 'commander';
+import { OvermindCliCommand } from './overmind-cli-command.js';
+import { inject, injectable } from 'tsyringe';
+import { OvermindIpcClientFactory } from '../core';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
+import { GetServiceStatsError } from 'overmind-api';
 
-export function registerStats(program: Command, client: OvermindIpcClient): void {
-  program
-    .command('stats')
-    .description('Request service runtime statistics.')
-    .action(async () => {
-      const stats = await client.getServiceStats({});
-      console.log(chalk.cyan(`Uptime: ${stats.uptime.toFixed(2)}s`));
-      console.log(chalk.cyan(`Running cerebrates: ${stats.runningCerebrateCount}`));
+@injectable()
+export class StatsCommand implements OvermindCliCommand {
+  private readonly logger: Logger;
 
-      for (const cerebrate of stats.cerebrates) {
-        console.log(
-          chalk.cyan(
-            `- ${cerebrate.name}: runtime ${cerebrate.runtime.toFixed(2)}s, idle loops ${cerebrate.idleLoopCount}`,
-          ),
-        );
-      }
-    });
+  constructor(
+    private readonly clientFactory: OvermindIpcClientFactory,
+    @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
+  ) {
+    this.logger = loggerFactory.create('StatsCommand');
+  }
+
+  register(program: Command): void {
+    program
+      .command('stats')
+      .description('Request service runtime statistics.')
+      .option('--config-dir <path>', 'Path to Overmind configuration directory.', process.env['OVERMIND_CONFIG_DIR'])
+      .action(async (options) => {
+        const client = this.clientFactory.getOvermindClient(options.configDir);
+        const response = await client.getServiceStats({});
+        if (!response.success) {
+          throw new Error(response.error.errorMessage);
+        }
+
+        const statsStr = [
+          `${chalk.blue('Uptime:')} ${response.result.uptime.toFixed(2)}s`,
+          `${chalk.blue('Running cerebrates:')} ${response.result.runningCerebrateCount}`,
+          ...response.result.cerebrates.flatMap(cerebrate =>
+            [
+              chalk.cyan(`- ${chalk.green(cerebrate.name)}:`),
+              `    ${chalk.cyan('runtime:')} ${cerebrate.runtime.toFixed(2)}s`,
+              `    ${chalk.cyan('idle loops:')} ${cerebrate.idleLoopCount}`,
+          ])
+        ].join('\n');
+
+        this.logger.info(statsStr);
+      });
+  }
 }

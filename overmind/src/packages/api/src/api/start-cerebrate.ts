@@ -5,3 +5,7 @@ export interface StartCerebrateRequest {
 export interface StartCerebrateResponse {
   name: string;
 }
+
+export interface StartCerebrateError {
+  errorMessage: string;
+}

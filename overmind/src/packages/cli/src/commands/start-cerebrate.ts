@@ -1,14 +1,33 @@
 import type { Command } from 'commander';
-import chalk from 'chalk';
-import type { OvermindIpcClient } from '../client.js';
+import { OvermindCliCommand } from './overmind-cli-command.js';
+import { inject, injectable } from 'tsyringe';
+import { OvermindIpcClientFactory } from '../core';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
 
-export function registerStartCerebrate(program: Command, client: OvermindIpcClient): void {
-  program
-    .command('start-cerebrate')
-    .description('Start a cerebrate instance by name.')
-    .argument('<name>', 'Cerebrate name.')
-    .action(async (name: string) => {
-      const result = await client.startCerebrate({ name });
-      console.log(chalk.green(`Cerebrate started: ${result.name}`));
-    });
+@injectable()
+export class StartCerebrateCommand implements OvermindCliCommand {
+  private readonly logger: Logger;
+
+  constructor(
+    private readonly clientFactory: OvermindIpcClientFactory,
+    @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
+  ) {
+    this.logger = loggerFactory.create('StartCerebrateCommand');
+  }
+
+  register(program: Command): void {
+    program
+      .command('start-cerebrate')
+      .description('Start a cerebrate instance by name.')
+      .argument('<name>', 'Cerebrate name.')
+      .option('--config-dir <path>', 'Path to Overmind configuration directory.', process.env['OVERMIND_CONFIG_DIR'])
+      .action(async (name: string, options) => {
+        const client = this.clientFactory.getOvermindClient(options.configDir);
+        const response = await client.startCerebrate({ name });
+        if (!response.success) {
+          throw new Error(response.error.errorMessage);
+        }
+        this.logger.info(`Cerebrate started: ${response.result.name}`);
+      });
+  }
 }

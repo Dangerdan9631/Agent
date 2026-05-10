@@ -6,3 +6,7 @@ export interface SendCerebrateCommandRequest {
 export interface SendCerebrateCommandResponse {
   output: string;
 }
+
+export interface SendCerebrateCommandError {
+  errorMessage: string;
+}
