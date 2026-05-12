@@ -1,6 +1,9 @@
+import net from 'node:net';
 import type {
-  OvermindIpcRequest,
-  OvermindIpcResponse,
+  AttachRequest,
+  OvermindIpcClientMessageEnvelope,
+  OvermindIpcServerMessageEnvelope,
+  OvermindIpcServerStreamMessageEnvelope,
 } from 'overmind-api';
 import { inject, singleton } from 'tsyringe';
 import { CerebrateController, ServiceController } from '@overmind/controllers';
@@ -14,43 +17,83 @@ export class OvermindService {
     private readonly ipcServer: OvermindIpcServer,
     private readonly serviceController: ServiceController,
     private readonly cerebrateController: CerebrateController,
-  ) {  }
-  
+  ) {}
+
   async start(): Promise<void> {
     await this.ipcServer.listen(
       this.config,
-      (async (request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>): Promise<OvermindIpcResponse> => {
-        switch (request.method) {
-          case 'service.stats':
-            return {
-              method: request.method,
-              result: await this.serviceController.getServiceStats(request.params),
-            };
-          case 'service.shutdown':
-            return {
-              method: request.method,
-              result: await this.serviceController.shutdown(request.params),
-            };
-          case 'cerebrate.start':
-            return {
-              method: request.method,
-              result: await this.cerebrateController.startCerebrate(request.params),
-            };
-          case 'cerebrate.stop':
-            return {
-              method: request.method,
-              result: await this.cerebrateController.stopCerebrate(request.params),
-            };
-          case 'cerebrate.command':
-            return {
-              method: request.method,
-              result: await this.cerebrateController.sendCerebrateCommand(request.params),
-            };
-          default:
-            throw new Error(`Unsupported method: ${(request as { method: string }).method}`);
-        }
-      }),
-      this.cerebrateController.subscribeCerebrateOutput.bind(this.cerebrateController),
+      this.#dispatch.bind(this),
+      this.#handleAttach.bind(this),
     );
+  }
+
+  async #dispatch(envelope: OvermindIpcClientMessageEnvelope): Promise<OvermindIpcServerMessageEnvelope> {
+    switch (envelope.method) {
+      case 'service.stats':
+        return {
+          method: envelope.method,
+          message: await this.serviceController.getServiceStats(envelope.message),
+        };
+      case 'service.shutdown':
+        return {
+          method: envelope.method,
+          message: await this.serviceController.shutdown(envelope.message),
+        };
+      case 'cerebrate.start':
+        return {
+          method: envelope.method,
+          message: await this.cerebrateController.startCerebrate(envelope.message),
+        };
+      case 'cerebrate.stop':
+        return {
+          method: envelope.method,
+          message: await this.cerebrateController.stopCerebrate(envelope.message),
+        };
+      case 'cerebrate.command':
+        return {
+          method: envelope.method,
+          message: await this.cerebrateController.sendCerebrateCommand(envelope.message),
+        };
+      default:
+        throw new Error(`Unsupported method: ${(envelope as { method: string }).method}`);
+    }
+  }
+
+  async #handleAttach(request: AttachRequest, socket: net.Socket): Promise<void> {
+    let unsubscribe: (() => void) | undefined;
+
+    const cleanup = (): void => {
+      unsubscribe?.();
+      unsubscribe = undefined;
+    };
+
+    socket.once('close', cleanup);
+    socket.once('error', cleanup);
+
+    try {
+      unsubscribe = this.cerebrateController.subscribeCerebrateOutput(
+        request.name ?? '',
+        (line: string) => {
+          const output: OvermindIpcServerStreamMessageEnvelope = {
+            method: 'service.attach',
+            message: { packet: 'output', data: { name: request.name, timestamp: Date.now(), data: line } },
+          };
+          socket.write(`${JSON.stringify(output)}\n`);
+        },
+      );
+    } catch (error) {
+      const errorResponse = {
+        method: 'service.attach',
+        error: error instanceof Error ? error.message : 'Unknown IPC error.',
+      };
+      socket.end(`${JSON.stringify(errorResponse)}\n`);
+      return;
+    }
+
+    const ack: OvermindIpcServerStreamMessageEnvelope = {
+      method: 'service.attach',
+      message: { packet: 'ack', data: { name: request.name } },
+    };
+    socket.write(`${JSON.stringify(ack)}\n`);
   }
 }

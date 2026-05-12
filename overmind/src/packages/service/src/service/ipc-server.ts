@@ -2,31 +2,29 @@
 import fs from 'node:fs/promises';
 import net from 'node:net';
 import {
-  type AttachCerebrateAckResponse,
-  type AttachCerebrateParams,
-  type CerebrateAttachOutputEvent,
-  type OvermindIpcErrorResponse,
-  type OvermindIpcRequest,
-  type OvermindIpcResponse,
+  type AttachRequest,
+  type OvermindIpcClientMessageEnvelope,
+  type OvermindIpcServerMessageEnvelope,
   getOvermindPipePath,
 } from 'overmind-api';
 import { singleton } from 'tsyringe';
 import { type OvermindConfig } from '@overmind/config';
 
+type DispatchHandler = (request: OvermindIpcClientMessageEnvelope) => Promise<OvermindIpcServerMessageEnvelope>;
+type AttachHandler = (request: AttachRequest, socket: net.Socket) => Promise<void>;
+
 @singleton()
 export class OvermindIpcServer {
   pipePath?: string;
   server?: net.Server;
-  onDispatch?: (request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>) => Promise<OvermindIpcResponse>;
-  onSubscribeCerebrateOutput?: (name: string, listener: (line: string) => void) => () => void;
   stopping = false;
 
   async listen(
     config: OvermindConfig,
-    listener: (request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>) => Promise<OvermindIpcResponse>,
-    attachListener: (name: string, lineListener: (line: string) => void) => () => void,
+    dispatch: DispatchHandler,
+    attach: AttachHandler,
   ): Promise<void> {
-    this.pipePath = getOvermindPipePath(config.configDir)
+    this.pipePath = getOvermindPipePath(config.configDir);
     this.server = net.createServer((socket) => {
       let buffer = '';
       let handled = false;
@@ -40,16 +38,13 @@ export class OvermindIpcServer {
 
         handled = true;
         const [rawRequest] = buffer.split('\n', 1);
-        void this.#handleFirstLine(rawRequest, socket);
+        void this.#handleFirstLine(rawRequest, socket, dispatch, attach);
       });
 
       socket.on('error', () => {
         socket.destroy();
       });
     });
-
-    this.onDispatch = listener;
-    this.onSubscribeCerebrateOutput = attachListener;
 
     await this.#removeSocketFileIfNeeded();
 
@@ -83,67 +78,38 @@ export class OvermindIpcServer {
     await this.#removeSocketFileIfNeeded();
   }
 
-  async #handleFirstLine(rawRequest: string, socket: net.Socket): Promise<void> {
+  async #handleFirstLine(
+    rawRequest: string,
+    socket: net.Socket,
+    dispatch: DispatchHandler,
+    attach: AttachHandler,
+  ): Promise<void> {
     try {
-      const request = JSON.parse(rawRequest) as OvermindIpcRequest;
+      const envelope = JSON.parse(rawRequest) as { method: string; message: unknown };
 
-      if (request.method === 'cerebrate.attach') {
-        await this.#handleAttach(request.params, socket);
+      if (envelope.method === 'service.attach') {
+        await attach(envelope.message as AttachRequest, socket);
         return;
       }
 
-      const response = await this.#dispatch(request as Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>);
+      const response = await dispatch(envelope as OvermindIpcClientMessageEnvelope);
       socket.end(`${JSON.stringify(response)}\n`);
 
-      if (response.method === 'service.shutdown' && !('error' in response)) {
+      if (response.method === 'service.shutdown' && response.message.success) {
         setImmediate(() => {
           void this.close();
         });
       }
     } catch (error) {
-      const response: OvermindIpcErrorResponse = {
+      const errorResponse = {
         method: 'unknown',
-        error: error instanceof Error ? error.message : 'Unknown IPC error.',
+        message: {
+          success: false,
+          error: { errorMessage: error instanceof Error ? error.message : 'Unknown IPC error.' },
+        },
       };
-      socket.end(`${JSON.stringify(response)}\n`);
+      socket.end(`${JSON.stringify(errorResponse)}\n`);
     }
-  }
-
-  async #handleAttach(params: AttachCerebrateParams, socket: net.Socket): Promise<void> {
-    let unsubscribe: (() => void) | undefined;
-
-    const cleanup = (): void => {
-      unsubscribe?.();
-      unsubscribe = undefined;
-    };
-
-    socket.once('close', cleanup);
-    socket.once('error', cleanup);
-
-    try {
-      unsubscribe = this.onSubscribeCerebrateOutput?.(params.name, (line: string) => {
-        const event: CerebrateAttachOutputEvent = { type: 'output', line };
-        socket.write(`${JSON.stringify(event)}\n`);
-      });
-    } catch (error) {
-      const response: OvermindIpcErrorResponse = {
-        method: 'cerebrate.attach',
-        error: error instanceof Error ? error.message : 'Unknown IPC error.',
-      };
-      socket.end(`${JSON.stringify(response)}\n`);
-      return;
-    }
-
-    const ack: AttachCerebrateAckResponse = { method: 'cerebrate.attach', ack: true };
-    socket.write(`${JSON.stringify(ack)}\n`);
-  }
-
-  async #dispatch(request: Exclude<OvermindIpcRequest, { method: 'cerebrate.attach' }>): Promise<OvermindIpcResponse> {
-    if (this.onDispatch) {
-      return this.onDispatch(request);
-    }
-
-    throw new Error(`Internal IPC dispatch error: no dispatch listener registered for method ${request.method}`);
   }
 
   async #removeSocketFileIfNeeded(): Promise<void> {

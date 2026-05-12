@@ -4,48 +4,86 @@ import type { SendCerebrateCommandError, SendCerebrateCommandRequest, SendCerebr
 import type { StartCerebrateError, StartCerebrateRequest, StartCerebrateResponse } from '../api/start-cerebrate.js';
 import type { StopCerebrateError, StopCerebrateRequest, StopCerebrateResponse } from '../api/stop-cerebrate.js';
 import type { OvermindResponse } from '../api/overmind-api.js';
-import type { AttachCerebrateParams } from './attach-cerebrate.js';
+import { AttachError, AttachListener, AttachPacketAck, AttachPacketOutput, AttachPacketTerminate, AttachRequest, AttachResponse } from '../api/attach.js';
 
-export type OvermindApiMethod =
-  | 'service.stats'
-  | 'service.shutdown'
-  | 'cerebrate.start'
-  | 'cerebrate.stop'
-  | 'cerebrate.command';
-
-export interface OvermindApiRequestMap {
-  'service.stats': GetServiceStatsRequest;
-  'service.shutdown': ShutdownRequest;
-  'cerebrate.start': StartCerebrateRequest;
-  'cerebrate.stop': StopCerebrateRequest;
-  'cerebrate.command': SendCerebrateCommandRequest;
+export type OvermindMessageEnvelope<TMessageType, TMessage> = {
+  method: TMessageType;
+  message: TMessage;
 }
 
-export interface OvermindApiResponseMap {
-  'service.stats': GetServiceStatsResponse;
-  'service.shutdown': ShutdownResponse;
-  'cerebrate.start': StartCerebrateResponse;
-  'cerebrate.stop': StopCerebrateResponse;
-  'cerebrate.command': SendCerebrateCommandResponse;
+export type OvermindStreamPacketEnvelope<TPacketType, TPacket> = {
+  packet: TPacketType;
+  data: TPacket;
 }
 
-export interface OvermindApiErrorMap {
-  'service.stats': GetServiceStatsError;
-  'service.shutdown': ShutdownError;
-  'cerebrate.start': StartCerebrateError;
-  'cerebrate.stop': StopCerebrateError;
-  'cerebrate.command': SendCerebrateCommandError;
+export type OvermindIpcClientMessageEnvelope =
+  | {
+    [M in keyof OvermindMethodMap]
+        : OvermindMessageEnvelope<M, OvermindMethodMap[M]['request']>;
+  }[keyof OvermindMethodMap];
+
+export type OvermindIpcServerMessageEnvelope =
+  | {
+    [M in keyof OvermindMethodMap]
+        : OvermindMessageEnvelope<M,OvermindMethodMap[M]['response']>;
+  }[keyof OvermindMethodMap];
+
+export type OvermindIpcClientStreamMessageEnvelope =
+  | {
+    [M in keyof OvermindStreamMethodMap]
+    : OvermindMessageEnvelope<M, OvermindStreamMethodMap[M]['service']>;
+  }[keyof OvermindStreamMethodMap];
+
+export type OvermindIpcServerStreamMessageEnvelope =
+  | {
+    [M in keyof OvermindStreamMethodMap]: {
+      [P in keyof OvermindStreamMethodMap[M]['service']['packets']]
+      : OvermindMessageEnvelope<M, OvermindStreamPacketEnvelope<P, OvermindStreamMethodMap[M]['service']['packets'][P]>>;
+    }[keyof OvermindStreamMethodMap[M]['service']['packets']]
+  }[keyof OvermindStreamMethodMap];
+
+// ---
+
+export type OvermindMethodMap = {
+  'service.stats': {
+    'request': GetServiceStatsRequest;
+    'response': OvermindResponse<GetServiceStatsResponse, GetServiceStatsError>;
+  };
+  'service.shutdown': {
+    'request': ShutdownRequest;
+    'response': OvermindResponse<ShutdownResponse, ShutdownError>;
+  };
+  'cerebrate.start': {
+    'request': StartCerebrateRequest;
+    'response': OvermindResponse<StartCerebrateResponse, StartCerebrateError>;
+  };
+  'cerebrate.stop': {
+    'request': StopCerebrateRequest;
+    'response': OvermindResponse<StopCerebrateResponse, StopCerebrateError>;
+  };
+  'cerebrate.command': {
+    'request': SendCerebrateCommandRequest;
+    'response': OvermindResponse<SendCerebrateCommandResponse, SendCerebrateCommandError>;
+  };
 }
 
-export type OvermindIpcRequest =
-  | { [M in OvermindApiMethod]: { method: M; params: OvermindApiRequestMap[M] } }[OvermindApiMethod]
-  | { method: 'cerebrate.attach'; params: AttachCerebrateParams };
-
-export type OvermindIpcResponse = {
-  [M in OvermindApiMethod]: { method: M; result: OvermindResponse<OvermindApiResponseMap[M], OvermindApiErrorMap[M]> }
-}[OvermindApiMethod];
-
-export interface OvermindIpcErrorResponse {
-  method: string;
-  error: string;
+export type OvermindStreamMethodMap = {
+  'service.attach': {
+    'request': AttachRequest;
+    'client': {
+      'packets': {
+        'terminate': AttachPacketTerminate;
+      }
+    };
+    'service': {
+      'listener': AttachListener;
+      'packets': {
+        'ack': AttachPacketAck;
+        'output': AttachPacketOutput;
+        'terminate': AttachPacketTerminate;
+      },
+    };
+    'error': AttachError;
+  }
 }
+
