@@ -42,8 +42,6 @@ export type OvermindIpcServerStreamMessageEnvelope =
     }[keyof OvermindStreamMethodMap[M]['service']['packets']]
   }[keyof OvermindStreamMethodMap];
 
-// ---
-
 export type OvermindMethodMap = {
   'service.stats': {
     'request': GetServiceStatsRequest;

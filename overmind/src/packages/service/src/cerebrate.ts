@@ -1,4 +1,3 @@
-import { EventEmitter } from 'node:events';
 import {
   createMachine,
   guard,
@@ -12,6 +11,8 @@ import {
 } from 'robot3';
 import type { CerebrateConfig } from './config/cerebrate-config.js';
 import type { LlmChain } from './llm/index.js';
+import { BufferedLogBuffer } from './logging/index.js';
+import { LogLevel } from './logging/logger.js';
 import { completeTask, getAvailableTasks, saveTask, startTask, type Task } from './tasks.js';
 
 export type CerebrateState = 'initialize' | 'idle' | 'check-tasks' | 'post-check' | 'work' | 'validate' | 'shutting down';
@@ -38,14 +39,15 @@ export class Cerebrate {
   readonly #config: CerebrateConfig;
   readonly #configDir: string;
   readonly #llmChain: LlmChain;
-  readonly #output = new EventEmitter();
+  readonly #logBuffer: BufferedLogBuffer;
   #currentTask: Task | undefined;
 
-  constructor(name: string, config: CerebrateConfig, configDir: string, llmChain: LlmChain) {
+  constructor(name: string, config: CerebrateConfig, configDir: string, llmChain: LlmChain, logBuffer: BufferedLogBuffer) {
     this.name = name;
     this.#config = config;
     this.#configDir = configDir;
     this.#llmChain = llmChain;
+    this.#logBuffer = logBuffer;
     this.#machine = createMachine(
       'initialize',
       {
@@ -88,7 +90,6 @@ export class Cerebrate {
   async stop(): Promise<void> {
     this.#abortController.abort();
     this.#service?.send('stop');
-    this.#output.removeAllListeners('line');
   }
 
   getStats(): CerebrateStats {
@@ -101,10 +102,9 @@ export class Cerebrate {
   }
 
   subscribeOutput(listener: (line: string) => void): () => void {
-    this.#output.on('line', listener);
-    return () => {
-      this.#output.off('line', listener);
-    };
+    return this.#logBuffer.subscribe((event) => {
+      listener(event.line);
+    }, undefined, this.name);
   }
 
   async sendCommand(commandName: string): Promise<string> {
@@ -193,7 +193,12 @@ export class Cerebrate {
   }
 
   #emit(line: string): void {
-    this.#output.emit('line', line);
+    this.#logBuffer.append({
+      timestamp: new Date().toISOString(),
+      level: LogLevel.Info,
+      category: this.name,
+      line,
+    }, this.name);
   }
 }
 

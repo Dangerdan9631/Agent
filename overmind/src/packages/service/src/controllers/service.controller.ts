@@ -8,11 +8,19 @@ import type {
   ShutdownResponse,
 } from 'overmind-api';
 import { inject, injectable } from 'tsyringe';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
 import { CerebrateController } from './cerebrate.controller.js';
 
 @injectable()
 export class ServiceController {
-  constructor(@inject(CerebrateController) private readonly cerebrates: CerebrateController) {}
+  private readonly logger: Logger;
+
+  constructor(
+    @inject(CerebrateController) private readonly cerebrates: CerebrateController,
+    @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
+  ) {
+    this.logger = loggerFactory.create('ServiceController');
+  }
 
   async getServiceStats(_request: GetServiceStatsRequest): Promise<OvermindResponse<GetServiceStatsResponse, GetServiceStatsError>> {
     const cerebrates = this.cerebrates.getRunningStats();
@@ -28,6 +36,7 @@ export class ServiceController {
   }
 
   async shutdown(_request: ShutdownRequest): Promise<OvermindResponse<ShutdownResponse, ShutdownError>> {
+    this.logger.info('shutdown requested');
     await this.cerebrates.stopAll();
 
     return {

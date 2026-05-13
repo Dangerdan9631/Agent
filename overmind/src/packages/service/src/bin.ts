@@ -6,6 +6,7 @@ import packageJson from '../package.json';
 import { container, type DependencyContainer } from 'tsyringe';
 import { createLlmChain, LlmChain } from './llm/index.js';
 import { loadCerebrateConfig, loadOvermindConfig, OvermindConfigToken } from '@overmind/config';
+import { BufferedLoggerFactory, LoggerFactoryToken } from './logging/index.js';
 import { OvermindService } from '@overmind/service';
 import { exit } from 'node:process';
 
@@ -25,6 +26,7 @@ function buildContainer(configDir: string): DependencyContainer {
   const overmindConfig = loadOvermindConfig(configDir);
   child.register(OvermindConfigToken, { useValue: overmindConfig });
   child.register(LlmChain, { useValue: createLlmChain(overmindConfig.llm) });
+  child.register(LoggerFactoryToken, { useClass: BufferedLoggerFactory });
   return child;
 }
 

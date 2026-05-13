@@ -3,6 +3,7 @@ import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
 import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
 import { OvermindIpcClientFactory } from '../core/index.js';
+import chalk from 'chalk';
 
 @injectable()
 export class AttachCommand implements OvermindCliCommand {
@@ -18,16 +19,21 @@ export class AttachCommand implements OvermindCliCommand {
   register(program: Command): void {
     program
       .command('attach')
-      .description('Attach to a running cerebrate output stream until the connection closes.')
-      .argument('<name>', 'Cerebrate name.')
+      .description('Attach to the Overmind service or a running cerebrate output stream.')
+      .argument('[name]', 'Cerebrate name. Leave blank to attach the Overmind service.')
       .option('--config-dir <path>', 'Path to Overmind configuration directory.', process.env['OVERMIND_CONFIG_DIR'])
-      .action(async (name: string, options) => {
+      .action(async (name: string | undefined, options) => {
         const client = this.clientFactory.getOvermindClient(options.configDir);
         await new Promise<void>((resolve, reject) => {
           client.attach(
-            { name },
+            { name, historyPlaybackSize: 100 },
             {
-              onReceive: (packet) => { this.logger.info(packet.data); },
+              onReceive: (packet) => {
+                this.logger.info(
+                  chalk.yellow(`[${new Date(packet.timestamp).toISOString()}]`),
+                  chalk.white(packet.data),
+                );
+              },
               onTerminate: () => { resolve(); },
             }
           ).then((result) => {

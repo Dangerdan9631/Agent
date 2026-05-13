@@ -15,6 +15,7 @@ import type {
 import { inject, singleton } from 'tsyringe';
 import { Cerebrate, type CerebrateStats } from '../cerebrate.js';
 import { loadCerebrateConfig } from '../config/cerebrate-config.js';
+import { BufferedLogBuffer } from '../logging/index.js';
 import { LlmChain } from '../llm/index.js';
 import { type OvermindConfig, OvermindConfigToken } from '../config/overmind-config.js';
 
@@ -25,6 +26,7 @@ export class CerebrateController {
   constructor(
     @inject(OvermindConfigToken) readonly config: OvermindConfig,
     @inject(LlmChain) private readonly llmChain: LlmChain,
+    private readonly logBuffer: BufferedLogBuffer,
   ) {}
 
   getRunningStats(): CerebrateStats[] {
@@ -55,7 +57,7 @@ export class CerebrateController {
     }
 
     const cerebrateConfig = loadCerebrateConfig(definitionDir, false);
-    const cerebrate = new Cerebrate(name, cerebrateConfig, this.config.configDir, this.llmChain);
+    const cerebrate = new Cerebrate(name, cerebrateConfig, this.config.configDir, this.llmChain, this.logBuffer);
 
     this.#cerebrates.set(name, cerebrate);
     cerebrate.start();
@@ -112,11 +114,8 @@ export class CerebrateController {
   }
 
   subscribeCerebrateOutput(name: string, listener: (line: string) => void): () => void {
-    const cerebrate = this.#cerebrates.get(name);
-    if (!cerebrate) {
-      throw new Error(`Cerebrate "${name}" is not running.`);
-    }
-
-    return cerebrate.subscribeOutput(listener);
+    return this.logBuffer.subscribe((event) => {
+      listener(event.line);
+    }, undefined, name);
   }
 }
