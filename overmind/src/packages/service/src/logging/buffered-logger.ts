@@ -69,6 +69,8 @@ export class BufferedLogBuffer {
 }
 
 export class BufferedLogger implements Logger {
+    private readonly children = new Set<BufferedLogger>();
+
     constructor(
         private level: LogLevel,
         private readonly category: string,
@@ -77,12 +79,22 @@ export class BufferedLogger implements Logger {
     ) { }
 
     logLevel(level: LogLevel): LoggerFactory {
+        const previousLevel = this.level;
         this.level = level;
+
+        for (const child of this.children) {
+            if (child.hasLogLevel(previousLevel)) {
+                child.logLevel(level);
+            }
+        }
+
         return this;
     }
 
     create(category: string): Logger {
-        return new BufferedLogger(this.level, `${this.category}:${category}`, this.buffer, this.bufferName);
+        const child = new BufferedLogger(this.level, `${this.category}:${category}`, this.buffer, this.bufferName);
+        this.children.add(child);
+        return child;
     }
 
     debug(...args: unknown[]): void {
@@ -111,5 +123,9 @@ export class BufferedLogger implements Logger {
             category: this.category,
             line: args
         }, this.bufferName);
+    }
+
+    hasLogLevel(level: LogLevel): boolean {
+        return this.level === level;
     }
 }

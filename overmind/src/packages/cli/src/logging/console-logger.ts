@@ -2,18 +2,30 @@ import chalk from 'chalk';
 import { Logger, LogLevel, LoggerFactory } from "./logger";
 
 export class ConsoleLogger implements Logger {
+    private readonly children = new Set<ConsoleLogger>();
+
     constructor(
         private level: LogLevel,
         private readonly category: string
     ) { }
 
     logLevel(level: LogLevel): LoggerFactory {
+        const previousLevel = this.level;
         this.level = level;
+
+        for (const child of this.children) {
+            if (child.hasLogLevel(previousLevel)) {
+                child.logLevel(level);
+            }
+        }
+
         return this;
     }
 
     create(category: string): Logger {
-        return new ConsoleLogger(this.level, `${this.category}:${category}`);
+        const child = new ConsoleLogger(this.level, `${this.category}:${category}`);
+        this.children.add(child);
+        return child;
     }
 
     debug(...args: unknown[]): void {
@@ -53,5 +65,9 @@ export class ConsoleLogger implements Logger {
             chalk.blue(this.category),
             chalk.red(...args)
         );
+    }
+
+    hasLogLevel(level: LogLevel): boolean {
+        return this.level === level;
     }
 }
