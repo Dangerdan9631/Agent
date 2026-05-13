@@ -14,19 +14,19 @@ const THINKING_RANK: Record<ThinkingLevel, number> = {
 };
 
 export class LlmChain {
-  readonly #providers: LlmProvider[];
+  private readonly providers: LlmProvider[];
 
   constructor(providers: LlmProvider[]) {
-    this.#providers = providers;
+    this.providers = providers;
   }
 
   async run(prompt: LlmPrompt): Promise<string> {
-    if (this.#providers.length === 0) {
+    if (this.providers.length === 0) {
       throw new Error('No LLM providers configured.');
     }
 
     const failures: string[] = [];
-    for (const provider of this.#providers) {
+    for (const provider of this.providers) {
       const model = selectModel(provider.models, prompt);
       if (!model) {
         failures.push(`${provider.providerName}: no models available`);

@@ -38,7 +38,7 @@ export class OvermindIpcServer {
 
         handled = true;
         const [rawRequest] = buffer.split('\n', 1);
-        void this.#handleFirstLine(rawRequest, socket, dispatch, attach);
+        void this.handleFirstLine(rawRequest, socket, dispatch, attach);
       });
 
       socket.on('error', () => {
@@ -46,7 +46,7 @@ export class OvermindIpcServer {
       });
     });
 
-    await this.#removeSocketFileIfNeeded();
+    await this.removeSocketFileIfNeeded();
 
     await new Promise<void>((resolve, reject) => {
       this.server?.once('error', reject);
@@ -75,10 +75,10 @@ export class OvermindIpcServer {
       });
     });
 
-    await this.#removeSocketFileIfNeeded();
+    await this.removeSocketFileIfNeeded();
   }
 
-  async #handleFirstLine(
+  private async handleFirstLine(
     rawRequest: string,
     socket: net.Socket,
     dispatch: DispatchHandler,
@@ -112,7 +112,7 @@ export class OvermindIpcServer {
     }
   }
 
-  async #removeSocketFileIfNeeded(): Promise<void> {
+  private async removeSocketFileIfNeeded(): Promise<void> {
     if (process.platform === 'win32') {
       return;
     }

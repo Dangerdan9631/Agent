@@ -29,13 +29,13 @@ export class OvermindService {
   async start(): Promise<void> {
     await this.ipcServer.listen(
       this.config,
-      this.#dispatch.bind(this),
-      this.#handleAttach.bind(this),
+      this.dispatch.bind(this),
+      this.handleAttach.bind(this),
     );
     this.logger.info('listening on', this.config.configDir);
   }
 
-  async #dispatch(envelope: OvermindIpcClientMessageEnvelope): Promise<OvermindIpcServerMessageEnvelope> {
+  private async dispatch(envelope: OvermindIpcClientMessageEnvelope): Promise<OvermindIpcServerMessageEnvelope> {
     this.logger.info('handling', envelope.method);
 
     switch (envelope.method) {
@@ -69,7 +69,7 @@ export class OvermindService {
     }
   }
 
-  async #handleAttach(request: AttachRequest, socket: net.Socket): Promise<void> {
+  private async handleAttach(request: AttachRequest, socket: net.Socket): Promise<void> {
     let unsubscribe: (() => void) | undefined;
     const streamName = request.name;
 
@@ -85,7 +85,7 @@ export class OvermindService {
     socket.once('error', cleanup);
 
     try {
-      unsubscribe = this.#subscribeAttachStream(request, (timestamp: Date, line: string) => {
+      unsubscribe = this.subscribeAttachStream(request, (timestamp: Date, line: string) => {
         const output: OvermindIpcServerStreamMessageEnvelope = {
           method: 'service.attach',
           message: { packet: 'output', data: { name: streamName, timestamp: timestamp.valueOf(), data: line } },
@@ -113,7 +113,7 @@ export class OvermindService {
     }
   }
 
-  #subscribeAttachStream(request: AttachRequest, listener: (timestamp: Date, line: string) => void): () => void {
+  private subscribeAttachStream(request: AttachRequest, listener: (timestamp: Date, line: string) => void): () => void {
     return this.logBuffer.subscribe((event) => {
       listener(event.timestamp, event.line);
     }, request.historyPlaybackSize, request.name);
