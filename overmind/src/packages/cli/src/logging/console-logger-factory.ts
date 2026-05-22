@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
 import { ConsoleLogger } from "./console-logger";
-import { LoggerFactory, LogLevel, Logger } from "./logger";
+import { LoggerFactory, LogLevel, Logger } from 'overmind-core';
 
 @injectable()
 export class ConsoleLoggerFactory implements LoggerFactory {

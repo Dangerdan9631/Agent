@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Logger, LoggerFactoryToken, type LoggerFactory } from '../logging';
+import { Logger, LoggerFactoryToken, resolveCliConfigDir, type LoggerFactory } from 'overmind-core';
 import { OvermindIpcClientFactory } from './overmind-client-factory';
 
 @injectable()
@@ -16,13 +16,14 @@ export class StartServiceHelper {
         this.logger = loggerFactory.create('StartServiceHelper');
     }
 
-    async startService(configDir: string): Promise<void> {
+    async startService(configDir: string | undefined): Promise<void> {
+        const resolvedConfigDir = resolveCliConfigDir(configDir);
         const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
         const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
 
         this.logger.info('Starting service process:', serviceBinPath);
-        this.logger.info('  - config:', configDir);
-        const child = spawn(process.execPath, [serviceBinPath, configDir], {
+        this.logger.info('  - config:', resolvedConfigDir);
+        const child = spawn(process.execPath, [serviceBinPath, resolvedConfigDir], {
             detached: true,
             stdio: ['ignore', 'ignore', 'pipe'],
         });
@@ -34,7 +35,7 @@ export class StartServiceHelper {
         child.unref();
 
         this.logger.debug('Waiting for service startup.');
-        await this.waitForService(configDir);
+        await this.waitForService(resolvedConfigDir);
     }
 
     private async isRunning(configDir: string): Promise<boolean> {

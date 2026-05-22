@@ -12,7 +12,7 @@ import {
     StatsCommand,
     StopCerebrateCommand
 } from './commands';
-import { Logger, type LoggerFactory, LoggerFactoryToken } from './logging/logger';
+import { Logger, type LoggerFactory, LoggerFactoryToken } from 'overmind-core';
 import { ConsoleLoggerFactory } from './logging/console-logger-factory';
 
 @injectable()

@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
 import { OvermindIpcClientFactory, StopServiceHelper } from '../core';
-import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 
 @injectable()
 export class ShutdownCommand implements OvermindCliCommand {

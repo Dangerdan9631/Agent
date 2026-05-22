@@ -20,7 +20,7 @@ import { LlmChain } from '../llm/index.js';
 import { type OvermindConfig, OvermindConfigToken } from '../config/overmind-config.js';
 
 @singleton()
-export class CerebrateController {
+export class CerebrateRuntime {
   private readonly cerebrates = new Map<string, Cerebrate>();
 
   constructor(
@@ -38,7 +38,7 @@ export class CerebrateController {
     this.cerebrates.clear();
   }
 
-  async startCerebrate(request: StartCerebrateRequest): Promise<OvermindResponse<StartCerebrateResponse, StartCerebrateError>> {
+  async start(request: StartCerebrateRequest): Promise<OvermindResponse<StartCerebrateResponse, StartCerebrateError>> {
     const { name } = request;
 
     if (this.cerebrates.has(name)) {
@@ -68,7 +68,7 @@ export class CerebrateController {
     };
   }
 
-  async stopCerebrate(request: StopCerebrateRequest): Promise<OvermindResponse<StopCerebrateResponse, StopCerebrateError>> {
+  async stop(request: StopCerebrateRequest): Promise<OvermindResponse<StopCerebrateResponse, StopCerebrateError>> {
     const cerebrate = this.cerebrates.get(request.name);
 
     if (!cerebrate) {
@@ -93,7 +93,7 @@ export class CerebrateController {
     };
   }
 
-  async sendCerebrateCommand(
+  async sendCommand(
     request: SendCerebrateCommandRequest,
   ): Promise<OvermindResponse<SendCerebrateCommandResponse, SendCerebrateCommandError>> {
     const cerebrate = this.cerebrates.get(request.name);
@@ -113,7 +113,7 @@ export class CerebrateController {
     };
   }
 
-  subscribeCerebrateOutput(name: string, listener: (line: string) => void): () => void {
+  subscribeOutput(name: string, listener: (line: string) => void): () => void {
     return this.logBuffer.subscribe((event) => {
       listener(event.line);
     }, undefined, name);

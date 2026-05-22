@@ -1,8 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": "overmind"
+		},
+		{
+			"path": "agentconfig"
 		}
 	],
-	"settings": {},
+	"settings": {
+		"git.openRepositoryInParentFolders": "always"
+	},
 }

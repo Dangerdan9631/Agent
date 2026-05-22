@@ -1,5 +1,5 @@
 import { singleton } from 'tsyringe';
-import { Logger, LogLevel, LoggerFactory } from './logger';
+import { Logger, LogLevel, LoggerFactory } from 'overmind-core';
 
 export interface BufferedLogEvent {
     timestamp: Date;

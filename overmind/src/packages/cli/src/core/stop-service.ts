@@ -2,6 +2,7 @@ import { execFileSync, execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { injectable } from 'tsyringe';
+import { resolveCliConfigDir } from 'overmind-core';
 
 type WindowsProcess = {
     commandLine: string;
@@ -10,11 +11,11 @@ type WindowsProcess = {
 
 @injectable()
 export class StopServiceHelper {
-    killAllServiceProcesses(configDir: string): number {
+    killAllServiceProcesses(configDir: string | undefined): number {
         const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
         const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
-        const rawConfigDir = configDir;
-        const resolvedConfigDir = path.resolve(configDir);
+        const resolvedConfigDir = resolveCliConfigDir(configDir);
+        const rawConfigDir = configDir?.trim() || resolvedConfigDir;
 
         if (process.platform === 'win32') {
             const matchingProcesses = this.getWindowsNodeProcesses().filter((processInfo) => {

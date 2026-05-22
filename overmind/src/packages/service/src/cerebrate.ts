@@ -12,7 +12,7 @@ import {
 import type { CerebrateConfig } from './config/cerebrate-config.js';
 import type { LlmChain } from './llm/index.js';
 import { BufferedLogBuffer } from './logging/index.js';
-import { LogLevel } from './logging/logger.js';
+import { LogLevel } from 'overmind-core';
 import { completeTask, getAvailableTasks, saveTask, startTask, type Task } from './tasks.js';
 
 export type CerebrateState = 'initialize' | 'idle' | 'check-tasks' | 'post-check' | 'work' | 'validate' | 'shutting down';

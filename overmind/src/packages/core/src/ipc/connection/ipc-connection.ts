@@ -1,12 +1,8 @@
 import net from 'node:net';
-import { Logger, LoggerFactory } from '../logging';
+import { IpcConnectionError } from './ipc-connection-error';
+import type { Logger, LoggerFactory } from '../../logging/index.js';
 
-export type IpcClientError = 
-    { type: 'service_error'; message: string; error?: Error }
-    | { type: 'timeout' }
-    | { type: 'disconnected' }
-
-export enum IpcClientState {
+export enum IpcConnectionState {
     Disconnected = 'disconnected',
     Connecting = 'connecting',
     Connected = 'connected',
@@ -14,32 +10,36 @@ export enum IpcClientState {
     Closed = 'closed',
 }
 
-export interface IpcListener {
-    onConnect: () => void;
-    onReceive: (data: string) => void;
-    onError: (error: IpcClientError) => void;
-    onDisconnect: () => void;
+export interface IpcConnectionListener {
+    onConnect: (connection: IpcConnection) => void;
+    onReceive: (connection: IpcConnection, data: string) => void;
+    onError: (connection: IpcConnection, error: IpcConnectionError) => void;
+    onDisconnect: (connection: IpcConnection) => void;
 }
 
-export class IpcClient {
-    private state: IpcClientState = IpcClientState.Disconnected;
-    private socket: net.Socket;
+export class IpcConnection {
+    private state: IpcConnectionState = IpcConnectionState.Disconnected;
     private buffer: string = '';
-    private logger: Logger;
-  
+
+    get State(): IpcConnectionState {
+        return this.state;
+    }
+
+    get Path(): string {
+        return this.socket.address().toString();
+    }
+
     constructor(
-        private readonly pipePath: string,
-        private readonly listener: IpcListener,
-        loggerFactory: LoggerFactory
+        private readonly socket: net.Socket,
+        private readonly listener: IpcConnectionListener,
+        private readonly logger: Logger
     ) {
-        this.logger = loggerFactory.create('IpcClient');
-        this.socket = net.createConnection(this.pipePath);
         this.socket.setEncoding('utf8');
         this.socket.once('connect', () => this.handleConnect());
         this.socket.on('data', (chunk) => this.handleReceive(chunk));
         this.socket.once('error', (error) => {
             this.handleError({
-                type: 'service_error',
+                type: 'remote_error',
                 message: error.message,
                 error: error
             })
@@ -52,7 +52,17 @@ export class IpcClient {
             this.handleError({ type: 'timeout' });
             this.socket.destroy();
         });
-        this.state = IpcClientState.Connecting;
+
+        // Accepted server sockets are already open and will never emit 'connect'.
+        if (this.socket.pending) {
+            this.state = IpcConnectionState.Connecting;
+        } else {
+            this.state = IpcConnectionState.Connected;
+            queueMicrotask(() => {
+                this.logger.debug('Connected');
+                this.listener.onConnect(this);
+            });
+        }
     }
 
     disconnect(): void {
@@ -68,7 +78,7 @@ export class IpcClient {
     async awaitConnection(timeoutMs: number): Promise<boolean> {
         const startedAt = Date.now();
         while (Date.now() - startedAt < timeoutMs) {
-            if (this.state === IpcClientState.Connected) {
+            if (this.state === IpcConnectionState.Connected) {
                 this.logger.debug('Awaiting connection complete');
                 return true;
             }
@@ -82,18 +92,18 @@ export class IpcClient {
     }
 
     private handleConnect(): void {
-        if (this.state !== IpcClientState.Connecting) {
+        if (this.state !== IpcConnectionState.Connecting) {
             this.logger.warn('Handling connect from invalid state', this.state);
             return;
         }
 
         this.logger.debug('Connected');
-        this.state = IpcClientState.Connected;
-        this.listener.onConnect();
+        this.state = IpcConnectionState.Connected;
+        this.listener.onConnect(this);
     }
-  
+
     private handleReceive(chunk: string | Buffer<ArrayBuffer>): void {
-        if (this.state !== IpcClientState.Connected) {
+        if (this.state !== IpcConnectionState.Connected) {
             this.logger.warn('Handling receive from invalid state', this.state);
             return;
         }
@@ -105,30 +115,35 @@ export class IpcClient {
         while ((newlineIdx = this.buffer.indexOf('\n')) !== -1) {
             const rawLine = this.buffer.slice(0, newlineIdx);
             this.buffer = this.buffer.slice(newlineIdx + 1);
-      
+
             const trimmed = rawLine.trimEnd();
             if (!trimmed) {
                 continue;
             }
 
             this.logger.debug('receive message complete');
-            this.listener.onReceive(trimmed);
+            this.listener.onReceive(this, trimmed);
         }
     }
-  
-    private handleError(error: IpcClientError): void {
+
+    private handleError(error: IpcConnectionError): void {
         this.logger.debug('Error:', JSON.stringify(error));
-        this.state = IpcClientState.Error;
-        this.listener.onError(error);
+        this.state = IpcConnectionState.Error;
+        this.listener.onError(this, error);
     }
 
     private handleDisconnect(): void {
-        if (this.state !== IpcClientState.Error) {
+        if (this.state !== IpcConnectionState.Error) {
             this.logger.warn('Handling disconnect from invalid state', this.state);
-            this.state = IpcClientState.Closed;
+            this.state = IpcConnectionState.Closed;
         }
 
         this.logger.debug('Disconnected');
-        this.listener.onDisconnect();
+        this.listener.onDisconnect(this);
     }
+}
+
+export function createIpcClientConnection(pipePath: string, listener: IpcConnectionListener, loggerFactory: LoggerFactory): IpcConnection {
+    const socket = net.createConnection(pipePath);
+    return new IpcConnection(socket, listener, loggerFactory.create('IpcClient'));
 }

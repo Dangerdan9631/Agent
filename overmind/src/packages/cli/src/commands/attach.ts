@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
-import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 import { OvermindIpcClientFactory } from '../core/index.js';
 import chalk from 'chalk';
 
@@ -26,18 +26,24 @@ export class AttachCommand implements OvermindCliCommand {
         const client = this.clientFactory.getOvermindClient(options.configDir);
         await new Promise<void>((resolve, reject) => {
           client.attach(
-            { name, historyPlaybackSize: 100 },
-            {
-              onReceive: (packet) => {
-                this.logger.info(
-                  chalk.yellow(`[${new Date(packet.timestamp).toISOString()}]`),
-                  chalk.white(packet.data),
-                );
-              },
-              onTerminate: () => { resolve(); },
-            }
+            { name, historyPlaybackSize: 100 }            
           ).then((result) => {
-            if (!result.success) {
+            if (result.success) {
+              result.client.onOutput((output) => {
+                this.logger.info(
+                  chalk.yellow(`[${new Date(output.timestamp).toISOString()}]`),
+                  chalk.white(output.data),
+                );
+              });
+              result.client.onTerminate(() => {
+                this.logger.info('Stream terminated.');
+                resolve();
+              });
+              result.client.listen().then(() => {
+                this.logger.info('Stream ended.');
+                resolve();
+              }).catch(reject);
+            } else {
               reject(new Error(result.error.errorMessage));
             }
           }).catch(reject);

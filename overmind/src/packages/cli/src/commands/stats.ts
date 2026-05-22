@@ -3,8 +3,7 @@ import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
 import { OvermindIpcClientFactory } from '../core';
-import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
-import { GetServiceStatsError } from 'overmind-api';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 
 @injectable()
 export class StatsCommand implements OvermindCliCommand {

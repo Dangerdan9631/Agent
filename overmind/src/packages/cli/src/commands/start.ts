@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
-import { LoggerFactoryToken, type Logger, type LoggerFactory } from '../logging/index.js';
+import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 import { StartServiceHelper } from '../core/start-service.js';
 
 @injectable()
