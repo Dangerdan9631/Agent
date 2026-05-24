@@ -2,12 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "../..",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "types": ["node", "reflect-metadata"],
     "paths": {
-      "@overmind/*": ["./src/*"]
+      "@overmind/*": ["packages/service/src/*"]
     }
   },
   "include": ["src/**/*"]

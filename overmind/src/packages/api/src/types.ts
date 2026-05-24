@@ -61,6 +61,6 @@ export function isOvermindStreamResponse<TClient, TError>(obj: any): obj is Over
 // -----------------------------------------------------------------------------
 
 export interface OvermindStreamChannel {
-  onError: (error: Error) => void;
+  onError: (listener: (error: Error) => void) => void;
   listen: () => Promise<void>;
 };

@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Logger, LoggerFactoryToken, resolveCliConfigDir, type LoggerFactory } from 'overmind-core';
-import { OvermindIpcClientFactory } from './overmind-client-factory';
+import { OvermindIpcClientFactory } from './overmind-ipc-client-factory';
 
 @injectable()
 export class StartServiceHelper {

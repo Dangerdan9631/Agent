@@ -5,3 +5,4 @@ export * from './send-cerebrate-command';
 export * from './shutdown';
 export * from './start-cerebrate';
 export * from './stop-cerebrate';
+export * from './types';

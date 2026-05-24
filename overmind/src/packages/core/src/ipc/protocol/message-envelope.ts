@@ -1,12 +1,16 @@
-export type MessageEnvelope<TMessageType> = {
+export type MessageEnvelope<TMessageType, TMessage> = {
   method: TMessageType;
-  message: unknown;
+  message: TMessage;
 };
 
-export function createMessageEnvelope<TMessageType>(method: TMessageType, message: unknown): MessageEnvelope<TMessageType> {
+export function createMessageEnvelope<TMessageType, TMessage>(method: TMessageType, message: TMessage): MessageEnvelope<TMessageType, TMessage> {
   return { method, message };
 }
 
-export function isMessageEnvelope(obj: any): obj is MessageEnvelope<any> {
-  return obj && typeof obj === 'object' && 'method' in obj && 'message' in obj;
+export function isMessageEnvelope<TMessageType>(method: TMessageType, obj: any): obj is MessageEnvelope<TMessageType, unknown> {
+  return obj
+    && typeof obj === 'object'
+    && 'method' in obj
+    && obj['method'] === method
+    && 'message' in obj;
 }

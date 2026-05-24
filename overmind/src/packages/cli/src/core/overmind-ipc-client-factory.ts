@@ -1,6 +1,6 @@
 import { inject, injectable } from "tsyringe";
 import { LoggerFactoryToken, getOvermindPipePath, resolveCliConfigDir, type LoggerFactory } from 'overmind-core';
-import { OvermindIpcClient } from "./overmind-client";
+import { OvermindIpcClient } from "./overmind-ipc-client";
 
 @injectable()
 export class OvermindIpcClientFactory {
