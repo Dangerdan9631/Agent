@@ -25,7 +25,7 @@ import {
 } from 'overmind-api';
 import {
     createMessageEnvelope,
-    isMessageEnvelope,
+    isMessageEnvelopeForRpc,
     RPC_GET_SERVICE_STATS,
     RPC_SHUTDOWN,
     RPC_START_CEREBRATE,
@@ -97,7 +97,7 @@ export class OvermindIpcClient implements OvermindApi {
                     onReceive: (_connection, data) => {
                         try {
                             const response: unknown = JSON.parse(data);
-                            if (isMessageEnvelope<TMethod>(method, response)
+                            if (isMessageEnvelopeForRpc<TMethod>(method, response)
                                 && isOvermindResponse<TResponse, TError>(response.message)
                             ) {
                                 resolve(response.message);
@@ -142,7 +142,7 @@ export class OvermindIpcClient implements OvermindApi {
                         if (channel) {
                             try {
                                 const response: unknown = JSON.parse(data);
-                                if (isMessageEnvelope<TMethod>(method, response)
+                                if (isMessageEnvelopeForRpc<TMethod>(method, response)
                                     && isStreamEventEnvelope(response.message)
                                 ) {
                                     channel.handleReceive(response.message);

@@ -145,21 +145,15 @@ export class OvermindServer {
         throw new Error('Invalid request format');
       }
 
+      let response: unknown;
       switch (request.method) {
         case RPC_GET_SERVICE_STATS:
-          this.sendRequestResponse(connection, createMessageEnvelope(RPC_GET_SERVICE_STATS, await this.service.getServiceStats(request.message as GetServiceStatsRequest)));
+          response = await this.service.getServiceStats(request.message as GetServiceStatsRequest);
+          connection.send(JSON.stringify(createMessageEnvelope(RPC_GET_SERVICE_STATS, response)));
           return;
         case RPC_SHUTDOWN:
-          this.sendRequestResponse(connection, createMessageEnvelope(RPC_SHUTDOWN, await this.service.shutdown(request.message as ShutdownRequest)));
-          return;
-        case RPC_START_CEREBRATE:
-          this.sendRequestResponse(connection, createMessageEnvelope(RPC_START_CEREBRATE, await this.service.startCerebrate(request.message as StartCerebrateRequest)));
-          return;
-        case RPC_STOP_CEREBRATE:
-          this.sendRequestResponse(connection, createMessageEnvelope(RPC_STOP_CEREBRATE, await this.service.stopCerebrate(request.message as StopCerebrateRequest)));
-          return;
-        case RPC_SEND_CEREBRATE_COMMAND:
-          this.sendRequestResponse(connection, createMessageEnvelope(RPC_SEND_CEREBRATE_COMMAND, await this.service.sendCerebrateCommand(request.message as SendCerebrateCommandRequest)));
+          response = await this.service.shutdown(request.message as ShutdownRequest);
+          connection.send(JSON.stringify(createMessageEnvelope(RPC_SHUTDOWN, response)));
           return;
         case RPC_ATTACH:
           if (isStreamEventEnvelope(request.message)) {
@@ -169,6 +163,17 @@ export class OvermindServer {
 
           await this.handleAttachRequest(connection, request.message as AttachRequest);
           return;
+        case RPC_START_CEREBRATE:
+          response = await this.service.startCerebrate(request.message as StartCerebrateRequest);
+          connection.send(JSON.stringify(createMessageEnvelope(RPC_START_CEREBRATE, response)));
+          return;
+        case RPC_STOP_CEREBRATE:
+          response = await this.service.stopCerebrate(request.message as StopCerebrateRequest);
+          connection.send(JSON.stringify(createMessageEnvelope(RPC_STOP_CEREBRATE, response)));
+          return;
+        case RPC_SEND_CEREBRATE_COMMAND:
+          response = await this.service.sendCerebrateCommand(request.message as SendCerebrateCommandRequest);
+          connection.send(JSON.stringify(createMessageEnvelope(RPC_SEND_CEREBRATE_COMMAND, response)));
         default:
           throw new Error(`Unknown method: ${data}`);
       }
@@ -179,13 +184,6 @@ export class OvermindServer {
         error: error instanceof Error ? error : undefined,
       });
     }
-  }
-
-  private sendRequestResponse(
-    connection: IpcConnection,
-    response: MessageEnvelope<string>,
-  ): void {
-    connection.send(JSON.stringify(response));
   }
 
   private handleAttachClientMessage(connection: IpcConnection, request: MessageEnvelope<string>): void {

@@ -7,6 +7,10 @@
     "emitDecoratorMetadata": true,
     "types": ["node", "reflect-metadata"],
     "paths": {
+      "overmind-api": ["packages/api/src/index.ts"],
+      "overmind-cli": ["packages/cli/src/index.ts"],
+      "overmind-core": ["packages/core/src/index.ts"],
+      "overmind-service": ["packages/service/src/index.ts"],
       "@overmind/*": ["packages/service/src/*"]
     }
   },

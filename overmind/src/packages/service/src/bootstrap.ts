@@ -4,7 +4,7 @@ import path from 'node:path';
 import packageJson from '../package.json';
 import { container, type DependencyContainer } from 'tsyringe';
 import { loadCerebrateConfig, loadOvermindConfig, OvermindConfigToken } from '@overmind/config';
-import { getOvermindPipePath, LoggerFactoryToken } from 'overmind-core';
+import { getOvermindPipePath, LoggerFactory, LoggerFactoryToken } from 'overmind-core';
 import { LlmChain, createLlmChain } from './llm/index.js';
 import { BufferedLoggerFactory } from './logging/index.js';
 import { OvermindServer, OvermindService } from './service/index.js';
@@ -59,7 +59,7 @@ export async function runOvermindService(argv: string[]): Promise<number> {
 
     const di = buildServiceContainer(configDir);
     const service = di.resolve(OvermindService);
-    const loggerFactory = di.resolve(LoggerFactoryToken);
+    const loggerFactory = di.resolve(LoggerFactoryToken) as LoggerFactory;
     const server = new OvermindServer(getOvermindPipePath(configDir), service, loggerFactory);
 
     await server.start();

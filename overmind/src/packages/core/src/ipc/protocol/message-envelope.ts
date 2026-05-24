@@ -7,10 +7,17 @@ export function createMessageEnvelope<TMessageType, TMessage>(method: TMessageTy
   return { method, message };
 }
 
-export function isMessageEnvelope<TMessageType>(method: TMessageType, obj: any): obj is MessageEnvelope<TMessageType, unknown> {
+export function isMessageEnvelopeForRpc<TMessageType>(method: TMessageType, obj: any): obj is MessageEnvelope<TMessageType, unknown> {
   return obj
     && typeof obj === 'object'
     && 'method' in obj
     && obj['method'] === method
+    && 'message' in obj;
+}
+
+export function isMessageEnvelope(obj: any): obj is MessageEnvelope<unknown, unknown> {
+  return obj
+    && typeof obj === 'object'
+    && 'method' in obj
     && 'message' in obj;
 }
