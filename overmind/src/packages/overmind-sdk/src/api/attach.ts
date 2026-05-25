@@ -1,4 +1,5 @@
-import { OvermindError, StreamErrorListener, StreamEventListener } from "./overmind-api";
+import { StreamErrorListener, StreamEventListener } from "./overmind-api";
+import { OvermindError } from "./overmind-error";
 
 export interface AttachRequest {
     name?: string | undefined;

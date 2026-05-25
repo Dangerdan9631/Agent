@@ -5,7 +5,12 @@
     "rootDir": "src",
     "types": [
       "node"
-    ]
+    ],
+    "paths": {
+      "@overmind-sdk/*": [
+        "packages/overmind-sdk/src/*"
+      ]
+    }
   },
   "include": ["src/**/*"]
 }

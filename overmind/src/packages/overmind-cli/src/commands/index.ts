@@ -1,3 +1,4 @@
+export * from './attach';
 export * from './overmind-cli';
 export * from './overmind-cli-command';
 export * from './send';

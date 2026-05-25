@@ -24,12 +24,5 @@ export interface OvermindApi {
     sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse>;
 };
 
-export class OvermindError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = new.target.name;
-    }
-}
-
 export type StreamEventListener<TEvent> = (event: TEvent) => void | Promise<void>;
 export type StreamErrorListener = (error: Error) => void | Promise<void>;

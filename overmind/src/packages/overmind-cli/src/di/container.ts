@@ -1,4 +1,5 @@
 import {
+    AttachCommand,
     SendCommand,
     ShutdownCommand,
     StartCerebrateCommand,
@@ -18,13 +19,13 @@ export function buildCliContainer(): DependencyContainer {
 
     cliContainer.register(LoggerFactoryToken, { useClass: ConsoleLoggerFactory });
     cliContainer.register(OvermindApiFactory, { useClass: OvermindApiFactory });
+    cliContainer.register(OvermindCliCommandToken, { useClass: AttachCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StartCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: ShutdownCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StatsCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StartCerebrateCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StopCerebrateCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: SendCommand });
-    // cliContainer.register(OvermindCliCommandToken, { useClass: AttachCommand });
 
     return cliContainer;
 }

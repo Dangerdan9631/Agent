@@ -1,4 +1,4 @@
-import { OvermindError } from "./overmind-api";
+import { OvermindError } from "./overmind-error";
 
 export interface StartCerebrateRequest {
     name: string;
