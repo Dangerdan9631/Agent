@@ -16,34 +16,46 @@ import {
     StopCerebrateRequest,
     StopCerebrateResponse
 } from "@overmind-sdk/api";
-import { OvermindConfigOptions, createConfigOptions } from "@overmind-sdk/config";
+import { LoggerFactoryToken } from '@overmind-sdk/di/logger-factory-token';
+import type { LoggerFactory } from "@overmind-sdk/logging";
+import { inject, injectable } from 'tsyringe';
 
+import { ShutdownOperation } from "./shutdown";
+import { StartOperation } from "./start";
+
+@injectable()
 export class OvermindApiHandler implements OvermindApi {
-    private readonly configOptions: OvermindConfigOptions;
+    private readonly logger: LoggerFactory;
 
-    constructor(private readonly configDir: string | undefined) {
-        this.configOptions = createConfigOptions(configDir);
+    constructor(
+        private readonly startOperation: StartOperation,
+        private readonly shutdownOperation: ShutdownOperation,
+        @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
+    ) { 
+        this.logger = loggerFactory.create('OvermindApi');
     }
 
-    start(request: StartRequest): Promise<StartResponse> {
+    async start(request: StartRequest): Promise<StartResponse> {
+        return await this.startOperation.execute(request);
+    }
+
+    async shutdown(request: ShutdownRequest): Promise<ShutdownResponse> {
+        return await this.shutdownOperation.execute(request);
+    }
+
+    getStats(_request: GetStatsRequest): Promise<GetStatsResponse> {
         throw new Error("Method not implemented.");
     }
-    shutdown(request: ShutdownRequest): Promise<ShutdownResponse> {
+    attach(_request: AttachRequest): Promise<AttachChannel> {
         throw new Error("Method not implemented.");
     }
-    getStats(request: GetStatsRequest): Promise<GetStatsResponse> {
+    startCerebrate(_request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
         throw new Error("Method not implemented.");
     }
-    attach(request: AttachRequest): Promise<AttachChannel> {
+    stopCerebrate(_request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
         throw new Error("Method not implemented.");
     }
-    startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
-        throw new Error("Method not implemented.");
-    }
-    stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
-        throw new Error("Method not implemented.");
-    }
-    sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse> {
+    sendCerebrateCommand(_request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse> {
         throw new Error("Method not implemented.");
     }
 }

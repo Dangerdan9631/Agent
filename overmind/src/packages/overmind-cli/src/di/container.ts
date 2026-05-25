@@ -1,12 +1,10 @@
-import {
-    AttachCommand,
-    SendCommand,
-    ShutdownCommand,
-    StartCerebrateCommand,
-    StartCommand,
-    StatsCommand,
-    StopCerebrateCommand,
-} from "@overmind-cli/commands";
+import { AttachCommand } from '@overmind-cli/commands/attach';
+import { SendCommand } from '@overmind-cli/commands/send';
+import { ShutdownCommand } from '@overmind-cli/commands/shutdown';
+import { StartCommand } from '@overmind-cli/commands/start';
+import { StartCerebrateCommand } from '@overmind-cli/commands/start-cerebrate';
+import { StatsCommand } from '@overmind-cli/commands/stats';
+import { StopCerebrateCommand } from '@overmind-cli/commands/stop-cerebrate';
 import { OvermindApiFactory } from "overmind-sdk";
 import { ConsoleLoggerFactory } from 'overmind-sdk/logging';
 import { container, DependencyContainer } from "tsyringe";

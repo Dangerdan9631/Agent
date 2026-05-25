@@ -1,11 +1,11 @@
-import { LoggerFactoryToken } from '@overmind-cli/di';
+import { LoggerFactoryToken } from '@overmind-cli/di/logger-factory-token';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { OvermindApiFactory } from 'overmind-sdk';
 import type { Logger,LoggerFactory } from 'overmind-sdk/logging';
 import { inject, injectable } from 'tsyringe';
 
-import { OvermindCliCommand } from './overmind-cli-command';
+import type { OvermindCliCommand } from './overmind-cli-command';
 
 @injectable()
 export class StatsCommand implements OvermindCliCommand {

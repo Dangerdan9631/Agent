@@ -1,3 +1,9 @@
+import 'reflect-metadata';
+
+import { createConfigOptions } from "@overmind-sdk/config";
+import { buildSdkContainer } from '@overmind-sdk/di';
+import { OvermindApiHandler } from "@overmind-sdk/operations";
+
 import { AttachChannel, AttachRequest } from "./attach";
 import { GetStatsRequest, GetStatsResponse } from "./get-stats";
 import { SendCerebrateCommandRequest, SendCerebrateCommandResponse } from "./send-cerebrate-command";
@@ -7,8 +13,9 @@ import { StartCerebrateRequest, StartCerebrateResponse } from "./start-cerebrate
 import { StopCerebrateRequest, StopCerebrateResponse } from "./stop-cerebrate";
 
 export class OvermindApiFactory {
-    create(configPath: string | undefined): OvermindApi {
-        throw new Error("Not implemented" + configPath);
+    create(configDir: string | undefined): OvermindApi {
+        const configOptions = createConfigOptions(configDir);
+        return buildSdkContainer(configOptions).resolve(OvermindApiHandler);
     }
 }
 

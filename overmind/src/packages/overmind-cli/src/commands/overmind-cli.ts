@@ -1,10 +1,11 @@
 import packageJson from '@overmind-cli/../package.json';
-import { LoggerFactoryToken, OvermindCliCommandToken } from "@overmind-cli/di";
+import { LoggerFactoryToken } from '@overmind-cli/di/logger-factory-token';
+import { OvermindCliCommandToken } from '@overmind-cli/di/overmind-cli-command-token';
 import { Command } from "commander";
 import type { Logger, LoggerFactory } from "overmind-sdk/logging";
 import { inject, injectable, injectAll } from "tsyringe";
 
-import { OvermindCliCommand } from "./overmind-cli-command";
+import type { OvermindCliCommand } from './overmind-cli-command';
 
 @injectable()
 export class OvermindCli {

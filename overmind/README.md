@@ -15,7 +15,7 @@ Overmind is a local TypeScript workspace for a scaffold service, a CLI client, a
 The service requires a **config directory** passed on startup:
 
 ```bash
-node packages/cli/dist/bin.js start --config-dir /path/to/overmind-config
+node packages/overmind-cli/dist/bin.js start --config-dir /path/to/overmind-config
 ```
 
 On first start, Overmind creates:
@@ -39,13 +39,13 @@ npm test
 Run the CLI locally without installing it globally:
 
 ```bash
-node packages/cli/dist/bin.js --help
-node packages/cli/dist/bin.js start --config-dir ./my-overmind-config
-node packages/cli/dist/bin.js start-cerebrate hello
-node packages/cli/dist/bin.js send-command hello hello
-node packages/cli/dist/bin.js attach hello   # streams command output (use another terminal with send-command)
-node packages/cli/dist/bin.js stats
-node packages/cli/dist/bin.js shutdown
+node packages/overmind-cli/dist/bin.js --help
+node packages/overmind-cli/dist/bin.js start --config-dir ./my-overmind-config
+node packages/overmind-cli/dist/bin.js start-cerebrate hello
+node packages/overmind-cli/dist/bin.js send-command hello hello
+node packages/overmind-cli/dist/bin.js attach hello   # streams command output (use another terminal with send-command)
+node packages/overmind-cli/dist/bin.js stats
+node packages/overmind-cli/dist/bin.js shutdown
 ```
 
 Make the local commands available on your PATH while developing:
@@ -54,7 +54,7 @@ Make the local commands available on your PATH while developing:
 cd overmind/src/packages/service
 npm link
 
-cd ../cli
+cd ../overmind-cli
 npm link
 
 overmind --help
