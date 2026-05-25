@@ -1,6 +1,7 @@
+import { Logger,LoggerFactory, LogLevel } from 'overmind-core';
 import { injectable } from 'tsyringe';
+
 import { BufferedLogBuffer, BufferedLogger } from './buffered-logger';
-import { LoggerFactory, LogLevel, Logger } from 'overmind-core';
 
 @injectable()
 export class BufferedLoggerFactory implements LoggerFactory {

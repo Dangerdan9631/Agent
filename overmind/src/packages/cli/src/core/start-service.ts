@@ -1,8 +1,10 @@
-import { inject, injectable } from 'tsyringe';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Logger, LoggerFactoryToken, resolveCliConfigDir, type LoggerFactory } from 'overmind-core';
+
+import { Logger, type LoggerFactory,LoggerFactoryToken, resolveCliConfigDir } from 'overmind-core';
+import { inject, injectable } from 'tsyringe';
+
 import { OvermindIpcClientFactory } from './overmind-ipc-client-factory';
 
 @injectable()

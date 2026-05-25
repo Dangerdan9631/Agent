@@ -1,5 +1,6 @@
 import type { ShutdownRequest, ShutdownResponse } from 'overmind-api';
 import type { Logger } from 'overmind-core';
+
 import { StopAllCerebratesUseCase } from './stop-all-cerebrates.js';
 
 export class ShutdownServiceUseCase {

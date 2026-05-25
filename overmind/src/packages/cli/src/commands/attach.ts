@@ -1,9 +1,10 @@
-import type { Command } from 'commander';
-import { OvermindCliCommand } from './overmind-cli-command.js';
-import { inject, injectable } from 'tsyringe';
-import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
-import { OvermindIpcClientFactory } from '../adapters/index.js';
 import chalk from 'chalk';
+import type { Command } from 'commander';
+import { type Logger, type LoggerFactory,LoggerFactoryToken } from 'overmind-core';
+import { inject, injectable } from 'tsyringe';
+
+import { OvermindIpcClientFactory } from '../adapters/index.js';
+import { OvermindCliCommand } from './overmind-cli-command.js';
 
 @injectable()
 export class AttachCommand implements OvermindCliCommand {

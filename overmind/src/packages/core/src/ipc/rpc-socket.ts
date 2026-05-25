@@ -1,6 +1,7 @@
-import { NodeIo, RPCChannel } from 'kkrpc';
-import net from 'node:net';
 import { once } from 'node:events';
+import net from 'node:net';
+
+import { NodeIo, RPCChannel } from 'kkrpc';
 
 type RpcApi = object;
 

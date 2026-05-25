@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+
 import type { CliCommand } from './llm-provider.js';
 
 const DEFAULT_PROCESS_TIMEOUT_MS = 300_000;

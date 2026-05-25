@@ -1,6 +1,8 @@
+import type net from 'node:net';
+
 import type { AttachEventTerminate, AttachRequest, AttachServerEventSink, GetServiceStatsRequest, OvermindRpcApi, SendCerebrateCommandRequest, ShutdownRequest, StartCerebrateRequest, StopCerebrateRequest } from 'overmind-api';
 import { createRpcChannel, type Logger, type LoggerFactory } from 'overmind-core';
-import type net from 'node:net';
+
 import { AttachToOutputUseCase } from '../../application/use-cases/attach-to-output.js';
 import { GetServiceStatsUseCase } from '../../application/use-cases/get-service-stats.js';
 import { SendCerebrateCommandUseCase } from '../../application/use-cases/send-cerebrate-command.js';

@@ -1,6 +1,7 @@
 import type { AttachEventTerminate, AttachRequest, AttachServerEventSink } from 'overmind-api';
 import { AttachError } from 'overmind-api';
 import type { Logger } from 'overmind-core';
+
 import type { OutputSink } from '../ports/output-sink.js';
 
 export class AttachToOutputUseCase {

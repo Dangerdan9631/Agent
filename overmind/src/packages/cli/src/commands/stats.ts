@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { OvermindCliCommand } from './overmind-cli-command.js';
+import { type Logger, type LoggerFactory,LoggerFactoryToken } from 'overmind-core';
 import { inject, injectable } from 'tsyringe';
+
 import { OvermindIpcClientFactory } from '../adapters';
-import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
+import { OvermindCliCommand } from './overmind-cli-command.js';
 
 @injectable()
 export class StatsCommand implements OvermindCliCommand {

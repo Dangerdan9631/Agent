@@ -1,6 +1,8 @@
-import { Command } from 'commander';
-import { exit } from 'node:process';
 import path from 'node:path';
+import { exit } from 'node:process';
+
+import { Command } from 'commander';
+
 import packageJson from '../../package.json';
 import { buildOvermindRuntime } from './di-container.js';
 

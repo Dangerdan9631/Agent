@@ -1,5 +1,5 @@
-import type { TaskChecklistItem } from '../../domain/task/task-checklist-item.js';
 import { Task, type TaskSnapshot, type TaskStatus } from '../../domain/task/task.js';
+import type { TaskChecklistItem } from '../../domain/task/task-checklist-item.js';
 
 const TASK_ID_PATTERN = /^([A-Z]{4})-(\d{5})$/;
 const TASK_STATUS_PATTERN = /^(open|in-progress|validating|cancelled|complete)$/;

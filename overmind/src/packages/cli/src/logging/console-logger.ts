@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Logger, LogLevel, LoggerFactory } from 'overmind-core';
+import { Logger, LoggerFactory,LogLevel } from 'overmind-core';
 
 export class ConsoleLogger implements Logger {
     private readonly children = new Set<ConsoleLogger>();

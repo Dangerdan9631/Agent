@@ -1,6 +1,6 @@
 import { OvermindError } from "./overmind-api";
 
-export type StartRequest = { };
+export interface StartRequest { };
 
 export interface StartResponse {
     message: string;

@@ -1,3 +1,5 @@
+import type net from 'node:net';
+
 import type {
   AttachClient,
   AttachErrorListener,
@@ -9,7 +11,6 @@ import type {
   AttachServerEventSink,
   OvermindRpcApi,
 } from 'overmind-api';
-import type net from 'node:net';
 
 type AttachRemoteApi = Pick<OvermindRpcApi, 'attach' | 'terminateAttach'>;
 

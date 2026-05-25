@@ -1,8 +1,10 @@
 import 'reflect-metadata';
+
+import { LogLevel } from 'overmind-core';
 import { describe, expect, it } from 'vitest';
+
 import { BufferedLogBuffer } from '../../src/logging/buffered-logger.js';
 import { BufferedLoggerFactory } from '../../src/logging/buffered-logger-factory.js';
-import { LogLevel } from 'overmind-core';
 
 describe('BufferedLoggerFactory', () => {
   it('updates child loggers that still match the parent log level', () => {

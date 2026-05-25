@@ -1,5 +1,6 @@
-import { container, type DependencyContainer } from 'tsyringe';
 import { LoggerFactoryToken } from 'overmind-core';
+import { container, type DependencyContainer } from 'tsyringe';
+
 import {
   AttachCommand,
   OvermindCliCommandToken,

@@ -1,5 +1,6 @@
 import type { GetServiceStatsRequest, GetServiceStatsResponse } from 'overmind-api';
 import type { Logger } from 'overmind-core';
+
 import type { Cerebrate } from '../../domain/cerebrate/cerebrate.js';
 import { CerebrateRegistry } from '../cerebrate-registry.js';
 

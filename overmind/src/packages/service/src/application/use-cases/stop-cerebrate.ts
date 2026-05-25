@@ -1,4 +1,5 @@
 import type { StopCerebrateRequest, StopCerebrateResponse } from 'overmind-api';
+
 import type { Cerebrate } from '../../domain/cerebrate/cerebrate.js';
 import { CerebrateRegistry } from '../cerebrate-registry.js';
 

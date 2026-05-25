@@ -1,5 +1,6 @@
 import type { SendCerebrateCommandRequest, SendCerebrateCommandResponse } from 'overmind-api';
 import { SendCerebrateCommandError } from 'overmind-api';
+
 import type { Cerebrate } from '../../domain/cerebrate/cerebrate.js';
 import { CerebrateRegistry } from '../cerebrate-registry.js';
 

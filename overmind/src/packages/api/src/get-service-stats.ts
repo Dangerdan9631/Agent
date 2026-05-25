@@ -1,6 +1,6 @@
 import { OvermindError } from './overmind-error.js';
 
-export type GetServiceStatsRequest = {};
+export interface GetServiceStatsRequest {};
 
 export interface CerebrateStats {
   name: string;

@@ -1,5 +1,5 @@
-import type { TaskChecklistItem } from '../../domain/task/task-checklist-item.js';
 import type { Task } from '../../domain/task/task.js';
+import type { TaskChecklistItem } from '../../domain/task/task-checklist-item.js';
 
 export function formatTaskMarkdown(task: Task): string {
   const snapshot = task.toSnapshot();

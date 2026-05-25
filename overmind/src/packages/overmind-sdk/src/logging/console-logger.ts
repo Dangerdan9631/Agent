@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+
 import { LogLevel } from './log-level';
 import { Logger } from './logger';
 import { LoggerFactory } from './logger-factory';

@@ -1,6 +1,8 @@
+import type net from 'node:net';
+
 import {
     type AttachClient,
-    type AttachServerEventSink,
+    AttachRequest,
     GetServiceStatsRequest,
     GetServiceStatsResponse,
     OvermindApi,
@@ -13,7 +15,6 @@ import {
     StartCerebrateResponse,
     StopCerebrateRequest,
     StopCerebrateResponse,
-    AttachRequest,
 } from 'overmind-api';
 import {
     closeRpcSocket,
@@ -22,7 +23,7 @@ import {
     type Logger,
     type LoggerFactory
 } from 'overmind-core';
-import type net from 'node:net';
+
 import { AttachStreamClient } from './attach-client.js';
 
 export class OvermindIpcClient implements OvermindApi {

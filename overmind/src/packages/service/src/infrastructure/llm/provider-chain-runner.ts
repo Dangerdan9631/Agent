@@ -1,8 +1,8 @@
 import type { LlmRunner } from '../../application/ports/llm-runner.js';
 import type { LlmPrompt, LlmThinkingLevel } from '../../domain/llm/llm-prompt.js';
 import type { ConfiguredLlmAgent, ConfiguredLlmChain, OvermindConfig } from '../config/overmind-config-loader.js';
-import { selectModel } from './model-selector.js';
 import type { LlmProvider, LlmProviderModel } from './llm-provider.js';
+import { selectModel } from './model-selector.js';
 import { ClaudeCodeProvider } from './providers/claude-code.provider.js';
 import { CodexCliProvider } from './providers/codex-cli.provider.js';
 import { CopilotCliProvider } from './providers/copilot-cli.provider.js';

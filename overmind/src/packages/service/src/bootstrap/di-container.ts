@@ -1,5 +1,9 @@
 import path from 'node:path';
+
 import { getOvermindPipePath } from 'overmind-core';
+
+import { RpcConnectionHandler } from '../adapters/rpc/rpc-connection-handler.js';
+import { RpcServer } from '../adapters/rpc/rpc-server.js';
 import { CerebrateRegistry } from '../application/cerebrate-registry.js';
 import { AttachToOutputUseCase } from '../application/use-cases/attach-to-output.js';
 import { GetServiceStatsUseCase } from '../application/use-cases/get-service-stats.js';
@@ -8,10 +12,8 @@ import { ShutdownServiceUseCase } from '../application/use-cases/shutdown-servic
 import { StartCerebrateUseCase } from '../application/use-cases/start-cerebrate.js';
 import { StopAllCerebratesUseCase } from '../application/use-cases/stop-all-cerebrates.js';
 import { StopCerebrateUseCase } from '../application/use-cases/stop-cerebrate.js';
-import { RpcConnectionHandler } from '../adapters/rpc/rpc-connection-handler.js';
-import { RpcServer } from '../adapters/rpc/rpc-server.js';
 import { Cerebrate } from '../domain/cerebrate/cerebrate.js';
-import { FileSystemCerebrateDefinitionReader, ensureDefaultCerebrateConfig } from '../infrastructure/config/cerebrate-config-loader.js';
+import { ensureDefaultCerebrateConfig,FileSystemCerebrateDefinitionReader } from '../infrastructure/config/cerebrate-config-loader.js';
 import { ensureOvermindConfig, loadOvermindConfig } from '../infrastructure/config/overmind-config-loader.js';
 import { createLlmRunner } from '../infrastructure/llm/provider-chain-runner.js';
 import { FileSystemTaskRepository } from '../infrastructure/persistence/file-system-task-repository.js';

@@ -1,14 +1,15 @@
-import { container, DependencyContainer } from "tsyringe";
-import { OvermindApiFactory } from "overmind-sdk";
-import { ConsoleLoggerFactory } from 'overmind-sdk/logging';
 import {
-    StartCommand,
     SendCommand,
     ShutdownCommand,
     StartCerebrateCommand,
+    StartCommand,
     StatsCommand,
     StopCerebrateCommand,
 } from "@overmind-cli/commands";
+import { OvermindApiFactory } from "overmind-sdk";
+import { ConsoleLoggerFactory } from 'overmind-sdk/logging';
+import { container, DependencyContainer } from "tsyringe";
+
 import { LoggerFactoryToken } from "./logger-factory-token";
 import { OvermindCliCommandToken } from "./overmind-cli-command-token";
 

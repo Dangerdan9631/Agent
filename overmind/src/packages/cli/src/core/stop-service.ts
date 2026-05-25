@@ -1,8 +1,9 @@
 import { execFileSync, execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { injectable } from 'tsyringe';
+
 import { resolveCliConfigDir } from 'overmind-core';
+import { injectable } from 'tsyringe';
 
 type WindowsProcess = {
     commandLine: string;

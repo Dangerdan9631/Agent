@@ -1,7 +1,9 @@
 import 'reflect-metadata';
+
 import { describe, expect, it } from 'vitest';
-import { TaskId } from '../../src/domain/task/task-id.js';
+
 import { Task } from '../../src/domain/task/task.js';
+import { TaskId } from '../../src/domain/task/task-id.js';
 
 describe('Task', () => {
   it('enforces the open -> in-progress -> validating -> complete lifecycle', () => {

@@ -1,7 +1,9 @@
 import { EventEmitter } from 'node:events';
 import type net from 'node:net';
-import { describe, expect, it, vi } from 'vitest';
+
 import type { AttachServerEventSink } from 'overmind-api';
+import { describe, expect, it, vi } from 'vitest';
+
 import { AttachStreamClient } from '../../src/core/attach-client.js';
 
 class FakeSocket extends EventEmitter {

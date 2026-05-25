@@ -1,9 +1,9 @@
+import type { AttachClient, AttachEventTerminate, AttachRequest, AttachServerEventSink } from './attach.js';
 import type { GetServiceStatsRequest, GetServiceStatsResponse } from './get-service-stats.js';
-import type { ShutdownRequest, ShutdownResponse } from './shutdown.js';
 import type { SendCerebrateCommandRequest, SendCerebrateCommandResponse } from './send-cerebrate-command.js';
+import type { ShutdownRequest, ShutdownResponse } from './shutdown.js';
 import type { StartCerebrateRequest, StartCerebrateResponse } from './start-cerebrate.js';
 import type { StopCerebrateRequest, StopCerebrateResponse, } from './stop-cerebrate.js';
-import type { AttachClient, AttachEventTerminate, AttachRequest, AttachServerEventSink } from './attach.js';
 
 export interface OvermindApi {
   getServiceStats(request: GetServiceStatsRequest): Promise<GetServiceStatsResponse>;

@@ -1,13 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import type { StartCerebrateRequest, StartCerebrateResponse } from 'overmind-api';
 import { StartCerebrateError } from 'overmind-api';
+
 import { Cerebrate } from '../../domain/cerebrate/cerebrate.js';
+import { CerebrateRegistry } from '../cerebrate-registry.js';
 import type { CerebrateDefinitionReader } from '../ports/cerebrate-definition-reader.js';
 import type { LlmRunner } from '../ports/llm-runner.js';
 import type { OutputSink } from '../ports/output-sink.js';
 import type { TaskRepository } from '../ports/task-repository.js';
-import { CerebrateRegistry } from '../cerebrate-registry.js';
 
 export class StartCerebrateUseCase {
   constructor(

@@ -1,21 +1,22 @@
+import { LogLevel } from 'overmind-core';
 import {
   createMachine,
   guard,
   immediate,
   interpret,
   invoke,
-  state,
-  transition,
   type Machine,
   type Service,
+  state,
+  transition,
 } from 'robot3';
-import { LogLevel } from 'overmind-core';
+
 import type { LlmRunner } from '../../application/ports/llm-runner.js';
 import type { OutputSink } from '../../application/ports/output-sink.js';
 import type { TaskRepository } from '../../application/ports/task-repository.js';
 import type { LlmPrompt } from '../llm/llm-prompt.js';
-import type { CerebrateDefinition } from './cerebrate-definition.js';
 import type { Task } from '../task/task.js';
+import type { CerebrateDefinition } from './cerebrate-definition.js';
 
 export type CerebrateState = 'initialize' | 'idle' | 'check-tasks' | 'post-check' | 'work' | 'validate' | 'shutting down';
 
@@ -28,6 +29,7 @@ export interface CerebrateStats {
 
 const IDLE_SLEEP_MS = 10_000;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CerebrateMachine = Machine<any, Record<string, never>>;
 type CerebrateMachineService = Service<CerebrateMachine>;
 

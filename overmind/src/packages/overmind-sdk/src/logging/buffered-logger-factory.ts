@@ -1,4 +1,4 @@
-import { BufferedLogger, BufferedLogBuffer } from "./buffered-logger";
+import { BufferedLogBuffer,BufferedLogger } from "./buffered-logger";
 import { LogLevel } from "./log-level";
 import { Logger } from "./logger";
 import { LoggerFactory } from "./logger-factory";

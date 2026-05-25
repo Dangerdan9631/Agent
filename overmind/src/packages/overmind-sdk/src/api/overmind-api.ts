@@ -8,7 +8,7 @@ import { StopCerebrateRequest, StopCerebrateResponse } from "./stop-cerebrate";
 
 export class OvermindApiFactory {
     create(configPath: string | undefined): OvermindApi {
-        throw new Error("Not implemented");
+        throw new Error("Not implemented" + configPath);
     }
 }
 

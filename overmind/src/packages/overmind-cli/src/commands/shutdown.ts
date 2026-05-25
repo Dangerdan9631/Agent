@@ -1,8 +1,9 @@
-import type { Command } from 'commander';
-import { inject, injectable } from 'tsyringe';
-import { OvermindApiFactory } from 'overmind-sdk';
-import type { LoggerFactory, Logger } from 'overmind-sdk/logging';
 import { LoggerFactoryToken } from '@overmind-cli/di';
+import type { Command } from 'commander';
+import { OvermindApiFactory } from 'overmind-sdk';
+import type { Logger,LoggerFactory } from 'overmind-sdk/logging';
+import { inject, injectable } from 'tsyringe';
+
 import { OvermindCliCommand } from './overmind-cli-command';
 
 @injectable()

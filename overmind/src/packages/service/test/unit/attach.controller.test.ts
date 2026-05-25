@@ -1,9 +1,11 @@
 import 'reflect-metadata';
+
+import { LogLevel } from 'overmind-core';
 import { describe, expect, it } from 'vitest';
+
 import { AttachToOutputUseCase } from '../../src/application/use-cases/attach-to-output.js';
 import { BufferedLogBuffer } from '../../src/logging/buffered-logger.js';
 import { BufferedLoggerFactory } from '../../src/logging/buffered-logger-factory.js';
-import { LogLevel } from 'overmind-core';
 
 describe('AttachToOutputUseCase', () => {
   it('replays buffered history and terminates cleanly', async () => {
