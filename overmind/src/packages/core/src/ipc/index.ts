@@ -1,2 +1,2 @@
-export * from './connection';
-export * from './protocol';
+export * from './protocol/pipe';
+export * from './rpc-socket';

@@ -19,7 +19,7 @@ const GLOBAL_BUFFER_NAME = '__global__';
 
 @singleton()
 export class BufferedLogBuffer {
-    readonly buffers = new Map<string, BufferedLogChannel>();
+    private readonly buffers = new Map<string, BufferedLogChannel>();
     readonly maxEntries = 1000;
 
     append(event: BufferedLogEvent, bufferName?: string): void {

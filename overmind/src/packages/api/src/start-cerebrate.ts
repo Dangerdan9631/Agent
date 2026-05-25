@@ -1,3 +1,5 @@
+import { OvermindError } from './overmind-error.js';
+
 export interface StartCerebrateRequest {
   name: string;
 };
@@ -6,6 +8,4 @@ export interface StartCerebrateResponse {
   name: string;
 };
 
-export interface StartCerebrateError {
-  errorMessage: string;
-};
+export class StartCerebrateError extends OvermindError {}

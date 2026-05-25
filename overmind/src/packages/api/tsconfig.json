@@ -7,5 +7,5 @@
       "node"
     ]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "../overmind-sdk/src/api/stream-event-listener.ts"]
 }

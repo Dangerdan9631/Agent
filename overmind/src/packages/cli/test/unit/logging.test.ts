@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleLoggerFactory } from '../../src/logging/console-logger-factory.js';
-import { LogLevel } from '../../src/logging/logger.js';
+import { LogLevel } from 'overmind-core';
 
 afterEach(() => {
   vi.restoreAllMocks();

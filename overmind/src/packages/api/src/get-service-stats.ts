@@ -1,3 +1,5 @@
+import { OvermindError } from './overmind-error.js';
+
 export type GetServiceStatsRequest = {};
 
 export interface CerebrateStats {
@@ -13,6 +15,4 @@ export interface GetServiceStatsResponse {
   cerebrates: CerebrateStats[];
 };
 
-export interface GetServiceStatsError {
-  errorMessage: string;
-};
+export class GetServiceStatsError extends OvermindError {}

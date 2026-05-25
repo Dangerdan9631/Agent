@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
-import { OvermindIpcClientFactory, StopServiceHelper } from '../core';
+import { OvermindIpcClientFactory, StopServiceHelper } from '../adapters';
 import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 
 @injectable()
@@ -30,10 +30,7 @@ export class ShutdownCommand implements OvermindCliCommand {
         }
         const client = this.clientFactory.getOvermindClient(options.configDir);
         const response = await client.shutdown({});
-        if (!response.success) {
-          throw new Error(response.error.errorMessage);
-        }
-        this.logger.info(response.result.message);
+        this.logger.info(response.message);
       });
   }
 }

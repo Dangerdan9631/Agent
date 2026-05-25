@@ -1,2 +1,3 @@
 export * from './logging';
-export * from './core';
+export * from './adapters';
+export * from './bootstrap/cli-bootstrap.js';

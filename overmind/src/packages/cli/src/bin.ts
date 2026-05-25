@@ -2,9 +2,9 @@
 import 'reflect-metadata';
 import { exit } from 'node:process';
 import { OvermindCli } from './overmind-cli';
-import { container } from 'tsyringe';
+import { buildCliContainer } from './bootstrap/cli-bootstrap.js';
 
 exit(
-  await (container.resolve(OvermindCli))
+  await (buildCliContainer().resolve(OvermindCli))
     .run(process.argv)
 );

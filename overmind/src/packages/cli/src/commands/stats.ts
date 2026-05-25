@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
-import { OvermindIpcClientFactory } from '../core';
+import { OvermindIpcClientFactory } from '../adapters';
 import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 
 @injectable()
@@ -24,14 +24,11 @@ export class StatsCommand implements OvermindCliCommand {
       .action(async (options) => {
         const client = this.clientFactory.getOvermindClient(options.configDir);
         const response = await client.getServiceStats({});
-        if (!response.success) {
-          throw new Error(response.error.errorMessage);
-        }
 
         const statsStr = [
-          `${chalk.blue('Uptime:')} ${response.result.uptime.toFixed(2)}s`,
-          `${chalk.blue('Running cerebrates:')} ${response.result.runningCerebrateCount}`,
-          ...response.result.cerebrates.flatMap(cerebrate =>
+          `${chalk.blue('Uptime:')} ${response.uptime.toFixed(2)}s`,
+          `${chalk.blue('Running cerebrates:')} ${response.runningCerebrateCount}`,
+          ...response.cerebrates.flatMap(cerebrate =>
             [
               chalk.cyan(`- ${chalk.green(cerebrate.name)}:`),
               `    ${chalk.cyan('runtime:')} ${cerebrate.runtime.toFixed(2)}s`,

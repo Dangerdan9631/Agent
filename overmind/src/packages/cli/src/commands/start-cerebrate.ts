@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { OvermindCliCommand } from './overmind-cli-command.js';
 import { inject, injectable } from 'tsyringe';
-import { OvermindIpcClientFactory } from '../core';
+import { OvermindIpcClientFactory } from '../adapters';
 import { LoggerFactoryToken, type Logger, type LoggerFactory } from 'overmind-core';
 
 @injectable()
@@ -24,10 +24,7 @@ export class StartCerebrateCommand implements OvermindCliCommand {
       .action(async (name: string, options) => {
         const client = this.clientFactory.getOvermindClient(options.configDir);
         const response = await client.startCerebrate({ name });
-        if (!response.success) {
-          throw new Error(response.error.errorMessage);
-        }
-        this.logger.info(`Cerebrate started: ${response.result.name}`);
+        this.logger.info(`Cerebrate started: ${response.name}`);
       });
   }
 }

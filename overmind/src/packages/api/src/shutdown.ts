@@ -1,10 +1,9 @@
+import { OvermindError } from './overmind-error.js';
+
 export type ShutdownRequest = {};
 
 export interface ShutdownResponse {
-    success: true;
     message: string;
 };
 
-export interface ShutdownError {
-    errorMessage: string;
-};
+export class ShutdownError extends OvermindError {}
