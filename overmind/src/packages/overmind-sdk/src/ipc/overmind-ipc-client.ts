@@ -1,43 +1,59 @@
 import { once } from 'node:events';
 import net from 'node:net';
 
+import {
+    GetStatsRequest,
+    GetStatsResponse,
+    ShutdownRequest,
+    ShutdownResponse,
+} from '@overmind-sdk/api';
+import type { OvermindConfigOptions } from '@overmind-sdk/config';
+import { OvermindConfigOptionsToken } from '@overmind-sdk/di/overmind-config-options-token';
 import { NodeIo, RPCChannel } from 'kkrpc';
+import { inject, injectable } from 'tsyringe';
 
-type RpcApi = object;
+interface OvermindIpcApi {
+    shutdown(request: ShutdownRequest): Promise<ShutdownResponse>;
+    getStats(request: GetStatsRequest): Promise<GetStatsResponse>;
+};
 
-async function _connectRpcSocket(pipePath: string): Promise<net.Socket> {
-    const socket = net.createConnection(pipePath);
+@injectable()
+export class OvermindIpcClient {
+    constructor(
+        @inject(OvermindConfigOptionsToken) private readonly configOptions: OvermindConfigOptions
+    ) { }
 
-    try {
-        await once(socket, 'connect');
-        return socket;
-    } catch (error) {
-        socket.destroy();
-        throw error;
-    }
-}
-
-function _createRpcChannel<TLocalApi extends RpcApi, TRemoteApi extends RpcApi>(
-    socket: net.Socket,
-    localApi?: TLocalApi,
-): RPCChannel<TLocalApi, TRemoteApi> {
-    const io = new NodeIo(socket, socket);
-
-    if (!localApi) {
-        return new RPCChannel<TLocalApi, TRemoteApi>(io);
+    async shutdown(): Promise<ShutdownResponse> {
+        return await this.withRemoteApi((api) => api.shutdown({}));
     }
 
-    return new RPCChannel<TLocalApi, TRemoteApi>(io, { expose: localApi });
-}
-
-async function _closeRpcSocket(socket: net.Socket): Promise<void> {
-    if (socket.destroyed) {
-        return;
+    async getStats(): Promise<GetStatsResponse> {
+        return await this.withRemoteApi((api) => api.getStats({}));
     }
 
-    socket.end();
+    private async withRemoteApi<TResponse>(
+        action: (api: OvermindIpcApi) => Promise<TResponse>): Promise<TResponse> {
+        const socket = net.createConnection(this.configOptions.pipePath);
+        
+        try {
+            await once(socket, 'connect');
+        } catch (error) {
+            socket.destroy();
+            throw error;
+        }
 
-    if (!socket.destroyed) {
-        await once(socket, 'close');
+        try {
+            const io = new NodeIo(socket, socket);
+            const api = new RPCChannel<Record<string, never>, OvermindIpcApi>(io).getAPI();
+            return await action(api);
+        } finally {
+            if (!socket.destroyed) {
+                socket.end();
+
+                if (!socket.destroyed) {
+                    await once(socket, 'close');
+                }
+            }
+        }
     }
 }

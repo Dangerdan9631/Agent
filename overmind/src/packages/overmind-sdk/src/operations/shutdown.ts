@@ -6,6 +6,7 @@ import { ShutdownRequest, ShutdownResponse } from '@overmind-sdk/api';
 import type { OvermindConfigOptions } from "@overmind-sdk/config";
 import { LoggerFactoryToken } from '@overmind-sdk/di/logger-factory-token';
 import { OvermindConfigOptionsToken } from '@overmind-sdk/di/overmind-config-options-token';
+import { OvermindIpcClient } from '@overmind-sdk/ipc/overmind-ipc-client';
 import type { Logger, LoggerFactory } from '@overmind-sdk/logging';
 import { inject, injectable } from 'tsyringe';
 
@@ -19,6 +20,7 @@ export class ShutdownOperation {
     private readonly logger: Logger;
 
     constructor(
+        private readonly overmindIpcClient: OvermindIpcClient,
         @inject(OvermindConfigOptionsToken) private readonly configOptions: OvermindConfigOptions,
         @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
     ) {
@@ -26,11 +28,22 @@ export class ShutdownOperation {
     }
 
     async execute(_request: ShutdownRequest): Promise<ShutdownResponse> {
+
+        if (_request.force !== true) {
+            this.logger.info('Sending service shut down command:', this.configOptions.instanceName);
+            return await this.overmindIpcClient.shutdown();
+        } else {
+            const count = this.forceKillAllProcesses();
+            return { message: `Force shutdown complete. Killed ${count} process(es).` };
+        }
+    }
+
+    private forceKillAllProcesses(): number {
         const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
         const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
         const rawConfigDir = this.configOptions.configDir?.trim() || this.configOptions.resolvedConfigDir;
 
-        this.logger.info('Shutting down service:', this.configOptions.instanceName);
+        this.logger.info('Shutting down service process:', this.configOptions.instanceName);
         this.logger.debug('  - service bin:', serviceBinPath);
         this.logger.debug('  - config:', this.configOptions.resolvedConfigDir);
 
@@ -54,7 +67,7 @@ export class ShutdownOperation {
                 }
             }
 
-            return { message: `Shutdown complete. Killed ${killedCount} process(es).` };
+            return killedCount;
         } else {
             const countOutput = execSync(`ps -eo pid=,args= | grep '${serviceBinPath}' | grep -F -- '${rawConfigDir}' | grep -v grep || true`).toString();
             const pids = countOutput
@@ -68,7 +81,7 @@ export class ShutdownOperation {
                 execSync(`kill -9 ${pid} || true`, { stdio: 'ignore' });
             }
 
-            return { message: `Shutdown complete. Killed ${pids.length} process(es).` };
+            return pids.length;
         }
     }
 

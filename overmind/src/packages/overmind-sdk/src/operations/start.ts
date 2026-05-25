@@ -6,6 +6,7 @@ import { StartRequest, StartResponse } from '@overmind-sdk/api';
 import type { OvermindConfigOptions } from "@overmind-sdk/config";
 import { LoggerFactoryToken } from '@overmind-sdk/di/logger-factory-token';
 import { OvermindConfigOptionsToken } from '@overmind-sdk/di/overmind-config-options-token';
+import { OvermindIpcClient } from '@overmind-sdk/ipc/overmind-ipc-client';
 import type { Logger, LoggerFactory } from '@overmind-sdk/logging';
 import { inject, injectable } from 'tsyringe';
 
@@ -14,6 +15,7 @@ export class StartOperation {
     private readonly logger: Logger;
 
     constructor(
+        private readonly overmindIpcClient: OvermindIpcClient,
         @inject(OvermindConfigOptionsToken) private readonly configOptions: OvermindConfigOptions,
         @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
     ) {
@@ -61,6 +63,12 @@ export class StartOperation {
     }
 
     private async isRunning(_configDir: string): Promise<boolean> {
-        return true;
+        try {
+            const response = await this.overmindIpcClient.getStats();
+            
+            return response !== undefined;
+        } catch {
+            return false;
+        }
     }
 }
