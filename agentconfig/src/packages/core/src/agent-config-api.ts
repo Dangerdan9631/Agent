@@ -1,4 +1,3 @@
-
 import type { IAgentConfigApi } from 'agentconfig-api';
 import type {
   GenerateOptions,
@@ -15,63 +14,52 @@ import type {
   ListTargetsOptions,
   ListTargetsResult,
 } from 'agentconfig-api';
-import {
-  runGenerate,
-  runValidate,
-  runDiff,
-  runInitialize,
-  runImport,
-  runTranslate,
-  listTargets,
-} from './operations';
+import type {
+  DiffUseCase,
+  GenerateUseCase,
+  ImportUseCase,
+  InitializeUseCase,
+  ListTargetsUseCase,
+  TranslateUseCase,
+  ValidateUseCase,
+} from './application/use-cases';
 
-class AgentConfigApi implements IAgentConfigApi {
+export class AgentConfigApiAdapter implements IAgentConfigApi {
+  constructor(
+    private readonly generateUseCase: GenerateUseCase,
+    private readonly validateUseCase: ValidateUseCase,
+    private readonly diffUseCase: DiffUseCase,
+    private readonly initializeUseCase: InitializeUseCase,
+    private readonly importUseCase: ImportUseCase,
+    private readonly translateUseCase: TranslateUseCase,
+    private readonly listTargetsUseCase: ListTargetsUseCase,
+  ) {}
+
   generate(options: GenerateOptions): Promise<void> {
-    return runGenerate(options);
+    return this.generateUseCase.execute(options);
   }
 
   validate(options: ValidateOptions): Promise<ValidateResult> {
-    return runValidate(options);
+    return this.validateUseCase.execute(options);
   }
 
   diff(options: DiffOptions): Promise<DiffResult> {
-    return runDiff(options);
+    return this.diffUseCase.execute(options);
   }
 
   initialize(options: InitializeOptions): Promise<InitializeResult> {
-    return runInitialize(options);
+    return this.initializeUseCase.execute(options);
   }
 
   import(options: ImportOptions): Promise<ImportResult> {
-    return runImport(options);
+    return this.importUseCase.execute(options);
   }
 
   translate(options: TranslateOptions): Promise<TranslateResult> {
-    return runTranslate(options);
+    return this.translateUseCase.execute(options);
   }
 
   listTargets(options?: ListTargetsOptions): Promise<ListTargetsResult> {
-    return listTargets(options);
+    return this.listTargetsUseCase.execute(options);
   }
-}
-
-/**
- * Creates and returns the agentconfig API implementation.
- *
- * This is the primary entry point for programmatic use of the agentconfig
- * core library. The returned object satisfies {@link IAgentConfigApi} and
- * orchestrates all operations — configuration loading, IR parsing, code
- * generation, validation, diffing, and plugin management.
- *
- * @returns An {@link IAgentConfigApi} instance backed by the full core runtime.
- *
- * @example
- * import { createAgentConfigApi } from 'agentconfig';
- * import type { IAgentConfigApi } from 'agentconfig-api';
- *
- * const api: IAgentConfigApi = createAgentConfigApi();
- * const { results } = await api.validate({});
- */
-export function createAgentConfigApi(): IAgentConfigApi {
-  return new AgentConfigApi();
 }

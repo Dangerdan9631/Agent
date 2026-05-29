@@ -28,8 +28,8 @@ describe('config edge branches', () => {
       };
     });
 
-    const { findConfigDir } = await import('../../src/config');
+    const { ConfigRepository } = await import('../../src/infrastructure/config-repository');
 
-    expect(findConfigDir('/virtual/work')).toBeNull();
+    expect(new ConfigRepository().findConfigDir('/virtual/work')).toBeNull();
   });
 });

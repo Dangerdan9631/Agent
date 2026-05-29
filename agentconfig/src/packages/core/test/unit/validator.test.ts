@@ -1,28 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { validate } from '../../src/validator';
-import type { AgentConfig } from '../../src/types/config';
-import type { IR, InstructionFile } from '../../src/types/ir';
+import type { AgentConfig } from 'agentconfig-api';
+import { registerAll, HookDefinition, InstructionFile } from '../../../plugins/src';
+import { PluginRegistry } from '../../src/infrastructure/plugin-registry';
 
 function createInstruction(overrides: Partial<InstructionFile>): InstructionFile {
-  return {
-    name: 'rule',
-    sourcePath: '/virtual/rule.md',
-    activation: 'always',
-    slug: 'rule',
-    body: 'Body',
-    ...overrides,
-  };
-}
-
-function createIr(instructions: InstructionFile[]): IR {
-  return {
-    instructions,
-    agents: [],
-    skills: [],
-    commands: [],
-    hooks: [],
-    extensions: {},
-  };
+  return new InstructionFile(
+    overrides.name ?? 'rule',
+    overrides.sourcePath ?? '/virtual/rule.md',
+    overrides.activation ?? 'always',
+    overrides.body ?? 'Body',
+    overrides.slug ?? 'rule',
+    overrides.globs,
+    overrides.description,
+    overrides.targets,
+    overrides.excludedTargets,
+    overrides.importNote,
+  );
 }
 
 function createConfig(targets: string[]): AgentConfig {
@@ -36,10 +30,14 @@ function createConfig(targets: string[]): AgentConfig {
 }
 
 describe('validate', () => {
+  const registry = new PluginRegistry();
+  registerAll(registry);
+
   it('reports an error when scoped instructions have no globs', () => {
     const results = validate(
-      createIr([createInstruction({ activation: 'scoped', globs: [] })]),
+      [createInstruction({ activation: 'scoped', globs: [] })],
       createConfig(['copilot']),
+      registry,
     );
 
     expect(results).toContainEqual(
@@ -52,7 +50,7 @@ describe('validate', () => {
 
   it('reports an error when ai-decided instructions have no description', () => {
     const results = validate(
-      createIr([
+      [
         createInstruction({
           name: 'ai-rule',
           sourcePath: '/virtual/ai-rule.md',
@@ -60,8 +58,9 @@ describe('validate', () => {
           slug: 'ai-rule',
           description: undefined,
         }),
-      ]),
+      ],
       createConfig(['copilot']),
+      registry,
     );
 
     expect(results).toContainEqual(
@@ -74,23 +73,21 @@ describe('validate', () => {
 
   it('skips target-specific warnings when the instruction is filtered out', () => {
     const results = validate(
-      createIr([
+      [
         createInstruction({
           body: 'x'.repeat(12_001),
           targets: ['copilot'],
         }),
-      ]),
+      ],
       createConfig(['antigravity']),
+      registry,
     );
 
     expect(results).toEqual([]);
   });
 
   it('warns when antigravity rules exceed the file size limit', () => {
-    const results = validate(
-      createIr([createInstruction({ body: 'x'.repeat(12_001) })]),
-      createConfig(['antigravity']),
-    );
+    const results = validate([createInstruction({ body: 'x'.repeat(12_001) })], createConfig(['antigravity']), registry);
 
     expect(results).toContainEqual(
       expect.objectContaining({
@@ -101,10 +98,7 @@ describe('validate', () => {
   });
 
   it('warns when windsurf rules exceed the file size limit', () => {
-    const results = validate(
-      createIr([createInstruction({ body: 'x'.repeat(12_001) })]),
-      createConfig(['windsurf']),
-    );
+    const results = validate([createInstruction({ body: 'x'.repeat(12_001) })], createConfig(['windsurf']), registry);
 
     expect(results).toContainEqual(
       expect.objectContaining({
@@ -115,10 +109,7 @@ describe('validate', () => {
   });
 
   it('warns when cursor always-on rules exceed the global file size limit', () => {
-    const results = validate(
-      createIr([createInstruction({ body: 'x'.repeat(12_001) })]),
-      createConfig(['cursor']),
-    );
+    const results = validate([createInstruction({ body: 'x'.repeat(12_001) })], createConfig(['cursor']), registry);
 
     expect(results).toContainEqual(
       expect.objectContaining({
@@ -130,22 +121,9 @@ describe('validate', () => {
 
   it('reports the codex hooks feature flag reminder', () => {
     const results = validate(
-      {
-        instructions: [],
-        agents: [],
-        skills: [],
-        commands: [],
-        hooks: [
-          {
-            name: 'block-force-push',
-            event: 'PreToolUse',
-            type: 'command',
-            command: './hooks/block-force-push.sh',
-          },
-        ],
-        extensions: {},
-      },
+      [new HookDefinition('block-force-push', 'PreToolUse', 'command', undefined, './hooks/block-force-push.sh')],
       createConfig(['codex']),
+      registry,
     );
 
     expect(results).toContainEqual(
@@ -158,22 +136,9 @@ describe('validate', () => {
 
   it('warns about codex hooks on Windows', () => {
     const results = validate(
-      {
-        instructions: [],
-        agents: [],
-        skills: [],
-        commands: [],
-        hooks: [
-          {
-            name: 'block-force-push',
-            event: 'PreToolUse',
-            type: 'command',
-            command: './hooks/block-force-push.sh',
-          },
-        ],
-        extensions: {},
-      },
+      [new HookDefinition('block-force-push', 'PreToolUse', 'command', undefined, './hooks/block-force-push.sh')],
       createConfig(['codex']),
+      registry,
     );
 
     if (process.platform === 'win32') {
@@ -195,7 +160,7 @@ describe('validate', () => {
   });
 
   it('warns when claude-code and codex are both targeted', () => {
-    const results = validate(createIr([]), createConfig(['claude-code', 'codex']));
+    const results = validate([], createConfig(['claude-code', 'codex']), registry);
 
     expect(results).toContainEqual(
       expect.objectContaining({

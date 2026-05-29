@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runGenerate, runInitialize, runTranslate } from '../../src/operations';
+import { createAgentConfigApi } from '../../src';
+import { registerAll } from '../../../plugins/src';
 import type { GenerateEvent } from 'agentconfig-api';
 import { createTempDir, readText, removeDir, writeTree } from '../test-utils';
 
@@ -34,6 +35,7 @@ afterEach(() => {
 
 describe('operations', () => {
   it('emits generate output through the event callback', async () => {
+    const api = createAgentConfigApi(registerAll);
     const projectDir = createTempDir('agentconfig-run-generate-');
     tempDirs.push(projectDir);
     const events: GenerateEvent[] = [];
@@ -43,7 +45,7 @@ describe('operations', () => {
       '.agentconfig/instructions/always-rule.md': 'Always keep changes reviewable.\n',
     });
 
-    await runGenerate({
+    await api.generate({
       configPath: path.join(projectDir, '.agentconfig'),
       onEvent: (event) => events.push(event),
     });
@@ -62,6 +64,7 @@ describe('operations', () => {
   });
 
   it('starts watch mode in core and emits watch events', async () => {
+    const api = createAgentConfigApi(registerAll);
     const projectDir = createTempDir('agentconfig-run-generate-watch-');
     tempDirs.push(projectDir);
     const configDir = path.join(projectDir, '.agentconfig');
@@ -72,7 +75,7 @@ describe('operations', () => {
       '.agentconfig/instructions/always-rule.md': 'Always keep changes reviewable.\n',
     });
 
-    await runGenerate({
+    await api.generate({
       configPath: configDir,
       watch: true,
       onEvent: (event) => events.push(event),
@@ -89,6 +92,7 @@ describe('operations', () => {
   });
 
   it('initializes from a project root', async () => {
+    const api = createAgentConfigApi(registerAll);
     const projectDir = createTempDir('agentconfig-run-initialize-');
     tempDirs.push(projectDir);
 
@@ -96,7 +100,7 @@ describe('operations', () => {
       '.github/copilot-instructions.md': 'Always keep changes reviewable.\n',
     });
 
-    const result = await runInitialize({
+    const result = await api.initialize({
       projectRoot: projectDir,
       target: ['copilot'],
     });
@@ -112,6 +116,7 @@ describe('operations', () => {
   });
 
   it('rejects initialize when .agentconfig already exists', async () => {
+    const api = createAgentConfigApi(registerAll);
     const projectDir = createTempDir('agentconfig-run-initialize-existing-');
     tempDirs.push(projectDir);
 
@@ -120,23 +125,25 @@ describe('operations', () => {
       '.github/copilot-instructions.md': 'Always keep changes reviewable.\n',
     });
 
-    await expect(runInitialize({
+    await expect(api.initialize({
       projectRoot: projectDir,
       target: ['copilot'],
     })).rejects.toThrow(`.agentconfig/ already exists at ${path.join(projectDir, '.agentconfig')}.`);
   });
 
   it('validates initialize source directory in core', async () => {
+    const api = createAgentConfigApi(registerAll);
     const missingDir = path.join(createTempDir('agentconfig-run-initialize-missing-parent-'), 'missing');
     tempDirs.push(path.dirname(missingDir));
 
-    await expect(runInitialize({
+    await expect(api.initialize({
       projectRoot: missingDir,
       target: ['copilot'],
     })).rejects.toThrow(`Source directory not found: ${missingDir}`);
   });
 
   it('initializes to an explicit config directory', async () => {
+    const api = createAgentConfigApi(registerAll);
     const projectDir = createTempDir('agentconfig-run-initialize-config-source-');
     const outputDir = createTempDir('agentconfig-run-initialize-config-output-');
     tempDirs.push(projectDir, outputDir);
@@ -146,7 +153,7 @@ describe('operations', () => {
       '.github/copilot-instructions.md': 'Always keep changes reviewable.\n',
     });
 
-    const result = await runInitialize({
+    const result = await api.initialize({
       projectRoot: projectDir,
       configPath: configDir,
       target: ['copilot'],
@@ -159,6 +166,7 @@ describe('operations', () => {
   });
 
   it('translates agent-native files from one target to another', async () => {
+    const api = createAgentConfigApi(registerAll);
     const projectDir = createTempDir('agentconfig-run-translate-');
     tempDirs.push(projectDir);
 
@@ -166,7 +174,7 @@ describe('operations', () => {
       '.github/copilot-instructions.md': 'Always keep changes reviewable.\n',
     });
 
-    const result = await runTranslate({
+    const result = await api.translate({
       projectRoot: projectDir,
       sourceTarget: 'copilot',
       destTarget: 'cursor',
@@ -186,10 +194,11 @@ describe('operations', () => {
   });
 
   it('rejects translate when the project root does not exist', async () => {
+    const api = createAgentConfigApi(registerAll);
     const missingDir = path.join(createTempDir('agentconfig-run-translate-missing-parent-'), 'missing');
     tempDirs.push(path.dirname(missingDir));
 
-    await expect(runTranslate({
+    await expect(api.translate({
       projectRoot: missingDir,
       sourceTarget: 'copilot',
       destTarget: 'cursor',

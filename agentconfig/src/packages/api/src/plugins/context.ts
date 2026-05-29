@@ -2,6 +2,7 @@ import type { DirectiveTypePlugin } from '../types';
 import type { GeneratorPlugin } from './generator-plugin';
 import type { ImporterPlugin } from './importer-plugin';
 import type { InstructionType } from './instruction-type';
+import type { AgentHookEventMap } from '../types';
 
 /**
  * A read-only interface to the plugin registry, provided to plugins
@@ -22,6 +23,8 @@ export interface ReadonlyRegistry {
   listDirectiveTypes(): DirectiveTypePlugin[];
   /** Look up a directive type plugin by typeId. */
   getDirectiveType(typeId: string): DirectiveTypePlugin | undefined;
+  /** Look up a registered hook event map for a specific target ID. */
+  getHookEventMap(target: string): AgentHookEventMap | undefined;
 }
 
 /**

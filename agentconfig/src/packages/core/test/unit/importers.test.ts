@@ -1,8 +1,17 @@
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { importArtifacts, writeAgentConfigDir } from '../../src/import-utils';
-import type { AgentConfig } from '../../src/types/config';
-import type { IR } from '../../src/types/ir';
+import type { AgentConfig } from 'agentconfig-api';
+import {
+  AgentDefinition,
+  CommandDefinition,
+  HookDefinition,
+  InstructionFile,
+  SkillDefinition,
+  registerAll,
+} from '../../../plugins/src';
+import { importFromTargets } from '../../src/application/use-cases/shared';
+import { AgentConfigDirWriter } from '../../src/infrastructure/agentconfig-dir-writer';
+import { PluginRegistry } from '../../src/infrastructure/plugin-registry';
 import { createTempDir, readText, removeDir, writeTree } from '../test-utils';
 
 const tempDirs: string[] = [];
@@ -13,68 +22,46 @@ afterEach(() => {
   }
 });
 
-function createIr(): IR {
-  return {
-    instructions: [
-      {
-        name: 'scoped-rule',
-        sourcePath: '/virtual/scoped-rule.md',
-        activation: 'scoped',
-        globs: ['src/**/*.ts'],
-        description: 'Used for TypeScript work',
-        slug: 'typescript-scope',
-        targets: ['copilot'],
-        excludedTargets: ['cursor'],
-        body: 'Use precise types.',
-        importNote: '# imported from source agent',
-      },
-    ],
-    agents: [
-      {
-        name: 'security-reviewer',
-        sourcePath: '/virtual/security-reviewer.md',
-        description: 'Reviews security risks',
-        model: 'claude-sonnet-4-6',
-        tools: ['Read', 'Grep'],
-        targets: ['claude-code'],
-        isolation: 'worktree',
-        body: 'Review for vulnerabilities.',
-      },
-    ],
-    skills: [
-      {
-        name: 'review-skill',
-        sourcePath: '/virtual/review-skill',
-        files: [
-          {
-            relativePath: 'SKILL.md',
-            content: '# Review skill',
-          },
-        ],
-      },
-    ],
-    commands: [
-      {
-        name: 'deploy',
-        slug: 'deploy',
-        sourcePath: '/virtual/deploy.md',
-        body: 'Deploy carefully.',
-      },
-    ],
-    hooks: [
-      {
-        name: 'block-force-push',
-        event: 'PreToolUse',
-        matcher: 'Bash',
-        type: 'command',
-        command: './hooks/scripts/block-force-push.sh',
-        timeout: 30,
-        blocking: true,
-        async: false,
-      },
-    ],
-    extensions: {},
-  };
+function createItems() {
+  return [
+    new InstructionFile(
+      'scoped-rule',
+      '/virtual/scoped-rule.md',
+      'scoped',
+      'Use precise types.',
+      'typescript-scope',
+      ['src/**/*.ts'],
+      'Used for TypeScript work',
+      ['copilot'],
+      ['cursor'],
+      '# imported from source agent',
+    ),
+    new AgentDefinition(
+      'security-reviewer',
+      '/virtual/security-reviewer.md',
+      'Review for vulnerabilities.',
+      'Reviews security risks',
+      'claude-sonnet-4-6',
+      ['Read', 'Grep'],
+      ['claude-code'],
+      undefined,
+      'worktree',
+    ),
+    new SkillDefinition('review-skill', '/virtual/review-skill', [
+      { relativePath: 'SKILL.md', content: '# Review skill' },
+    ]),
+    new CommandDefinition('deploy', 'deploy', '/virtual/deploy.md', 'Deploy carefully.'),
+    new HookDefinition(
+      'block-force-push',
+      'PreToolUse',
+      'command',
+      'Bash',
+      './hooks/scripts/block-force-push.sh',
+      30,
+      true,
+      false,
+    ),
+  ];
 }
 
 function createConfig(): AgentConfig {
@@ -88,7 +75,9 @@ function createConfig(): AgentConfig {
 }
 
 async function writeConfigDir(configDir: string): Promise<void> {
-  await writeAgentConfigDir(createIr(), createConfig(), configDir, { overwrite: true });
+  const registry = new PluginRegistry();
+  registerAll(registry);
+  await new AgentConfigDirWriter(registry).write(createItems(), createConfig(), configDir, { overwrite: true });
 }
 
 describe('importers API', () => {
@@ -128,9 +117,11 @@ describe('importers API', () => {
       '.github/prompts/migrate.prompt.md': 'Run the migration plan.\n',
     });
 
-    const ir = await importArtifacts(sourceDir, { target: ['copilot'] });
+    const registry = new PluginRegistry();
+    registerAll(registry);
+    const items = await importFromTargets(sourceDir, registry, ['copilot']);
 
-    expect(ir.instructions).toHaveLength(4);
+    expect(items.filter((item) => item.typeId === 'instruction')).toHaveLength(4);
   });
 
   it('writes config.yaml when exporting an .agentconfig directory', async () => {

@@ -2,6 +2,7 @@
 import { program } from 'commander';
 import chalk from 'chalk';
 import { createAgentConfigApi } from 'agentconfig';
+import { registerAll } from 'agentconfig-plugins';
 import type { IAgentConfigApi } from 'agentconfig-api';
 import { registerGenerate } from './commands/generate';
 import { registerValidate } from './commands/validate';
@@ -11,7 +12,7 @@ import { registerImport } from './commands/import';
 import { registerListTargets } from './commands/list-targets';
 import { registerTranslate } from './commands/translate';
 
-const api: IAgentConfigApi = createAgentConfigApi();
+const api: IAgentConfigApi = createAgentConfigApi(registerAll);
 
 program
   .name('agentconfig')

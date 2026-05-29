@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/api && npm run build -w packages/core && npm run build -w packages/cli",
+    "build": "npm run build -w packages/api && npm run build -w packages/plugins && npm run build -w packages/core && npm run build -w packages/cli",
     "dev": "npm run dev -w packages/core",
     "test": "npm run test:unit && npm run test:functional",
     "test:unit": "vitest run --config vitest.unit.config.ts",

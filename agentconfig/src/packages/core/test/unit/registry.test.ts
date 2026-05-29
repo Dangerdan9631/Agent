@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PluginRegistry } from '../../src/registry';
+import { PluginRegistry } from '../../src/infrastructure/plugin-registry';
 import type { GeneratorPlugin, ImporterPlugin, InstructionType } from 'agentconfig-api';
 
 describe('PluginRegistry', () => {
@@ -61,7 +61,7 @@ describe('PluginRegistry', () => {
     expect(registry.getImporters('agent3')).not.toContain(importer);
   });
 
-  it('should correctly identify multi-agent plugins in _registerOne', () => {
+  it('should correctly identify multi-agent plugins in registerOne', () => {
     const registry = new PluginRegistry();
     
     const multiGenerator = {
@@ -78,10 +78,8 @@ describe('PluginRegistry', () => {
       import: async () => [],
     };
 
-    // @ts-ignore - testing private method/dynamic loading logic
-    expect(registry._registerOne(multiGenerator, 'test-mod')).toBe(true);
-    // @ts-ignore
-    expect(registry._registerOne(multiImporter, 'test-mod')).toBe(true);
+    (registry as unknown as { registerOne(plugin: unknown): void }).registerOne(multiGenerator);
+    (registry as unknown as { registerOne(plugin: unknown): void }).registerOne(multiImporter);
 
     expect(registry.getGenerators('a')).toHaveLength(1);
     expect(registry.getGenerators('b')).toHaveLength(1);

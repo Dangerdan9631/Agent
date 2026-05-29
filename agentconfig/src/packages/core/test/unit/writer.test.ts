@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearHashCache, computeDiff, write } from '../../src/writer';
+import { ArtifactWriter, clearHashCache } from '../../src/infrastructure/artifact-writer';
 import { createTempDir, removeDir, writeTree } from '../test-utils';
 
 const tempDirs: string[] = [];
@@ -18,13 +18,15 @@ afterEach(() => {
 });
 
 describe('writer helpers', () => {
+  const writer = new ArtifactWriter();
+
   it('reports create actions for files that do not exist yet', async () => {
     const tempDir = createTempDir('agentconfig-diff-temp-');
     const outputDir = createTempDir('agentconfig-diff-create-');
     tempDirs.push(tempDir, outputDir);
     writeTree(tempDir, { 'create.txt': 'new file' });
 
-    const diff = await computeDiff(tempDir, outputDir);
+    const diff = await writer.computeDiff(tempDir, outputDir);
 
     expect(diff).toEqual([{ path: 'create.txt', action: 'create', diff: 'new file' }]);
   });
@@ -36,7 +38,7 @@ describe('writer helpers', () => {
     writeTree(tempDir, { 'unchanged.txt': 'same' });
     writeTree(outputDir, { 'unchanged.txt': 'same' });
 
-    const diff = await computeDiff(tempDir, outputDir);
+    const diff = await writer.computeDiff(tempDir, outputDir);
 
     expect(diff).toEqual([{ path: 'unchanged.txt', action: 'unchanged' }]);
   });
@@ -48,7 +50,7 @@ describe('writer helpers', () => {
     writeTree(tempDir, { 'update.txt': 'new' });
     writeTree(outputDir, { 'update.txt': 'old' });
 
-    const diff = await computeDiff(tempDir, outputDir);
+    const diff = await writer.computeDiff(tempDir, outputDir);
 
     expect(diff).toEqual([expect.objectContaining({ path: 'update.txt', action: 'update' })]);
   });
@@ -59,7 +61,7 @@ describe('writer helpers', () => {
     tempDirs.push(tempDir, outputDir);
     writeTree(tempDir, { 'dry-run.txt': 'preview' });
 
-    await write(tempDir, outputDir, {
+    await writer.write(tempDir, outputDir, {
       dryRun: true,
       overwrite: true,
     });
@@ -74,7 +76,7 @@ describe('writer helpers', () => {
     writeTree(tempDir, { 'file.txt': 'replacement' });
     writeTree(outputDir, { 'file.txt': 'original' });
 
-    await write(tempDir, outputDir, {
+    await writer.write(tempDir, outputDir, {
       overwrite: false,
     });
 
@@ -87,12 +89,12 @@ describe('writer helpers', () => {
     tempDirs.push(tempDir, outputDir);
     writeTree(tempDir, { 'file.txt': 'original' });
 
-    await write(tempDir, outputDir, {
+    await writer.write(tempDir, outputDir, {
       overwrite: true,
     });
 
     fs.writeFileSync(path.join(outputDir, 'file.txt'), 'mutated', 'utf8');
-    await write(tempDir, outputDir, {
+    await writer.write(tempDir, outputDir, {
       overwrite: true,
     });
 
@@ -105,7 +107,7 @@ describe('writer helpers', () => {
     tempDirs.push(tempDir, outputDir);
     writeTree(tempDir, { 'file.txt': 'original' });
 
-    await write(tempDir, outputDir, {
+    await writer.write(tempDir, outputDir, {
       overwrite: true,
     });
 
@@ -115,7 +117,7 @@ describe('writer helpers', () => {
     writeTree(tempDir, { 'file.txt': 'restored' });
 
     clearHashCache();
-    await write(tempDir, outputDir, {
+    await writer.write(tempDir, outputDir, {
       overwrite: true,
     });
 

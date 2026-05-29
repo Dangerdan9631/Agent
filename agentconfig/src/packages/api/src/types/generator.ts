@@ -16,6 +16,8 @@ export interface WriteOptions {
   dryRun?: boolean;
 }
 
+export type AgentHookEventMap = Partial<Record<string, string>>;
+
 // ── Directive type plugin ─────────────────────────────────────────────────────
 
 import type { InstructionType } from '../plugins/instruction-type';
@@ -47,7 +49,7 @@ export interface DirectiveTypePlugin<T extends InstructionType = InstructionType
   /** Parse items of this type from a `.agentconfig/` directory. */
   parse(configDir: string): Promise<T[]> | T[];
   /** Write items back to a `.agentconfig/` directory (used by `writeAgentConfigDir`). */
-  write?(items: T[], configDir: string, opts?: WriteOptions): void;
+  write?(items: T[], configDir: string, opts?: WriteOptions): Promise<void> | void;
   /** Validate items against the active config, returning any errors/warnings. */
   validate?(items: T[], config: AgentConfig): ValidationResult[];
 }

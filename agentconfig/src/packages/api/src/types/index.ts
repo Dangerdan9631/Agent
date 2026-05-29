@@ -12,6 +12,7 @@ export type { AgentConfig } from './config';
 // ─── Generator / plugin types ─────────────────────────────────────────────────
 export type {
   DetectedAgent,
+  AgentHookEventMap,
   WriteOptions,
   DirectiveTypePlugin,
 } from './generator';

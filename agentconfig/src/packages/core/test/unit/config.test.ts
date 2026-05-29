@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { findConfigDir, loadConfig, resolveConfigDir } from '../../src/config';
+import { ConfigRepository } from '../../src/infrastructure/config-repository';
 import { createTempDir, removeDir, writeTree } from '../test-utils';
 
 const tempDirs: string[] = [];
@@ -13,6 +13,8 @@ afterEach(() => {
 });
 
 describe('config helpers', () => {
+  const repository = new ConfigRepository();
+
   it('finds the nearest .agentconfig directory', () => {
     const projectDir = createTempDir('agentconfig-config-');
     tempDirs.push(projectDir);
@@ -23,19 +25,19 @@ describe('config helpers', () => {
     });
 
     const nestedDir = path.join(projectDir, 'packages', 'core', 'src');
-    expect(findConfigDir(nestedDir)).toBe(path.join(projectDir, '.agentconfig'));
+    expect(repository.findConfigDir(nestedDir)).toBe(path.join(projectDir, '.agentconfig'));
   });
 
   it('throws when no .agentconfig directory can be found', () => {
     const rootDir = path.parse(process.cwd()).root;
 
-    expect(() => resolveConfigDir(rootDir)).toThrow(/No \.agentconfig\//);
+    expect(() => repository.resolveConfigDir(rootDir)).toThrow(/No \.agentconfig\//);
   });
 
   it('returns null when no .agentconfig directory exists while walking upward', () => {
     const rootDir = path.parse(process.cwd()).root;
 
-    expect(findConfigDir(rootDir)).toBeNull();
+    expect(repository.findConfigDir(rootDir)).toBeNull();
   });
 
   it('ignores .agentconfig paths that are files instead of directories', () => {
@@ -48,7 +50,7 @@ describe('config helpers', () => {
       '.agentconfig': 'not a directory\n',
     });
 
-    expect(findConfigDir(projectDir)).toBeNull();
+    expect(repository.findConfigDir(projectDir)).toBeNull();
   });
 
   it('uses the current working directory when resolveConfigDir has no argument', () => {
@@ -63,7 +65,7 @@ describe('config helpers', () => {
     process.chdir(projectDir);
 
     try {
-      expect(resolveConfigDir()).toBe(path.join(projectDir, '.agentconfig'));
+      expect(repository.resolveConfigDir()).toBe(path.join(projectDir, '.agentconfig'));
     } finally {
       process.chdir(previousCwd);
     }
@@ -84,7 +86,7 @@ describe('config helpers', () => {
       ].join('\n'),
     });
 
-    const config = await loadConfig(path.join(projectDir, '.agentconfig'));
+    const config = await repository.loadConfig(path.join(projectDir, '.agentconfig'));
 
     expect(config).toEqual({
       version: 1,
@@ -110,7 +112,7 @@ describe('config helpers', () => {
       ].join('\n'),
     });
 
-    const config = await loadConfig(path.join(projectDir, '.agentconfig'), {
+    const config = await repository.loadConfig(path.join(projectDir, '.agentconfig'), {
       options: {
         output_dir: 'preview',
       },
@@ -133,7 +135,7 @@ describe('config helpers', () => {
       '.agentconfig/.gitkeep': '',
     });
 
-    const config = await loadConfig(path.join(projectDir, '.agentconfig'));
+    const config = await repository.loadConfig(path.join(projectDir, '.agentconfig'));
 
     expect(config).toEqual({
       version: 1,
@@ -152,7 +154,7 @@ describe('config helpers', () => {
       '.agentconfig/config.yaml': '',
     });
 
-    const config = await loadConfig(path.join(projectDir, '.agentconfig'));
+    const config = await repository.loadConfig(path.join(projectDir, '.agentconfig'));
 
     expect(config).toEqual({
       version: 1,
