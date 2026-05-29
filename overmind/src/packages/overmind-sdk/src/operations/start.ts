@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { StartRequest, StartResponse } from '@overmind-sdk/api';
@@ -23,8 +22,7 @@ export class StartOperation {
     }
 
     async execute(_request: StartRequest): Promise<StartResponse> {
-        const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
-        const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
+        const serviceBinPath = fileURLToPath(import.meta.resolve('overmind-service/bin'));
 
         this.logger.info('Starting service:', this.configOptions.instanceName);
         this.logger.debug('  - service bin:', serviceBinPath);

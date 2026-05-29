@@ -2,20 +2,14 @@ import { once } from 'node:events';
 import net from 'node:net';
 
 import {
-    GetStatsRequest,
     GetStatsResponse,
-    ShutdownRequest,
     ShutdownResponse,
 } from '@overmind-sdk/api';
 import type { OvermindConfigOptions } from '@overmind-sdk/config';
 import { OvermindConfigOptionsToken } from '@overmind-sdk/di/overmind-config-options-token';
 import { NodeIo, RPCChannel } from 'kkrpc';
 import { inject, injectable } from 'tsyringe';
-
-interface OvermindIpcApi {
-    shutdown(request: ShutdownRequest): Promise<ShutdownResponse>;
-    getStats(request: GetStatsRequest): Promise<GetStatsResponse>;
-};
+import { OvermindIpcApi } from './overmind-ipc-api';
 
 @injectable()
 export class OvermindIpcClient {

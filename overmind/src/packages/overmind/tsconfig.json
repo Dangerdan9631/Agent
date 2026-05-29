@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "../..",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "types": ["node", "reflect-metadata"],
+    "paths": {
+      "overmind-sdk": [
+        "packages/overmind-sdk/src/index.ts"
+      ],
+      "overmind-sdk/*": [
+        "packages/overmind-sdk/src/*"
+      ],
+      "@overmind/*": [
+        "packages/overmind/src/*"
+      ]
+    }
+  },
+  "include": ["src/**/*"]
+}

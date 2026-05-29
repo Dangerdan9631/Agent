@@ -20,6 +20,7 @@ import { LoggerFactoryToken } from '@overmind-sdk/di/logger-factory-token';
 import type { LoggerFactory } from "@overmind-sdk/logging";
 import { inject, injectable } from 'tsyringe';
 
+import { OvermindIpcClient } from "@overmind-sdk/ipc/overmind-ipc-client";
 import { ShutdownOperation } from "./shutdown";
 import { StartOperation } from "./start";
 
@@ -30,6 +31,7 @@ export class OvermindApiHandler implements OvermindApi {
     constructor(
         private readonly startOperation: StartOperation,
         private readonly shutdownOperation: ShutdownOperation,
+        private readonly overmindIpcClient: OvermindIpcClient,
         @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
     ) { 
         this.logger = loggerFactory.create('OvermindApi');
@@ -43,8 +45,8 @@ export class OvermindApiHandler implements OvermindApi {
         return await this.shutdownOperation.execute(request);
     }
 
-    getStats(_request: GetStatsRequest): Promise<GetStatsResponse> {
-        throw new Error("Method not implemented.");
+    async getStats(request: GetStatsRequest): Promise<GetStatsResponse> {
+        return await this.overmindIpcClient.getStats(request);
     }
     attach(_request: AttachRequest): Promise<AttachChannel> {
         throw new Error("Method not implemented.");

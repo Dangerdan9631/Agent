@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/overmind-sdk && npm run build -w packages/overmind-cli",
+    "build": "npm run build -w packages/overmind-sdk && npm run build -w packages/overmind-cli && npm run build -w packages/overmind",
     "test": "npm run test:unit",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage",

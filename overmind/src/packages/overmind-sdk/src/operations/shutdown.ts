@@ -1,5 +1,4 @@
 import { execFileSync, execSync } from 'node:child_process';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ShutdownRequest, ShutdownResponse } from '@overmind-sdk/api';
@@ -39,8 +38,7 @@ export class ShutdownOperation {
     }
 
     private forceKillAllProcesses(): number {
-        const serviceEntryPath = fileURLToPath(import.meta.resolve('overmind-service'));
-        const serviceBinPath = path.resolve(path.dirname(serviceEntryPath), 'bin.js');
+        const serviceBinPath = fileURLToPath(import.meta.resolve('overmind-service/bin'));
         const rawConfigDir = this.configOptions.configDir?.trim() || this.configOptions.resolvedConfigDir;
 
         this.logger.info('Shutting down service process:', this.configOptions.instanceName);
