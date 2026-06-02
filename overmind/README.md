@@ -1,14 +1,20 @@
 # Overmind
 
-Overmind is a local TypeScript workspace for a scaffold service, a CLI client, and shared API types. The CLI communicates with the service over IPC.
+Overmind is a local TypeScript workspace for a service process, a CLI client, and
+a shared SDK. The CLI talks to the service over IPC via `overmind-sdk`.
 
 ## Packages
 
-| Package | Purpose |
-|---|---|
-| `overmind-api` | Shared request and response types. |
-| `overmind-service` | IPC service process and service implementation. |
-| `overmind-cli` | `overmind` command for starting and controlling the service. |
+Only these workspace packages are canonical (see `.specify/memory/constitution.md`):
+
+| Directory | npm name | Purpose |
+|-----------|----------|---------|
+| `packages/overmind` | `overmind-service` | IPC service process and cerebrate runtime |
+| `packages/overmind-cli` | `overmind-cli` | `overmind` command for starting and controlling the service |
+| `packages/overmind-sdk` | `overmind-sdk` | Shared types, IPC client, and programmatic API |
+
+Legacy packages (`api`, `cli`, `core`, `service` under `packages/`) are deprecated
+and must not be used for new work.
 
 ## Configuration
 
@@ -51,7 +57,7 @@ node packages/overmind-cli/dist/bin.js shutdown
 Make the local commands available on your PATH while developing:
 
 ```bash
-cd overmind/src/packages/service
+cd overmind/src/packages/overmind
 npm link
 
 cd ../overmind-cli
@@ -80,7 +86,7 @@ Run these from `overmind/src`.
 
 | Command | Description |
 |---|---|
-| `npm run build` | Build API, service, and CLI packages. |
+| `npm run build` | Build SDK, service, and CLI packages. |
 | `npm test` | Run the unit test suite. |
 | `npm run lint` | Run ESLint over workspace packages. |
 | `npm run clean` | Remove package `dist` directories. |
