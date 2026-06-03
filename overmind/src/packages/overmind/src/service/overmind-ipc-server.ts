@@ -1,9 +1,9 @@
 import { once } from 'node:events';
 import net from 'node:net';
 
-import { OvermindIpcApi } from 'overmind-sdk/ipc/overmind-ipc-api';
-import { OvermindConfigOptions } from 'overmind-sdk/config';
 import { NodeIo, RPCChannel } from 'kkrpc';
+import { OvermindConfigOptions } from 'overmind-sdk/config';
+import { OvermindIpcApi } from 'overmind-sdk/ipc/overmind-ipc-api';
 import { injectable } from "tsyringe";
 
 @injectable()

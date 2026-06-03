@@ -2,13 +2,16 @@ import { once } from 'node:events';
 import net from 'node:net';
 
 import {
+    GetStatsRequest,
     GetStatsResponse,
+    ShutdownRequest,
     ShutdownResponse,
 } from '@overmind-sdk/api';
 import type { OvermindConfigOptions } from '@overmind-sdk/config';
 import { OvermindConfigOptionsToken } from '@overmind-sdk/di/overmind-config-options-token';
 import { NodeIo, RPCChannel } from 'kkrpc';
 import { inject, injectable } from 'tsyringe';
+
 import { OvermindIpcApi } from './overmind-ipc-api';
 
 @injectable()
@@ -17,12 +20,12 @@ export class OvermindIpcClient {
         @inject(OvermindConfigOptionsToken) private readonly configOptions: OvermindConfigOptions
     ) { }
 
-    async shutdown(): Promise<ShutdownResponse> {
-        return await this.withRemoteApi((api) => api.shutdown({}));
+    async shutdown(request: ShutdownRequest = {}): Promise<ShutdownResponse> {
+        return await this.withRemoteApi((api) => api.shutdown(request));
     }
 
-    async getStats(): Promise<GetStatsResponse> {
-        return await this.withRemoteApi((api) => api.getStats({}));
+    async getStats(request: GetStatsRequest = {}): Promise<GetStatsResponse> {
+        return await this.withRemoteApi((api) => api.getStats(request));
     }
 
     private async withRemoteApi<TResponse>(

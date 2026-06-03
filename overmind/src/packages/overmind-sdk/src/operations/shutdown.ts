@@ -30,7 +30,21 @@ export class ShutdownOperation {
 
         if (_request.force !== true) {
             this.logger.info('Sending service shut down command:', this.configOptions.instanceName);
-            return await this.overmindIpcClient.shutdown();
+            try {
+                return await this.overmindIpcClient.shutdown();
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw new Error(
+                        `Overmind service is not running for config dir "${this.configOptions.resolvedConfigDir}". Start it first or use --force to clean up a stale process.`,
+                        { cause: error },
+                    );
+                }
+
+                throw new Error(
+                    `Overmind service is not running for config dir "${this.configOptions.resolvedConfigDir}". Start it first or use --force to clean up a stale process.`,
+                    { cause: error },
+                );
+            }
         } else {
             const count = this.forceKillAllProcesses();
             return { message: `Force shutdown complete. Killed ${count} process(es).` };

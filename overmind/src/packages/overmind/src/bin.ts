@@ -2,6 +2,7 @@
 import 'reflect-metadata';
 
 import { exit } from 'node:process';
+
 import { buildServiceContainer } from './di/container';
 import { OvermindService } from './service/overmind-service';
 

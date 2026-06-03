@@ -17,10 +17,10 @@ import {
     StopCerebrateResponse
 } from "@overmind-sdk/api";
 import { LoggerFactoryToken } from '@overmind-sdk/di/logger-factory-token';
+import { OvermindIpcClient } from "@overmind-sdk/ipc/overmind-ipc-client";
 import type { LoggerFactory } from "@overmind-sdk/logging";
 import { inject, injectable } from 'tsyringe';
 
-import { OvermindIpcClient } from "@overmind-sdk/ipc/overmind-ipc-client";
 import { ShutdownOperation } from "./shutdown";
 import { StartOperation } from "./start";
 

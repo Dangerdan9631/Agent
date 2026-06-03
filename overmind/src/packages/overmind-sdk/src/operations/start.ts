@@ -22,7 +22,11 @@ export class StartOperation {
     }
 
     async execute(_request: StartRequest): Promise<StartResponse> {
-        const serviceBinPath = fileURLToPath(import.meta.resolve('overmind-service/bin'));
+        if (await this.isRunning()) {
+            throw new Error(`Overmind service is already running for config dir "${this.configOptions.resolvedConfigDir}".`);
+        }
+
+        const serviceBinPath = this.resolveServiceBinPath();
 
         this.logger.info('Starting service:', this.configOptions.instanceName);
         this.logger.debug('  - service bin:', serviceBinPath);
@@ -39,17 +43,17 @@ export class StartOperation {
         child.unref();
 
         this.logger.debug('Waiting for service startup.');
-        await this.waitForService(this.configOptions.resolvedConfigDir);
+        await this.waitForService();
 
         return { message: 'Service started successfully.' };
     }
 
-    private async waitForService(configDir: string): Promise<void> {
+    private async waitForService(): Promise<void> {
         const startedAt = Date.now();
         const timeoutMs = 5_000;
 
         while (Date.now() - startedAt < timeoutMs) {
-            if (await this.isRunning(configDir)) {
+            if (await this.isRunning()) {
                 return;
             }
 
@@ -60,7 +64,11 @@ export class StartOperation {
         throw new Error('Timed out waiting for service startup.');
     }
 
-    private async isRunning(_configDir: string): Promise<boolean> {
+    private resolveServiceBinPath(): string {
+        return fileURLToPath(import.meta.resolve('overmind-service/bin'));
+    }
+
+    private async isRunning(): Promise<boolean> {
         try {
             const response = await this.overmindIpcClient.getStats();
             

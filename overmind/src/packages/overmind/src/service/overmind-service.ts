@@ -4,9 +4,10 @@ import type {
     ShutdownRequest,
     ShutdownResponse,
 } from 'overmind-sdk/api';
-import { OvermindIpcApi } from 'overmind-sdk/ipc/overmind-ipc-api';
 import { createConfigOptions } from 'overmind-sdk/config';
+import { OvermindIpcApi } from 'overmind-sdk/ipc/overmind-ipc-api';
 import { injectable } from "tsyringe";
+
 import { OvermindIpcServer } from './overmind-ipc-server';
 
 @injectable()
@@ -22,7 +23,7 @@ export class OvermindService implements OvermindIpcApi {
         try {
             await this.ipcServer.run(this, configOptions);
             return 0;
-        } catch (error) {
+        } catch {
             this.startedAt = 0;
             return 1;
         }

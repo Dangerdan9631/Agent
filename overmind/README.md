@@ -18,18 +18,18 @@ and must not be used for new work.
 
 ## Configuration
 
-The service requires a **config directory** passed on startup:
+The service currently requires an existing **config directory** passed on startup:
 
 ```bash
 node packages/overmind-cli/dist/bin.js start --config-dir /path/to/overmind-config
 ```
 
-On first start, Overmind creates:
+Automatic bootstrap of `overmind-config.yaml` and `cerebrates/hello/cerebrate-config.yaml`
+is planned but not implemented in the canonical service yet. For now, create the
+directory yourself before running `start`.
 
-- `overmind-config.yaml` – service settings (minimum: `version: 1`)
-- `cerebrates/hello/cerebrate-config.yaml` – example cerebrate (description, responsibilities, commands)
-
-Each cerebrate lives under `cerebrates/<name>/` with `cerebrate-config.yaml`. Only one running instance is allowed per name.
+Each cerebrate will live under `cerebrates/<name>/` with `cerebrate-config.yaml`.
+Only one running instance is allowed per name.
 
 ## Development
 
