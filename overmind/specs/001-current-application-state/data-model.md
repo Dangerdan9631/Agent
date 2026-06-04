@@ -39,7 +39,7 @@ Additional keys TBD during M1 port from legacy schema.
 | `name` | string | Must match directory name |
 | `description` | string | Human-readable |
 | `responsibilities` | string[] | Optional guidance for agent |
-| `commands` | object | Command templates for agent invocation |
+| `commands` | object | Command templates for agent invocation; legacy model includes lifecycle/integration entries such as `run`, `shutdown`, and `attach` |
 
 Loaded at `startCerebrate`; invalid config → start error.
 
@@ -88,7 +88,7 @@ Port details from legacy `Task` entity during M3.
 | `terminate` | `{ name? }` | Either direction |
 | `error` | Error | Service → client |
 
-**Request**: `{ name?: string, historyPlaybackSize?: number }` — replays up to N historical lines then live.
+**Request**: `{ name?: string, historyPlaybackSize?: number }` — replays up to N historical lines then live. If `name` is omitted, the request attaches to the service/global log buffer rather than a cerebrate-specific stream.
 
 ## SDK API Operations (client-side)
 
@@ -104,6 +104,7 @@ Port details from legacy `Task` entity during M3.
 
 ## Validation Rules Summary
 
-- FR-016: `startCerebrate(name)` MUST fail if `name` already in registry
+- FR-017: `startCerebrate(name)` MUST fail if `name` already in registry
 - FR-003: missing config dir MUST throw `missingConfigDirError` at SDK
 - Attach: only one active attach per RPC connection (legacy rule; preserve in M2)
+- Attach: unnamed attach follows the legacy global-buffer behavior (`bufferName ?? __global__`)

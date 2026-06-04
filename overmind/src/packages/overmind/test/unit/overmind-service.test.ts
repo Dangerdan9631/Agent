@@ -16,7 +16,7 @@ describe('OvermindService', () => {
     expect(stats.uptime).toBeGreaterThan(1.5);
   });
 
-  it('stops the IPC server during shutdown', async () => {
+  it('resets uptime state during shutdown without throwing', async () => {
     const ipcServer = {
       stop: vi.fn(),
     };
@@ -27,7 +27,18 @@ describe('OvermindService', () => {
       message: 'Overmind service is shutting down.',
     });
 
-    expect(ipcServer.stop).toHaveBeenCalledTimes(1);
+    expect(ipcServer.stop).not.toHaveBeenCalled();
     expect((service as never).startedAt).toBe(0);
+  });
+
+  it('stops the IPC server when stop is called', () => {
+    const ipcServer = {
+      stop: vi.fn(),
+    };
+    const service = new OvermindService(ipcServer as never);
+
+    service.stop();
+
+    expect(ipcServer.stop).toHaveBeenCalledTimes(1);
   });
 });

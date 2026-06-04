@@ -27,7 +27,7 @@ class OvermindApiFactory {
 | `startCerebrate` | `StartCerebrateRequest` | `StartCerebrateResponse` | IPC (stub today) |
 | `stopCerebrate` | `StopCerebrateRequest` | `StopCerebrateResponse` | IPC (stub today) |
 | `sendCerebrateCommand` | `SendCerebrateCommandRequest` | `SendCerebrateCommandResponse` | IPC (stub today) |
-| `attach` | `AttachRequest` | `AttachChannel` | IPC streaming (stub today) |
+| `attach` | `AttachRequest` | `AttachChannel` | IPC streaming (stub today); omit `name` for service/global logs |
 
 ## AttachChannel (client)
 
@@ -42,7 +42,9 @@ interface AttachChannel {
 }
 ```
 
-CLI `attach` command uses `onOutput` + `listen()` until terminate.
+CLI `attach` command uses `onOutput` + `listen()` until terminate. `AttachRequest.name`
+remains optional so the same channel can target either a named cerebrate stream or the
+service/global log output.
 
 ## Dependency rules
 

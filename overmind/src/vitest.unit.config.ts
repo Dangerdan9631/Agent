@@ -36,13 +36,16 @@ export default defineConfig({
       'packages/**/test/unit/**/*.test.ts',
       'packages/**/*.test.ts',
     ],
+    exclude: [
+      'packages/**/test/integration/**/*.test.ts',
+      'test/integration/**/*.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       reportsDirectory: 'coverage/unit',
       include: [
         'packages/overmind*/src/**/*.ts',
-        'packages/service/**/*.ts',
       ],
       thresholds: {
         branches: 100,

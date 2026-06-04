@@ -4,13 +4,16 @@ import 'reflect-metadata';
 import { exit } from 'node:process';
 
 import { buildServiceContainer } from './di/container';
+import { OvermindConnectionHandler } from './service/overmind-connection-handler';
 import { OvermindService } from './service/overmind-service';
+
+const container = buildServiceContainer();
 
 exit(
     await (
-        buildServiceContainer()
+        container
             .resolve(OvermindService)
-            .run(process.argv)
+            .run(process.argv, container.resolve(OvermindConnectionHandler))
     )
 );
 

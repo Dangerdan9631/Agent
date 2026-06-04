@@ -22,6 +22,15 @@ export interface AttachEventTerminate {
     name: string | undefined;
 };
 
+export type AttachEventListener<TEvent> = (event: TEvent) => void | Promise<void>;
+export type AttachErrorListener = (error: Error) => void | Promise<void>;
+
+export interface AttachServerEventSink {
+    attached: (event: AttachEventAttached) => void | Promise<void>;
+    output: (event: AttachEventOutput) => void | Promise<void>;
+    terminate: (event: AttachEventTerminate) => void | Promise<void>;
+}
+
 export interface AttachChannel {
     onAttached(listener: StreamEventListener<AttachEventAttached>): () => void;
     onOutput(listener: StreamEventListener<AttachEventOutput>): () => void;

@@ -13,22 +13,20 @@ Only these workspace packages are canonical (see `.specify/memory/constitution.m
 | `packages/overmind-cli` | `overmind-cli` | `overmind` command for starting and controlling the service |
 | `packages/overmind-sdk` | `overmind-sdk` | Shared types, IPC client, and programmatic API |
 
-Legacy packages (`api`, `cli`, `core`, `service` under `packages/`) are deprecated
-and must not be used for new work.
+These three packages are the complete supported workspace surface.
 
 ## Configuration
 
-The service currently requires an existing **config directory** passed on startup:
+The service requires a **config directory** passed on startup:
 
 ```bash
 node packages/overmind-cli/dist/bin.js start --config-dir /path/to/overmind-config
 ```
 
-Automatic bootstrap of `overmind-config.yaml` and `cerebrates/hello/cerebrate-config.yaml`
-is planned but not implemented in the canonical service yet. For now, create the
-directory yourself before running `start`.
+When that directory exists, the canonical service bootstraps `overmind-config.yaml`
+and `cerebrates/hello/cerebrate-config.yaml` automatically on first start.
 
-Each cerebrate will live under `cerebrates/<name>/` with `cerebrate-config.yaml`.
+Each cerebrate lives under `cerebrates/<name>/` with `cerebrate-config.yaml`.
 Only one running instance is allowed per name.
 
 ## Development
@@ -47,6 +45,7 @@ Run the CLI locally without installing it globally:
 ```bash
 node packages/overmind-cli/dist/bin.js --help
 node packages/overmind-cli/dist/bin.js start --config-dir ./my-overmind-config
+node packages/overmind-cli/dist/bin.js start --config-dir ./my-overmind-config   # second start should fail clearly
 node packages/overmind-cli/dist/bin.js start-cerebrate hello
 node packages/overmind-cli/dist/bin.js send-command hello hello
 node packages/overmind-cli/dist/bin.js attach hello   # streams command output (use another terminal with send-command)
@@ -87,6 +86,6 @@ Run these from `overmind/src`.
 | Command | Description |
 |---|---|
 | `npm run build` | Build SDK, service, and CLI packages. |
-| `npm test` | Run the unit test suite. |
+| `npm test` | Run the unit and integration test suites. |
 | `npm run lint` | Run ESLint over workspace packages. |
 | `npm run clean` | Remove package `dist` directories. |

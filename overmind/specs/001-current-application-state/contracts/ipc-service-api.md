@@ -51,6 +51,9 @@
 
 **Request**: `AttachRequest` — `{ name?: string; historyPlaybackSize?: number }`
 
+If `name` is omitted, the service attaches to the legacy global/service log buffer
+rather than a cerebrate-specific stream.
+
 **Server events** (legacy-compatible):
 
 - `attached({ name })`

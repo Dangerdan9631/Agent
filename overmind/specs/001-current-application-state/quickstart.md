@@ -1,6 +1,6 @@
 # Quickstart: Overmind baseline (001-current-application-state)
 
-**Audience**: Developers validating service + CLI scaffolding before cerebrate migration.
+**Audience**: Developers validating the canonical service, CLI, and SDK workspace.
 
 ## Prerequisites
 
@@ -13,8 +13,10 @@
 mkdir -p ./my-overmind-config
 ```
 
-> **Note**: Automatic `overmind-config.yaml` creation is planned (M1). Until then,
-> ensure the directory exists and will receive config files when bootstrap lands.
+Expected after first successful `start`:
+
+- `my-overmind-config/overmind-config.yaml`
+- `my-overmind-config/cerebrates/hello/cerebrate-config.yaml`
 
 ## 2. Start the service
 
@@ -36,7 +38,7 @@ node packages/overmind-cli/dist/bin.js stats --config-dir ../my-overmind-config
 Expected:
 
 - Uptime in seconds (> 0)
-- Running cerebrates: `0` (until M3)
+- Running cerebrates count and summary fields from the service
 
 ## 4. Shut down cooperatively
 
@@ -44,7 +46,8 @@ Expected:
 node packages/overmind-cli/dist/bin.js shutdown --config-dir ../my-overmind-config
 ```
 
-Expected: shutdown message; subsequent `stats` fails to connect.
+Expected: shutdown message; subsequent `stats` fails to connect after the service
+finishes closing its IPC server.
 
 ## 5. Force shutdown (if stale process)
 
@@ -52,11 +55,11 @@ Expected: shutdown message; subsequent `stats` fails to connect.
 node packages/overmind-cli/dist/bin.js shutdown --force --config-dir ../my-overmind-config
 ```
 
-Use when IPC is unavailable but a orphaned `overmind-service` node process remains.
+Use when IPC is unavailable but an orphaned `overmind-service` node process remains.
 
-## 6. Cerebrate commands (post-M4)
+## 6. Cerebrate commands
 
-After migration milestones M2–M4, verify:
+Verify the full canonical control surface:
 
 ```bash
 node packages/overmind-cli/dist/bin.js start --config-dir ../my-overmind-config
@@ -65,10 +68,17 @@ node packages/overmind-cli/dist/bin.js stats --config-dir ../my-overmind-config
 node packages/overmind-cli/dist/bin.js send-command hello "echo test" --config-dir ../my-overmind-config
 # Terminal A:
 node packages/overmind-cli/dist/bin.js attach hello --config-dir ../my-overmind-config
+# Terminal C (service/global logs, no cerebrate name):
+node packages/overmind-cli/dist/bin.js attach --config-dir ../my-overmind-config
 # Terminal B: send-command as above
 node packages/overmind-cli/dist/bin.js stop-cerebrate hello --config-dir ../my-overmind-config
 node packages/overmind-cli/dist/bin.js shutdown --config-dir ../my-overmind-config
 ```
+
+Expected:
+
+- `attach hello` replays recent `hello` output and then follows the live stream
+- unnamed `attach` follows service/global log output, matching the legacy implementation
 
 ## Environment variable
 
@@ -89,5 +99,5 @@ overmind-service
 ## Related docs
 
 - [spec.md](./spec.md) — baseline requirements and gap matrix
-- [plan.md](./plan.md) — milestones M0–M5
+- [plan.md](./plan.md) — implementation record and cleanup notes
 - [README.md](../../README.md) — workspace overview

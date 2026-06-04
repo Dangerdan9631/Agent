@@ -1,4 +1,5 @@
 import { execFileSync, execSync } from 'node:child_process';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ShutdownRequest, ShutdownResponse } from '@overmind-sdk/api';
@@ -19,7 +20,7 @@ export class ShutdownOperation {
     private readonly logger: Logger;
 
     constructor(
-        private readonly overmindIpcClient: OvermindIpcClient,
+        @inject(OvermindIpcClient) private readonly overmindIpcClient: OvermindIpcClient,
         @inject(OvermindConfigOptionsToken) private readonly configOptions: OvermindConfigOptions,
         @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
     ) {
@@ -52,7 +53,7 @@ export class ShutdownOperation {
     }
 
     private forceKillAllProcesses(): number {
-        const serviceBinPath = fileURLToPath(import.meta.resolve('overmind-service/bin'));
+        const serviceBinPath = this.resolveServiceBinPath();
         const rawConfigDir = this.configOptions.configDir?.trim() || this.configOptions.resolvedConfigDir;
 
         this.logger.info('Shutting down service process:', this.configOptions.instanceName);
@@ -124,6 +125,14 @@ export class ShutdownOperation {
                 .filter((processInfo) => Number.isInteger(processInfo.processId) && processInfo.commandLine.length > 0);
         } catch {
             return [];
+        }
+    }
+
+    private resolveServiceBinPath(): string {
+        try {
+            return fileURLToPath(import.meta.resolve('overmind-service/bin'));
+        } catch {
+            return path.resolve(process.cwd(), 'packages/overmind/dist/bin.js');
         }
     }
 }

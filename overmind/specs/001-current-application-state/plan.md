@@ -7,11 +7,11 @@
 ## Summary
 
 Document and close the gap between the **baseline spec** (what Overmind promises vs
-what the canonical trio delivers today). Service lifecycle and IPC scaffolding
-work; cerebrate control, config bootstrap, and full `OvermindIpcApi` are stubs.
-The technical approach is **incremental migration**: port proven behavior from
-legacy `packages/service` into `packages/overmind`, extend `overmind-sdk` IPC and
-handlers, keep `overmind-cli` thin, then delete legacy packages.
+what the canonical trio delivers today). The canonical workspace now provides
+service lifecycle, config bootstrap, cerebrate control, attach streaming, and the
+full `OvermindIpcApi` surface. The technical approach was an **incremental
+migration**: port behavior into `packages/overmind`, extend `overmind-sdk` IPC and
+handlers, keep `overmind-cli` thin, then remove the legacy packages.
 
 ## Technical Context
 
@@ -36,8 +36,8 @@ latency suitable for interactive CLI (sub-second event delivery on local IPC)
 **Constraints**: Constitution v1.1.0 — three canonical packages only; no UI/MCP
 in this feature; one cerebrate instance per name; credentials in config/env only
 
-**Scale/Scope**: Single-machine, single operator; tens of cerebrates max; migration
-from ~4 legacy packages without new surfaces
+**Scale/Scope**: Single-machine, single operator; tens of cerebrates max; canonical
+three-package workspace without new surfaces
 
 ## Constitution Check
 
@@ -52,7 +52,7 @@ from ~4 legacy packages without new surfaces
 | V. Tests | PARTIAL — expand with milestones | PASS — test tasks per milestone |
 
 **Deferred (documented, not violations)**: Electron UI, MCP, external agent CLIs
-(FR-017–FR-019) remain out of scope per spec.
+(FR-018–FR-020) remain out of scope per spec.
 
 ## Project Structure
 
@@ -96,8 +96,7 @@ overmind/
 ```
 
 **Structure Decision**: npm workspace under `overmind/src` with three canonical
-packages. Legacy `packages/{api,cli,core,service}` are read-only migration sources
-until M5 deletion.
+packages only.
 
 ## Complexity Tracking
 
@@ -136,7 +135,7 @@ verifiable.
 
 **Exit**: SC-001, SC-002 satisfied; FR-001–FR-010 verified by automation.
 
-### Milestone M1 — Config bootstrap (FR-015)
+### Milestone M1 — Config bootstrap (FR-016)
 
 **Goal**: First `start` creates config layout described in README.
 
@@ -160,14 +159,14 @@ verifiable.
 
 **Exit**: IPC-level smoke tests call each method (may return errors until M3).
 
-### Milestone M3 — Cerebrate runtime port (US3, FR-012–FR-016, FR-014)
+### Milestone M3 — Cerebrate runtime port (US3, FR-012–FR-017, FR-014–FR-015)
 
 **Goal**: Working cerebrates with robot3 FSM and registry.
 
 - Port domain/application layers from legacy `packages/service`:
   - `Cerebrate` robot3 machine, registry, task repository, output buffer
   - Use cases: start/stop/send/attach/get-stats (consolidated stats)
-- Enforce single instance per cerebrate name (FR-016)
+- Enforce single instance per cerebrate name (FR-017)
 - Populate `GetStatsResponse.cerebrates` with live `CerebrateStats`
 
 **Exit**: All cerebrate CLI commands succeed end-to-end; stats shows running agents.
@@ -190,15 +189,20 @@ verifiable.
 - Delete legacy directories; update `tsconfig.base.json`, root `package.json` workspaces
 - Final docs pass on README + quickstart
 
-**Exit**: No legacy path references outside git history and this spec’s migration notes.
+**Exit**: No live legacy package paths remain outside historical migration notes in
+this spec set.
+
+**Historical note**: Remaining references to `packages/api`, `packages/cli`,
+`packages/core`, and `packages/service` are documentation-only and limited to this
+spec set where they explain migration history or legacy behavioral provenance.
 
 ### Future milestones (separate features)
 
 | Item | Spec refs | Notes |
 |------|-----------|-------|
-| Electron UI | FR-017, TEMP.md | SDK-only; Vayeate guidelines |
-| MCP server | FR-018 | Same SDK contracts |
-| Agent providers | FR-019 | Provider chain behind service port |
+| Electron UI | FR-018, TEMP.md | SDK-only; Vayeate guidelines |
+| MCP server | FR-019 | Same SDK contracts |
+| Agent providers | FR-020 | Provider chain behind service port |
 | `list-agents` command | TEMP.md | May alias `stats` or thin list command |
 
 ## Risk & Mitigation
@@ -206,7 +210,7 @@ verifiable.
 | Risk | Mitigation |
 |------|------------|
 | kkrpc attach differs from legacy RPC | Spike in M2; document in ipc contract; port `AttachToOutputUseCase` behavior |
-| Large port from legacy service | Milestone per layer; keep legacy until M5 green |
+| Large service migration | Milestone per layer; remove legacy packages only after canonical tests are green |
 | Windows pipe stale after crash | Document `--force` in quickstart; M0 integration test |
 | npm name `overmind-service` vs dir `overmind` | Separate rename task; not blocking M0–M4 |
 

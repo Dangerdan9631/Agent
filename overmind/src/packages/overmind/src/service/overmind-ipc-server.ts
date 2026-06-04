@@ -6,18 +6,33 @@ import { OvermindConfigOptions } from 'overmind-sdk/config';
 import { OvermindIpcApi } from 'overmind-sdk/ipc/overmind-ipc-api';
 import { injectable } from "tsyringe";
 
+type ConnectionHandler = {
+    handleConnection(socket: net.Socket): void;
+};
+
 @injectable()
 export class OvermindIpcServer {
     private server: net.Server | undefined;
     private serverClosed: Promise<void> | undefined;
+    private readonly sockets = new Set<net.Socket>();
 
-    async run(overmindService: OvermindIpcApi, configOptions: OvermindConfigOptions): Promise<number> {
+    async run(overmindService: OvermindIpcApi | ConnectionHandler, configOptions: OvermindConfigOptions): Promise<number> {
         if (this.server) {
             throw new Error('OvermindService is already running.');
         }
 
         try {
             const server = net.createServer((socket) => {
+                this.sockets.add(socket);
+                socket.once('close', () => {
+                    this.sockets.delete(socket);
+                });
+
+                if (this.isConnectionHandler(overmindService)) {
+                    overmindService.handleConnection(socket);
+                    return;
+                }
+
                 const io = new NodeIo(socket, socket);
                 new RPCChannel<OvermindIpcApi, Record<string, never>>(io, { expose: overmindService });
             });
@@ -40,6 +55,14 @@ export class OvermindIpcServer {
         if (!this.server) {
             throw new Error('OvermindService is not running.');
         }
+
+        for (const socket of this.sockets) {
+            socket.end();
+            if (!socket.destroyed) {
+                socket.destroy();
+            }
+        }
+
         this.server.close();
     }
 
@@ -59,5 +82,9 @@ export class OvermindIpcServer {
             server.once('listening', handleListening);
             server.listen(pipePath);
         });
+    }
+
+    private isConnectionHandler(service: OvermindIpcApi | ConnectionHandler): service is ConnectionHandler {
+        return 'handleConnection' in service;
     }
 }

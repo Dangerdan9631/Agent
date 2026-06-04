@@ -7,7 +7,9 @@
     "node": ">=24"
   },
   "workspaces": [
-    "packages/*"
+    "packages/overmind-sdk",
+    "packages/overmind-cli",
+    "packages/overmind"
   ],
   "scripts": {
     "build": "npm run build -w packages/overmind-sdk && npm run build -w packages/overmind-cli && npm run build -w packages/overmind",

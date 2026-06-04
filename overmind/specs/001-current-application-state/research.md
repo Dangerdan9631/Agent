@@ -9,7 +9,8 @@
 `overmind-sdk` types only.
 
 **Rationale**: Legacy service already implements robot3 cerebrates, attach streaming,
-task persistence, and provider chain — matching TEMP.md and FR-014–FR-016. Rewriting
+task persistence, provider chain behavior, and the unnamed/global attach path —
+matching TEMP.md and FR-015–FR-017. Rewriting
 would delay baseline closure without benefit.
 
 **Alternatives considered**:
@@ -32,10 +33,12 @@ would touch all three packages without user value.
   dependency and conflicts with legacy deprecation.
 
 **Attach streaming**: Legacy passes `AttachServerEventSink` callbacks on the same
-connection (`attached`, `output`, `terminate`). kkrpc must support bidirectional
-events or a dedicated attach connection pattern. **Action for M2**: prototype
-attach on kkrpc; if unsupported, use secondary connection or port legacy channel
-factory behind `OvermindIpcServer` adapter interface.
+connection (`attached`, `output`, `terminate`). When `AttachRequest.name` is omitted,
+legacy subscribes to the global buffered logger channel (`bufferName ?? __global__`),
+which is how service log output is attached without naming a cerebrate. kkrpc must
+support bidirectional events or a dedicated attach connection pattern. **Action for
+M2**: prototype attach on kkrpc; if unsupported, use secondary connection or port
+legacy channel factory behind `OvermindIpcServer` adapter interface.
 
 ## R3: Type ownership
 
@@ -56,7 +59,7 @@ package.
 - `overmind-config.yaml` with `version: 1`
 - `cerebrates/hello/cerebrate-config.yaml` example
 
-**Rationale**: FR-015 and operator expectations; legacy loaders already implement
+**Rationale**: FR-016 and operator expectations; legacy loaders already implement
 validation.
 
 **Alternatives considered**:
@@ -84,7 +87,8 @@ provider chain from legacy but gate actual Cursor/Codex/Gemini adapters behind a
 follow-up feature (FR-019).
 
 **Rationale**: Spec explicitly excludes external agent backends; M3 can use stub or
-hello-world provider for tests.
+hello-world provider for tests while the command contract remains documented for
+legacy parity.
 
 ## R7: Duplicate service start
 

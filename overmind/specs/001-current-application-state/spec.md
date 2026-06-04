@@ -40,6 +40,23 @@ and migration away from legacy packages—not a net-new feature request.
   contract when implemented)
 - External agent backends (Cursor SDK, Codex CLI, Gemini CLI, Claude, Copilot, Windsurf)
 
+### Deferred Product Surfaces
+
+- **Electron UI** remains a deferred surface. It should consume `overmind-sdk`
+  for attach windows, live cerebrate state, runtime stats, and service control,
+  but no Electron-specific implementation is in scope for this baseline.
+- **MCP agent interface** remains deferred. Any future MCP surface should expose
+  the same control plane through `overmind-sdk` rather than opening its own IPC
+  contract or duplicating service orchestration.
+- **External provider/tool integrations** remain deferred behind the service
+  boundary. Cursor SDK, Codex CLI, Gemini CLI, Claude CLI, Copilot CLI, and
+  Windsurf CLI are product-direction references, not part of the canonical
+  implementation scope captured here.
+- **Service lifecycle ownership** remains intentionally limited to operator-facing
+  surfaces such as the CLI today and a future UI later. Deferred agent-facing
+  surfaces should control cerebrates, not replace `start` or `shutdown` for the
+  service process itself.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Start and observe the service (Priority: P1)
@@ -112,22 +129,24 @@ document expected vs actual behavior for baseline tracking.
 
 1. **Given** a running service,
    **When** the operator runs `overmind start-cerebrate <name> --config-dir <path>`,
-   **Then** **current behavior**: the SDK returns "Method not implemented" and the
-   command fails; **target behavior**: a cerebrate instance starts and appears in
-   `stats` with state and runtime fields populated.
+   **Then** a cerebrate instance starts and appears in `stats` with state and
+   runtime fields populated.
 2. **Given** a running cerebrate,
    **When** the operator runs `overmind send-command <cerebrate> <command> ...`,
-   **Then** **current behavior**: not implemented in SDK; **target behavior**: command
-   is delivered and output is returned or streamed.
+   **Then** the command is delivered and output is returned or streamed.
 3. **Given** a running cerebrate,
    **When** the operator runs `overmind attach <name> --config-dir <path>`,
-   **Then** **current behavior**: not implemented in SDK; **target behavior**: the
-   operator sees historical output (per `historyPlaybackSize`) and live stream events
-   until terminate.
-4. **Given** a running cerebrate,
+   **Then** the operator sees historical output (per `historyPlaybackSize`) and
+   live stream events until terminate.
+4. **Given** a running service,
+   **When** the operator runs `overmind attach --config-dir <path>` without a
+   cerebrate name,
+   **Then** **target behavior** matches the legacy implementation: the attach stream
+   binds to the service/global log buffer and streams service log output until
+   terminate.
+5. **Given** a running cerebrate,
    **When** the operator runs `overmind stop-cerebrate <name>`,
-   **Then** **current behavior**: not implemented in SDK; **target behavior**: the
-   cerebrate stops and is removed from running stats.
+   **Then** the cerebrate stops and is removed from running stats.
 
 ---
 
@@ -155,8 +174,8 @@ a running service, record implemented vs stub responses.
 3. **Given** a running service,
    **When** the developer calls `attach`, `startCerebrate`, `stopCerebrate`, or
    `sendCerebrateCommand`,
-   **Then** **current behavior**: calls throw not-implemented; contracts and CLI
-   wiring exist for future implementation.
+   **Then** the SDK delegates to the service IPC layer and exposes typed results
+   or attach stream events without reimplementing transport logic.
 
 ---
 
@@ -223,32 +242,37 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
 - **FR-010**: The service IPC surface MUST implement at minimum `getStats` and
   `shutdown` handlers.
 
-### Functional Requirements — Contract surface (declared, not implemented)
+### Functional Requirements — Canonical control surface
 
 - **FR-011**: The SDK `OvermindApi` MUST define operations for `attach`,
   `startCerebrate`, `stopCerebrate`, and `sendCerebrateCommand` with typed
-  request/response models (present today).
+  request/response models.
 - **FR-012**: Cerebrate stats model MUST support name, runtime, idle loop count, and
   states: initialize, idle, check-tasks, post-check, work, validate, shutting down
-  (types exist; service does not populate yet).
+  and the service MUST populate those fields for running cerebrates.
 - **FR-013**: Attach channel MUST support attached, output, terminate, and error
-  events plus `listen()` and `terminate()` (interface exists; handler not implemented).
+  events plus `listen()` and `terminate()`.
+  Omitting `AttachRequest.name` MUST attach to the service/global log output, matching
+  the legacy buffered attach implementation.
+- **FR-014**: Cerebrate definitions SHOULD support explicit lifecycle/integration
+  commands for `run`, `shutdown`, and `attach`, matching the legacy command-driven
+  external agent model.
 
 ### Functional Requirements — Planned capabilities (TEMP.md + constitution)
 
-- **FR-014**: The system SHOULD run **robot3 state machines** in the service: one for
+- **FR-015**: The system SHOULD run **robot3 state machines** in the service: one for
   service lifecycle and one per cerebrate (init → idle → process message → terminate).
-- **FR-015**: The system SHOULD support **config-driven** `overmind-config.yaml` and
+- **FR-016**: The system SHOULD support **config-driven** `overmind-config.yaml` and
   per-cerebrate `cerebrate-config.yaml` under `cerebrates/<name>/`.
-- **FR-016**: The system SHOULD enforce **one running instance per cerebrate name**.
-- **FR-017**: A future **Electron UI** SHOULD support multiple attach windows, live
+- **FR-017**: The system SHOULD enforce **one running instance per cerebrate name**.
+- **FR-018**: A future **Electron UI** SHOULD support multiple attach windows, live
   streams, agent messaging, state/stats display, and service runtime stats.
-- **FR-018**: A future **MCP interface** SHOULD expose agent-oriented control using the
+- **FR-019**: A future **MCP interface** SHOULD expose agent-oriented control using the
   same SDK contracts as the CLI.
-- **FR-019**: Cerebrate execution SHOULD integrate external agent tools (Cursor SDK,
+- **FR-020**: Cerebrate execution SHOULD integrate external agent tools (Cursor SDK,
   Gemini CLI, Codex CLI, Claude CLI, Copilot CLI, Windsurf CLI) behind service
   abstractions—not CLI-specific branches.
-- **FR-020**: `start` and `stop` of the **service itself** SHOULD remain CLI/UI-only
+- **FR-021**: `start` and `stop` of the **service itself** SHOULD remain CLI/UI-only
   per TEMP.md (agents/MCP do not replace service lifecycle commands).
 
 ### Key Entities
@@ -256,15 +280,15 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
 - **Config instance**: A resolved config directory; determines IPC endpoint, instance
   name (basename), and hash suffix for pipe/socket path.
 - **Service process**: Detached Node process running `OvermindService` and
-  `OvermindIpcServer`; authoritative for uptime and (future) cerebrate registry.
-- **Cerebrate**: Named agent worker defined under config; intended single-instance,
-  state-machine-driven runtime (not active in canonical service yet).
+  `OvermindIpcServer`; authoritative for uptime and cerebrate registry.
+- **Cerebrate**: Named agent worker defined under config; single-instance,
+  state-machine-driven runtime managed by the canonical service.
 - **CLI command**: User-facing entry point registered on the `overmind` binary;
   thin wrapper over SDK.
 - **SDK operation**: Client-side orchestration (`StartOperation`, `ShutdownOperation`)
   or IPC proxy (`OvermindIpcClient`) implementing `OvermindApi`.
-- **IPC contract**: kkrpc channel exposing `OvermindIpcApi` (`getStats`, `shutdown`
-  today; cerebrate methods future).
+- **IPC contract**: kkrpc channel exposing `OvermindIpcApi` for service lifecycle,
+  cerebrate lifecycle, command dispatch, and attach streaming.
 
 ## Success Criteria *(mandatory)*
 
@@ -274,10 +298,10 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
   under 10 seconds on a local developer machine (excluding first-time build).
 - **SC-002**: Cooperative shutdown completes and a subsequent `stats` call fails to
   connect within 3 seconds in 95% of manual test runs on Windows and Unix targets.
-- **SC-003**: 100% of CLI commands that are not implemented in the SDK fail with an
-  explicit error (no silent success) until implementations land.
+- **SC-003**: 100% of the seven registered CLI commands complete through the SDK
+  surface with explicit success or failure behavior and no silent no-ops.
 - **SC-004**: Baseline spec readers can list all seven CLI commands and classify each
-  as **working**, **stub**, or **planned** without reading source code.
+  as **working**, **partial**, or **planned** without reading source code.
 - **SC-005**: No new feature spec or plan references legacy package paths unless the
   work item is explicitly "remove legacy package X."
 
@@ -303,10 +327,10 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
 | `start` | `start` | N/A (spawns process) | Working |
 | `shutdown` | `shutdown` | `shutdown` | Working (cooperative + force) |
 | `stats` | `getStats` | `getStats` | Working (stub cerebrate data) |
-| `start-cerebrate` | `startCerebrate` | Not exposed | Stub (SDK throws) |
-| `stop-cerebrate` | `stopCerebrate` | Not exposed | Stub (SDK throws) |
-| `send-command` | `sendCerebrateCommand` | Not exposed | Stub (SDK throws) |
-| `attach` | `attach` | Not exposed | Stub (SDK throws) |
+| `start-cerebrate` | `startCerebrate` | `startCerebrate` | Working |
+| `stop-cerebrate` | `stopCerebrate` | `stopCerebrate` | Working |
+| `send-command` | `sendCerebrateCommand` | `sendCerebrateCommand` | Working |
+| `attach` | `attach` | `attach` / `terminateAttach` | Working (named and unnamed attach) |
 
 ## Architecture Alignment (constitution v1.1.0)
 

@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { StartRequest, StartResponse } from '@overmind-sdk/api';
@@ -14,7 +15,7 @@ export class StartOperation {
     private readonly logger: Logger;
 
     constructor(
-        private readonly overmindIpcClient: OvermindIpcClient,
+        @inject(OvermindIpcClient) private readonly overmindIpcClient: OvermindIpcClient,
         @inject(OvermindConfigOptionsToken) private readonly configOptions: OvermindConfigOptions,
         @inject(LoggerFactoryToken) loggerFactory: LoggerFactory,
     ) {
@@ -65,7 +66,11 @@ export class StartOperation {
     }
 
     private resolveServiceBinPath(): string {
-        return fileURLToPath(import.meta.resolve('overmind-service/bin'));
+        try {
+            return fileURLToPath(import.meta.resolve('overmind-service/bin'));
+        } catch {
+            return path.resolve(process.cwd(), 'packages/overmind/dist/bin.js');
+        }
     }
 
     private async isRunning(): Promise<boolean> {
