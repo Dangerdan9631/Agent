@@ -8,6 +8,7 @@ import { SendCommand } from '../../src/commands/send.js';
 import { ShutdownCommand } from '../../src/commands/shutdown.js';
 import { StartCommand } from '../../src/commands/start.js';
 import { StartCerebrateCommand } from '../../src/commands/start-cerebrate.js';
+import { StartWorkflowCommand } from '../../src/commands/start-workflow.js';
 import { StatsCommand } from '../../src/commands/stats.js';
 import { StopCerebrateCommand } from '../../src/commands/stop-cerebrate.js';
 
@@ -23,6 +24,12 @@ describe('CLI commands', () => {
       shutdown: vi.fn(async () => ({ message: 'shutting down' })),
       start: vi.fn(async () => ({ pid: 123 })),
       startCerebrate: vi.fn(async () => ({ name: 'hello' })),
+      startCerebrateWorkflow: vi.fn(async () => ({
+        cerebrateName: 'hello',
+        workflowName: 'daily-review',
+        initialState: 'inspect',
+        status: 'running' as const,
+      })),
       stopCerebrate: vi.fn(async () => ({ stopped: true, message: 'Cerebrate stopped: hello' })),
     };
     const overmindApi = {
@@ -36,6 +43,7 @@ describe('CLI commands', () => {
       new ShutdownCommand(overmindApi as never, loggerFactory as never),
       new StatsCommand(overmindApi as never, loggerFactory as never),
       new StartCerebrateCommand(overmindApi as never, loggerFactory as never),
+      new StartWorkflowCommand(overmindApi as never, loggerFactory as never),
       new StopCerebrateCommand(overmindApi as never, loggerFactory as never),
       new SendCommand(overmindApi as never, loggerFactory as never),
     ];
@@ -44,6 +52,7 @@ describe('CLI commands', () => {
     await runCommand(commands, ['shutdown', '--force', '--config-dir', 'cfg']);
     await runCommand(commands, ['stats', '--config-dir', 'cfg']);
     await runCommand(commands, ['start-cerebrate', 'hello', '--config-dir', 'cfg']);
+    await runCommand(commands, ['start-workflow', 'hello', 'daily-review', '--config-dir', 'cfg']);
     await runCommand(commands, ['stop-cerebrate', 'hello', '--config-dir', 'cfg']);
     await runCommand(commands, ['send-command', 'hello', 'run', '--config-dir', 'cfg']);
 
@@ -52,6 +61,10 @@ describe('CLI commands', () => {
     expect(api.shutdown).toHaveBeenCalledWith({ force: true });
     expect(api.getStats).toHaveBeenCalledWith({});
     expect(api.startCerebrate).toHaveBeenCalledWith({ name: 'hello' });
+    expect(api.startCerebrateWorkflow).toHaveBeenCalledWith({
+      cerebrateName: 'hello',
+      workflowName: 'daily-review',
+    });
     expect(api.stopCerebrate).toHaveBeenCalledWith({ cerebrateName: 'hello' });
     expect(api.sendCerebrateCommand).toHaveBeenCalledWith({
       cerebrateName: 'hello',

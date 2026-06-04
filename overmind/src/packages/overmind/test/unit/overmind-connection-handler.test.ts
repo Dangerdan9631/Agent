@@ -23,6 +23,7 @@ describe('OvermindConnectionHandler', () => {
       sendCerebrateCommand: vi.fn(),
       shutdown: vi.fn(),
       startCerebrate: vi.fn(),
+      startCerebrateWorkflow: vi.fn(),
       stop: vi.fn(),
       stopCerebrate: vi.fn(),
     };
@@ -70,6 +71,7 @@ describe('OvermindConnectionHandler', () => {
       sendCerebrateCommand: vi.fn(),
       shutdown: vi.fn(),
       startCerebrate: vi.fn(),
+      startCerebrateWorkflow: vi.fn(),
       stop: vi.fn(),
       stopCerebrate: vi.fn(),
     };
@@ -106,5 +108,34 @@ describe('OvermindConnectionHandler', () => {
 
     await api.terminateAttach({ name: 'hello' });
     await expect(attachPromise).resolves.toBeUndefined();
+  });
+
+  it('delegates workflow starts to the service', async () => {
+    const service = {
+      attach: vi.fn(),
+      getStats: vi.fn(),
+      sendCerebrateCommand: vi.fn(),
+      shutdown: vi.fn(),
+      startCerebrate: vi.fn(),
+      startCerebrateWorkflow: vi.fn(async () => ({
+        cerebrateName: 'hello',
+        workflowName: 'daily-review',
+        initialState: 'inspect',
+        status: 'running' as const,
+      })),
+      stop: vi.fn(),
+      stopCerebrate: vi.fn(),
+    };
+
+    const handler = new OvermindConnectionHandler(service as never);
+
+    await expect(
+      handler.startCerebrateWorkflow({ cerebrateName: 'hello', workflowName: 'daily-review' }),
+    ).resolves.toEqual({
+      cerebrateName: 'hello',
+      workflowName: 'daily-review',
+      initialState: 'inspect',
+      status: 'running',
+    });
   });
 });

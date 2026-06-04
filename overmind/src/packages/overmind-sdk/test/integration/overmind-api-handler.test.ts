@@ -1,5 +1,8 @@
 import 'reflect-metadata';
 
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
 import type {
   AttachChannel,
   AttachEventAttached,
@@ -8,6 +11,7 @@ import type {
 } from '@overmind-sdk/api';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { CEREBRATE_CONFIG_FILENAME } from '../../../../packages/overmind/src/infrastructure/config/cerebrate-config-loader.js';
 import {
   createTempConfigDir,
   forceCleanupService,
@@ -40,7 +44,16 @@ describe.sequential('OvermindApiHandler', () => {
       cerebrates: [],
     });
 
+    await addHelloWorkflow(configDir);
     await expect(api.startCerebrate({ name: 'hello' })).resolves.toEqual({ name: 'hello' });
+    await expect(
+      api.startCerebrateWorkflow({ cerebrateName: 'hello', workflowName: 'daily-review' }),
+    ).resolves.toEqual({
+      cerebrateName: 'hello',
+      workflowName: 'daily-review',
+      initialState: 'inspect',
+      status: 'running',
+    });
     await expect(
       api.sendCerebrateCommand({ cerebrateName: 'hello', command: 'run' }),
     ).resolves.toMatchObject({
@@ -126,4 +139,22 @@ async function collectAttach(
 
   expect(errors).toEqual([]);
   return { attached, output, terminated };
+}
+
+async function addHelloWorkflow(configDir: string): Promise<void> {
+  const configPath = path.join(
+    configDir,
+    'cerebrates',
+    'hello',
+    CEREBRATE_CONFIG_FILENAME,
+  );
+  const contents = await readFile(configPath, 'utf8');
+  const updated = contents
+    .replace('states: []', 'states:\n  - name: inspect\n    command: run\n    next: END')
+    .replace('workflows: []', 'workflows:\n  - name: daily-review\n    initialState: inspect');
+  await writeFile(
+    configPath,
+    updated,
+    'utf8',
+  );
 }

@@ -6,7 +6,7 @@ import { OvermindService } from '../../src/service/overmind-service.js';
 
 describe('OvermindService', () => {
   it('reports uptime and empty cerebrate stats', async () => {
-    const service = new OvermindService({} as never);
+    const service = new OvermindService({} as never, {} as never);
     (service as never).startedAt = Date.now() - 2_000;
 
     const stats = await service.getStats({});
@@ -20,7 +20,7 @@ describe('OvermindService', () => {
     const ipcServer = {
       stop: vi.fn(),
     };
-    const service = new OvermindService(ipcServer as never);
+    const service = new OvermindService(ipcServer as never, {} as never);
     (service as never).startedAt = Date.now() - 1_000;
 
     await expect(service.shutdown({})).resolves.toEqual({
@@ -35,7 +35,7 @@ describe('OvermindService', () => {
     const ipcServer = {
       stop: vi.fn(),
     };
-    const service = new OvermindService(ipcServer as never);
+    const service = new OvermindService(ipcServer as never, {} as never);
 
     service.stop();
 

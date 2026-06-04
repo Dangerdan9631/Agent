@@ -10,6 +10,10 @@ import { SendCerebrateCommandRequest, SendCerebrateCommandResponse } from "./sen
 import { ShutdownRequest, ShutdownResponse } from "./shutdown";
 import { StartRequest, StartResponse } from "./start";
 import { StartCerebrateRequest, StartCerebrateResponse } from "./start-cerebrate";
+import {
+    StartCerebrateWorkflowRequest,
+    StartCerebrateWorkflowResponse,
+} from "./start-cerebrate-workflow";
 import { StopCerebrateRequest, StopCerebrateResponse } from "./stop-cerebrate";
 
 export class OvermindApiFactory {
@@ -27,6 +31,7 @@ export interface OvermindApi {
     attach(request: AttachRequest): Promise<AttachChannel>;
 
     startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse>;
+    startCerebrateWorkflow(request: StartCerebrateWorkflowRequest): Promise<StartCerebrateWorkflowResponse>;
     stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse>;
     sendCerebrateCommand(request: SendCerebrateCommandRequest): Promise<SendCerebrateCommandResponse>;
 };

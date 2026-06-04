@@ -13,6 +13,8 @@ import {
     ShutdownResponse,
     StartCerebrateRequest,
     StartCerebrateResponse,
+    StartCerebrateWorkflowRequest,
+    StartCerebrateWorkflowResponse,
     StopCerebrateRequest,
     StopCerebrateResponse,
 } from '@overmind-sdk/api';
@@ -52,6 +54,12 @@ export class OvermindIpcClient {
 
     async startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse> {
         return await this.withRemoteApi((api) => api.startCerebrate(request));
+    }
+
+    async startCerebrateWorkflow(
+        request: StartCerebrateWorkflowRequest,
+    ): Promise<StartCerebrateWorkflowResponse> {
+        return await this.withRemoteApi((api) => api.startCerebrateWorkflow(request));
     }
 
     async stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {

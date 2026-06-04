@@ -6,4 +6,5 @@ export * from './send-cerebrate-command';
 export * from './shutdown';
 export * from './start';
 export * from './start-cerebrate';
+export * from './start-cerebrate-workflow';
 export * from './stop-cerebrate';

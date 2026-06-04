@@ -15,7 +15,7 @@ import {
 import type { OutputSink } from '../../application/ports/output-sink.js';
 import type { TaskRepository } from '../../application/ports/task-repository.js';
 import type { Task } from '../task/task.js';
-import type { CerebrateDefinition } from './cerebrate-definition.js';
+import type { CerebrateDefinition, WorkflowDefinition, WorkflowStateDefinition } from './cerebrate-definition.js';
 
 type CerebrateMachine = Machine<Record<string, never>, Record<string, never>>;
 type CerebrateMachineService = Service<CerebrateMachine>;
@@ -106,6 +106,18 @@ export class Cerebrate {
     const output = JSON.stringify(command.value);
     this.emit(output);
     return output;
+  }
+
+  getWorkflowInitialState(workflowName: string): string | undefined {
+    return this.definition.workflows.find((workflow) => workflow.name === workflowName)?.initialState;
+  }
+
+  getWorkflowDefinition(workflowName: string): WorkflowDefinition | undefined {
+    return this.definition.workflows.find((workflow) => workflow.name === workflowName);
+  }
+
+  getWorkflowStateDefinition(stateName: string): WorkflowStateDefinition | undefined {
+    return this.definition.states.find((state) => state.name === stateName);
   }
 
   private get state(): CerebrateStats['state'] {

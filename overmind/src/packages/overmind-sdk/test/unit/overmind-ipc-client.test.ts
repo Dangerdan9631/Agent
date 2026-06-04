@@ -79,6 +79,44 @@ describe('OvermindIpcClient', () => {
       await closeServer(server);
     }
   });
+
+  it('forwards workflow start requests to the remote IPC API', async () => {
+    const pipePath = createPipePath('start-workflow');
+    const server = await listenWithApi(pipePath, {
+      async getStats() {
+        return {
+          cerebrates: [],
+          runningCerebrateCount: 0,
+          uptime: 0,
+        };
+      },
+      async shutdown() {
+        return { message: 'unused' };
+      },
+      async startCerebrateWorkflow(request) {
+        return {
+          cerebrateName: request.cerebrateName,
+          workflowName: request.workflowName,
+          initialState: 'inspect',
+          status: 'running' as const,
+        };
+      },
+    });
+
+    try {
+      const client = createClient(pipePath);
+      await expect(
+        client.startCerebrateWorkflow({ cerebrateName: 'hello', workflowName: 'daily-review' }),
+      ).resolves.toEqual({
+        cerebrateName: 'hello',
+        workflowName: 'daily-review',
+        initialState: 'inspect',
+        status: 'running',
+      });
+    } finally {
+      await closeServer(server);
+    }
+  });
 });
 
 function createClient(pipePath: string): OvermindIpcClient {
@@ -98,6 +136,14 @@ async function listenWithApi(
   api: {
     getStats: () => Promise<{ uptime: number; runningCerebrateCount: number; cerebrates: [] }>;
     shutdown: () => Promise<{ message: string }>;
+    startCerebrateWorkflow?: (
+      request: { cerebrateName: string; workflowName: string },
+    ) => Promise<{
+      cerebrateName: string;
+      workflowName: string;
+      initialState: string;
+      status: 'running';
+    }>;
   },
 ): Promise<net.Server> {
   const server = net.createServer((socket) => {

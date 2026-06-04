@@ -47,6 +47,17 @@ describe('cerebrate-config-loader', () => {
       '    value:',
       '      type: text',
       '      text: Run the cerebrate',
+      'states:',
+      '  - name: inspect',
+      '    command: run',
+      '    next: END',
+      '    branches:',
+      '      - when:',
+      '          outputContains: needs-validation',
+      '        next: END',
+      'workflows:',
+      '  - name: daily-review',
+      '    initialState: inspect',
     ].join('\n'));
 
     const config = loadCerebrateConfig(cerebrateDir);
@@ -55,8 +66,127 @@ describe('cerebrate-config-loader', () => {
     expect(config.taskId).toBe('TEST');
     expect(config.commands).toHaveLength(1);
     expect(config.commands[0]?.name).toBe('run');
+    expect(config.states).toEqual([
+      {
+        name: 'inspect',
+        command: 'run',
+        next: 'END',
+        branches: [
+          {
+            when: {
+              outputContains: 'needs-validation',
+            },
+            next: 'END',
+          },
+        ],
+      },
+    ]);
+    expect(config.workflows).toEqual([
+      {
+        name: 'daily-review',
+        initialState: 'inspect',
+      },
+    ]);
+  });
+
+  it('rejects unknown state references and unknown workflow commands', async () => {
+    const cerebrateDir = await createTempDir();
+    const filePath = path.join(cerebrateDir, CEREBRATE_CONFIG_FILENAME);
+
+    await writeFile(filePath, [
+      'description: Test cerebrate',
+      'taskId: TEST',
+      'nextTaskNumber: 1',
+      'responsibilities: Run test tasks',
+      'commands:',
+      '  - name: run',
+      '    value:',
+      '      type: text',
+      '      text: Run the cerebrate',
+      'states:',
+      '  - name: inspect',
+      '    command: missing-command',
+      '    next: missing-state',
+      '    onError: recover',
+      'workflows:',
+      '  - name: daily-review',
+      '    initialState: missing-state',
+    ].join('\n'));
+
+    const message = getLoadErrorMessage(cerebrateDir);
+    expect(message).toContain('Unknown command \\"missing-command\\".');
+    expect(message).toContain('Unknown workflow target \\"missing-state\\".');
+    expect(message).toContain('Unknown workflow target \\"recover\\".');
+    expect(message).toContain('Unknown initial state \\"missing-state\\".');
+  });
+
+  it('rejects invalid branch conditions and malformed regex values', async () => {
+    const cerebrateDir = await createTempDir();
+    const filePath = path.join(cerebrateDir, CEREBRATE_CONFIG_FILENAME);
+
+    await writeFile(filePath, [
+      'description: Test cerebrate',
+      'taskId: TEST',
+      'nextTaskNumber: 1',
+      'responsibilities: Run test tasks',
+      'commands:',
+      '  - name: run',
+      '    value:',
+      '      type: text',
+      '      text: Run the cerebrate',
+      'states:',
+      '  - name: inspect',
+      '    command: run',
+      '    next: END',
+      '    branches:',
+      '      - when: {}',
+      '        next: END',
+      '      - when:',
+      '          outputRegex: "["',
+      '        next: END',
+    ].join('\n'));
+
+    const message = getLoadErrorMessage(cerebrateDir);
+    expect(message).toContain('Branch conditions must define at least one supported field.');
+    expect(message).toContain('Invalid outputRegex: Invalid regular expression: /[/: Unterminated character class');
+  });
+
+  it('rejects reserved END as a state name', async () => {
+    const cerebrateDir = await createTempDir();
+    const filePath = path.join(cerebrateDir, CEREBRATE_CONFIG_FILENAME);
+
+    await writeFile(filePath, [
+      'description: Test cerebrate',
+      'taskId: TEST',
+      'nextTaskNumber: 1',
+      'responsibilities: Run test tasks',
+      'commands:',
+      '  - name: run',
+      '    value:',
+      '      type: text',
+      '      text: Run the cerebrate',
+      'states:',
+      '  - name: END',
+      '    command: run',
+      '    next: END',
+      'workflows:',
+      '  - name: daily-review',
+      '    initialState: END',
+    ].join('\n'));
+
+    expect(getLoadErrorMessage(cerebrateDir)).toContain('State name \\"END\\" is reserved.');
   });
 });
+
+function getLoadErrorMessage(cerebrateDir: string): string {
+  try {
+    loadCerebrateConfig(cerebrateDir);
+  } catch (error) {
+    return (error as Error).message;
+  }
+
+  throw new Error('Expected cerebrate config load to fail.');
+}
 
 async function createTempDir(): Promise<string> {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'cerebrate-config-loader-'));

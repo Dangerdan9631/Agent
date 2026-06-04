@@ -3,6 +3,7 @@ import { SendCommand } from '@overmind-cli/commands/send';
 import { ShutdownCommand } from '@overmind-cli/commands/shutdown';
 import { StartCommand } from '@overmind-cli/commands/start';
 import { StartCerebrateCommand } from '@overmind-cli/commands/start-cerebrate';
+import { StartWorkflowCommand } from '@overmind-cli/commands/start-workflow';
 import { StatsCommand } from '@overmind-cli/commands/stats';
 import { StopCerebrateCommand } from '@overmind-cli/commands/stop-cerebrate';
 import { OvermindApiFactory } from "overmind-sdk";
@@ -22,6 +23,7 @@ export function buildCliContainer(): DependencyContainer {
     cliContainer.register(OvermindCliCommandToken, { useClass: ShutdownCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StatsCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StartCerebrateCommand });
+    cliContainer.register(OvermindCliCommandToken, { useClass: StartWorkflowCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: StopCerebrateCommand });
     cliContainer.register(OvermindCliCommandToken, { useClass: SendCommand });
 

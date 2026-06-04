@@ -5,5 +5,6 @@ export * from './send';
 export * from './shutdown';
 export * from './start';
 export * from './start-cerebrate';
+export * from './start-workflow';
 export * from './stats';
 export * from './stop-cerebrate';

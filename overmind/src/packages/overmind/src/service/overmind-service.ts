@@ -12,19 +12,22 @@ import type {
   ShutdownResponse,
   StartCerebrateRequest,
   StartCerebrateResponse,
+  StartCerebrateWorkflowRequest,
+  StartCerebrateWorkflowResponse,
   StopCerebrateRequest,
   StopCerebrateResponse,
 } from 'overmind-sdk/api';
 import { createConfigOptions } from 'overmind-sdk/config';
 import { OvermindIpcApi } from 'overmind-sdk/ipc/overmind-ipc-api';
 import { BufferedLogBuffer, BufferedLoggerFactory, LogLevel } from 'overmind-sdk/logging';
-import { injectable } from 'tsyringe';
+import { delay, inject, injectable } from 'tsyringe';
 
 import { CerebrateRegistry } from '../application/cerebrate-registry.js';
 import type { OutputSink } from '../application/ports/output-sink.js';
 import { AttachToOutputUseCase } from '../application/use-cases/attach-to-output.js';
 import { SendCerebrateCommandUseCase } from '../application/use-cases/send-cerebrate-command.js';
 import { StartCerebrateUseCase } from '../application/use-cases/start-cerebrate.js';
+import { StartCerebrateWorkflowUseCase } from '../application/use-cases/start-cerebrate-workflow.js';
 import { StopCerebrateUseCase } from '../application/use-cases/stop-cerebrate.js';
 import type { Cerebrate } from '../domain/cerebrate/cerebrate.js';
 import { ensureDefaultCerebrateConfig } from '../infrastructure/config/cerebrate-config-loader.js';
@@ -40,7 +43,11 @@ export class OvermindService implements OvermindIpcApi {
   private readonly loggerFactory = new BufferedLoggerFactory(this.outputBuffer);
   private readonly registry = new CerebrateRegistry<Cerebrate>();
 
-  constructor(private readonly ipcServer: OvermindIpcServer) {}
+  constructor(
+    private readonly ipcServer: OvermindIpcServer,
+    @inject(delay(() => StartCerebrateWorkflowUseCase))
+    private readonly startCerebrateWorkflowUseCase: StartCerebrateWorkflowUseCase,
+  ) {}
 
   async run(argv: string[], exposedApi: OvermindIpcApi = this): Promise<number> {
     const configOptions = createConfigOptions(argv[2]);
@@ -105,6 +112,12 @@ export class OvermindService implements OvermindIpcApi {
     return response;
   }
 
+  async startCerebrateWorkflow(
+    request: StartCerebrateWorkflowRequest,
+  ): Promise<StartCerebrateWorkflowResponse> {
+    return await this.startCerebrateWorkflowUseCase.execute(request);
+  }
+
   async stopCerebrate(request: StopCerebrateRequest): Promise<StopCerebrateResponse> {
     const useCase = new StopCerebrateUseCase(this.registry);
     const response = await useCase.execute(request);
@@ -119,6 +132,10 @@ export class OvermindService implements OvermindIpcApi {
     const response = await useCase.execute(request);
     this.emitGlobal(`cerebrate command sent: ${request.cerebrateName}:${request.command}`);
     return response;
+  }
+
+  getCerebrateRegistry(): CerebrateRegistry<Cerebrate> {
+    return this.registry;
   }
 
   getOutputSink(): OutputSink {

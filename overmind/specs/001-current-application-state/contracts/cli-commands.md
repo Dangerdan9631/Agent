@@ -10,7 +10,7 @@
 |---------|-----------|---------|----------|--------|
 | `start` | — | `--config-dir` | `start({})` | Working |
 | `shutdown` | — | `--config-dir`, `--force` | `shutdown({ force })` | Working |
-| `stats` | — | `--config-dir` | `getStats({})` | Working (empty cerebrates) |
+| `stats` | — | `--config-dir` | `getStats({})` | Working |
 | `start-cerebrate` | `<name>` | `--config-dir` | `startCerebrate({ name })` | Working |
 | `stop-cerebrate` | `<name>` | `--config-dir` | `stopCerebrate({ cerebrateName: name })` | Working |
 | `send-command` | `<cerebrate> <command...>` | `--config-dir` | `sendCerebrateCommand({ cerebrateName, command })` | Working |

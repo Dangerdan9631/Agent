@@ -24,10 +24,10 @@ class OvermindApiFactory {
 | `start` | `StartRequest` | `StartResponse` | `StartOperation` — spawns `overmind-service` binary |
 | `shutdown` | `ShutdownRequest` (`force?: boolean`) | `ShutdownResponse` | `ShutdownOperation` — IPC or process kill |
 | `getStats` | `GetStatsRequest` | `GetStatsResponse` | `OvermindIpcClient` |
-| `startCerebrate` | `StartCerebrateRequest` | `StartCerebrateResponse` | IPC (stub today) |
-| `stopCerebrate` | `StopCerebrateRequest` | `StopCerebrateResponse` | IPC (stub today) |
-| `sendCerebrateCommand` | `SendCerebrateCommandRequest` | `SendCerebrateCommandResponse` | IPC (stub today) |
-| `attach` | `AttachRequest` | `AttachChannel` | IPC streaming (stub today); omit `name` for service/global logs |
+| `startCerebrate` | `StartCerebrateRequest` | `StartCerebrateResponse` | IPC |
+| `stopCerebrate` | `StopCerebrateRequest` | `StopCerebrateResponse` | IPC |
+| `sendCerebrateCommand` | `SendCerebrateCommandRequest` | `SendCerebrateCommandResponse` | IPC |
+| `attach` | `AttachRequest` | `AttachChannel` | IPC streaming; omit `name` for service/global logs |
 
 ## AttachChannel (client)
 

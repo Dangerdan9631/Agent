@@ -4,7 +4,7 @@
 **Implementer**: `packages/overmind` (`OvermindService` + connection handler)  
 **Transport**: kkrpc over named pipe (Windows) or Unix socket
 
-## Current (implemented)
+## Implemented
 
 ### `getStats(request: GetStatsRequest): Promise<GetStatsResponse>`
 
@@ -20,15 +20,13 @@
 }
 ```
 
-**Current behavior**: `runningCerebrateCount` is `0`; `cerebrates` is `[]`.
+**Behavior**: response includes service uptime and live cerebrate summary data.
 
 ### `shutdown(request: ShutdownRequest): Promise<ShutdownResponse>`
 
 **Request**: `{}` (shutdown initiated by client; service stops IPC server)
 
 **Response**: `{ message: string }`
-
-## Target (M2–M3)
 
 ### `startCerebrate(request: StartCerebrateRequest): Promise<StartCerebrateResponse>`
 

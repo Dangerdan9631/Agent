@@ -33,7 +33,6 @@ and migration away from legacy packages—not a net-new feature request.
 
 - Legacy packages (`packages/api`, `cli`, `core`, `service`)
 - Electron UI, MCP agent interface (TEMP.md)
-- Full cerebrate runtime (state machines, message processing, provider integrations)
 - Automatic creation of `overmind-config.yaml` and cerebrate configs on first start
   (described in README; not present in canonical service code yet)
 - Listing running agents as a dedicated command (TEMP.md; partially covered by `stats`
@@ -159,7 +158,7 @@ operations without reimplementing IPC or process management.
 SDK; the SDK is the single contract owner.
 
 **Independent Test**: Instantiate `OvermindApiFactory`, call each API method with
-a running service, record implemented vs stub responses.
+a running service, and verify typed responses or attach stream events.
 
 **Acceptance Scenarios**:
 
@@ -170,7 +169,7 @@ a running service, record implemented vs stub responses.
 2. **Given** a running service,
    **When** the developer calls `getStats({})`,
    **Then** a typed response includes uptime, `runningCerebrateCount`, and
-   `cerebrates[]` (currently empty stub from service).
+   `cerebrates[]`.
 3. **Given** a running service,
    **When** the developer calls `attach`, `startCerebrate`, `stopCerebrate`, or
    `sendCerebrateCommand`,
@@ -194,8 +193,8 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
 
 1. **Given** TEMP.md architecture notes,
    **When** stakeholders read this spec,
-   **Then** they can distinguish CLI (shipped scaffolding), service IPC (partial),
-   SDK (partial), UI (not started), and MCP (not started).
+   **Then** they can distinguish CLI, service IPC, SDK, UI (not started), and
+   MCP (not started).
 2. **Given** constitution Principle II–III,
    **When** UI or MCP is built,
    **Then** it MUST use `overmind-sdk` only and MUST NOT duplicate service logic.
@@ -214,9 +213,6 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
   under `/tmp`), derived from config directory hash.
 - **Cerebrate name collision**: Constitution requires at most one instance per name;
   enforcement is **not yet implemented** in canonical service.
-- **CLI registers cerebrate commands before SDK implements them**: Operators see
-  command help but runtime failure—documented as known gap.
-
 ## Requirements *(mandatory)*
 
 ### Functional Requirements — Current capabilities
@@ -238,7 +234,7 @@ requirement in the "Current capabilities" set depends on UI/MCP/cerebrate FSM.
 - **FR-008**: `shutdown --force` MUST terminate service processes matching the service
   binary and config directory without requiring IPC (platform-specific process scan).
 - **FR-009**: `stats` MUST display service uptime and cerebrate summary fields from
-  `GetStatsResponse` (service currently returns zero cerebrates).
+  `GetStatsResponse`.
 - **FR-010**: The service IPC surface MUST implement at minimum `getStats` and
   `shutdown` handlers.
 
