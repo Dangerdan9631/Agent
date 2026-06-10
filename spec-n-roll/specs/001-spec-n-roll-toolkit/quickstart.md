@@ -38,7 +38,8 @@ Expected outcomes:
 
 - A local CLI copy is installed into the project.
 - Agent-specific rules/skills/commands are generated for each selected agent.
-- User-owned config contains a default full workflow.
+- `workflow.config.json` contains papercut, quick, and full tier variants — each listing shared `specify` as step 1.
+- `project-metadata.json` includes `nextTaskSpecId: 1`.
 - Toolkit-owned and user-owned directories are separate.
 - The CLI does not verify that selected agents are installed.
 
@@ -57,7 +58,7 @@ Expected outcomes:
 - With `--global`, the global CLI runs directly.
 - Output identifies global and local versions when both are available.
 
-## Scenario 3: Interactive Specification Interview
+## Scenario 3: Interactive Specification with Embedded Triage
 
 Run the generated agent command in a configured agent:
 
@@ -68,10 +69,12 @@ Run the generated agent command in a configured agent:
 Expected outcomes:
 
 - The agent explores available project context before asking questions that files can answer.
-- The agent asks exactly one targeted question at a time.
+- Triage runs at the start of `specify` (before the interview), proposes a tier with rationale, and persists `workflowVariantId` after confirmation.
+- The agent asks exactly one targeted question at a time during the interview.
 - Each question includes a recommended answer.
 - Resolved answers are recorded in the task spec and are not re-asked.
-- The resulting `spec.md` has no unresolved critical placeholders.
+- The resulting `spec.md` has YAML frontmatter with `status: Active` and no unresolved critical placeholders.
+- `workflow-state.json` contains numeric `taskSpecId` and required `slug`.
 
 ## Scenario 4: `/spec-n-roll` Advances Workflow State
 
@@ -84,13 +87,14 @@ Run:
 Expected outcomes:
 
 - The command reads the task spec workflow state file.
-- It advances to the next incomplete step.
-- If state is missing or unreadable, it falls back to artifact detection.
+- It advances to the next incomplete step in the selected tier variant.
+- If state is missing or unreadable, it falls back to tier-aware artifact detection.
 - If state conflicts with artifacts, it warns once and asks for a single confirmation.
+- Absence of `plan.md` on papercut/quick tiers is not treated as an error.
 
 ## Scenario 5: Interrupted Step Recovery
 
-Create partial artifacts for the next step, then run:
+Create partial artifacts for the next step (per step output manifest), then run:
 
 ```text
 /spec-n-roll
@@ -99,6 +103,7 @@ Create partial artifacts for the next step, then run:
 Expected outcomes:
 
 - The command presents exactly three choices: restart, cancel, and force-clean.
+- Detection uses the built-in step output manifest (not per-file ad hoc checks).
 - Restart overwrites all partial artifacts for the step.
 - Cancel leaves artifacts in place and marks the workflow paused.
 - Force-clean deletes all partial artifacts for the step and restarts.
@@ -114,10 +119,10 @@ Run:
 
 Expected outcomes:
 
-- The current task is validated and written to project metadata.
+- The current task is validated and written to `project-metadata.json` (`currentTaskSpecId` + `currentTaskSlug`).
 - Only one Active task spec can be in implementation.
-- Living specs under `living-specs/` are created or updated before test or production code.
-- New or modified scenarios receive the current `@task-{id}` tag.
+- Living specs under `living-specs/{kebab-case-domain}.feature` are created or updated before test or production code.
+- New or modified scenarios receive the current `@spec-n-roll-{numeric-id}` tag.
 - Existing task tags are preserved.
 - Cucumber runs directly against living spec `.feature` files.
 - Unmapped steps receive clearly marked stub step definitions.
@@ -158,23 +163,34 @@ Expected outcomes:
 
 ## Scenario 9: Extension Workflow Variant
 
-Register an extension that contributes a custom triage step and two workflow variants.
+Register an extension that replaces built-in triage logic within `specify` and contributes a custom workflow variant.
 
 Expected outcomes:
 
 - The extension manifest validates against `contracts/extension-manifest.schema.json`.
+- Extension `entrypoint` is invoked in-process via Node `import()`.
 - The workflow config validates against `contracts/workflow-config.schema.json`.
-- `/spec-n-roll` can select a workflow variant through the triage step.
+- `/spec-n-specify` can select a workflow tier through embedded triage.
 - Shared built-in steps are referenced rather than duplicated.
-- If the extension is disabled, the built-in step is used.
+- If the extension is disabled, the built-in behavior is used.
 
-## Scenario 10: Documentation Completeness
+## Scenario 10: Task Spec Lifecycle and Locking
+
+Complete a workflow, then start a non-specify step on a different task spec.
+
+Expected outcomes:
+
+- Completed spec has `status: Complete` in `spec.md` frontmatter after implement finishes.
+- When a different task spec begins a non-specify step, prior Complete specs transition to `status: Locked` in frontmatter.
+- Write attempts to Locked task spec directories are rejected.
+
+## Scenario 11: Documentation Completeness
 
 Review `docs/`.
 
 Expected outcomes:
 
-- Overall workflow documentation covers all steps and interactions.
+- Overall workflow documentation covers all steps and interactions (including triage embedded in specify).
 - CLI documentation covers setup, update, modify/configuration, local delegation, and `--global`.
 - Multi-agent setup and switching are documented.
 - Platform script variant behavior is documented.

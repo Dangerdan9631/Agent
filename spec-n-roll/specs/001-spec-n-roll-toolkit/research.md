@@ -36,6 +36,60 @@
 - Generate a complete spec from the initial prompt: rejected because the feature requires iterative interactive specification.
 - Ask a batch of questions: rejected because both the spec and grill-me guidance require one targeted question at a time.
 
+## Decision: Embed triage inside the `specify` step
+
+**Rationale**: `specify` must be the first step of every workflow tier. Triage selects the tier variant (papercut/quick/full) at the start of `specify` before the interview, then persists `workflowVariantId` before the interview proceeds. This keeps a single universal entry step while still routing by complexity.
+
+**Alternatives considered**:
+
+- Separate `triage-selector` workflow step before `specify`: rejected because the developer requires `specify` as the first step of every workflow.
+- Meta-workflow wrapping triage then tier: rejected in favor of embedding triage in the specify handler.
+
+## Decision: Model tier variants with shared `specify` step reference plus tail
+
+**Rationale**: Each tier variant in `workflow.config.json` lists a shared `specify` step as step 1 followed by its tier-specific tail. Steps are reusable references, not duplicated definitions. `defaultWorkflowId` pre-selects a tier only in the manual/override picker (ambiguous descriptions); normal heuristic triage proposes its own match.
+
+**Alternatives considered**:
+
+- Post-specify tails only with implicit specify prefix: rejected to keep workflow config explicit and inspectable.
+- Monolithic workflow with conditional branching: rejected because named variants must be configurable and extension-replaceable.
+
+## Decision: Persist task spec lifecycle in `spec.md` YAML frontmatter
+
+**Rationale**: Lifecycle states (`Active`, `Complete`, `Locked`) are human-visible and co-located with requirements. Operational workflow progress (`active`/`paused`/`complete`) remains in `workflow-state.json` as a separate concern.
+
+**Alternatives considered**:
+
+- Composite persistence across `workflow-state.json` and `project-metadata.lockedTaskSpecIds`: rejected in favor of frontmatter as the lifecycle source of truth.
+- Separate `lifecycle.json` per task spec: rejected as unnecessary artifact proliferation.
+
+## Decision: Machine-readable IDs use numeric `taskSpecId` plus required `slug`
+
+**Rationale**: JSON contracts (`workflow-state.json`, `project-metadata.json`) carry numeric `taskSpecId` and a required `slug` field. Gherkin tags remain numeric-only (`@spec-n-roll-001`). Directory paths use `specs/{numeric-id}-{slug}/`.
+
+**Alternatives considered**:
+
+- Numeric-only JSON with slug directory-only: rejected because slug is required metadata for disambiguation in prompts and metadata files.
+- Full `001-slug` composite in `taskSpecId` fields: rejected to keep IDs and tags numeric.
+
+## Decision: Assign sequential IDs via `nextTaskSpecId` counter
+
+**Rationale**: `project-metadata.json` maintains `nextTaskSpecId`, incremented atomically when a new task spec directory is created. Avoids directory scans at runtime.
+
+**Alternatives considered**:
+
+- Scan `specs/` for max ID + 1: rejected for performance and race sensitivity.
+- Timestamp-based IDs: rejected because spec requires sequential zero-padded numeric IDs.
+
+## Decision: Omit tier-skipped artifacts
+
+**Rationale**: Papercut and quick tiers do not create `plan.md` or `tasks.md` stubs. Artifact detection and `/spec-n-roll` respect the selected tier's step list from `workflow.config.json`.
+
+**Alternatives considered**:
+
+- Placeholder stub files: rejected because they add noise and confuse artifact detection.
+- Always generate all artifacts: rejected because it contradicts tier semantics.
+
 ## Decision: Enforce behavior-first TDD with vertical slices
 
 **Rationale**: The referenced TDD guidance requires tests to verify behavior through public interfaces, avoid implementation coupling, and use vertical red-green-refactor slices: one test, minimal implementation, repeat. For this toolkit, the most valuable public interfaces are CLI commands, generated workflow commands, workflow state/artifact contracts, config files, and living Gherkin behavior.
@@ -47,12 +101,21 @@
 
 ## Decision: Maintain living specifications as direct Cucumber Gherkin sources
 
-**Rationale**: Living specs are required to be executable `.feature` files under a user-owned `living-specs/` directory. Cucumber should run against those files directly, while step definitions and test code live in the project's normal test location. The toolkit generates or updates scenarios first at implementation entry, tags them with additive task IDs, and creates clearly marked stub step definitions for unmapped steps.
+**Rationale**: Living specs are required to be executable `.feature` files under `living-specs/{kebab-case-domain}.feature`. Cucumber runs against those files directly, while step definitions and test code live in the project's normal test location. The toolkit generates or updates scenarios first at implementation entry, tags them with additive task IDs, and creates clearly marked stub step definitions for unmapped steps.
 
 **Alternatives considered**:
 
 - Duplicate generated `.feature` files under `tests/`: rejected because living specs themselves must be the source of truth.
 - Archive deprecated scenarios: rejected because version control history is the archival record.
+
+## Decision: Detect partial artifacts via built-in step output manifest
+
+**Rationale**: Each step ID maps to expected output files (e.g., `specify` → `spec.md`). Partial means any expected file for the current incomplete step exists while `workflow-state.json` shows that step not yet completed. One interrupted-step prompt covers all partial files for that step.
+
+**Alternatives considered**:
+
+- mtime-based detection since last state write: rejected as unreliable across tooling.
+- Explicit `interruptedArtifacts[]` only: rejected as insufficient without a manifest baseline.
 
 ## Decision: Use versioned JSON/YAML schemas and a tolerant reader for config migration
 
@@ -65,16 +128,17 @@
 
 ## Decision: Represent workflow extensibility as manifests, hooks, step definitions, and variants
 
-**Rationale**: The toolkit must support custom steps, hooks, triage/selectors, named workflow variants, priority ordering, disabled extensions, and semver compatibility warnings. A manifest-driven model keeps extension behavior inspectable and lets the CLI validate extension compatibility during updates.
+**Rationale**: The toolkit must support custom steps, hooks, triage logic within specify, named workflow variants, priority ordering, disabled extensions, and semver compatibility warnings. Extension `entrypoint` values are in-process Node modules (`import()` + exported handler).
 
 **Alternatives considered**:
 
 - Code-only plugin registration: rejected because workflow definitions must be configurable in project files.
+- Subprocess extension execution: rejected because TypeScript in-process handlers enable shared types and lower latency.
 - Separate versioning for each interface: rejected because the spec says the toolkit's semver governs extension interfaces as a whole.
 
 ## Decision: Use file-system state as the source of workflow continuity
 
-**Rationale**: Each task spec writes a workflow state file after each step completes. `/spec-n-roll` uses that state when present and parseable, falls back to artifact detection when absent/unreadable, and prompts once for state/artifact mismatch or interrupted partial artifacts. This gives agents deterministic restart behavior without requiring conversation state.
+**Rationale**: Each task spec writes a workflow state file after each step completes. `/spec-n-roll` uses that state when present and parseable, falls back to tier-aware artifact detection when absent/unreadable, and prompts once for state/artifact mismatch or interrupted partial artifacts.
 
 **Alternatives considered**:
 

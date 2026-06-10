@@ -75,35 +75,37 @@ Represents versioned project configuration.
 **Fields**:
 
 - `schemaVersion`: Current schema version for the config file
-- `workflows`: Named workflow variants
+- `workflows`: Named workflow tier variants (each lists shared `specify` as step 1 + tail)
 - `steps`: Reusable step definitions
 - `agents`: Agent configurations
 - `scriptVariants`: Enabled automation variants, e.g. `powershell`, `shell`
 - `extensions`: Registered extension references
+- `defaultWorkflowId`: Tier pre-selected in manual/override picker only
 
 **Validation**:
 
 - Runtime commands may assume the current schema version.
 - The CLI update path uses a tolerant reader for prior schemas, migrates, and writes the current schema.
 - Breaking schema migrations require a migration plan and explicit confirmation.
+- `defaultWorkflowId` does not auto-run a workflow before `specify`.
 
 ## Workflow Variant
 
-An ordered workflow definition selected directly or by a triage/selector step.
+An ordered workflow tier definition; each variant lists a shared `specify` step reference as step 1 plus a tier-specific tail.
 
 **Fields**:
 
-- `id`: Unique workflow variant identifier
+- `id`: Unique workflow variant identifier (`papercut`, `quick`, `full`)
 - `name`: Human-readable name
 - `description`: Purpose and intended complexity tier
-- `steps`: Ordered references to reusable workflow steps
-- `default`: Whether this is the initialized default workflow
+- `steps`: Ordered references to reusable workflow steps (always starts with shared `specify`)
+- `default`: Whether this tier is pre-selected in the manual picker (`defaultWorkflowId`)
 
 **Validation**:
 
-- A fresh project must include a default full workflow.
-- Multiple variants may reference the same step definition.
-- A selector step may choose another variant at runtime.
+- Initialization must write papercut, quick, and full variants.
+- Multiple variants reference the same `specify`, `tasks`, `plan`, and `implement` step definitions.
+- Triage within `specify` selects which variant tail executes after `specify` completes.
 
 ## Workflow Step
 
@@ -112,17 +114,43 @@ A single executable workflow phase.
 **Fields**:
 
 - `id`: Step identifier, e.g. `specify`, `clarify`, `plan`, `tasks`, `implement`
-- `kind`: `built-in`, `extension`, `triage-selector`, or `hook`
+- `kind`: `built-in`, `extension`, or `hook`
 - `command`: Agent command exposed to the developer
 - `implementation`: Built-in handler or extension reference
 - `priority`: Ordering when multiple extensions target the same phase
 - `enabled`: Whether the step can be selected
+- `outputs`: Expected artifact paths (for partial-artifact detection)
 
 **Validation**:
 
 - Agent-facing commands must use the `spec-n-` prefix.
+- `specify` embeds triage at its start (before the interview); triage is not a separate workflow step in tier definitions.
 - Disabled extensions are ignored and built-in behavior is used when available.
 - If multiple enabled extensions target a phase, priority determines the active step and the developer is informed.
+
+## Step Output Manifest
+
+Built-in mapping from step ID to expected output files for interrupted-step detection.
+
+**Fields**:
+
+- `stepId`: Workflow step identifier
+- `expectedFiles`: Project-relative paths produced by the step
+
+**Default mappings**:
+
+| Step ID | Expected files |
+|---------|----------------|
+| `specify` | `spec.md` |
+| `plan` | `plan.md` |
+| `tasks` | `tasks.md` |
+| `implement` | (living spec updates + test artifacts — tier-dependent; see implementation contract) |
+
+**Validation**:
+
+- Partial = any expected file for the current incomplete step exists while `workflow-state.json` shows that step not yet completed.
+- One interrupted-step prompt covers all partial files for the step.
+- Tier-skipped steps have no expected files for that task spec.
 
 ## Extension
 
@@ -133,12 +161,14 @@ Registered package or module that contributes steps, hooks, or workflow variants
 - `id`: Unique extension identifier
 - `manifestVersion`: Extension manifest schema version
 - `targetToolkitVersion`: Toolkit version the extension was designed for
+- `entrypoint`: Project-relative path to a JS/TS module exporting a standard handler
 - `steps`: Step contributions
 - `hooks`: Hook contributions
 - `workflowVariants`: Optional workflow variants
 
 **Validation**:
 
+- Handlers are invoked in-process via Node `import()`.
 - Compatibility mismatches are reported as update-time warnings.
 - Warnings do not block the update or runtime startup.
 - If an extension later fails at runtime after a warning, the step fails with remediation guidance.
@@ -149,54 +179,61 @@ Directory-scoped artifact set for a single workflow run.
 
 **Fields**:
 
-- `numericId`: Unique zero-padded identifier
-- `slug`: Optional or derived kebab-case slug
-- `path`: `specs/{numeric-id}-{slug}/`
-- `status`: `Active`, `Complete`, or `Locked`
-- `artifacts`: `spec.md`, `plan.md`, `tasks.md`, workflow state, and optional reports
+- `taskSpecId`: Unique zero-padded numeric identifier (e.g. `001`)
+- `slug`: Required kebab-case slug (developer-provided or derived from feature description)
+- `path`: `specs/{taskSpecId}-{slug}/`
+- `status`: `Active`, `Complete`, or `Locked` — persisted in `spec.md` YAML frontmatter
+- `artifacts`: Minimum `spec.md` + `workflow-state.json`; tier-applicable `plan.md`, `tasks.md`
 
 **Validation**:
 
-- Numeric IDs are unique and sequential.
+- Numeric IDs assigned from `project-metadata.nextTaskSpecId`.
 - Slugs are not required to be unique.
 - Locked task specs are immutable.
 - `/spec-n-specify` does not lock prior specs.
-- Starting a non-specify step locks eligible Complete specs.
+- Starting a non-specify step locks eligible Complete specs (updates their `spec.md` frontmatter to `Locked`).
+- Tier-skipped artifacts are omitted — not created as stubs.
 
 ## Workflow State
 
-The persisted state used by `/spec-n-roll`.
+The persisted operational state used by `/spec-n-roll`.
 
 **Fields**:
 
 - `schemaVersion`: State file schema version
-- `taskSpecId`: Owning task spec ID
-- `workflowVariantId`: Active workflow variant
+- `taskSpecId`: Owning numeric task spec ID
+- `slug`: Required slug matching the task spec directory
+- `workflowVariantId`: Active workflow tier variant (set during triage within `specify`)
 - `lastCompletedStepId`: Last successful step, or `null`
 - `currentStepId`: Step that was in progress when interrupted, when known
-- `status`: `active`, `paused`, `complete`
+- `status`: `active`, `paused`, `complete` (operational — not lifecycle)
 - `updatedAt`: Timestamp of last state write
 
 **Validation**:
 
 - State wins over artifact inference when present and parseable.
+- Artifact detection respects the selected tier's step list.
 - State/artifact mismatches require one confirmation before proceeding.
-- Missing or unreadable state triggers artifact detection fallback.
+- Missing or unreadable state triggers tier-aware artifact detection fallback.
 - Interrupted partial artifacts trigger restart/cancel/force-clean.
 
 ## Project Metadata
 
-Project-level metadata used for implementation routing.
+Project-level metadata for ID assignment and implementation routing.
 
 **Fields**:
 
 - `schemaVersion`: Metadata schema version
-- `currentTaskSpecId`: Task spec authoritative for implementation
+- `nextTaskSpecId`: Sequential counter for new task spec numeric IDs
+- `currentTaskSpecId`: Numeric ID authoritative for implementation (nullable)
+- `currentTaskSlug`: Required slug paired with `currentTaskSpecId` when set
 - `implementationStartedAt`: Timestamp set when implementation begins
+- `updatedAt`: Timestamp of last metadata write
 
 **Validation**:
 
-- Set and validated when the implement step begins.
+- `nextTaskSpecId` increments atomically when a new task spec directory is created.
+- Implementation fields validated and set when the implement step begins.
 - Only one Active task spec may be in implementation at a time.
 - `/spec-n-roll` uses this metadata at implement time.
 
@@ -206,13 +243,14 @@ Cucumber Gherkin `.feature` file representing current accepted behavior.
 
 **Fields**:
 
-- `path`: File under `living-specs/`
-- `domain`: Capability or domain area
+- `path`: `living-specs/{kebab-case-domain}.feature`
+- `domain`: Capability or domain area (kebab-case)
 - `scenarios`: Current Gherkin scenarios
-- `taskTags`: Additive `@task-{numeric-id}` tags on new or modified scenarios
+- `taskTags`: Additive `@spec-n-roll-{numeric-id}` tags on new or modified scenarios
 
 **Validation**:
 
+- Agent infers domain semantically from feature description.
 - Deprecated scenarios are removed, not archived in-repo.
 - New or modified scenarios receive the current task tag.
 - Existing task tags are preserved.
@@ -225,13 +263,16 @@ Interactive specify/clarify session following grill-me guidance.
 **Fields**:
 
 - `sessionType`: `specify` or `clarify`
-- `taskSpecId`: Associated task spec
+- `taskSpecId`: Associated numeric task spec ID
+- `slug`: Associated slug
 - `resolvedQuestions`: Recorded decisions
 - `pendingAmbiguities`: Ranked unresolved ambiguities
 - `recommendedAnswer`: Suggested answer for the current question
+- `triageResult`: Selected workflow tier variant (specify sessions only, before interview)
 
 **Validation**:
 
+- Specify sessions run triage before the interview and persist `workflowVariantId`.
 - Ask exactly one targeted question at a time.
 - Explore the repository instead of asking questions that can be answered from code.
 - Do not re-ask resolved questions.

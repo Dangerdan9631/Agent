@@ -31,7 +31,7 @@
 
 ## Notes
 
-- All checklist items pass. Specification is ready for `/spec-n-plan`.
+- All checklist items pass. Specification updated 2026-06-10 with design interview clarifications (directory layout, workflow tiers, tag format, extension-only agents, triage embedded in specify, lifecycle frontmatter, tier-skipped artifacts, extension entrypoints, partial artifact manifest).
 - Living spec toolchain (Cucumber test runner) is intentionally out of scope per Assumptions — the toolkit scaffolds Gherkin and step definitions but does not bundle a runner. Living specs in `living-specs/` are the Cucumber feature source; step definitions live in the project's standard test location.
 - Multi-agent scope in v1 targets rules-file/skills-file configurable agents only; proprietary config formats are deferred. Agent selection at init is user input with no installation verification.
 - TypeScript (CLI tool) and Gherkin/Cucumber (living specs) are explicitly user-stated technology constraints, not AI-generated implementation choices. They are accepted in the spec in the same way a user-specified platform or protocol constraint would be.

@@ -6,6 +6,7 @@
   "required": [
     "schemaVersion",
     "taskSpecId",
+    "slug",
     "workflowVariantId",
     "lastCompletedStepId",
     "status",
@@ -18,7 +19,13 @@
     },
     "taskSpecId": {
       "type": "string",
-      "pattern": "^[0-9]{3,}(-[a-z0-9-]+)?$"
+      "pattern": "^[0-9]{3,}$",
+      "description": "Numeric task spec ID only (e.g. 001). Slug is a separate required field."
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "minLength": 1
     },
     "workflowVariantId": {
       "type": "string",
@@ -31,11 +38,13 @@
       "type": ["string", "null"]
     },
     "status": {
-      "enum": ["active", "paused", "complete"]
+      "enum": ["active", "paused", "complete"],
+      "description": "Operational progress only. Lifecycle (Active/Complete/Locked) is in spec.md YAML frontmatter."
     },
     "interruptedArtifacts": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "description": "Optional cache of partial artifact paths detected via step output manifest."
     },
     "updatedAt": {
       "type": "string",

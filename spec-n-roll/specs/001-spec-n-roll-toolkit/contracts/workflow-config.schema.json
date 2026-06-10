@@ -53,7 +53,7 @@
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "kind": {
-            "enum": ["built-in", "extension", "triage-selector", "hook"]
+            "enum": ["built-in", "extension", "hook"]
           },
           "command": {
             "type": "string",
@@ -62,7 +62,12 @@
           "implementation": { "type": "string" },
           "extensionId": { "type": "string" },
           "priority": { "type": "integer", "default": 0 },
-          "enabled": { "type": "boolean" }
+          "enabled": { "type": "boolean" },
+          "outputs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Expected artifact paths for partial-step detection (built-in steps)."
+          }
         },
         "additionalProperties": false
       }
@@ -80,7 +85,8 @@
           "steps": {
             "type": "array",
             "minItems": 1,
-            "items": { "type": "string", "minLength": 1 }
+            "items": { "type": "string", "minLength": 1 },
+            "description": "Tier variants list shared specify as step 1 plus tier-specific tail."
           },
           "default": { "type": "boolean", "default": false }
         },
@@ -89,7 +95,8 @@
     },
     "defaultWorkflowId": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Pre-selected tier in manual/override picker only; does not auto-run before specify."
     },
     "extensions": {
       "type": "array",

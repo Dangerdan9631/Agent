@@ -29,12 +29,12 @@ Initializes toolkit files in a project.
 - Select one or more agents to configure.
 - Select script variants: PowerShell, shell, or both.
 - Confirm toolkit-owned and user-owned directory layout.
-- Confirm default workflow creation.
+- Confirm default workflow creation (papercut, quick, full tier variants — each with shared `specify` as step 1).
 
 **Outputs**:
 
 - Toolkit-owned files in designated toolkit directories.
-- User-owned config files in designated user directories.
+- User-owned config files in designated user directories (`workflow.config.json`, `project-metadata.json` with `nextTaskSpecId: 1`).
 - Local CLI copy.
 - Default workflow configuration.
 - Agent-specific rules/skills/commands for selected agents.
@@ -121,8 +121,29 @@ Generated agent commands expose the development workflow:
 **Shared contract**:
 
 - Commands operate on task specs under `specs/{numeric-id}-{slug}/`.
-- Pre-implement commands require explicit task ID when multiple Active task specs exist.
-- `/spec-n-roll` advances the next step from workflow state or artifact fallback.
-- `/spec-n-specify` includes a one-question-at-a-time interview.
+- Task spec lifecycle (`Active`/`Complete`/`Locked`) is read/written in `spec.md` YAML frontmatter.
+- `workflow-state.json` carries numeric `taskSpecId` plus required `slug`; operational status is `active`/`paused`/`complete`.
+- Pre-implement commands and `/spec-n-roll` present a numbered-list interactive prompt when multiple Active specs exist and no task is identified.
+- `/spec-n-specify` runs embedded triage (tier selection) before the interview, then persists `workflowVariantId`.
 - `/spec-n-clarify` uses a separate follow-up interview.
+- `/spec-n-roll` advances the next step from workflow state or tier-aware artifact fallback.
+- Partial artifacts are detected via the built-in step output manifest (one prompt per step).
 - `/spec-n-implement` begins with living spec updates and TDD red-green-refactor cycles.
+- Tier-skipped artifacts (`plan.md`, `tasks.md`) are omitted — not errors on papercut/quick tiers.
+
+## Step Output Manifest (built-in)
+
+| Step ID | Expected files (relative to task spec dir) |
+|---------|---------------------------------------------|
+| `specify` | `spec.md` |
+| `plan` | `plan.md` |
+| `tasks` | `tasks.md` |
+
+Partial = any expected file exists for the current incomplete step per `workflow-state.json`.
+
+## Extension Handler Contract
+
+- `entrypoint`: project-relative path to a JS/TS module.
+- Module MUST export a standard async handler function.
+- Invoked in-process via Node `import()`.
+- Failures fail the current workflow step with remediation guidance.
