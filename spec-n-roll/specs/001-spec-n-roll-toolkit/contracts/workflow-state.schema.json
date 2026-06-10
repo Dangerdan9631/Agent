@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-n-roll.local/contracts/workflow-state.schema.json",
+  "title": "Spec-n-Roll Workflow State",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "taskSpecId",
+    "workflowVariantId",
+    "lastCompletedStepId",
+    "status",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taskSpecId": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}(-[a-z0-9-]+)?$"
+    },
+    "workflowVariantId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lastCompletedStepId": {
+      "type": ["string", "null"]
+    },
+    "currentStepId": {
+      "type": ["string", "null"]
+    },
+    "status": {
+      "enum": ["active", "paused", "complete"]
+    },
+    "interruptedArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

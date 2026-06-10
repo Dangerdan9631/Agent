@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-n-roll.local/contracts/workflow-config.schema.json",
+  "title": "Spec-n-Roll Workflow Configuration",
+  "type": "object",
+  "required": ["schemaVersion", "toolkitVersion", "agents", "scriptVariants", "steps", "workflows", "defaultWorkflowId"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "toolkitVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "enabled", "commandPrefix"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "displayName": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "commandPrefix": { "const": "spec-n-" },
+          "ruleTargets": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "skillTargets": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "scriptVariants": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["powershell", "shell"]
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "command", "enabled"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": {
+            "enum": ["built-in", "extension", "triage-selector", "hook"]
+          },
+          "command": {
+            "type": "string",
+            "pattern": "^spec-n-[a-z0-9-]+$"
+          },
+          "implementation": { "type": "string" },
+          "extensionId": { "type": "string" },
+          "priority": { "type": "integer", "default": 0 },
+          "enabled": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "workflows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "steps"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "default": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      }
+    },
+    "defaultWorkflowId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "manifestPath", "enabled"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "manifestPath": { "type": "string", "minLength": 1 },
+          "enabled": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-n-roll.local/contracts/extension-manifest.schema.json",
+  "title": "Spec-n-Roll Extension Manifest",
+  "type": "object",
+  "required": ["manifestVersion", "id", "name", "targetToolkitVersion"],
+  "properties": {
+    "manifestVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "targetToolkitVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "phase", "command", "entrypoint"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "phase": {
+            "enum": ["specify", "clarify", "plan", "tasks", "analyze", "implement", "triage"]
+          },
+          "command": {
+            "type": "string",
+            "pattern": "^spec-n-[a-z0-9-]+$"
+          },
+          "entrypoint": { "type": "string", "minLength": 1 },
+          "priority": { "type": "integer", "default": 0 },
+          "enabledByDefault": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "hooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "event", "entrypoint"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "event": {
+            "enum": [
+              "before_specify",
+              "after_specify",
+              "before_plan",
+              "after_plan",
+              "before_tasks",
+              "after_tasks",
+              "before_implement",
+              "after_implement",
+              "before_update",
+              "after_update"
+            ]
+          },
+          "entrypoint": { "type": "string", "minLength": 1 },
+          "optional": { "type": "boolean", "default": true },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "workflowVariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "steps"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-n-roll.local/contracts/project-metadata.schema.json",
+  "title": "Spec-n-Roll Project Metadata",
+  "type": "object",
+  "required": ["schemaVersion", "updatedAt"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "currentTaskSpecId": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{3,}(-[a-z0-9-]+)?$"
+    },
+    "implementationStartedAt": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "lockedTaskSpecIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9]{3,}(-[a-z0-9-]+)?$"
+      }
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
