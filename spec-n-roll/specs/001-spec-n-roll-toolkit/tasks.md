@@ -151,25 +151,25 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 3
 
-- [ ] T055 [P] [US3] Write failing integration test for /spec-n-specify in tests/integration/specify.test.ts (triage→instantiate→interview→spec.md frontmatter via core; workflow-state.json via core)
-- [ ] T056 [P] [US3] Write failing unit test for triage heuristic in tests/unit/triage.test.ts (single-file→papercut, new behavior→quick, cross-cutting→full, ambiguous→manual picker with defaultWorkflowId pre-select)
+- [x] T055 [P] [US3] Write failing integration test for /spec-n-specify in tests/integration/specify.test.ts (triage→instantiate→interview→spec.md frontmatter via core; workflow-state.json via core)
+- [x] T056 [P] [US3] Write failing unit test for triage heuristic in tests/unit/triage.test.ts (single-file→papercut, new behavior→quick, cross-cutting→full, ambiguous→manual picker with defaultWorkflowId pre-select)
 
 ### Implementation for User Story 3
 
-- [ ] T057 [US3] Implement triage heuristic (papercut/quick/full classification) with rationale output in src/specs/triage.ts (embedded at start of specify; persist workflowVariantId before interview)
-- [ ] T058 [US3] Implement one-question-at-a-time interview engine in src/specs/interview.ts (ranks ambiguities, asks one, records answer, does not re-ask resolved, explores codebase before asking)
-- [ ] T059 [US3] Implement task spec directory creation with auto-assigned taskSpecId from nextTaskSpecId and kebab-case slug derivation in src/specs/specify.ts (via src/core/project-metadata.ts)
-- [ ] T060 [US3] Integrate step_output_instantiate before interview prose edits in src/specs/specify.ts (call src/core/templates.ts; set status: Active via src/core/task-lifecycle.ts)
-- [ ] T061 [US3] Implement workflow state writer for specify step completion in src/specs/specify.ts (via src/core/workflow-state.ts: taskSpecId, slug, workflowVariantId, lastCompletedStepId: specify)
-- [ ] T062 [P] [US3] Implement /spec-n-clarify step handler with separate follow-up interview for existing task spec in src/specs/clarify.ts (revert Complete→Active when new un-implemented requirements added)
-- [ ] T063 [US3] Implement spec quality checker (no unresolved placeholder markers, critical questions answered) in src/specs/quality.ts
-- [ ] T064 [US3] Generate /spec-n-specify and /spec-n-clarify skill files documenting MCP instantiate + prose edit workflow in src/agents/generators/ (route machine-readable writes to MCP tools)
+- [x] T057 [US3] Implement triage heuristic (papercut/quick/full classification) with rationale output in src/specs/triage.ts (embedded at start of specify; persist workflowVariantId before interview)
+- [x] T058 [US3] Implement one-question-at-a-time interview engine in src/specs/interview.ts (ranks ambiguities, asks one, records answer, does not re-ask resolved, explores codebase before asking)
+- [x] T059 [US3] Implement task spec directory creation with auto-assigned taskSpecId from nextTaskSpecId and kebab-case slug derivation in src/specs/specify.ts (via src/core/project-metadata.ts)
+- [x] T060 [US3] Integrate step_output_instantiate before interview prose edits in src/specs/specify.ts (call src/core/templates.ts; set status: Active via src/core/task-lifecycle.ts)
+- [x] T061 [US3] Implement workflow state writer for specify step completion in src/specs/specify.ts (via src/core/workflow-state.ts: taskSpecId, slug, workflowVariantId, lastCompletedStepId: specify)
+- [x] T062 [P] [US3] Implement /spec-n-clarify step handler with separate follow-up interview for existing task spec in src/specs/clarify.ts (revert Complete→Active when new un-implemented requirements added)
+- [x] T063 [US3] Implement spec quality checker (no unresolved placeholder markers, critical questions answered) in src/specs/quality.ts
+- [x] T064 [US3] Generate /spec-n-specify and /spec-n-clarify skill files documenting MCP instantiate + prose edit workflow in src/agents/generators/ (route machine-readable writes to MCP tools)
 
 **Checkpoint**: /spec-n-specify integration test passes; triage unit tests pass; template instantiation precedes prose edits.
 
 ### Documentation (US3)
 
-- [ ] T065 [P] Update docs/workflow.md specify/triage/clarify sections to match implemented behavior (template instantiation, interview flow, MCP/CLI mutation boundaries); TODO for unimplemented analyze and roll flows
+- [x] T065 [P] Update docs/workflow.md specify/triage/clarify sections to match implemented behavior (template instantiation, interview flow, MCP/CLI mutation boundaries); TODO for unimplemented analyze and roll flows
 
 ---
 

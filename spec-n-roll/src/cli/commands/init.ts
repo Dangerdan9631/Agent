@@ -10,6 +10,7 @@ import {
   validateSelectedAgentIds,
 } from '../../agents/extension-loader.js';
 import { writeCanonicalAgentsMd } from '../../agents/generators/agents-md.js';
+import { generateWorkflowSkills } from '../../agents/generators/workflow-skills.js';
 import { MCP_BINARY_RELATIVE_PATH } from '../../agents/mcp-config.js';
 import type { AgentConfig, WorkflowConfig } from '../../config/schema.js';
 import { atomicWriteJson } from '../../core/atomic-write.js';
@@ -327,6 +328,7 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
   await installProjectBinaries(projectRoot, toolkitRoot);
   await installBundledPlatformScripts(projectRoot, toolkitRoot);
   await writeCanonicalAgentsMd(projectRoot);
+  await generateWorkflowSkills(projectRoot);
   await installBundledExtensions(projectRoot, selectedAgents);
 
   for (const agentId of selectedAgents) {
