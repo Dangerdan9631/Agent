@@ -221,3 +221,60 @@ export const workflowConfigSchema = z
  * Project workflow configuration: reusable steps and tier variants.
  */
 export type WorkflowConfig = z.infer<typeof workflowConfigSchema>;
+
+/**
+ * Zod schema for project metadata tracking task spec IDs and active task.
+ */
+export const projectMetadataSchema = z
+  .object({
+    /**
+     * Version of this metadata document's shape so readers can migrate older persisted data.
+     */
+    schemaVersion: z.string().min(1),
+    /**
+     * Positive integer counter for the next auto-assigned task spec numeric id; incremented when a new task spec is created.
+     */
+    nextTaskSpecId: z.number().int().min(1),
+    /**
+     * Optional taskSpecIdSchema of the task spec currently in implementation, or null when none.
+     */
+    currentTaskSpecId: taskSpecIdSchema.nullable().optional(),
+    /**
+     * Optional kebab-case slug paired with currentTaskSpecId; required and non-empty when currentTaskSpecId is set.
+     */
+    currentTaskSlug: kebabCaseIdSchema.nullable().optional(),
+    /**
+     * Optional ISO-8601 datetime when implementation began for the current task, or null.
+     */
+    implementationStartedAt: z.string().datetime().nullable().optional(),
+    /**
+     * ISO-8601 datetime marking when this metadata was last written.
+     */
+    updatedAt: z.string().datetime(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.currentTaskSpecId != null && value.currentTaskSlug == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'currentTaskSlug is required when currentTaskSpecId is set',
+        path: ['currentTaskSlug'],
+      });
+    }
+    if (
+      value.currentTaskSpecId != null &&
+      value.currentTaskSlug != null &&
+      value.currentTaskSlug.length < 1
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'currentTaskSlug must be non-empty when currentTaskSpecId is set',
+        path: ['currentTaskSlug'],
+      });
+    }
+  });
+
+/**
+ * Project metadata type tracking task spec IDs and active implementation task.
+ */
+export type ProjectMetadata = z.infer<typeof projectMetadataSchema>;

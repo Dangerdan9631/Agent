@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { registerCoreCommands } from './commands/core.js';
 import { stripGlobalFlag } from './dispatcher.js';
 
 /**
@@ -75,6 +76,8 @@ function createProgram(): Command {
     .action(() => {
       notImplemented('version');
     });
+
+  registerCoreCommands(program);
 
   return program;
 }

@@ -1,35 +1,40 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-/**
- * Toolkit version read from the package manifest for MCP server identification.
- */
-const TOOLKIT_VERSION = '0.1.0';
+import { registerCoreMcpTools } from './tools.js';
 
 /**
- * Creates the MCP server instance with a minimal tool surface for Phase 1 packaging.
- * Full tool registration is implemented in Phase 2 (T027).
+ * Reads the toolkit version from package.json for MCP server identification.
  *
- * @returns A configured MCP Server ready for stdio transport connection.
+ * @returns Semver version string for the installed toolkit package.
  */
-export function createMcpServer(): Server {
-  const server = new Server(
-    {
-      name: 'spec-n-roll',
-      version: TOOLKIT_VERSION,
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    },
+function readToolkitVersion(): string {
+  const packageJsonPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../package.json',
   );
+  const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string };
+  return pkg.version;
+}
 
+/**
+ * Creates the MCP server with all core-library tools registered (SC-012).
+ *
+ * @returns Configured MCP server ready for stdio transport.
+ */
+export function createMcpServer(): McpServer {
+  const server = new McpServer({
+    name: 'spec-n-roll',
+    version: readToolkitVersion(),
+  });
+
+  registerCoreMcpTools(server);
   return server;
 }
 

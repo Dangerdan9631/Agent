@@ -103,12 +103,12 @@ Toggles a task completion checkbox in `tasks.md`.
 
 - `taskSpecId` (string, required)
 - `slug` (string, required)
-- `taskId` (string, required): Checkbox identifier (e.g. `T042`)
+- `taskIds` (string[], required, min 1): Checkbox identifiers (e.g. `T042`, `T043`); all must exist in the same task spec `tasks.md`
 - `completed` (boolean, required)
 
-**Returns**: Confirmation with updated checkbox state.
+**Returns**: Confirmation with updated checkbox state for each task id.
 
-**CLI parallel**: `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id> --completed <true|false>`
+**CLI parallel**: `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id...> --completed <true|false>`
 
 ---
 

@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,3 +11,7 @@ mkdirSync(targetDir, { recursive: true });
 for (const wrapperName of ['spec-n-roll.cmd', 'spec-n-roll-mcp.cmd']) {
   copyFileSync(path.join(sourceDir, wrapperName), path.join(targetDir, wrapperName));
 }
+
+cpSync(path.join(rootDir, 'src', 'templates'), path.join(rootDir, 'dist', 'templates'), {
+  recursive: true,
+});

@@ -113,6 +113,73 @@ export const extensionWorkflowVariantSchema = z
 export type ExtensionWorkflowVariant = z.infer<typeof extensionWorkflowVariantSchema>;
 
 /**
+ * Zod schema for an MCP configuration target path in an agent extension manifest.
+ */
+export const extensionMcpConfigTargetSchema = z
+  .object({
+    /**
+     * Project-relative path to the agent's native MCP configuration file.
+     */
+    path: z.string().min(1),
+  })
+  .strict();
+
+/**
+ * MCP configuration target path for agent extension setup.
+ */
+export type ExtensionMcpConfigTarget = z.infer<typeof extensionMcpConfigTargetSchema>;
+
+/**
+ * Zod schema for agent MCP merge settings declared in an extension manifest.
+ */
+export const extensionAgentMcpConfigSchema = z
+  .object({
+    /**
+     * Stable merge key for the spec-n-roll MCP server entry (default `spec-n-roll`).
+     */
+    serverId: kebabCaseIdSchema,
+    /**
+     * MCP config format adapter id (e.g. cursor-mcp-json).
+     */
+    format: z.string().min(1),
+    /**
+     * One or more project-relative MCP configuration file paths to upsert.
+     */
+    targets: z.array(extensionMcpConfigTargetSchema).min(1),
+  })
+  .strict();
+
+/**
+ * Agent MCP configuration block for bundled agent extensions.
+ */
+export type ExtensionAgentMcpConfig = z.infer<typeof extensionAgentMcpConfigSchema>;
+
+/**
+ * Zod schema for agent integration metadata in an extension manifest.
+ */
+export const extensionAgentSetupSchema = z
+  .object({
+    /**
+     * MCP server registration and merge rules for the agent environment.
+     */
+    mcpConfig: extensionAgentMcpConfigSchema,
+    /**
+     * Optional project-relative paths for generated rule pointer files.
+     */
+    ruleTargets: z.array(z.string().min(1)).optional(),
+    /**
+     * Optional project-relative paths for generated skill or command files.
+     */
+    skillTargets: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
+
+/**
+ * Agent setup block required for bundled agent extensions.
+ */
+export type ExtensionAgentSetup = z.infer<typeof extensionAgentSetupSchema>;
+
+/**
  * Zod schema for the complete extension manifest.
  */
 export const extensionManifestSchema = z
@@ -137,6 +204,14 @@ export const extensionManifestSchema = z
      * Semver of the toolkit release this extension was designed against; must match semverSchema.
      */
     targetToolkitVersion: semverSchema,
+    /**
+     * Optional project-relative path to the extension handler entry module.
+     */
+    entrypoint: z.string().min(1).optional(),
+    /**
+     * Optional agent integration block; required for bundled agent extensions.
+     */
+    agentSetup: extensionAgentSetupSchema.optional(),
     /**
      * Optional list of workflow step contributions provided by this extension.
      */

@@ -135,7 +135,7 @@ Each subcommand invokes the same `src/core/` operation as its MCP tool twin.
 
 ### Task checkboxes
 
-- `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id> --completed <true|false>`
+- `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id...> --completed <true|false>`
 
 ### Step output templates
 

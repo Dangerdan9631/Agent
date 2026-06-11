@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1",
+  "toolkitVersion": "0.1.0",
+  "agents": [{ "id": "cursor", "enabled": true, "commandPrefix": "spec-n-" }],
+  "steps": [
+    {
+      "id": "specify",
+      "kind": "built-in",
+      "command": "spec-n-specify",
+      "enabled": true
+    }
+  ],
+  "workflows": [
+    {
+      "id": "quick",
+      "name": "Quick",
+      "steps": ["specify", "tasks", "implement"]
+    }
+  ],
+  "defaultWorkflowId": "quick"
+}

@@ -2,108 +2,43 @@ import path from 'node:path';
 import fse from 'fs-extra';
 
 import { workflowConfigSchema, type WorkflowConfig } from '../config/schema.js';
-import {
-  atomicWriteJson,
-  formatTaskSpecId,
-  projectMetadataSchema,
-  type ProjectMetadata,
-  type WorkflowState,
-} from './state.js';
+import type { WorkflowState } from './state.js';
 import { getExpectedOutputsForVariant, getVariantStepIds } from './step-manifest.js';
 
 /**
- * Schema version for project metadata to enable future migrations.
- */
-export const PROJECT_METADATA_SCHEMA_VERSION = '1';
-
-/**
- * Relative path to the project metadata file.
- */
-export const PROJECT_METADATA_RELATIVE_PATH = '.spec-n-roll/config/project-metadata.json';
-
-/**
- * Relative path to the workflow configuration file.
+ * Relative path to the workflow configuration file from the project root.
  */
 export const WORKFLOW_CONFIG_RELATIVE_PATH = '.spec-n-roll/config/workflow.config.json';
 
 /**
- * Returns the absolute path to the project metadata file for a project.
- *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @returns Absolute path to the project metadata file.
+ * Represents a partially completed artifact from a workflow step.
  */
-export function projectMetadataPath(projectRoot: string): string {
-  return path.join(projectRoot, PROJECT_METADATA_RELATIVE_PATH);
+export interface PartialArtifact {
+  /** Workflow step id that produced the partial artifact. */
+  stepId: string;
+  /** Project-relative path to the partial artifact. */
+  relativePath: string;
+  /** Absolute path to the partial artifact on disk. */
+  absolutePath: string;
 }
 
 /**
- * Reads the project metadata file to retrieve task spec tracking information.
- *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @returns Project metadata object or null if the file does not exist.
+ * Result of artifact detection containing variant information and partial artifacts.
  */
-export async function readProjectMetadata(projectRoot: string): Promise<ProjectMetadata | null> {
-  const filePath = projectMetadataPath(projectRoot);
-  if (!(await fse.pathExists(filePath))) {
-    return null;
-  }
-
-  const raw: unknown = await fse.readJson(filePath);
-  return projectMetadataSchema.parse(raw);
+export interface ArtifactDetectionResult {
+  /** Active workflow variant id used for tier-aware expectations. */
+  variantId: string;
+  /** Ordered step ids for the resolved workflow variant. */
+  variantSteps: string[];
+  /** Partial artifacts detected for incomplete steps. */
+  partialArtifacts: PartialArtifact[];
 }
 
 /**
- * Writes the project metadata file to update task spec tracking information.
+ * Reads the workflow configuration file when present.
  *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @param metadata - The metadata to write, optionally without updatedAt.
- * @returns The complete ProjectMetadata object with updatedAt set.
- */
-export async function writeProjectMetadata(
-  projectRoot: string,
-  metadata: Omit<ProjectMetadata, 'updatedAt'> & { updatedAt?: string },
-): Promise<ProjectMetadata> {
-  const filePath = projectMetadataPath(projectRoot);
-  const payload: ProjectMetadata = projectMetadataSchema.parse({
-    ...metadata,
-    updatedAt: metadata.updatedAt ?? new Date().toISOString(),
-  });
-
-  await atomicWriteJson(filePath, payload);
-  return payload;
-}
-
-/**
- * Allocates the next task spec ID and updates the project metadata to
- * ensure sequential task spec numbering.
- *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @returns Object containing the allocated task spec ID and updated metadata.
- */
-export async function allocateNextTaskSpecId(projectRoot: string): Promise<{
-  taskSpecId: string;
-  metadata: ProjectMetadata;
-}> {
-  const existing = await readProjectMetadata(projectRoot);
-  const nextId = existing?.nextTaskSpecId ?? 1;
-  const taskSpecId = formatTaskSpecId(nextId);
-
-  const metadata = await writeProjectMetadata(projectRoot, {
-    schemaVersion: existing?.schemaVersion ?? PROJECT_METADATA_SCHEMA_VERSION,
-    nextTaskSpecId: nextId + 1,
-    currentTaskSpecId: existing?.currentTaskSpecId ?? null,
-    currentTaskSlug: existing?.currentTaskSlug ?? null,
-    implementationStartedAt: existing?.implementationStartedAt ?? null,
-  });
-
-  return { taskSpecId, metadata };
-}
-
-/**
- * Reads the workflow configuration file to retrieve workflow step and tier settings.
- *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @returns Workflow configuration object or null if the file does not exist.
+ * @param projectRoot - Absolute path to the project root.
+ * @returns Parsed workflow configuration or null when absent.
  */
 export async function readWorkflowConfig(projectRoot: string): Promise<WorkflowConfig | null> {
   const filePath = path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH);
@@ -116,51 +51,31 @@ export async function readWorkflowConfig(projectRoot: string): Promise<WorkflowC
 }
 
 /**
- * Represents a partially completed artifact from a workflow step.
- */
-export interface PartialArtifact {
-  stepId: string;
-  relativePath: string;
-  absolutePath: string;
-}
-
-/**
- * Result of artifact detection containing variant information and
- * any partially completed artifacts.
- */
-export interface ArtifactDetectionResult {
-  variantId: string;
-  variantSteps: string[];
-  partialArtifacts: PartialArtifact[];
-}
-
-/**
- * Checks if a path exists to avoid attempting operations on non-existent files.
+ * Checks whether an absolute path exists on disk.
  *
- * @param absolutePath - Absolute path to check. Must be a valid path.
- * @returns true if the path exists, false otherwise.
+ * @param absolutePath - Absolute path to test.
+ * @returns True when the path exists.
  */
 async function pathExists(absolutePath: string): Promise<boolean> {
   return fse.pathExists(absolutePath);
 }
 
 /**
- * Resolves whether a workflow output exists and returns its absolute path
- * to support both file and directory outputs.
+ * Resolves whether a workflow output exists and returns its absolute path.
  *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @param taskSpecDir - Directory containing the task spec outputs.
- * @param outputPath - Relative or absolute output path to check.
- * @returns Object with existence flag and resolved absolute path.
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecDirPath - Absolute path to the task spec directory.
+ * @param outputPath - Output path relative to the task spec dir or project root when trailing `/`.
+ * @returns Existence flag and resolved absolute path.
  */
 async function resolveOutputExists(
   projectRoot: string,
-  taskSpecDir: string,
+  taskSpecDirPath: string,
   outputPath: string,
 ): Promise<{ exists: boolean; absolutePath: string }> {
   const absolutePath = outputPath.endsWith('/')
     ? path.join(projectRoot, outputPath)
-    : path.join(taskSpecDir, outputPath);
+    : path.join(taskSpecDirPath, outputPath);
   const exists = outputPath.endsWith('/')
     ? (await fse.pathExists(absolutePath)) && (await fse.readdir(absolutePath)).length > 0
     : await pathExists(absolutePath);
@@ -169,11 +84,11 @@ async function resolveOutputExists(
 }
 
 /**
- * Resolves the step IDs for a workflow variant from configuration or defaults.
+ * Resolves ordered step ids for a workflow variant from config or built-in defaults.
  *
- * @param workflowVariantId - The workflow variant ID to resolve steps for.
- * @param workflowConfig - The workflow configuration or null to use defaults.
- * @returns Array of step IDs for the variant.
+ * @param workflowVariantId - Workflow variant id such as `quick`.
+ * @param workflowConfig - Optional workflow configuration.
+ * @returns Ordered step ids for the variant.
  */
 function resolveVariantSteps(
   workflowVariantId: string,
@@ -184,18 +99,17 @@ function resolveVariantSteps(
 }
 
 /**
- * Detects partially completed artifacts in a task spec directory to
- * identify work that can be resumed after interruption.
+ * Detects partially completed artifacts using workflow state and tier-aware expectations.
  *
- * @param projectRoot - Absolute path to the project root. Must be a valid directory.
- * @param taskSpecDir - Directory containing the task spec outputs.
- * @param state - Current workflow state or null if not started.
- * @param workflowConfig - Optional workflow configuration to use for detection.
- * @returns Artifact detection result with variant info and partial artifacts.
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecDirPath - Absolute path to the task spec directory.
+ * @param state - Current workflow state or null when not started.
+ * @param workflowConfig - Optional workflow configuration override.
+ * @returns Variant metadata and any detected partial artifacts.
  */
 export async function detectPartialArtifacts(
   projectRoot: string,
-  taskSpecDir: string,
+  taskSpecDirPath: string,
   state: WorkflowState | null,
   workflowConfig?: WorkflowConfig | null,
 ): Promise<ArtifactDetectionResult> {
@@ -223,7 +137,7 @@ export async function detectPartialArtifacts(
     for (const outputPath of outputs) {
       const { exists, absolutePath } = await resolveOutputExists(
         projectRoot,
-        taskSpecDir,
+        taskSpecDirPath,
         outputPath,
       );
       if (exists) {

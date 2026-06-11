@@ -51,34 +51,34 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T011 Define Zod schemas for all config file shapes in src/config/schema.ts (WorkflowConfig, WorkflowVariant, WorkflowStep, AgentConfig, schemaVersion)
-- [ ] T012 [P] Define Zod schemas for workflow-state.json in src/workflow/state.ts (taskSpecId, slug, workflowVariantId, lastCompletedStepId, currentStepId, status: active|paused|complete, updatedAt)
-- [ ] T013 [P] Define Zod schemas for project-metadata.json in src/config/schema.ts (schemaVersion, nextTaskSpecId, currentTaskSpecId, currentTaskSlug, implementationStartedAt, updatedAt)
-- [ ] T014 Implement file ownership classification in src/updates/ownership.ts (toolkit-owned: .spec-n-roll/ except config/, .agents/; user-owned: .spec-n-roll/config/, specs/, living-specs/)
-- [ ] T015 [P] Implement built-in step output manifest in src/workflow/step-manifest.ts (specify→spec.md, plan→plan.md, tasks→tasks.md; tier-aware expectations)
-- [ ] T016 [P] Implement tier-aware artifact detection in src/workflow/artifacts.ts (reads workflow variant from state to know which files are expected)
-- [ ] T017 Implement workflow state read/write with atomic file operations in src/core/workflow-state.ts (sole writer for workflow-state.json; updatedAt on every write)
-- [ ] T018 [P] Implement project metadata read/write in src/core/project-metadata.ts (nextTaskSpecId counter increment; current implementation task fields)
-- [ ] T019 [P] Implement spec.md YAML frontmatter read/write in src/core/frontmatter.ts (non-status fields; status delegated to task-lifecycle)
-- [ ] T020 [P] Implement tasks.md checkbox toggle in src/core/task-checkboxes.ts (parse and update completion checkboxes by task ID)
-- [ ] T021 [P] Implement step output template instantiation in src/core/templates.ts (copy src/templates/{stepId}.md → specs/{id}-{slug}/; accept frontmatter args)
-- [ ] T022 Implement task spec lifecycle status transitions in src/core/task-lifecycle.ts (Active|Complete|Locked via spec.md frontmatter; Locked write guard)
-- [ ] T023 [P] Create toolkit-owned step output templates with inline fill instructions in src/templates/spec.md, src/templates/plan.md, and src/templates/tasks.md (tasks.md template MUST include Living Specification Updates as the first implementation phase before test/code tasks per FR-009; plan.md template MUST include a Living Spec Targets section per FR-008)
-- [ ] T024 Implement CLI entry point with Commander registration in src/cli/index.ts (init, update, config, version, and core-library subcommands per contracts/cli-commands.md)
-- [ ] T025 Implement global/local CLI dispatcher in src/cli/dispatcher.ts (walk cwd→parents for .spec-n-roll/cli/bin/spec-n-roll; exec child process; forward -v/--version unchanged; --global bypass; fail clearly if local exec fails)
-- [ ] T026 [P] Define extension manifest Zod schema in src/extensions/manifest.ts (id, manifestVersion, targetToolkitVersion, entrypoint, steps[], hooks[], workflowVariants[], agentSetup.mcpConfig)
-- [ ] T027 [P] Implement .bak backup writer in src/updates/backup.ts (write {file}.bak if toolkit-owned file is locally modified before overwrite; report each conflict)
-- [ ] T028 Implement MCP stdio server skeleton in src/mcp/server.ts (@modelcontextprotocol/sdk; register tools from contracts/mcp-tools.md delegating to src/core/)
-- [ ] T029 [P] Wire non-interactive CLI core subcommands in src/cli/commands/ (workflow state, task status, project metadata, task checkbox, step instantiate, spec frontmatter — each invokes matching src/core/ operation)
-- [ ] T030 [P] Write failing contract test skeleton for MCP/CLI parity in tests/contract/mcp-cli-parity.test.ts (one mutation exercised via CLI and MCP with identical file outcome)
-- [ ] T031 [P] Create fixture directory layout in tests/fixtures/ (empty project, initialized project, multi-spec project, pre-existing agent MCP config templates)
+- [x] T011 Define Zod schemas for all config file shapes in src/config/schema.ts (WorkflowConfig, WorkflowVariant, WorkflowStep, AgentConfig, schemaVersion)
+- [x] T012 [P] Define Zod schemas for workflow-state.json in src/workflow/state.ts (taskSpecId, slug, workflowVariantId, lastCompletedStepId, currentStepId, status: active|paused|complete, updatedAt)
+- [x] T013 [P] Define Zod schemas for project-metadata.json in src/config/schema.ts (schemaVersion, nextTaskSpecId, currentTaskSpecId, currentTaskSlug, implementationStartedAt, updatedAt)
+- [x] T014 Implement file ownership classification in src/updates/ownership.ts (toolkit-owned: .spec-n-roll/ except config/, .agents/; user-owned: .spec-n-roll/config/, specs/, living-specs/)
+- [x] T015 [P] Implement built-in step output manifest in src/workflow/step-manifest.ts (specify→spec.md, plan→plan.md, tasks→tasks.md; tier-aware expectations)
+- [x] T016 [P] Implement tier-aware artifact detection in src/workflow/artifacts.ts (reads workflow variant from state to know which files are expected)
+- [x] T017 Implement workflow state read/write with atomic file operations in src/core/workflow-state.ts (sole writer for workflow-state.json; updatedAt on every write)
+- [x] T018 [P] Implement project metadata read/write in src/core/project-metadata.ts (nextTaskSpecId counter increment; current implementation task fields)
+- [x] T019 [P] Implement spec.md YAML frontmatter read/write in src/core/frontmatter.ts (non-status fields; status delegated to task-lifecycle)
+- [x] T020 [P] Implement tasks.md checkbox toggle in src/core/task-checkboxes.ts (parse and update completion checkboxes by task ID)
+- [x] T021 [P] Implement step output template instantiation in src/core/templates.ts (copy src/templates/{stepId}.md → specs/{id}-{slug}/; accept frontmatter args)
+- [x] T022 Implement task spec lifecycle status transitions in src/core/task-lifecycle.ts (Active|Complete|Locked via spec.md frontmatter; Locked write guard)
+- [x] T023 [P] Create toolkit-owned step output templates with inline fill instructions in src/templates/spec.md, src/templates/plan.md, and src/templates/tasks.md (tasks.md template MUST include Living Specification Updates as the first implementation phase before test/code tasks per FR-009; plan.md template MUST include a Living Spec Targets section per FR-008)
+- [x] T024 Implement CLI entry point with Commander registration in src/cli/index.ts (init, update, config, version, and core-library subcommands per contracts/cli-commands.md)
+- [x] T025 Implement global/local CLI dispatcher in src/cli/dispatcher.ts (walk cwd→parents for .spec-n-roll/cli/bin/spec-n-roll; exec child process; forward -v/--version unchanged; --global bypass; fail clearly if local exec fails)
+- [x] T026 [P] Define extension manifest Zod schema in src/extensions/manifest.ts (id, manifestVersion, targetToolkitVersion, entrypoint, steps[], hooks[], workflowVariants[], agentSetup.mcpConfig)
+- [x] T027 [P] Implement .bak backup writer in src/updates/backup.ts (write {file}.bak if toolkit-owned file is locally modified before overwrite; report each conflict)
+- [x] T028 Implement MCP stdio server skeleton in src/mcp/server.ts (@modelcontextprotocol/sdk; register tools from contracts/mcp-tools.md delegating to src/core/)
+- [x] T029 [P] Wire non-interactive CLI core subcommands in src/cli/commands/ (workflow state, task status, project metadata, task checkbox, step instantiate, spec frontmatter — each invokes matching src/core/ operation)
+- [x] T030 [P] Write failing contract test skeleton for MCP/CLI parity in tests/contract/mcp-cli-parity.test.ts (one mutation exercised via CLI and MCP with identical file outcome)
+- [x] T031 [P] Create fixture directory layout in tests/fixtures/ (empty project, initialized project, multi-spec project, pre-existing agent MCP config templates)
 
 **Checkpoint**: T009 build outputs exist; schemas compile; core library mutations work via CLI subcommands; MCP server starts; dispatcher unit-tests pass; parity contract test exists and fails — user story implementation can begin.
 
 ### Documentation (Phase 2)
 
-- [ ] T032 [P] Update docs/updates-and-migrations.md to document implemented file ownership classification and excluded toolkit docs (match src/updates/ownership.ts); TODO for .bak backup, migration, and update command flows
-- [ ] T033 [P] Update docs/cli.md to document implemented dispatcher delegation, global CLI exec fallback, and MCP server skeleton (match src/cli/dispatcher.ts, src/mcp/server.ts); document implemented core-library subcommands only; TODO for remaining tools per contracts/mcp-tools.md
+- [x] T032 [P] Update docs/updates-and-migrations.md to document implemented file ownership classification and excluded toolkit docs (match src/updates/ownership.ts); TODO for .bak backup, migration, and update command flows
+- [x] T033 [P] Update docs/cli.md to document implemented dispatcher delegation, global CLI exec fallback, and MCP server skeleton (match src/cli/dispatcher.ts, src/mcp/server.ts); document implemented core-library subcommands only; TODO for remaining tools per contracts/mcp-tools.md
 
 ---
 
