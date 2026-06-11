@@ -11,7 +11,7 @@ import { readWorkflowState } from './workflow-state.js';
 /**
  * Schema version written for new project metadata files.
  */
-export const PROJECT_METADATA_SCHEMA_VERSION = '1';
+export const PROJECT_METADATA_SCHEMA_VERSION = '2';
 
 /**
  * Relative path to the project metadata file from the project root.

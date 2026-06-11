@@ -31,27 +31,64 @@ Repository root `docs/` (toolkit-authored documentation) is never copied into us
 
 ## Update flow (implemented)
 
-Implementation: `src/cli/commands/update.ts`, backup helper `src/updates/backup.ts`, MCP refresh `src/agents/mcp-config.ts`.
+Implementation: `src/cli/commands/update.ts`, backup helper `src/updates/backup.js`, MCP refresh `src/agents/mcp-config.ts`.
 
 ```bash
 spec-n-roll update --yes
 spec-n-roll update --dry-run
+spec-n-roll update --yes --confirm-migration
 ```
 
 When `update` runs (interactively or with `--yes`):
 
 1. Read configured agents from `.spec-n-roll/config/workflow.config.json`.
-2. Plan toolkit-owned overwrites: binaries, platform scripts, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, bundled extension manifests, and `compatibility.json`.
-3. For each toolkit-owned file that exists and differs from the new toolkit content, write a `.bak` sibling before overwrite.
-4. Apply overwrites. User-owned paths (`.spec-n-roll/config/`, `specs/`, `living-specs/`) remain byte-identical.
-5. Refresh the spec-n-roll MCP server entry in every configured agent's MCP config targets (stdio path `.spec-n-roll/cli/bin/spec-n-roll-mcp`).
+2. Plan user-owned config schema migrations (`src/updates/migration.ts`).
+3. Evaluate extension compatibility warnings from `.spec-n-roll/compatibility.json` (`src/extensions/compatibility.ts`).
+4. Plan toolkit-owned overwrites: binaries, platform scripts, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, bundled extension manifests, and `compatibility.json`.
+5. For each toolkit-owned file that exists and differs from the new toolkit content, write a `.bak` sibling before overwrite.
+6. Apply confirmed config migrations, then apply toolkit-owned overwrites. User-owned paths outside migrated configs (`specs/`, `living-specs/`) remain byte-identical.
+7. Refresh the spec-n-roll MCP server entry in every configured agent's MCP config targets (stdio path `.spec-n-roll/cli/bin/spec-n-roll-mcp`).
 
-`--dry-run` reports the same plan without writing files or refreshing MCP config.
+`--dry-run` reports the same plan without writing files, migrating configs, or refreshing MCP config.
 
-## TODO — not yet implemented
+## Config schema migration (implemented)
 
-The following update and migration behaviors are planned for later phases:
+Implementation: tolerant reader `src/config/reader.ts`, migration planner/applier `src/updates/migration.ts`.
 
-- **Config schema migration** — tolerant reader and incremental migrations at update time (US10)
-- **Extension compatibility warnings** — advisory checks from `.spec-n-roll/compatibility.json` surfaced in update summary (US10)
-- **Breaking migration confirmation** — interactive prompt unless `--yes` with `--confirm-migration` (US10)
+- Config files carry a `schemaVersion` field. New projects are initialized at workflow config schema version `2`.
+- The tolerant reader parses prior schema versions, ignores unknown fields, and maps legacy field names (for example `workflowVariants` → `workflows`, `installedToolkitVersion` → `toolkitVersion`).
+- Migrations run **only** during `spec-n-roll update`, not at runtime.
+- Non-breaking migrations apply automatically (including with `--yes`).
+- Breaking migrations (for example removal of deprecated `legacyTierRouting`) require explicit confirmation:
+  - Interactive update: confirm in the Ink prompt.
+  - Non-interactive: pass both `--yes` and `--confirm-migration`.
+
+Migrated files:
+
+| File                                        | Migration behavior                                      |
+| ------------------------------------------- | ------------------------------------------------------- |
+| `.spec-n-roll/config/workflow.config.json`  | v1 → v2 field normalization; breaking when legacy flags |
+| `.spec-n-roll/config/project-metadata.json` | v1 → current schema field normalization (non-breaking)    |
+
+## Extension compatibility warnings (implemented)
+
+Implementation: `src/extensions/compatibility.ts`, matrix file `.spec-n-roll/compatibility.json`.
+
+- `init` and every `update` refresh `.spec-n-roll/compatibility.json` from the running toolkit (initially an empty `incompatibleCombinations` array).
+- During update, enabled extensions are checked against the compatibility matrix for the **target toolkit version**.
+- Mismatches are reported as **warnings** in the update summary and Ink prompt.
+- Compatibility warnings never block the update or subsequent workflow execution.
+
+Example matrix entry:
+
+```json
+{
+  "incompatibleCombinations": [
+    {
+      "extensionId": "cursor",
+      "toolkitVersion": "0.2.0",
+      "reason": "Cursor MCP merge format changed"
+    }
+  ]
+}
+```

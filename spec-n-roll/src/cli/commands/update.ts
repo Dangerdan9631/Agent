@@ -23,7 +23,18 @@ import {
   installBundledPlatformScripts,
   PROJECT_SCRIPTS_RELATIVE_DIR,
 } from '../../workflow/platform-scripts.js';
+import type { WorkflowConfig } from '../../config/schema.js';
+import {
+  checkExtensionCompatibility,
+  type ExtensionCompatibilityInput,
+} from '../../extensions/compatibility.js';
+import { extensionManifestSchema } from '../../extensions/manifest.js';
 import { backupIfModified, type BackupConflict } from '../../updates/backup.js';
+import {
+  applyUserConfigMigrations,
+  BreakingMigrationError,
+  planUserConfigMigrations,
+} from '../../updates/migration.js';
 import { promptForUpdateConfirmation } from '../ink/update-prompts.js';
 import {
   collectLauncherBinaryUpdates,
@@ -89,6 +100,14 @@ export interface UpdateResult {
    * True when the run only planned changes.
    */
   dryRun: boolean;
+  /**
+   * Project-relative user-owned config paths migrated during update.
+   */
+  configMigrations: string[];
+  /**
+   * Extension compatibility advisory warnings surfaced in the update summary.
+   */
+  extensionWarnings: string[];
 }
 
 /**
@@ -118,11 +137,38 @@ function readToolkitVersion(toolkitRoot: string): string {
 }
 
 /**
- * Resolves enabled bundled agent ids from workflow configuration.
+ * Loads enabled extension manifests referenced by workflow configuration.
  *
  * @param projectRoot - Absolute path to the project root.
- * @returns Sorted enabled agent ids configured in the project.
+ * @param workflowConfig - Parsed workflow configuration for the project.
+ * @returns Enabled extensions with validated manifests.
  */
+async function loadEnabledExtensions(
+  projectRoot: string,
+  workflowConfig: WorkflowConfig,
+): Promise<ExtensionCompatibilityInput[]> {
+  const extensions: ExtensionCompatibilityInput[] = [];
+
+  for (const extensionRef of workflowConfig.extensions ?? []) {
+    if (!extensionRef.enabled) {
+      continue;
+    }
+
+    const manifestPath = path.join(projectRoot, extensionRef.manifestPath);
+    if (!(await fse.pathExists(manifestPath))) {
+      continue;
+    }
+
+    const raw: unknown = await fse.readJson(manifestPath);
+    extensions.push({
+      id: extensionRef.id,
+      manifest: extensionManifestSchema.parse(raw),
+    });
+  }
+
+  return extensions;
+}
+
 async function resolveConfiguredAgentIds(projectRoot: string): Promise<string[]> {
   const workflowConfig = await readWorkflowConfig(projectRoot);
   if (workflowConfig == null) {
@@ -295,13 +341,25 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
   const toolkitRoot = options.toolkitRoot ?? resolveToolkitRoot();
   const agentIds = await resolveConfiguredAgentIds(projectRoot);
   const workflowConfig = await readWorkflowConfig(projectRoot);
-  const previousToolkitVersion = workflowConfig?.toolkitVersion ?? 'unknown';
+  if (workflowConfig == null) {
+    throw new Error(
+      `Project is not initialized. Run \`spec-n-roll init\` before update. Missing ${WORKFLOW_CONFIG_RELATIVE_PATH}.`,
+    );
+  }
+
+  const previousToolkitVersion = workflowConfig.toolkitVersion;
   const targetToolkitVersion = readToolkitVersion(toolkitRoot);
+  const migrationPlan = await planUserConfigMigrations(projectRoot, targetToolkitVersion);
 
   const textUpdates = collectTextToolkitUpdates(agentIds);
   const scriptUpdates = collectPlatformScriptUpdates(toolkitRoot);
   const binaryUpdates = collectLauncherBinaryUpdates();
   const allUpdates = [...textUpdates, ...scriptUpdates, ...binaryUpdates];
+  const extensionWarnings = await checkExtensionCompatibility(
+    projectRoot,
+    targetToolkitVersion,
+    await loadEnabledExtensions(projectRoot, workflowConfig),
+  );
 
   if (options.dryRun === true) {
     const wouldBackup = await detectModifiedToolkitFiles(projectRoot, allUpdates);
@@ -314,7 +372,19 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
       backupConflicts: wouldBackup,
       mcpRefresh: [],
       dryRun: true,
+      configMigrations: migrationPlan.migrations.map((migration) => migration.relativePath),
+      extensionWarnings,
     };
+  }
+
+  if (
+    options.yes === true &&
+    migrationPlan.breakingCount > 0 &&
+    options.confirmMigration !== true
+  ) {
+    throw new BreakingMigrationError(
+      'Breaking config migrations require --confirm-migration when using --yes.',
+    );
   }
 
   const backupConflicts = await backupModifiedToolkitFiles(projectRoot, allUpdates);
@@ -325,10 +395,16 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
       targetToolkitVersion,
       filesToOverwrite: allUpdates.map((update) => update.relativePath),
       backupConflicts,
-      migrationCount: 0,
-      extensionWarnings: [],
+      migrationCount: migrationPlan.migrations.length,
+      extensionWarnings,
     });
   }
+
+  const migrationResult = await applyUserConfigMigrations(projectRoot, migrationPlan, {
+    targetToolkitVersion,
+    yes: options.yes === true,
+    confirmBreaking: options.yes !== true || options.confirmMigration === true,
+  });
 
   await writeToolkitFileUpdates(projectRoot, allUpdates);
   await installProjectBinaries(projectRoot, toolkitRoot);
@@ -350,6 +426,8 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
     backupConflicts,
     mcpRefresh,
     dryRun: false,
+    configMigrations: migrationResult.applied.map((migration) => migration.relativePath),
+    extensionWarnings,
   };
 }
 
@@ -377,6 +455,10 @@ export async function handleUpdateCommand(commandOptions: {
       );
       console.log(`Files: ${result.overwrittenFiles.length}`);
       console.log(`Backups: ${result.backupConflicts.length}`);
+      console.log(`Config migrations: ${result.configMigrations.length}`);
+      for (const warning of result.extensionWarnings) {
+        console.log(`Warning: ${warning}`);
+      }
       return;
     }
 
@@ -384,10 +466,16 @@ export async function handleUpdateCommand(commandOptions: {
       `Updated spec-n-roll ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}`,
     );
     console.log(`Overwrote ${result.overwrittenFiles.length} toolkit-owned file(s).`);
+    if (result.configMigrations.length > 0) {
+      console.log(`Migrated ${result.configMigrations.length} user-owned config file(s).`);
+    }
     if (result.backupConflicts.length > 0) {
       console.log(
         `Backed up ${result.backupConflicts.length} locally modified toolkit-owned file(s) to .bak.`,
       );
+    }
+    for (const warning of result.extensionWarnings) {
+      console.log(`Warning: ${warning}`);
     }
     const refreshed = result.mcpRefresh.filter((entry) => entry.refreshed).length;
     console.log(`Refreshed MCP config for ${refreshed} agent target(s).`);

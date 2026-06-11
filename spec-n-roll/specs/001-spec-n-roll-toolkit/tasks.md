@@ -323,23 +323,23 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 10
 
-- [ ] T114 [P] [US10] Write failing unit tests for config migration in tests/unit/migration.test.ts (tolerant reader parses v1 config; migrates to v2; breaking migration requires confirmation; non-breaking is automatic)
-- [ ] T115 [P] [US10] Write failing unit test for extension compatibility in tests/unit/compatibility.test.ts (mismatch from compatibility.json → warning in update summary; execution not blocked)
+- [x] T114 [P] [US10] Write failing unit tests for config migration in tests/unit/migration.test.ts (tolerant reader parses v1 config; migrates to v2; breaking migration requires confirmation; non-breaking is automatic)
+- [x] T115 [P] [US10] Write failing unit test for extension compatibility in tests/unit/compatibility.test.ts (mismatch from compatibility.json → warning in update summary; execution not blocked)
 
 ### Implementation for User Story 10
 
-- [ ] T116 [P] [US10] Implement semver toolkit version field validation in src/config/schema.ts (toolkitVersion: semver string in config schema)
-- [ ] T117 [US10] Implement additive-only tolerant config reader in src/config/reader.ts (reads any prior schema version; ignores unknown fields; maps old field names)
-- [ ] T118 [US10] Implement config schema migration logic in src/updates/migration.ts (detect schemaVersion delta; incremental migrations; write back; require confirmation for breaking changes)
-- [ ] T119 [US10] Implement extension compatibility checker in src/extensions/compatibility.ts (load .spec-n-roll/compatibility.json; compare targetToolkitVersion; warnings only)
-- [ ] T120 [P] [US10] Bundle initial .spec-n-roll/compatibility.json in toolkit install files (empty incompatibleCombinations array; refreshed on every update)
-- [ ] T121 [US10] Integrate migration and compatibility into update command in src/cli/commands/update.ts (migration on all user-owned configs; compatibility check on extensions; warnings in summary)
+- [x] T116 [P] [US10] Implement semver toolkit version field validation in src/config/schema.ts (toolkitVersion: semver string in config schema)
+- [x] T117 [US10] Implement additive-only tolerant config reader in src/config/reader.ts (reads any prior schema version; ignores unknown fields; maps old field names)
+- [x] T118 [US10] Implement config schema migration logic in src/updates/migration.ts (detect schemaVersion delta; incremental migrations; write back; require confirmation for breaking changes)
+- [x] T119 [US10] Implement extension compatibility checker in src/extensions/compatibility.ts (load .spec-n-roll/compatibility.json; compare targetToolkitVersion; warnings only)
+- [x] T120 [P] [US10] Bundle initial .spec-n-roll/compatibility.json in toolkit install files (empty incompatibleCombinations array; refreshed on every update)
+- [x] T121 [US10] Integrate migration and compatibility into update command in src/cli/commands/update.ts (migration on all user-owned configs; compatibility check on extensions; warnings in summary)
 
 **Checkpoint**: Migration and compatibility unit tests pass; update executes schema migrations and reports compatibility warnings.
 
 ### Documentation (US10)
 
-- [ ] T122 [P] Update docs/updates-and-migrations.md migration and compatibility sections to match implemented schema migration and compatibility.json warnings; TODO only where behavior is still stubbed
+- [x] T122 [P] Update docs/updates-and-migrations.md migration and compatibility sections to match implemented schema migration and compatibility.json warnings; TODO only where behavior is still stubbed
 
 ---
 

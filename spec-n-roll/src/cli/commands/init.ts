@@ -14,16 +14,14 @@ import { generateWorkflowSkills } from '../../agents/generators/workflow-skills.
 import { MCP_BINARY_RELATIVE_PATH } from '../../agents/mcp-config.js';
 import type { AgentConfig, WorkflowConfig } from '../../config/schema.js';
 import { atomicWriteJson } from '../../core/atomic-write.js';
+import { WORKFLOW_CONFIG_SCHEMA_VERSION } from '../../updates/migration.js';
 import { writeProjectMetadata } from '../../core/project-metadata.js';
 import { installProjectBinaries } from '../local-binaries.js';
 import { installBundledPlatformScripts } from '../../workflow/platform-scripts.js';
 import { BUILT_IN_STEP_OUTPUTS } from '../../workflow/step-manifest.js';
 import { promptForAgentSelection } from '../ink/init-prompts.js';
 
-/**
- * Schema version written for new workflow configuration files.
- */
-export const WORKFLOW_CONFIG_SCHEMA_VERSION = '1';
+export { WORKFLOW_CONFIG_SCHEMA_VERSION };
 
 /**
  * Relative path to the workflow configuration file from the project root.
