@@ -7,13 +7,15 @@
     "node": ">=20"
   },
   "bin": {
-    "spec-n-roll": "./dist/cli/index.js"
+    "spec-n-roll": "./dist/cli/dispatcher.js",
+    "spec-n-roll-cli": "./dist/cli/index.js",
+    "spec-n-roll-mcp": "./dist/mcp/server.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/copy-wrappers.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cucumber": "cucumber-js",
@@ -23,6 +25,7 @@
   },
   "dependencies": {
     "@cucumber/cucumber": "^11.2.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "commander": "^13.1.0",
     "fs-extra": "^11.3.0",
     "ink": "^5.2.0",

@@ -123,10 +123,9 @@ src/
 │   ├── ownership.ts
 │   ├── migration.ts
 │   └── backup.ts
-├── config/
-│   ├── schema.ts
-│   └── reader.ts
-└── docs/
+└── config/
+    ├── schema.ts
+    └── reader.ts
 
 tests/
 ├── features/
@@ -147,7 +146,7 @@ docs/
 └── updates-and-migrations.md
 ```
 
-**Structure Decision**: Use a single TypeScript package with focused modules for dispatcher, full CLI, MCP server, shared core library, workflow, living specs, agent extension generation, extensions, updates, config, templates, and documentation. The dispatcher, full CLI, and MCP server are separate build outputs; core library logic is never duplicated across interfaces. This keeps the v1 toolkit easy to install and test while preserving clear module boundaries for future package extraction if needed.
+**Structure Decision**: Use a single TypeScript package with focused modules for dispatcher, full CLI, MCP server, shared core library, workflow, living specs, agent extension generation, extensions, updates, config, and templates. Toolkit-authored documentation lives in the repository root `docs/` directory only — it is not part of `src/` and is not installed into user projects by `init` or `update`. The dispatcher, full CLI, and MCP server are separate build outputs; core library logic is never duplicated across interfaces. This keeps the v1 toolkit easy to install and test while preserving clear module boundaries for future package extraction if needed.
 
 ### Installed Project Layout
 
@@ -181,6 +180,8 @@ project-root/
 ```
 
 Per-agent native pointer files (e.g., root `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`) reference `.spec-n-roll/AGENTS.md` — they are generated and toolkit-owned. Per-agent project-local MCP configuration files (e.g., `.cursor/mcp.json`) are created or idempotently updated by agent extension generators on `init`, `config add-agent`, and refreshed on `update` — see `contracts/agent-mcp-config.md`.
+
+Toolkit-authored documentation (`docs/` at the toolkit repository root) is **not** part of the installed project layout. Developers read it from the spec-n-roll repository or npm package source; `init` and `update` do not copy it into user projects.
 
 ### Default Workflow Tiers
 

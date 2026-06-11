@@ -1,6 +1,7 @@
+import { spawnSync } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Defines the standard installation location for project-local CLI versions
@@ -289,4 +290,89 @@ export function dispatch(argv: string[], options: DispatchOptions = {}): number 
     case 'continue':
       return 0;
   }
+}
+
+/**
+ * Resolves the co-bundled global full CLI binary path relative to the dispatcher
+ * install location, preferring Windows .cmd shims when present.
+ *
+ * @returns Absolute path to the full CLI executable adjacent to the dispatcher.
+ */
+export function resolveGlobalCliPath(): string {
+  const dispatcherDir = path.dirname(fileURLToPath(import.meta.url));
+
+  if (process.platform === 'win32') {
+    const cmdPath = path.join(dispatcherDir, 'spec-n-roll.cmd');
+    if (pathExists(cmdPath)) {
+      return cmdPath;
+    }
+  }
+
+  return path.join(dispatcherDir, 'index.js');
+}
+
+/**
+ * Executes the co-bundled global full CLI as a child process when no local CLI
+ * is found or when --global forces global execution.
+ *
+ * @param argv - Raw command-line arguments after the node executable and script path.
+ * @param options - Optional dispatch configuration for cwd and environment.
+ * @returns Exit code from the spawned full CLI process.
+ */
+export function execGlobalCli(argv: string[], options: DispatchOptions = {}): number {
+  const cwd = options.cwd ?? process.cwd();
+  const env = options.env ?? process.env;
+  const { args } = stripGlobalFlag(argv);
+  const cliPath = resolveGlobalCliPath();
+
+  const result = spawnSync(cliPath, args, {
+    cwd,
+    env,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+
+  if (result.error != null) {
+    console.error(
+      `Failed to execute global spec-n-roll CLI at ${cliPath}: ${result.error.message}`,
+    );
+    return 1;
+  }
+
+  return result.status ?? 1;
+}
+
+/**
+ * Global dispatcher entry point that delegates to a local CLI or exec's the
+ * co-bundled full CLI binary without loading full CLI code in-process.
+ *
+ * @param argv - Full process.argv array including node and script path entries.
+ * @param options - Optional dispatch configuration for cwd and environment.
+ * @returns Exit code from delegation or global CLI execution.
+ */
+export function runDispatcher(
+  argv: string[] = process.argv,
+  options: DispatchOptions = {},
+): number {
+  const rawArgs = argv.slice(2);
+  const delegation = resolveDelegation(rawArgs, options);
+
+  if (delegation.action === 'delegated') {
+    return delegation.exitCode;
+  }
+
+  if (delegation.action === 'error') {
+    console.error(delegation.message);
+    return delegation.exitCode;
+  }
+
+  return execGlobalCli(rawArgs, options);
+}
+
+const isDispatcherMain =
+  process.argv[1] != null &&
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+
+if (isDispatcherMain) {
+  process.exit(runDispatcher());
 }

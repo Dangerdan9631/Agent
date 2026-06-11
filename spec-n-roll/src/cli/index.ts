@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveDelegation, stripGlobalFlag } from './dispatcher.js';
+import { stripGlobalFlag } from './dispatcher.js';
 
 /**
  * Reads the package version from package.json to display in CLI help and version output.
@@ -80,37 +80,15 @@ function createProgram(): Command {
 }
 
 /**
- * Detects if the CLI is running from a project-local installation to enable delegation logic.
- *
- * @returns True if running from a local installation, false otherwise.
- */
-function isLocalCliInstall(): boolean {
-  const normalized = fileURLToPath(import.meta.url).replace(/\\/g, '/');
-  return normalized.includes('/.spec-n-roll/cli/bin/');
-}
-
-/**
- * Entry point that handles delegation to local installs and parses CLI arguments.
+ * Entry point for the full CLI binary that parses subcommands and options.
  *
  * @param argv - The command line arguments to parse.
  */
 export function main(argv: string[] = process.argv): void {
   const rawArgs = argv.slice(2);
-
-  if (!isLocalCliInstall()) {
-    const delegation = resolveDelegation(rawArgs);
-    if (delegation.action === 'delegated') {
-      process.exit(delegation.exitCode);
-    }
-    if (delegation.action === 'error') {
-      console.error(delegation.message);
-      process.exit(delegation.exitCode);
-    }
-  }
-
   const { args } = stripGlobalFlag(rawArgs);
   const program = createProgram();
-  program.parse(['node', 'spec-n-roll', ...args], { from: 'user' });
+  program.parse(args, { from: 'user' });
 }
 
 const isMainModule =

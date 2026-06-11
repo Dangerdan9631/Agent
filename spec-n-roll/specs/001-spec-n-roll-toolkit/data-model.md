@@ -115,7 +115,7 @@ Represents the versioned toolkit distribution installed into a project.
 
 - `version` must be valid semver.
 - Toolkit-owned and user-owned directories must not overlap.
-- Documentation lives only in the toolkit repository and is excluded from project ownership classification.
+- Toolkit-authored documentation lives in the repository root `docs/` directory only; it is not installed into user projects and is excluded from project ownership classification.
 
 ## File Ownership Class
 

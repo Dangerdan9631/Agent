@@ -249,7 +249,7 @@ Expected outcomes:
 
 ## Scenario 12: Documentation Completeness
 
-Review `docs/`.
+Review the toolkit repository root `docs/` directory (not installed into initialized projects).
 
 Expected outcomes:
 
