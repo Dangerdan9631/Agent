@@ -1,0 +1,46 @@
+{
+  "name": "spec-n-roll",
+  "version": "0.1.0",
+  "description": "Specification-driven workflow toolkit for AI coding agents",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "spec-n-roll": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cucumber": "cucumber-js",
+    "lint": "eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "@cucumber/cucumber": "^11.2.0",
+    "commander": "^13.1.0",
+    "fs-extra": "^11.3.0",
+    "ink": "^5.2.0",
+    "react": "^18.3.1",
+    "semver": "^7.7.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.13.10",
+    "@types/react": "^18.3.18",
+    "eslint": "^9.22.0",
+    "eslint-config-prettier": "^10.1.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.1",
+    "vitest": "^3.0.9"
+  }
+}
