@@ -265,21 +265,21 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 7
 
-- [ ] T093 [P] [US7] Write failing integration test for TDD cycle entry in tests/integration/tdd-cycle.test.ts (Cucumber runs against living-specs/ feature files; stub step defs generated; tests fail before code)
+- [x] T093 [P] [US7] Write failing integration test for TDD cycle entry in tests/integration/tdd-cycle.test.ts (Cucumber runs against living-specs/ feature files; stub step defs generated; tests fail before code)
 
 ### Implementation for User Story 7
 
-- [ ] T094 [US7] Implement Cucumber test runner invocation in src/specs/implement.ts (runs against living-specs/*.feature directly; step defs from project test location)
-- [ ] T095 [US7] Implement stub step definition generator in src/living-specs/step-stubs.ts (for each unmapped Gherkin step: generate stub with "// STUB: requires implementation" comment; clearly marked)
-- [ ] T096 [US7] Implement test status tracker in src/specs/implement.ts (records pass/fail per scenario; guides red→green→refactor cycle; reports progress to developer)
-- [ ] T097 [P] [US7] Enforce pre-code red gate in src/specs/implement.ts (fail implement step with clear message if all tests pass before production code changes)
-- [ ] T098 [US7] Complete /spec-n-implement step handler in src/specs/implement.ts (living spec update → Cucumber red → code → green → refactor → mark step complete via src/core/workflow-state.ts)
+- [x] T094 [US7] Implement Cucumber test runner invocation in src/specs/implement.ts (runs against living-specs/*.feature directly; step defs from project test location)
+- [x] T095 [US7] Implement stub step definition generator in src/living-specs/step-stubs.ts (for each unmapped Gherkin step: generate stub with "// STUB: requires implementation" comment; clearly marked)
+- [x] T096 [US7] Implement test status tracker in src/specs/implement.ts (records pass/fail per scenario; guides red→green→refactor cycle; reports progress to developer)
+- [x] T097 [P] [US7] Enforce pre-code red gate in src/specs/implement.ts (fail implement step with clear message if all tests pass before production code changes)
+- [x] T098 [US7] Complete /spec-n-implement step handler in src/specs/implement.ts (living spec update → Cucumber red → code → green → refactor → mark step complete via src/core/workflow-state.ts)
 
 **Checkpoint**: TDD cycle integration test passes; stub generation works; red gate enforced.
 
 ### Documentation (US7)
 
-- [ ] T099 [P] Update docs/workflow.md TDD/Cucumber sections to match implemented red→green→refactor entry behavior; TODO for refactor guidance and reporting gaps
+- [x] T099 [P] Update docs/workflow.md TDD/Cucumber sections to match implemented red→green→refactor entry behavior; TODO for refactor guidance and reporting gaps
 
 ---
 

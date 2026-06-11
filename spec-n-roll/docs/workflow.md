@@ -1,6 +1,6 @@
 # Workflow
 
-spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 8 (US5)** living specification maintenance plus **Phase 7 (US6)** lifecycle enforcement, **Phase 6 (US4)** roll advancement, plan/tasks tier steps, analyze, FR-009 living-spec-first tasks rules, and Phase 5 specify/triage/clarify.
+spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 9 (US7)** TDD Cucumber cycle in implement, **Phase 8 (US5)** living specification maintenance, **Phase 7 (US6)** lifecycle enforcement, **Phase 6 (US4)** roll advancement, plan/tasks tier steps, analyze, FR-009 living-spec-first tasks rules, and Phase 5 specify/triage/clarify.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -17,11 +17,11 @@ Numeric ids are allocated from `.spec-n-roll/config/project-metadata.json` → `
 
 Task specs use a three-state lifecycle persisted in `spec.md` YAML frontmatter (`status` field). Operational workflow progress (`active` / `paused` / `complete`) remains in `workflow-state.json` as a separate concern.
 
-| Status | Meaning |
-| ------ | ------- |
-| **Active** | Open for workflow commands, clarify, and (when selected) implement |
-| **Complete** | Final tier step finished; still eligible for on-demand commands until locked |
-| **Locked** | Immutable — core library and MCP/CLI reject machine-readable and guarded prose writes |
+| Status       | Meaning                                                                               |
+| ------------ | ------------------------------------------------------------------------------------- |
+| **Active**   | Open for workflow commands, clarify, and (when selected) implement                    |
+| **Complete** | Final tier step finished; still eligible for on-demand commands until locked          |
+| **Locked**   | Immutable — core library and MCP/CLI reject machine-readable and guarded prose writes |
 
 **Transitions** (implementation: `src/core/task-lifecycle.ts`, orchestration: `src/workflow/engine.ts`):
 
@@ -40,11 +40,11 @@ Triage is **not** a separate workflow step. It runs at the start of `/spec-n-spe
 
 Built-in heuristics (implementation: `src/specs/triage.ts`):
 
-| Signal | Proposed tier | Tail steps |
-| ------ | ------------- | ---------- |
-| Single-file fix, copy, typo, trivial patch | `papercut` | specify → implement |
-| New behavior without architecture change | `quick` | specify → tasks → implement |
-| Cross-cutting, subsystem, multi-actor, architectural | `full` | specify → plan → tasks → implement |
+| Signal                                               | Proposed tier | Tail steps                         |
+| ---------------------------------------------------- | ------------- | ---------------------------------- |
+| Single-file fix, copy, typo, trivial patch           | `papercut`    | specify → implement                |
+| New behavior without architecture change             | `quick`       | specify → tasks → implement        |
+| Cross-cutting, subsystem, multi-actor, architectural | `full`        | specify → plan → tasks → implement |
 
 The toolkit presents the matched tier with rationale. The developer confirms or overrides. When the description is empty or too ambiguous, all tiers are presented for manual selection with `defaultWorkflowId` from `workflow.config.json` pre-selected (default: `quick`).
 
@@ -84,13 +84,13 @@ Agent skill: `.agents/skills/spec-n-clarify/SKILL.md` (generated at `init`).
 
 ## MCP / CLI mutation boundaries
 
-| Artifact | MCP / CLI required | Agent direct edit |
-| -------- | ------------------ | ----------------- |
-| `workflow-state.json` | Yes | No |
-| `spec.md` frontmatter (`status`) | Yes | No |
-| `spec.md` prose (after instantiate) | No | Yes |
-| `project-metadata.json` | Yes | No |
-| `living-specs/*.feature` | N/A | Yes (agent-managed) |
+| Artifact                            | MCP / CLI required | Agent direct edit   |
+| ----------------------------------- | ------------------ | ------------------- |
+| `workflow-state.json`               | Yes                | No                  |
+| `spec.md` frontmatter (`status`)    | Yes                | No                  |
+| `spec.md` prose (after instantiate) | No                 | Yes                 |
+| `project-metadata.json`             | Yes                | No                  |
+| `living-specs/*.feature`            | N/A                | Yes (agent-managed) |
 
 Step output templates (`spec.md`, `plan.md`, `tasks.md`) must be instantiated via MCP/CLI before prose edits.
 
@@ -112,13 +112,13 @@ Zero-knowledge meta-command that detects intent and advances the next **tier** s
 
 ### Intent detection
 
-| Input | Behavior |
-| ----- | -------- |
-| Description argument | Route to `/spec-n-specify` with that description |
-| No description, zero Active specs, nothing resumable | Prompt for a feature description |
-| No description, multiple Active specs | Numbered task-selection list (no silent default) |
-| No description, paused/incomplete non-Active specs | "New or continue?" prompt |
-| No description, exactly one Active spec | Advance that spec |
+| Input                                                | Behavior                                         |
+| ---------------------------------------------------- | ------------------------------------------------ |
+| Description argument                                 | Route to `/spec-n-specify` with that description |
+| No description, zero Active specs, nothing resumable | Prompt for a feature description                 |
+| No description, multiple Active specs                | Numbered task-selection list (no silent default) |
+| No description, paused/incomplete non-Active specs   | "New or continue?" prompt                        |
+| No description, exactly one Active spec              | Advance that spec                                |
 
 ### Advancement
 
@@ -209,27 +209,59 @@ When behavior is removed, deprecated scenarios are deleted from living spec file
 
 **Orchestration**: `src/specs/implement.ts` → `runImplement`
 
-Implement entry performs **living spec updates first** (FR-009) before any test or production code:
+Implement performs **living spec updates first** (FR-009), then drives the **TDD red-green-refactor** cycle from living spec Gherkin files before production code is accepted.
+
+### Entry phase (`phase: entry`, default)
 
 1. Route to `living-specs/{domain}.feature` from the feature description (create file when absent)
 2. Remove deprecated scenarios when `deprecatedScenarioNames` are supplied
 3. Add or update scenarios with additive `@spec-n-roll-{taskSpecId}` tags
-4. Set `workflow-state.json` `currentStepId: implement` via core library
+4. Generate stub step definitions for unmapped Gherkin steps in `tests/step-definitions/living-spec-stubs.mjs` (`src/living-specs/step-stubs.ts`; each stub marked with `// STUB: requires implementation` and throws until implemented)
+5. Run Cucumber against `living-specs/**/*.feature` filtered to `@spec-n-roll-{taskSpecId}` (`src/living-specs/cucumber-runner.ts`)
+6. **Red gate** — reject entry when all tagged scenarios pass before `productionCodeWritten: true` (`TddRedGateError`)
+7. Set `workflow-state.json` `currentStepId: implement` via core library
 
-`/spec-n-roll` still claims the single implement slot and returns `{ action: 'implement' }` for the agent to invoke `runImplement` with scenario payloads.
+Entry must leave at least one failing scenario (typically via throwing stubs) before production code.
+
+### Follow-up phases
+
+Re-invoke `runImplement` with explicit `phase` after the agent writes code:
+
+| Phase      | Purpose                                 | Success criteria                                                                                                     |
+| ---------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `green`    | Verify implementation                   | All tagged scenarios pass                                                                                            |
+| `refactor` | Verify behavior preserved after cleanup | All tagged scenarios still pass                                                                                      |
+| `complete` | Finish implement step                   | All tagged scenarios pass; writes `workflow-state.json` with `lastCompletedStepId: implement` and `status: complete` |
+
+Each invocation returns `testRun` with per-scenario pass/fail tracking and a `progressMessage` for developer reporting.
+
+### Cucumber layout
+
+- **Feature source**: `living-specs/{domain}.feature` (no duplicate feature files under `tests/`)
+- **Step definitions**: `tests/step-definitions/` (generated `.mjs` stubs plus hand-written implementations)
+- **Dependency**: projects must install `@cucumber/cucumber`; when absent locally, the toolkit symlinks its own copy only for the test run (development fixtures)
+
+`/spec-n-roll` still claims the single implement slot and returns `{ action: 'implement' }` for the agent to invoke `runImplement` with scenario payloads and phase.
 
 Agent skill: `.agents/skills/spec-n-implement/SKILL.md`
 
+### TODO: TDD reporting gaps (US7 follow-ups)
+
+| Area                   | Notes                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Refactor guidance      | Toolkit verifies tests stay green on `refactor` phase; detailed refactor heuristics left to agent skill prose |
+| Vertical-slice picker  | No interactive slice selection UI — agent chooses behavior from `tasks.md`                                    |
+| Cucumber install check | Clear error when `@cucumber/cucumber` cannot be resolved in the project                                       |
+
 ## TODO: Not yet implemented
 
-| Area | Phase |
-| ---- | ----- |
-| `/spec-n-implement` Cucumber red-green-refactor cycle | US7 |
-| Extension step replacement and custom workflow hooks | US8 |
+| Area                                                 | Phase |
+| ---------------------------------------------------- | ----- |
+| Extension step replacement and custom workflow hooks | US8   |
 
 ### TODO: Lifecycle nuances (US6 follow-ups)
 
-| Area | Notes |
-| ---- | ----- |
-| Clarify on Locked specs | Rejected today; future policy for sealed-spec amendments TBD |
+| Area                        | Notes                                                                                                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clarify on Locked specs     | Rejected today; future policy for sealed-spec amendments TBD                                                                                         |
 | Implement completion signal | Lifecycle **Complete** is set when `/spec-n-roll` detects no remaining tier steps (typically after implement is recorded complete in workflow state) |
