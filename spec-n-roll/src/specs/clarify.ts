@@ -3,7 +3,11 @@ import fse from 'fs-extra';
 
 import { parseFrontmatterDocument, serializeFrontmatterDocument } from '../core/frontmatter.js';
 import { taskSpecFilePath } from '../core/paths.js';
-import { readTaskSpecStatus, setTaskSpecStatus } from '../core/task-lifecycle.js';
+import {
+  assertTaskSpecWritable,
+  readTaskSpecStatus,
+  setTaskSpecStatus,
+} from '../core/task-lifecycle.js';
 import {
   createInterviewSession,
   getNextInterviewQuestion,
@@ -91,6 +95,8 @@ async function appendClarifyToSpec(
   topic: string,
   session: InterviewSession,
 ): Promise<void> {
+  await assertTaskSpecWritable(projectRoot, taskSpecId, slug);
+
   const filePath = taskSpecFilePath(projectRoot, taskSpecId, slug, 'spec.md');
   const content = await fse.readFile(filePath, 'utf8');
   const document = parseFrontmatterDocument(content);

@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 
 import { atomicWriteJson } from './atomic-write.js';
 import { taskSpecDir } from './paths.js';
+import { assertTaskSpecWritable } from './task-lifecycle.js';
 import {
   WORKFLOW_STATE_FILENAME,
   WORKFLOW_STATE_SCHEMA_VERSION,
@@ -77,6 +78,8 @@ export async function writeWorkflowState(
   projectRoot: string,
   input: WorkflowStateWriteInput,
 ): Promise<WorkflowState> {
+  await assertTaskSpecWritable(projectRoot, input.taskSpecId, input.slug);
+
   const directory = taskSpecDir(projectRoot, input.taskSpecId, input.slug);
   await fse.ensureDir(directory);
 

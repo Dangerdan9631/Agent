@@ -1,7 +1,15 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
-import { readTaskSpecStatus } from '../core/task-lifecycle.js';
+import {
+  claimImplementSlot,
+  clearImplementSlot,
+} from '../core/project-metadata.js';
+import {
+  lockCompleteTaskSpecs,
+  readTaskSpecStatus,
+  setTaskSpecStatus,
+} from '../core/task-lifecycle.js';
 import { taskSpecDir } from '../core/paths.js';
 import { readWorkflowState, writeWorkflowState } from '../core/workflow-state.js';
 import { instantiateStepOutput } from '../core/templates.js';
@@ -442,6 +450,50 @@ export async function applyPartialRecovery(
 }
 
 /**
+ * Marks a task spec workflow finished with lifecycle Complete and operational state complete.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecId - Zero-padded numeric task spec id.
+ * @param slug - Kebab-case slug paired with the task spec id.
+ * @param state - Current workflow state when present.
+ */
+async function completeTaskSpecWorkflow(
+  projectRoot: string,
+  taskSpecId: string,
+  slug: string,
+  state: WorkflowState | null,
+): Promise<void> {
+  await setTaskSpecStatus(projectRoot, taskSpecId, slug, 'Complete');
+
+  if (state != null) {
+    await writeWorkflowState(projectRoot, {
+      taskSpecId,
+      slug,
+      workflowVariantId: state.workflowVariantId,
+      lastCompletedStepId: state.lastCompletedStepId,
+      currentStepId: null,
+      status: 'complete',
+    });
+  }
+
+  await clearImplementSlot(projectRoot);
+}
+
+/**
+ * Locks eligible Complete specs before a non-specify tier step begins.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param stepId - Workflow step about to execute.
+ */
+async function lockCompleteSpecsBeforeStep(projectRoot: string, stepId: string): Promise<void> {
+  if (stepId === 'specify') {
+    return;
+  }
+
+  await lockCompleteTaskSpecs(projectRoot);
+}
+
+/**
  * Executes a built-in tier step handler and returns the completed step id.
  *
  * @param projectRoot - Absolute path to the project root.
@@ -602,6 +654,7 @@ export async function runRoll(options: RunRollOptions): Promise<RollResult> {
   );
 
   if (nextStepId == null) {
+    await completeTaskSpecWorkflow(projectRoot, taskSpecId, slug, progress.state);
     return { action: 'workflow_complete', taskSpecId, slug };
   }
 
@@ -665,6 +718,9 @@ export async function runRoll(options: RunRollOptions): Promise<RollResult> {
   }
 
   if (nextStepId === 'implement') {
+    await lockCompleteSpecsBeforeStep(projectRoot, 'implement');
+    await claimImplementSlot(projectRoot, taskSpecId, slug);
+
     const existingState = progress.state ?? (await readWorkflowState(projectRoot, taskSpecId, slug));
     if (existingState != null) {
       await writeWorkflowState(projectRoot, {
@@ -679,6 +735,7 @@ export async function runRoll(options: RunRollOptions): Promise<RollResult> {
     return { action: 'implement', taskSpecId, slug };
   }
 
+  await lockCompleteSpecsBeforeStep(projectRoot, nextStepId);
   const completedStepId = await executeTierStep(projectRoot, taskSpecId, slug, nextStepId);
   return { action: 'step_completed', stepId: completedStepId, taskSpecId, slug };
 }

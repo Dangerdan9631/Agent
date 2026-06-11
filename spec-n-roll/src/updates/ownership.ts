@@ -1,8 +1,13 @@
+import { assertTaskSpecWritable } from '../core/task-lifecycle.js';
+import { CoreMutationError } from '../core/errors.js';
+
 /**
  * Represents the owner of a file to distinguish between toolkit-managed
  * and user-owned files during updates.
  */
 export type FileOwner = 'toolkit' | 'user';
+
+const TASK_SPEC_PATH_PATTERN = /^specs\/(\d{3})-([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/.*)?$/;
 
 /**
  * Normalizes a path to use forward slashes and remove trailing slashes
@@ -84,4 +89,62 @@ export function isToolkitOwned(relativePath: string): boolean {
  */
 export function isUserOwned(relativePath: string): boolean {
   return classifyPath(relativePath) === 'user';
+}
+
+/**
+ * Parsed task spec identity extracted from a project-relative path under `specs/`.
+ */
+export interface TaskSpecPathIdentity {
+  /** Zero-padded numeric task spec id. */
+  taskSpecId: string;
+  /** Kebab-case slug paired with the task spec id. */
+  slug: string;
+}
+
+/**
+ * Extracts a task spec identity from a project-relative path when it targets `specs/{id}-{slug}`.
+ *
+ * @param relativePath - Project-relative path such as `specs/001-demo/spec.md`.
+ * @returns Parsed identity or null when the path is outside task spec directories.
+ */
+export function parseTaskSpecPathIdentity(relativePath: string): TaskSpecPathIdentity | null {
+  const normalized = normalizePath(relativePath);
+  const match = TASK_SPEC_PATH_PATTERN.exec(normalized);
+  if (match == null) {
+    return null;
+  }
+
+  return {
+    taskSpecId: match[1]!,
+    slug: match[2]!,
+  };
+}
+
+/**
+ * Rejects writes to Locked task spec directories for user-owned paths under `specs/`.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param relativePath - Project-relative path being mutated.
+ */
+export async function assertUserOwnedPathWritable(
+  projectRoot: string,
+  relativePath: string,
+): Promise<void> {
+  if (!isUserOwned(relativePath)) {
+    return;
+  }
+
+  const identity = parseTaskSpecPathIdentity(relativePath);
+  if (identity == null) {
+    return;
+  }
+
+  try {
+    await assertTaskSpecWritable(projectRoot, identity.taskSpecId, identity.slug);
+  } catch (error) {
+    if (error instanceof CoreMutationError) {
+      throw error;
+    }
+    throw error;
+  }
 }

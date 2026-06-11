@@ -1,6 +1,6 @@
 # Workflow
 
-spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 6 (US4)** shipped behavior for roll advancement, plan/tasks tier steps, analyze, and FR-009 living-spec-first tasks rules (plus Phase 5 specify/triage/clarify).
+spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 7 (US6)** lifecycle enforcement plus **Phase 6 (US4)** roll advancement, plan/tasks tier steps, analyze, and FR-009 living-spec-first tasks rules (and Phase 5 specify/triage/clarify).
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -12,6 +12,27 @@ Each workflow run creates a directory at `specs/{numeric-id}-{slug}/` containing
 - `workflow-state.json` — operational progress (variant, last completed step, status)
 
 Numeric ids are allocated from `.spec-n-roll/config/project-metadata.json` → `nextTaskSpecId`. Slugs are required; the toolkit derives kebab-case slugs from the feature description when omitted.
+
+### Lifecycle status (`spec.md` frontmatter)
+
+Task specs use a three-state lifecycle persisted in `spec.md` YAML frontmatter (`status` field). Operational workflow progress (`active` / `paused` / `complete`) remains in `workflow-state.json` as a separate concern.
+
+| Status | Meaning |
+| ------ | ------- |
+| **Active** | Open for workflow commands, clarify, and (when selected) implement |
+| **Complete** | Final tier step finished; still eligible for on-demand commands until locked |
+| **Locked** | Immutable — core library and MCP/CLI reject machine-readable and guarded prose writes |
+
+**Transitions** (implementation: `src/core/task-lifecycle.ts`, orchestration: `src/workflow/engine.ts`):
+
+1. **Active → Complete** — `/spec-n-roll` sets `status: Complete` when the variant has no remaining tier steps (implement finished; `lastCompletedStepId: implement`).
+2. **Complete → Active** — `/spec-n-clarify` reverts when new un-implemented requirements are appended (`addsUnimplementedRequirements`, default true).
+3. **Complete → Locked** — When any task spec begins a step beyond `specify` (`plan`, `tasks`, or `implement`), all **Complete** specs in the project lock. `/spec-n-specify` does **not** lock prior specs.
+4. **Locked** — No further transitions; writes rejected with `TASK_SPEC_LOCKED`.
+
+**Single implement guard** — Only one **Active** task spec may be in implement at a time. `project-metadata.json` tracks `currentTaskSpecId` / `currentTaskSlug`; starting implement on a second Active spec while another is in-flight raises `IMPLEMENT_IN_PROGRESS`. Fields clear when a workflow completes.
+
+Write protection also flows through `src/updates/ownership.ts` (`assertUserOwnedPathWritable`) for paths under `specs/{id}-{slug}/`.
 
 ## Embedded triage (within specify)
 
@@ -55,7 +76,7 @@ Agent skill: `.agents/skills/spec-n-specify/SKILL.md` (generated at `init`).
 
 Follow-up interview for an **existing** task spec — separate from the initial specify session.
 
-- When new un-implemented requirements are added to a **Complete** spec, `status` reverts to **Active** via MCP `task_spec_status_set`
+- When new un-implemented requirements are added to a **Complete** spec, `status` reverts to **Active** via MCP `task_spec_status_set` before the follow-up interview (`src/specs/clarify.ts`)
 - One question at a time with recommended answers
 - Clarifications appended to `spec.md` prose (not frontmatter)
 
@@ -107,6 +128,9 @@ Zero-knowledge meta-command that detects intent and advances the next **tier** s
 4. When state is missing, fall back to tier-aware artifact detection (`src/workflow/artifacts.ts`)
 5. When parseable state conflicts with artifacts, **state wins** after a single confirmation prompt
 6. When partial artifacts exist for the next step (per `src/workflow/step-manifest.ts`), present one three-choice Ink prompt (`src/cli/ink/partial-recovery-prompt.tsx`): **restart** (overwrite partials), **cancel** (leave artifacts, `status: paused`), **force-clean** (delete partials then restart)
+7. Before `plan`, `tasks`, or `implement`, lock all **Complete** specs in the project
+8. When the variant has no remaining tier steps, set lifecycle **Complete** and operational workflow `status: complete`
+9. Before `implement`, claim the single implement slot in `project-metadata.json` (reject concurrent Active implement)
 
 Agent skill: `.agents/skills/spec-n-roll/SKILL.md` (generated at `init`).
 
@@ -162,5 +186,11 @@ Living spec file edits remain agent-managed under `living-specs/` (outside MCP/C
 | Area | Phase |
 | ---- | ----- |
 | `/spec-n-implement` TDD entry and living-spec automation | US5–US7 |
-| Active → Complete → Locked lifecycle enforcement in engine | US6 |
 | Extension step replacement and custom workflow hooks | US8 |
+
+### TODO: Lifecycle nuances (US6 follow-ups)
+
+| Area | Notes |
+| ---- | ----- |
+| Clarify on Locked specs | Rejected today; future policy for sealed-spec amendments TBD |
+| Implement completion signal | Lifecycle **Complete** is set when `/spec-n-roll` detects no remaining tier steps (typically after implement is recorded complete in workflow state) |

@@ -212,21 +212,21 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 6
 
-- [ ] T078 [P] [US6] Write failing unit tests for lifecycle state transitions in tests/unit/lifecycle.test.ts (implement-complete→Complete, non-specify-start→Complete-specs-lock, clarify-revert→Active, locked-write→rejected)
+- [x] T078 [P] [US6] Write failing unit tests for lifecycle state transitions in tests/unit/lifecycle.test.ts (implement-complete→Complete, non-specify-start→Complete-specs-lock, clarify-revert→Active, locked-write→rejected)
 
 ### Implementation for User Story 6
 
-- [ ] T079 [US6] Integrate automatic Complete transition in src/workflow/engine.ts (src/core/task-lifecycle.ts sets status: Complete when final tier step completes)
-- [ ] T080 [US6] Implement locking of eligible Complete specs in src/workflow/engine.ts (when any task spec begins a step beyond specify, transition all Complete specs to Locked via core)
-- [ ] T081 [US6] Enforce write protection for Locked task spec directories in src/core/task-lifecycle.ts and src/updates/ownership.ts (reject machine-readable and prose writes with clear error)
-- [ ] T082 [US6] Implement "only one Active spec in implement" guard in src/workflow/engine.ts (validate/set currentTaskSpecId in project-metadata when implement begins; reject second concurrent implement)
-- [ ] T083 [US6] Wire /spec-n-clarify Complete→Active revert in src/specs/clarify.ts (via src/core/task-lifecycle.ts when new un-implemented requirements appended)
+- [x] T079 [US6] Integrate automatic Complete transition in src/workflow/engine.ts (src/core/task-lifecycle.ts sets status: Complete when final tier step completes)
+- [x] T080 [US6] Implement locking of eligible Complete specs in src/workflow/engine.ts (when any task spec begins a step beyond specify, transition all Complete specs to Locked via core)
+- [x] T081 [US6] Enforce write protection for Locked task spec directories in src/core/task-lifecycle.ts and src/updates/ownership.ts (reject machine-readable and prose writes with clear error)
+- [x] T082 [US6] Implement "only one Active spec in implement" guard in src/workflow/engine.ts (validate/set currentTaskSpecId in project-metadata when implement begins; reject second concurrent implement)
+- [x] T083 [US6] Wire /spec-n-clarify Complete→Active revert in src/specs/clarify.ts (via src/core/task-lifecycle.ts when new un-implemented requirements appended)
 
 **Checkpoint**: Lifecycle unit tests pass; lifecycle enforcement integrates with workflow engine and MCP tools.
 
 ### Documentation (US6)
 
-- [ ] T084 [P] Update docs/workflow.md lifecycle section (Active→Complete→Locked, single implement guard) to match implemented behavior; TODO for clarify-revert nuances not yet shipped
+- [x] T084 [P] Update docs/workflow.md lifecycle section (Active→Complete→Locked, single implement guard) to match implemented behavior; TODO for clarify-revert nuances not yet shipped
 
 ---
 

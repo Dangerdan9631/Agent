@@ -5,6 +5,7 @@ import fse from 'fs-extra';
 import { applyInitialSpecFrontmatter } from './frontmatter.js';
 import { taskSpecDir } from './paths.js';
 import { CoreMutationError } from './errors.js';
+import { assertTaskSpecWritable } from './task-lifecycle.js';
 
 /**
  * Maps workflow step ids to toolkit template filenames under `src/templates/`.
@@ -70,6 +71,8 @@ export async function instantiateStepOutput(
       'Re-run toolkit build or update to restore template files.',
     );
   }
+
+  await assertTaskSpecWritable(projectRoot, taskSpecId, slug);
 
   const targetDir = taskSpecDir(projectRoot, taskSpecId, slug);
   await fse.ensureDir(targetDir);

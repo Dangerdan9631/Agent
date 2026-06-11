@@ -1,9 +1,12 @@
+import path from 'node:path';
 import fse from 'fs-extra';
 
 import { CoreMutationError } from './errors.js';
 import { parseFrontmatterDocument, serializeFrontmatterDocument } from './frontmatter.js';
 import { taskSpecFilePath } from './paths.js';
 import { atomicWriteText } from './atomic-write.js';
+
+const TASK_SPEC_DIR_PATTERN = /^(\d{3})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 /**
  * Task spec lifecycle status values stored in `spec.md` YAML frontmatter.
@@ -123,4 +126,75 @@ export async function setTaskSpecStatus(
   await atomicWriteText(filePath, nextDocument);
 
   return { previousStatus, status };
+}
+
+/**
+ * Identity of a task spec directory discovered under `specs/`.
+ */
+export interface TaskSpecDirectoryIdentity {
+  /** Zero-padded numeric task spec id. */
+  taskSpecId: string;
+  /** Kebab-case slug paired with the task spec id. */
+  slug: string;
+}
+
+/**
+ * Lists task spec directories under `specs/` sorted by numeric id.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @returns Parsed task spec identities.
+ */
+export async function listTaskSpecDirectoryIdentities(
+  projectRoot: string,
+): Promise<TaskSpecDirectoryIdentity[]> {
+  const specsDir = path.join(projectRoot, 'specs');
+  if (!(await fse.pathExists(specsDir))) {
+    return [];
+  }
+
+  const entries = await fse.readdir(specsDir, { withFileTypes: true });
+  const identities: TaskSpecDirectoryIdentity[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const match = TASK_SPEC_DIR_PATTERN.exec(entry.name);
+    if (match == null) {
+      continue;
+    }
+
+    identities.push({
+      taskSpecId: match[1]!,
+      slug: match[2]!,
+    });
+  }
+
+  return identities.sort((left, right) => left.taskSpecId.localeCompare(right.taskSpecId));
+}
+
+/**
+ * Transitions every Complete task spec in the project to Locked.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @returns Task spec identities that were locked.
+ */
+export async function lockCompleteTaskSpecs(
+  projectRoot: string,
+): Promise<TaskSpecDirectoryIdentity[]> {
+  const identities = await listTaskSpecDirectoryIdentities(projectRoot);
+  const locked: TaskSpecDirectoryIdentity[] = [];
+
+  for (const identity of identities) {
+    const status = await readTaskSpecStatus(projectRoot, identity.taskSpecId, identity.slug);
+    if (status !== 'Complete') {
+      continue;
+    }
+
+    await setTaskSpecStatus(projectRoot, identity.taskSpecId, identity.slug, 'Locked');
+    locked.push(identity);
+  }
+
+  return locked;
 }
