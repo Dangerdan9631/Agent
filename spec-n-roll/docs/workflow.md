@@ -1,6 +1,6 @@
 # Workflow
 
-spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 5 (US3)** shipped behavior for specify, triage, and clarify.
+spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 6 (US4)** shipped behavior for roll advancement, plan/tasks tier steps, analyze, and FR-009 living-spec-first tasks rules (plus Phase 5 specify/triage/clarify).
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -81,13 +81,86 @@ Step output templates (`spec.md`, `plan.md`, `tasks.md`) must be instantiated vi
 - Critical interview questions resolved
 - Non-empty spec body
 
+## /spec-n-roll
+
+**Command**: `/spec-n-roll [description]`
+
+**Orchestration**: `src/workflow/engine.ts`
+
+Zero-knowledge meta-command that detects intent and advances the next **tier** step automatically.
+
+### Intent detection
+
+| Input | Behavior |
+| ----- | -------- |
+| Description argument | Route to `/spec-n-specify` with that description |
+| No description, zero Active specs, nothing resumable | Prompt for a feature description |
+| No description, multiple Active specs | Numbered task-selection list (no silent default) |
+| No description, paused/incomplete non-Active specs | "New or continue?" prompt |
+| No description, exactly one Active spec | Advance that spec |
+
+### Advancement
+
+1. Read `workflow-state.json` via core (`workflow_state_read` / `workflow_state_write`)
+2. Resolve next step from variant step list (`papercut`: specify → implement; `quick`: specify → tasks → implement; `full`: specify → plan → tasks → implement)
+3. Skip on-demand `clarify` and `analyze` unless explicitly invoked
+4. When state is missing, fall back to tier-aware artifact detection (`src/workflow/artifacts.ts`)
+5. When parseable state conflicts with artifacts, **state wins** after a single confirmation prompt
+6. When partial artifacts exist for the next step (per `src/workflow/step-manifest.ts`), present one three-choice Ink prompt (`src/cli/ink/partial-recovery-prompt.tsx`): **restart** (overwrite partials), **cancel** (leave artifacts, `status: paused`), **force-clean** (delete partials then restart)
+
+Agent skill: `.agents/skills/spec-n-roll/SKILL.md` (generated at `init`).
+
+## /spec-n-plan
+
+**Command**: `/spec-n-plan`
+
+**Orchestration**: `src/specs/plan.ts`
+
+Full-tier step only (omitted on papercut/quick).
+
+1. Instantiate `plan.md` via MCP `step_output_instantiate` **before** prose edits
+2. Fill sections including **Living Spec Targets** (FR-008)
+3. Write `workflow-state.json` with `lastCompletedStepId: plan`
+
+Agent skill: `.agents/skills/spec-n-plan/SKILL.md`
+
+## /spec-n-tasks
+
+**Command**: `/spec-n-tasks`
+
+**Orchestration**: `src/specs/tasks.ts`
+
+Quick and full tiers (omitted on papercut).
+
+1. Instantiate `tasks.md` via MCP `step_output_instantiate` **before** prose edits
+2. **FR-009**: keep "Living Specification Updates" as the first implementation phase before test/code tasks (enforced in template and handler)
+3. Write `workflow-state.json` with `lastCompletedStepId: tasks`
+
+Agent skill: `.agents/skills/spec-n-tasks/SKILL.md`
+
+## /spec-n-analyze
+
+**Command**: `/spec-n-analyze`
+
+**Orchestration**: `src/specs/quality.ts` → `runCrossArtifactAnalysis`
+
+On-demand step (not in default tier advancement). Produces a **non-destructive** report of gaps, placeholder failures, FR-009 ordering issues, and state/artifact mismatches across `spec.md`, `plan.md`, `tasks.md`, and optionally `living-specs/`.
+
+Agent skill: `.agents/skills/spec-n-analyze/SKILL.md`
+
+## FR-009 living-spec-first tasks
+
+The toolkit `tasks.md` template (`src/templates/tasks.md`) and `/spec-n-tasks` handler require:
+
+- **Phase 1: Living Specification Updates** before any test or production code tasks
+- Living-spec targets documented in `plan.md` (Living Spec Targets section) for full tier
+
+Living spec file edits remain agent-managed under `living-specs/` (outside MCP/CLI).
+
 ## TODO: Not yet implemented
 
 | Area | Phase |
 | ---- | ----- |
-| `/spec-n-roll` meta-command advancement | US4 |
-| `/spec-n-plan`, `/spec-n-tasks` step handlers | US4 |
-| `/spec-n-analyze` cross-artifact report | US4 |
-| `/spec-n-implement` and TDD entry | US5–US7 |
+| `/spec-n-implement` TDD entry and living-spec automation | US5–US7 |
 | Active → Complete → Locked lifecycle enforcement in engine | US6 |
-| Multi-spec numbered-list task selection prompts | US4 |
+| Extension step replacement and custom workflow hooks | US8 |

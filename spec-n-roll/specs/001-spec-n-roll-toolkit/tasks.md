@@ -181,26 +181,26 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 4
 
-- [ ] T066 [P] [US4] Write failing integration test for /spec-n-roll advancement in tests/integration/roll.test.ts (state read → next step executed; missing state → tier-aware artifact fallback; partial artifacts → three-choice prompt)
-- [ ] T067 [P] [US4] Write failing unit test for intent detection in tests/unit/roll-intent.test.ts (description arg→specify, zero Active→prompt, Active specs→numbered list, ambiguous→"new or continue?")
-- [ ] T068 [P] [US4] Write failing unit test for FR-009 tasks-step template rules in tests/unit/tasks-template.test.ts (src/templates/tasks.md mandates living-spec update as first implementation task group; plan.md template includes living-spec targets section)
+- [x] T066 [P] [US4] Write failing integration test for /spec-n-roll advancement in tests/integration/roll.test.ts (state read → next step executed; missing state → tier-aware artifact fallback; partial artifacts → three-choice prompt)
+- [x] T067 [P] [US4] Write failing unit test for intent detection in tests/unit/roll-intent.test.ts (description arg→specify, zero Active→prompt, Active specs→numbered list, ambiguous→"new or continue?")
+- [x] T068 [P] [US4] Write failing unit test for FR-009 tasks-step template rules in tests/unit/tasks-template.test.ts (src/templates/tasks.md mandates living-spec update as first implementation task group; plan.md template includes living-spec targets section)
 
 ### Implementation for User Story 4
 
-- [ ] T069 [US4] Implement workflow engine state-based next-step resolver in src/workflow/engine.ts (reads workflowVariantId, lastCompletedStepId → returns next step ID per variant steps array; skip on-demand clarify/analyze)
-- [ ] T070 [US4] Implement /spec-n-roll intent detection in src/workflow/engine.ts (description arg→specify; no description + zero Active→prompt for description; Active specs→numbered task list; ambiguous→"new or continue?")
-- [ ] T071 [US4] Implement partial artifact detection in src/workflow/engine.ts using src/workflow/step-manifest.ts (any expected file exists + step not complete in state → partial)
-- [ ] T072 [US4] Implement restart/cancel/force-clean three-choice Ink prompt in src/cli/ink/partial-recovery-prompt.tsx (one prompt covers all partial files for the step; paused status via core)
-- [ ] T073 [P] [US4] Implement state/artifact conflict detection and single confirmation prompt in src/workflow/engine.ts (state wins when parseable; warn + confirm before proceeding)
-- [ ] T074 [P] [US4] Implement /spec-n-analyze step handler producing non-destructive cross-artifact report in src/specs/quality.ts (gaps, contradictions, checklist failures across spec, plan, tasks, living-specs)
-- [ ] T075 [US4] Implement /spec-n-plan and /spec-n-tasks step handlers in src/specs/plan.ts and src/specs/tasks.ts (instantiate plan.md/tasks.md via core before agent prose edits; plan.md documents living-spec targets; tasks.md first implementation phase lists living-spec updates before test/code tasks per FR-009; tier-skipped steps omitted)
-- [ ] T076 [US4] Generate /spec-n-roll, /spec-n-plan, /spec-n-tasks, /spec-n-analyze, /spec-n-implement skill files for all configured agents in src/agents/generators/ (`/spec-n-tasks` skill MUST require living-spec updates as first task(s) per FR-009; reference MCP instantiate + prose edit workflow)
+- [x] T069 [US4] Implement workflow engine state-based next-step resolver in src/workflow/engine.ts (reads workflowVariantId, lastCompletedStepId → returns next step ID per variant steps array; skip on-demand clarify/analyze)
+- [x] T070 [US4] Implement /spec-n-roll intent detection in src/workflow/engine.ts (description arg→specify; no description + zero Active→prompt for description; Active specs→numbered task list; ambiguous→"new or continue?")
+- [x] T071 [US4] Implement partial artifact detection in src/workflow/engine.ts using src/workflow/step-manifest.ts (any expected file exists + step not complete in state → partial)
+- [x] T072 [US4] Implement restart/cancel/force-clean three-choice Ink prompt in src/cli/ink/partial-recovery-prompt.tsx (one prompt covers all partial files for the step; paused status via core)
+- [x] T073 [P] [US4] Implement state/artifact conflict detection and single confirmation prompt in src/workflow/engine.ts (state wins when parseable; warn + confirm before proceeding)
+- [x] T074 [P] [US4] Implement /spec-n-analyze step handler producing non-destructive cross-artifact report in src/specs/quality.ts (gaps, contradictions, checklist failures across spec, plan, tasks, living-specs)
+- [x] T075 [US4] Implement /spec-n-plan and /spec-n-tasks step handlers in src/specs/plan.ts and src/specs/tasks.ts (instantiate plan.md/tasks.md via core before agent prose edits; plan.md documents living-spec targets; tasks.md first implementation phase lists living-spec updates before test/code tasks per FR-009; tier-skipped steps omitted)
+- [x] T076 [US4] Generate /spec-n-roll, /spec-n-plan, /spec-n-tasks, /spec-n-analyze, /spec-n-implement skill files for all configured agents in src/agents/generators/ (`/spec-n-tasks` skill MUST require living-spec updates as first task(s) per FR-009; reference MCP instantiate + prose edit workflow)
 
 **Checkpoint**: /spec-n-roll integration test passes; FR-009 tasks-template test (T068) passes; advancement, partial artifact recovery, and multi-spec selection all work.
 
 ### Documentation (US4)
 
-- [ ] T077 [P] Update docs/workflow.md roll/plan/tasks/analyze sections to match implemented advancement, partial recovery, tier steps, and FR-009 living-spec-first tasks rules; TODO for unimplemented edge cases
+- [x] T077 [P] Update docs/workflow.md roll/plan/tasks/analyze sections to match implemented advancement, partial recovery, tier steps, and FR-009 living-spec-first tasks rules; TODO for unimplemented edge cases
 
 ---
 

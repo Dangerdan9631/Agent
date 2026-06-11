@@ -3,7 +3,11 @@ import fse from 'fs-extra';
 
 import { workflowConfigSchema, type WorkflowConfig } from '../config/schema.js';
 import type { WorkflowState } from './state.js';
-import { getExpectedOutputsForVariant, getVariantStepIds } from './step-manifest.js';
+import {
+  getExpectedOutputsForVariant,
+  getStepOutputs,
+  getVariantStepIds,
+} from './step-manifest.js';
 
 /**
  * Relative path to the workflow configuration file from the project root.
@@ -96,6 +100,65 @@ function resolveVariantSteps(
 ): string[] {
   const configured = workflowConfig?.workflows.find((w) => w.id === workflowVariantId)?.steps;
   return getVariantStepIds(workflowVariantId, configured);
+}
+
+/**
+ * Returns true when every expected output path for a step exists on disk.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecDirPath - Absolute path to the task spec directory.
+ * @param stepId - Workflow step id to evaluate.
+ * @param variantId - Workflow variant id for tier-specific outputs.
+ * @returns True when all manifest outputs for the step are present.
+ */
+export async function stepOutputsExist(
+  projectRoot: string,
+  taskSpecDirPath: string,
+  stepId: string,
+  variantId: string,
+): Promise<boolean> {
+  const outputs = getStepOutputs(stepId, variantId);
+  if (outputs.length === 0) {
+    return false;
+  }
+
+  for (const outputPath of outputs) {
+    const { exists } = await resolveOutputExists(projectRoot, taskSpecDirPath, outputPath);
+    if (!exists) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Infers the last completed tier step from on-disk artifacts when workflow state is absent.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecDirPath - Absolute path to the task spec directory.
+ * @param variantId - Workflow variant id for tier-aware expectations.
+ * @param variantSteps - Optional configured steps for the variant.
+ * @returns Last step id whose outputs all exist, or null when none are complete.
+ */
+export async function inferLastCompletedStepFromArtifacts(
+  projectRoot: string,
+  taskSpecDirPath: string,
+  variantId: string,
+  variantSteps?: readonly string[],
+): Promise<string | null> {
+  const steps = getVariantStepIds(variantId, variantSteps);
+  let lastComplete: string | null = null;
+
+  for (const stepId of steps) {
+    const complete = await stepOutputsExist(projectRoot, taskSpecDirPath, stepId, variantId);
+    if (!complete) {
+      break;
+    }
+    lastComplete = stepId;
+  }
+
+  return lastComplete;
 }
 
 /**
