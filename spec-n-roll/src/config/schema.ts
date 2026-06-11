@@ -199,15 +199,6 @@ export const workflowConfigSchema = z
      */
     agents: z.array(agentConfigSchema).min(1),
     /**
-     * Script runtime variants enabled for this project; at least one must be selected during init.
-     */
-    scriptVariants: z
-      .array(z.enum(['powershell', 'shell']))
-      .min(1)
-      .refine((variants) => new Set(variants).size === variants.length, {
-        message: 'scriptVariants must not contain duplicates',
-      }),
-    /**
      * Non-empty registry of reusable step definitions composed by workflow variants.
      */
     steps: z.array(workflowStepSchema).min(1),

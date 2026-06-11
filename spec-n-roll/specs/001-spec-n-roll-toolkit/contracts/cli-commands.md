@@ -45,7 +45,6 @@ Initializes toolkit files in a project.
 **Interactive Ink prompts** (when invoked as bare `spec-n-roll` → Ink, or `init` without `--yes`):
 
 - Select one or more agents to configure.
-- Select script variants: PowerShell, shell, or both.
 - Confirm toolkit-owned and user-owned directory layout.
 - Confirm default workflow creation (papercut, quick, full tier variants — each with shared `specify` as step 1).
 
@@ -109,10 +108,6 @@ Adds a configured agent to an initialized project.
 
 - Existing agents' MCP config and rules remain unchanged.
 - Merge is idempotent — unrelated MCP servers preserved.
-
-### `spec-n-roll config script-variants`
-
-Changes enabled automation script variants.
 
 ## Version
 

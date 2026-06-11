@@ -31,7 +31,6 @@ spec-n-roll init .
 During the Ink prompts:
 
 - Select at least two agents.
-- Select both PowerShell and shell script variants.
 - Accept the default workflow.
 
 Expected outcomes:
@@ -257,6 +256,6 @@ Expected outcomes:
 - CLI documentation covers setup, update, modify/configuration, dispatcher exec model, MCP registration, interactive vs non-interactive modes, and `--global`.
 - MCP tool documentation mirrors CLI subcommands for deterministic mutations.
 - Multi-agent setup and switching are documented.
-- Platform script variant behavior is documented.
+- Platform script execution (`.sh`/`.ps1` auto-selection) is documented.
 - Extension documentation includes a quick-start, reference, and fully worked example.
 - Update and migration documentation explains ownership, backups, schema migration, and compatibility warnings.

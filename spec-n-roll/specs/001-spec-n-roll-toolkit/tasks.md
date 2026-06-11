@@ -13,7 +13,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 **Organization**: Tasks grouped by user story for independent implementation and testing.
 
-**Revised**: 2026-06-10 — inline phase documentation tasks (docs match implemented behavior + TODO for pending features); triple-binary build packaging (T009), FR-009 living-spec-first `tasks.md` template rules, SC-009 non-interactive `--yes` flags; plus dispatcher/MCP/core library, agent MCP config, and platform script variants.
+**Revised**: 2026-06-10 — inline phase documentation tasks (docs match implemented behavior + TODO for pending features); triple-binary build packaging (T009), FR-009 living-spec-first `tasks.md` template rules, SC-009 non-interactive `--yes` flags; plus dispatcher/MCP/core library, agent MCP config, and platform script auto-selection (no `scriptVariants` config or `config script-variants` command).
 
 ## Format: `[ID] [P?] [Story?] Description`
 
@@ -51,7 +51,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T011 Define Zod schemas for all config file shapes in src/config/schema.ts (WorkflowConfig, WorkflowVariant, WorkflowStep, AgentConfig, scriptVariants, schemaVersion)
+- [ ] T011 Define Zod schemas for all config file shapes in src/config/schema.ts (WorkflowConfig, WorkflowVariant, WorkflowStep, AgentConfig, schemaVersion)
 - [ ] T012 [P] Define Zod schemas for workflow-state.json in src/workflow/state.ts (taskSpecId, slug, workflowVariantId, lastCompletedStepId, currentStepId, status: active|paused|complete, updatedAt)
 - [ ] T013 [P] Define Zod schemas for project-metadata.json in src/config/schema.ts (schemaVersion, nextTaskSpecId, currentTaskSpecId, currentTaskSlug, implementationStartedAt, updatedAt)
 - [ ] T014 Implement file ownership classification in src/updates/ownership.ts (toolkit-owned: .spec-n-roll/ except config/, .agents/; user-owned: .spec-n-roll/config/, specs/, living-specs/)
@@ -84,7 +84,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ## Phase 3: User Story 1 — Multi-Agent Project Initialization (Priority: P1) 🎯 MVP
 
-**Goal**: Developer runs `spec-n-roll init`, selects agents and script variants, and all agent rules/skills/workflow commands plus project-local MCP configuration are ready in every selected agent environment.
+**Goal**: Developer runs `spec-n-roll init`, selects agents, and all agent rules/skills/workflow commands plus project-local MCP configuration are ready in every selected agent environment.
 
 **Independent Test**: Run `spec-n-roll init .` in a fixture directory, select cursor and claude-code, verify `.agents/skills/`, `.spec-n-roll/AGENTS.md`, per-agent pointer files, each agent's project-local MCP config pointing at `.spec-n-roll/cli/bin/spec-n-roll-mcp`, `workflow.config.json` with three tier variants, `project-metadata.json` with `nextTaskSpecId: 1`, and version-matched full CLI + MCP binaries installed locally.
 
@@ -105,10 +105,10 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 - [ ] T041 [US1] Implement canonical AGENTS.md writer in src/agents/generators/agents-md.ts (toolkit-owned .spec-n-roll/AGENTS.md with workflow command and MCP tool reference)
 - [ ] T042 [US1] Implement extension loader for bundled extensions in src/agents/extension-loader.ts (discovers .spec-n-roll/bundled-extensions/{id}/; validates manifest including agentSetup.mcpConfig)
 - [ ] T043 [US1] Implement MCP config format adapters and idempotent merge in src/agents/mcp-config.ts (read/upsert/write per contracts/agent-mcp-config.md; bundled adapters for cursor, claude-code, copilot, codex)
-- [ ] T044 [US1] Implement Ink multi-select prompts for agent and script variant selection in src/cli/ink/init-prompts.tsx (PowerShell, shell, or both; skipped when `--yes` supplies flags)
-- [ ] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; scriptVariants; bundled agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
+- [ ] T044 [US1] Implement Ink multi-select prompts for agent selection in src/cli/ink/init-prompts.tsx (skipped when `--yes` supplies `--agents`)
+- [ ] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; bundled agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
 - [ ] T046 [US1] Install full CLI and MCP binaries to .spec-n-roll/cli/bin/ during init in src/cli/commands/init.ts (copy from T009 build outputs: spec-n-roll + spec-n-roll-mcp; .cmd wrappers on Windows; version-matched pair)
-- [ ] T047 [US1] Implement `spec-n-roll init [path] [--yes]` command orchestration in src/cli/commands/init.ts (Ink prompts or `--yes` with `--agents`/`--script-variants` → agent generators → MCP config merge → config files → bundled-extensions copy → script install; copies built binaries from T009)
+- [ ] T047 [US1] Implement `spec-n-roll init [path] [--yes]` command orchestration in src/cli/commands/init.ts (Ink prompts or `--yes` with `--agents` → agent generators → MCP config merge → config files → bundled-extensions copy → script install; copies built binaries from T009)
 
 **Checkpoint**: `spec-n-roll init .` with two agents produces all expected files, MCP configs reference local MCP binary, and T034–T036 pass.
 
@@ -120,26 +120,26 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ## Phase 4: User Story 2 — Platform-Appropriate Script Execution (Priority: P1)
 
-**Goal**: Automation scripts run in the correct platform variant (`.ps1` on Windows, `.sh` on macOS/Linux) based on project configuration, with clear errors when the required runtime is missing.
+**Goal**: Automation scripts run in the correct platform form (`.ps1` on Windows, `.sh` on macOS/Linux) via runtime platform detection, with clear errors when the required shell runtime is missing.
 
-**Independent Test**: Initialize a project with both script variants enabled; on Windows a workflow step runs the `.ps1` variant; on macOS the same project runs the `.sh` variant without configuration changes.
+**Independent Test**: After `init`, on Windows a workflow step runs the `.ps1` script; on macOS the same project runs the `.sh` script without configuration changes.
 
 ### Tests for User Story 2
 
 - [ ] T049 [P] [US2] Write failing integration test for platform script selection in tests/integration/platform-scripts.test.ts (Windows fixture → .ps1; Unix fixture → .sh; missing runtime → clear error with remediation)
-- [ ] T050 [P] [US2] Write failing unit test for script variant resolver in tests/unit/script-variants.test.ts (both configured → platform auto-select; explicit override → chosen variant; single variant → use configured only)
+- [ ] T050 [P] [US2] Write failing unit test for platform script selection in tests/unit/platform-scripts.test.ts (Windows → `.ps1`; Unix → `.sh`; missing runtime → clear error with remediation)
 
 ### Implementation for User Story 2
 
-- [ ] T051 [US2] Implement script variant resolver in src/config/script-variants.ts (read workflow.config.json scriptVariants; detect platform; support explicit override; fail with remediation when runtime missing)
+- [ ] T051 [US2] Implement platform script selector in src/workflow/platform-scripts.ts (detect platform; select `.ps1` or `.sh` from `.spec-n-roll/scripts/`; fail with remediation when runtime missing)
 - [ ] T052 [P] [US2] Bundle and install paired .sh and .ps1 automation scripts to .spec-n-roll/scripts/ during init in src/cli/commands/init.ts (one logical operation per script pair)
-- [ ] T053 [US2] Integrate script variant execution into workflow engine in src/workflow/engine.ts (invoke correct .spec-n-roll/scripts/ variant; never spawn wrong platform script)
+- [ ] T053 [US2] Integrate platform script execution into workflow engine in src/workflow/engine.ts (invoke correct `.spec-n-roll/scripts/` script for current platform; never spawn wrong platform script)
 
 **Checkpoint**: Platform script integration tests pass on Windows and Unix fixtures; missing-runtime errors are actionable.
 
 ### Documentation (US2)
 
-- [ ] T054 [P] Update docs/platform-scripts.md to match implemented script variant selection and .spec-n-roll/scripts/ install behavior; TODO for unimplemented override and missing-runtime remediation details
+- [ ] T054 [P] Update docs/platform-scripts.md to match implemented platform auto-selection and `.spec-n-roll/scripts/` install behavior; TODO for unimplemented missing-runtime remediation details
 
 ---
 
@@ -303,15 +303,14 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 - [ ] T106 [US9] Refresh spec-n-roll MCP server paths in all configured agents during update in src/agents/mcp-config.ts (invoke from src/cli/commands/update.ts per contracts/agent-mcp-config.md)
 - [ ] T107 [US9] Implement `spec-n-roll config add-agent` command in src/cli/commands/config-add-agent.ts (Ink agent select or `--yes` with `--agent` flags → generators → MCP config merge for new agent only; preserve existing agents)
 - [ ] T108 [P] [US9] Implement `spec-n-roll version` combined report in src/cli/commands/version.ts (dispatcher version when applicable, executed binary version, local/global target, local path, latest available when discoverable)
-- [ ] T109 [P] [US9] Implement `spec-n-roll config script-variants` command in src/cli/commands/config-script-variants.ts (change enabled .sh/.ps1 variants in workflow.config.json)
 - [ ] T110 [US9] Complete MCP/CLI parity contract tests in tests/contract/mcp-cli-parity.test.ts (all tools in contracts/mcp-tools.md have matching CLI subcommand with identical outcomes — SC-012)
-- [ ] T111 [US9] Implement shared `--yes` non-interactive mode and CLI args for management commands in src/cli/commands/init.ts, src/cli/commands/update.ts, and src/cli/commands/config-add-agent.ts (`--yes` skips Ink; `init` accepts `--agents` and `--script-variants`; `config add-agent` accepts `--agent`; per contracts/cli-commands.md — SC-009)
+- [ ] T111 [US9] Implement shared `--yes` non-interactive mode and CLI args for management commands in src/cli/commands/init.ts, src/cli/commands/update.ts, and src/cli/commands/config-add-agent.ts (`--yes` skips Ink; `init` accepts `--agents`; `config add-agent` accepts `--agent`; per contracts/cli-commands.md — SC-009)
 
 **Checkpoint**: Update, dispatcher, add-agent, non-interactive (SC-009), and MCP/CLI parity tests pass.
 
 ### Documentation (US9)
 
-- [ ] T112 [P] Update docs/cli.md management-command sections (update, config add-agent, config script-variants, version, --global, --yes) to match implemented behavior; TODO for flags not yet wired
+- [ ] T112 [P] Update docs/cli.md management-command sections (update, config add-agent, version, --global, --yes) to match implemented behavior; TODO for flags not yet wired
 - [ ] T113 [P] Update docs/updates-and-migrations.md update-flow section to match implemented toolkit-owned overwrite and MCP path refresh; TODO for dry-run and migration details pending US10
 
 ---
@@ -391,7 +390,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 - **Setup (Phase 1)**: No dependencies — start immediately; T009 triple-binary build blocks US1 binary install (T046)
 - **Foundational (Phase 2)**: Depends on Setup (T009) — **BLOCKS all user stories**
 - **US1 (Phase 3)**: Depends on Foundational implementation tasks (T011–T031) and T009 build outputs
-- **US2 (Phase 4)**: Depends on US1 (init installs scripts and scriptVariants config)
+- **US2 (Phase 4)**: Depends on US1 (init installs paired `.sh`/`.ps1` scripts to `.spec-n-roll/scripts/`)
 - **US3 (Phase 5)**: Depends on US1 (agent skills) and Foundational (core templates, lifecycle, workflow-state)
 - **US4 (Phase 6)**: Depends on US3 (specify step and workflow-state populated)
 - **US6 (Phase 7)**: Depends on US4 (workflow engine advancement triggers locking)

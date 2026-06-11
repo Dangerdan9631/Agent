@@ -10,7 +10,6 @@ describe('workflowConfigSchema', () => {
       schemaVersion: '1',
       toolkitVersion: '0.1.0',
       agents: [{ id: 'cursor', enabled: true, commandPrefix: 'spec-n-' }],
-      scriptVariants: ['shell'],
       steps: [
         {
           id: 'specify',
@@ -38,7 +37,6 @@ describe('workflowConfigSchema', () => {
         schemaVersion: '1',
         toolkitVersion: '0.1.0',
         agents: [{ id: 'cursor', enabled: true, commandPrefix: 'spec-n-' }],
-        scriptVariants: ['shell'],
         steps: [
           {
             id: 'Not_Valid',

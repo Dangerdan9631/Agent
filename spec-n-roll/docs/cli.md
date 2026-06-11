@@ -129,10 +129,9 @@ The sections below list planned CLI and MCP behavior from `specs/001-spec-n-roll
 
 | Command | Planned flags / behavior | Phase |
 |---------|-------------------------|-------|
-| `spec-n-roll init [path]` | Ink agent/script selection; `--yes`, `--agents`, `--script-variants`; installs project-local binaries and agent MCP config | US1 (Phase 3) |
+| `spec-n-roll init [path]` | Ink agent selection; `--yes`, `--agents`; installs project-local binaries, platform script pairs, and agent MCP config | US1 (Phase 3) |
 | `spec-n-roll update` | `--dry-run`, `--yes`, `--confirm-migration`; toolkit-owned overwrite, `.bak` backups, MCP path refresh | US9 (Phase 10) |
 | `spec-n-roll config add-agent` | `--yes`, `--agent`; merge MCP config for new agent only | US9 (Phase 10) |
-| `spec-n-roll config script-variants` | Change enabled `.sh` / `.ps1` variants in `workflow.config.json` | US9 (Phase 10) |
 | `spec-n-roll version` | Combined dispatcher + executed binary + local/global target report | US9 (Phase 10) |
 | Bare `spec-n-roll` (no subcommand) | Ink interactive menu | US1+ |
 

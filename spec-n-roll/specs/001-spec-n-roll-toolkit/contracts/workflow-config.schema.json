@@ -3,7 +3,7 @@
   "$id": "https://spec-n-roll.local/contracts/workflow-config.schema.json",
   "title": "Spec-n-Roll Workflow Configuration",
   "type": "object",
-  "required": ["schemaVersion", "toolkitVersion", "agents", "scriptVariants", "steps", "workflows", "defaultWorkflowId"],
+  "required": ["schemaVersion", "toolkitVersion", "agents", "steps", "workflows", "defaultWorkflowId"],
   "properties": {
     "schemaVersion": {
       "type": "string",
@@ -34,14 +34,6 @@
           }
         },
         "additionalProperties": false
-      }
-    },
-    "scriptVariants": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "enum": ["powershell", "shell"]
       }
     },
     "steps": {

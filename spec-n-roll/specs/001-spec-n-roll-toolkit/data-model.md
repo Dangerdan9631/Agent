@@ -143,7 +143,6 @@ Represents versioned project configuration.
 - `workflows`: Named workflow tier variants (each lists shared `specify` as step 1 + tail)
 - `steps`: Reusable step definitions
 - `agents`: Agent configurations
-- `scriptVariants`: Enabled automation variants, e.g. `powershell`, `shell`
 - `extensions`: Registered extension references
 - `defaultWorkflowId`: Tier pre-selected in manual/override picker only
 
