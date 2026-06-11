@@ -14,6 +14,7 @@ import { MCP_BINARY_RELATIVE_PATH } from '../../agents/mcp-config.js';
 import type { AgentConfig, WorkflowConfig } from '../../config/schema.js';
 import { atomicWriteJson } from '../../core/atomic-write.js';
 import { writeProjectMetadata } from '../../core/project-metadata.js';
+import { installBundledPlatformScripts } from '../../workflow/platform-scripts.js';
 import { BUILT_IN_STEP_OUTPUTS } from '../../workflow/step-manifest.js';
 import { promptForAgentSelection } from '../ink/init-prompts.js';
 
@@ -324,6 +325,7 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
 
   await ensureUserOwnedDirectories(projectRoot);
   await installProjectBinaries(projectRoot, toolkitRoot);
+  await installBundledPlatformScripts(projectRoot, toolkitRoot);
   await writeCanonicalAgentsMd(projectRoot);
   await installBundledExtensions(projectRoot, selectedAgents);
 

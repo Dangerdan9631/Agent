@@ -15,3 +15,7 @@ for (const wrapperName of ['spec-n-roll.cmd', 'spec-n-roll-mcp.cmd']) {
 cpSync(path.join(rootDir, 'src', 'templates'), path.join(rootDir, 'dist', 'templates'), {
   recursive: true,
 });
+
+cpSync(path.join(rootDir, 'src', 'scripts'), path.join(rootDir, 'dist', 'scripts'), {
+  recursive: true,
+});

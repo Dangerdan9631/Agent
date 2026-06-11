@@ -126,20 +126,20 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 2
 
-- [ ] T049 [P] [US2] Write failing integration test for platform script selection in tests/integration/platform-scripts.test.ts (Windows fixture → .ps1; Unix fixture → .sh; missing runtime → clear error with remediation)
-- [ ] T050 [P] [US2] Write failing unit test for platform script selection in tests/unit/platform-scripts.test.ts (Windows → `.ps1`; Unix → `.sh`; missing runtime → clear error with remediation)
+- [x] T049 [P] [US2] Write failing integration test for platform script selection in tests/integration/platform-scripts.test.ts (Windows fixture → .ps1; Unix fixture → .sh; missing runtime → clear error with remediation)
+- [x] T050 [P] [US2] Write failing unit test for platform script selection in tests/unit/platform-scripts.test.ts (Windows → `.ps1`; Unix → `.sh`; missing runtime → clear error with remediation)
 
 ### Implementation for User Story 2
 
-- [ ] T051 [US2] Implement platform script selector in src/workflow/platform-scripts.ts (detect platform; select `.ps1` or `.sh` from `.spec-n-roll/scripts/`; fail with remediation when runtime missing)
-- [ ] T052 [P] [US2] Bundle and install paired .sh and .ps1 automation scripts to .spec-n-roll/scripts/ during init in src/cli/commands/init.ts (one logical operation per script pair)
-- [ ] T053 [US2] Integrate platform script execution into workflow engine in src/workflow/engine.ts (invoke correct `.spec-n-roll/scripts/` script for current platform; never spawn wrong platform script)
+- [x] T051 [US2] Implement platform script selector in src/workflow/platform-scripts.ts (detect platform; select `.ps1` or `.sh` from `.spec-n-roll/scripts/`; fail with remediation when runtime missing)
+- [x] T052 [P] [US2] Bundle and install paired .sh and .ps1 automation scripts to .spec-n-roll/scripts/ during init in src/cli/commands/init.ts (one logical operation per script pair)
+- [x] T053 [US2] Integrate platform script execution into workflow engine in src/workflow/engine.ts (invoke correct `.spec-n-roll/scripts/` script for current platform; never spawn wrong platform script)
 
 **Checkpoint**: Platform script integration tests pass on Windows and Unix fixtures; missing-runtime errors are actionable.
 
 ### Documentation (US2)
 
-- [ ] T054 [P] Update docs/platform-scripts.md to match implemented platform auto-selection and `.spec-n-roll/scripts/` install behavior; TODO for unimplemented missing-runtime remediation details
+- [x] T054 [P] Update docs/platform-scripts.md to match implemented platform auto-selection and `.spec-n-roll/scripts/` install behavior; TODO for unimplemented missing-runtime remediation details
 
 ---
 
