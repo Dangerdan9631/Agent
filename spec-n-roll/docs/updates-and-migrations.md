@@ -29,12 +29,29 @@ Repository root `docs/` (toolkit-authored documentation) is never copied into us
 | `living-specs/auth.feature`                 | user                  |
 | `.agents/skills/speckit-specify/SKILL.md`   | toolkit               |
 
+## Update flow (implemented)
+
+Implementation: `src/cli/commands/update.ts`, backup helper `src/updates/backup.ts`, MCP refresh `src/agents/mcp-config.ts`.
+
+```bash
+spec-n-roll update --yes
+spec-n-roll update --dry-run
+```
+
+When `update` runs (interactively or with `--yes`):
+
+1. Read configured agents from `.spec-n-roll/config/workflow.config.json`.
+2. Plan toolkit-owned overwrites: binaries, platform scripts, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, bundled extension manifests, and `compatibility.json`.
+3. For each toolkit-owned file that exists and differs from the new toolkit content, write a `.bak` sibling before overwrite.
+4. Apply overwrites. User-owned paths (`.spec-n-roll/config/`, `specs/`, `living-specs/`) remain byte-identical.
+5. Refresh the spec-n-roll MCP server entry in every configured agent's MCP config targets (stdio path `.spec-n-roll/cli/bin/spec-n-roll-mcp`).
+
+`--dry-run` reports the same plan without writing files or refreshing MCP config.
+
 ## TODO — not yet implemented
 
 The following update and migration behaviors are planned for later phases:
 
-- **`spec-n-roll update` command** — toolkit-owned overwrite flow, dry-run summary, and version reporting (US9)
-- **`.bak` backup integration in update** — `src/updates/backup.ts` exists; update command does not call it yet
 - **Config schema migration** — tolerant reader and incremental migrations at update time (US10)
-- **Extension compatibility warnings** — advisory checks from `.spec-n-roll/compatibility.json` (US10)
-- **MCP config path refresh** — refresh spec-n-roll MCP binary paths in agent MCP config on update (US9)
+- **Extension compatibility warnings** — advisory checks from `.spec-n-roll/compatibility.json` surfaced in update summary (US10)
+- **Breaking migration confirmation** — interactive prompt unless `--yes` with `--confirm-migration` (US10)

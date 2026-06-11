@@ -291,27 +291,27 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 9
 
-- [ ] T100 [P] [US9] Write failing integration test for update command in tests/integration/update.test.ts (toolkit-owned files overwritten; user-owned preserved; .bak for modified toolkit-owned; MCP config paths refreshed)
-- [ ] T101 [P] [US9] Write failing integration test for dispatcher local exec in tests/integration/dispatcher.test.ts (global dispatcher exec's local binary without in-process load; --global bypass; -v forwarded to full CLI combined report)
-- [ ] T102 [P] [US9] Write failing integration test for config add-agent MCP merge in tests/integration/config-add-agent.test.ts (new agent only; existing agents unchanged; idempotent)
-- [ ] T103 [P] [US9] Write failing integration test for non-interactive management commands in tests/integration/cli-non-interactive.test.ts (`init --yes`, `update --yes`, `config add-agent --yes --agent <id>` complete with zero Ink prompts and no manual file edits — SC-009)
+- [x] T100 [P] [US9] Write failing integration test for update command in tests/integration/update.test.ts (toolkit-owned files overwritten; user-owned preserved; .bak for modified toolkit-owned; MCP config paths refreshed)
+- [x] T101 [P] [US9] Write failing integration test for dispatcher local exec in tests/integration/dispatcher.test.ts (global dispatcher exec's local binary without in-process load; --global bypass; -v forwarded to full CLI combined report)
+- [x] T102 [P] [US9] Write failing integration test for config add-agent MCP merge in tests/integration/config-add-agent.test.ts (new agent only; existing agents unchanged; idempotent)
+- [x] T103 [P] [US9] Write failing integration test for non-interactive management commands in tests/integration/cli-non-interactive.test.ts (`init --yes`, `update --yes`, `config add-agent --yes --agent <id>` complete with zero Ink prompts and no manual file edits — SC-009)
 
 ### Implementation for User Story 9
 
-- [ ] T104 [US9] Implement `spec-n-roll update [--dry-run] [--yes]` command in src/cli/commands/update.ts (Ink UI when interactive; skip prompts with `--yes`; versions, toolkit-owned diff, .bak conflicts, migrations, extension warnings, MCP refresh summary; require confirm for breaking migrations unless `--yes` with explicit `--confirm-migration`)
-- [ ] T105 [US9] Implement toolkit-owned file update logic in src/cli/commands/update.ts (overwrite toolkit-owned including CLI + MCP binaries; call src/updates/backup.ts for locally modified files)
-- [ ] T106 [US9] Refresh spec-n-roll MCP server paths in all configured agents during update in src/agents/mcp-config.ts (invoke from src/cli/commands/update.ts per contracts/agent-mcp-config.md)
-- [ ] T107 [US9] Implement `spec-n-roll config add-agent` command in src/cli/commands/config-add-agent.ts (Ink agent select or `--yes` with `--agent` flags → generators → MCP config merge for new agent only; preserve existing agents)
-- [ ] T108 [P] [US9] Implement `spec-n-roll version` combined report in src/cli/commands/version.ts (dispatcher version when applicable, executed binary version, local/global target, local path, latest available when discoverable)
-- [ ] T110 [US9] Complete MCP/CLI parity contract tests in tests/contract/mcp-cli-parity.test.ts (all tools in contracts/mcp-tools.md have matching CLI subcommand with identical outcomes — SC-012)
-- [ ] T111 [US9] Implement shared `--yes` non-interactive mode and CLI args for management commands in src/cli/commands/init.ts, src/cli/commands/update.ts, and src/cli/commands/config-add-agent.ts (`--yes` skips Ink; `init` accepts `--agents`; `config add-agent` accepts `--agent`; per contracts/cli-commands.md — SC-009)
+- [x] T104 [US9] Implement `spec-n-roll update [--dry-run] [--yes]` command in src/cli/commands/update.ts (Ink UI when interactive; skip prompts with `--yes`; versions, toolkit-owned diff, .bak conflicts, migrations, extension warnings, MCP refresh summary; require confirm for breaking migrations unless `--yes` with explicit `--confirm-migration`)
+- [x] T105 [US9] Implement toolkit-owned file update logic in src/cli/commands/update.ts (overwrite toolkit-owned including CLI + MCP binaries; call src/updates/backup.ts for locally modified files)
+- [x] T106 [US9] Refresh spec-n-roll MCP server paths in all configured agents during update in src/agents/mcp-config.ts (invoke from src/cli/commands/update.ts per contracts/agent-mcp-config.md)
+- [x] T107 [US9] Implement `spec-n-roll config add-agent` command in src/cli/commands/config-add-agent.ts (Ink agent select or `--yes` with `--agent` flags → generators → MCP config merge for new agent only; preserve existing agents)
+- [x] T108 [P] [US9] Implement `spec-n-roll version` combined report in src/cli/commands/version.ts (dispatcher version when applicable, executed binary version, local/global target, local path, latest available when discoverable)
+- [x] T110 [US9] Complete MCP/CLI parity contract tests in tests/contract/mcp-cli-parity.test.ts (all tools in contracts/mcp-tools.md have matching CLI subcommand with identical outcomes — SC-012)
+- [x] T111 [US9] Implement shared `--yes` non-interactive mode and CLI args for management commands in src/cli/commands/init.ts, src/cli/commands/update.ts, and src/cli/commands/config-add-agent.ts (`--yes` skips Ink; `init` accepts `--agents`; `config add-agent` accepts `--agent`; per contracts/cli-commands.md — SC-009)
 
 **Checkpoint**: Update, dispatcher, add-agent, non-interactive (SC-009), and MCP/CLI parity tests pass.
 
 ### Documentation (US9)
 
-- [ ] T112 [P] Update docs/cli.md management-command sections (update, config add-agent, version, --global, --yes) to match implemented behavior; TODO for flags not yet wired
-- [ ] T113 [P] Update docs/updates-and-migrations.md update-flow section to match implemented toolkit-owned overwrite and MCP path refresh; TODO for dry-run and migration details pending US10
+- [x] T112 [P] Update docs/cli.md management-command sections (update, config add-agent, version, --global, --yes) to match implemented behavior; TODO for flags not yet wired
+- [x] T113 [P] Update docs/updates-and-migrations.md update-flow section to match implemented toolkit-owned overwrite and MCP path refresh; TODO for dry-run and migration details pending US10
 
 ---
 

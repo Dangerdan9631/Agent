@@ -1,4 +1,4 @@
-import { chmodSync, copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fse from 'fs-extra';
@@ -15,6 +15,7 @@ import { MCP_BINARY_RELATIVE_PATH } from '../../agents/mcp-config.js';
 import type { AgentConfig, WorkflowConfig } from '../../config/schema.js';
 import { atomicWriteJson } from '../../core/atomic-write.js';
 import { writeProjectMetadata } from '../../core/project-metadata.js';
+import { installProjectBinaries } from '../local-binaries.js';
 import { installBundledPlatformScripts } from '../../workflow/platform-scripts.js';
 import { BUILT_IN_STEP_OUTPUTS } from '../../workflow/step-manifest.js';
 import { promptForAgentSelection } from '../ink/init-prompts.js';
@@ -192,51 +193,7 @@ function readToolkitVersion(toolkitRoot: string): string {
   return pkg.version;
 }
 
-/**
- * Installs version-matched full CLI and MCP binaries into the project.
- *
- * @param projectRoot - Absolute path to the project root.
- * @param toolkitRoot - Absolute path to the toolkit package root containing `dist/`.
- */
-export async function installProjectBinaries(
-  projectRoot: string,
-  toolkitRoot: string,
-): Promise<void> {
-  const binDir = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin');
-  await fse.ensureDir(binDir);
-
-  const cliSource = path.join(toolkitRoot, 'dist', 'cli', 'index.js');
-  const mcpSource = path.join(toolkitRoot, 'dist', 'mcp', 'server.js');
-  const cliTarget = path.join(binDir, 'spec-n-roll');
-  const mcpTarget = path.join(binDir, 'spec-n-roll-mcp');
-
-  if (!existsSync(cliSource) || !existsSync(mcpSource)) {
-    throw new Error(
-      'Toolkit build outputs are missing. Run `npm run build` in the spec-n-roll package before init.',
-    );
-  }
-
-  copyFileSync(cliSource, cliTarget);
-  copyFileSync(mcpSource, mcpTarget);
-
-  if (process.platform !== 'win32') {
-    chmodSync(cliTarget, 0o755);
-    chmodSync(mcpTarget, 0o755);
-  }
-
-  if (process.platform === 'win32') {
-    writeFileSync(
-      path.join(binDir, 'spec-n-roll.cmd'),
-      `@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll" %*\r\n`,
-      'utf8',
-    );
-    writeFileSync(
-      path.join(binDir, 'spec-n-roll-mcp.cmd'),
-      `@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll-mcp" %*\r\n`,
-      'utf8',
-    );
-  }
-}
+export { installProjectBinaries } from '../local-binaries.js';
 
 /**
  * Writes initial user-owned configuration files for a new project.

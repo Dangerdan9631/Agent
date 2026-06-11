@@ -59,7 +59,7 @@ When you run the global `spec-n-roll` binary (dispatcher):
 | `--global` bypass                            | Implemented                                                         |
 | Windows `.cmd` preference for local CLI      | Implemented                                                         |
 | Clear error when local CLI is not executable | Implemented                                                         |
-| Forward `-v` / `--version` unchanged         | Registered on full CLI; combined version report not implemented yet |
+| Forward `-v` / `--version` unchanged         | Implemented — combined version report via full CLI                    |
 
 Direct full CLI access for development:
 
@@ -100,16 +100,71 @@ spec-n-roll init . --yes --agents cursor,claude-code
 
 > **TODO:** Ink layout confirmation prompts; platform script install (US2).
 
-## Management commands (stubs)
+## `update` (implemented)
 
-| Command            | Status        | Registered flags |
-| ------------------ | ------------- | ---------------- |
-| `init [path]`      | Implemented   | `--yes`, `--agents` |
-| `update`           | Not implemented | `--dry-run`    |
-| `config add-agent` | Not implemented | —              |
-| `version`          | Not implemented | —              |
+Implementation: `src/cli/commands/update.ts`, MCP refresh in `src/agents/mcp-config.ts`.
 
-> **TODO:** Implement `update`, `config add-agent`, `version`, bare `spec-n-roll` Ink mode, and `--yes` on remaining management commands (US9).
+```bash
+spec-n-roll update
+spec-n-roll update --yes
+spec-n-roll update --dry-run
+```
+
+| Flag                   | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `--dry-run`            | Preview toolkit-owned files to overwrite and `.bak` plan |
+| `--yes`                | Non-interactive mode; skip Ink confirmation              |
+| `--confirm-migration`  | Apply breaking config migrations without prompting (US10 hook) |
+
+**Behavior:**
+
+- Overwrites toolkit-owned paths (`.spec-n-roll/` except `config/`, `.agents/`, binaries, scripts, skills, bundled extensions).
+- Preserves user-owned files byte-for-byte (`.spec-n-roll/config/`, `specs/`, `living-specs/`).
+- Writes `.bak` siblings for locally modified toolkit-owned files before overwrite (`src/updates/backup.ts`).
+- Refreshes spec-n-roll MCP server paths for all configured agents.
+
+> **TODO:** Config schema migration and extension compatibility warnings at update time (US10).
+
+## `config add-agent` (implemented)
+
+Implementation: `src/cli/commands/config-add-agent.ts`.
+
+```bash
+spec-n-roll config add-agent
+spec-n-roll config add-agent --yes --agent copilot
+```
+
+| Flag            | Description                                        |
+| --------------- | -------------------------------------------------- |
+| `--yes`         | Non-interactive mode; requires `--agent`           |
+| `--agent <id>`  | Bundled agent id: `cursor`, `claude-code`, `copilot`, `codex` |
+
+Adds rules, skills pointers, bundled extension manifest, and MCP config merge for the new agent only. Existing agents remain unchanged. Idempotent when the agent is already configured.
+
+## `version` (implemented)
+
+Implementation: `src/cli/commands/version.ts`.
+
+```bash
+spec-n-roll version
+spec-n-roll -v
+spec-n-roll --version
+```
+
+Prints combined report: toolkit version, invocation target (`local` / `global` / `direct`), dispatcher version when delegated, and local CLI path when running project-local.
+
+> **TODO:** Discover and report latest published toolkit version from registry.
+
+## Management commands summary
+
+| Command            | Status      | Flags                                      |
+| ------------------ | ----------- | ------------------------------------------ |
+| `init [path]`      | Implemented | `--yes`, `--agents`                        |
+| `update`           | Implemented | `--dry-run`, `--yes`, `--confirm-migration` |
+| `config add-agent` | Implemented | `--yes`, `--agent`                         |
+| `version`          | Implemented | — (also `-v` / `--version` on full CLI)    |
+
+> **TODO:** Bare `spec-n-roll` Ink mode (no subcommand).
 
 ## Core library subcommands (implemented)
 
@@ -169,18 +224,15 @@ Registered tools (stdio transport):
 
 MCP uses `process.cwd()` as the project root. Agent MCP configuration must point at `.spec-n-roll/cli/bin/spec-n-roll-mcp` — never the dispatcher or full CLI binary.
 
-> **TODO:** Full MCP/CLI parity coverage for all tools in contract tests (T110, US9). Phase 2 includes an initial parity contract test for workflow state write and step instantiate.
+MCP/CLI parity for all eight core tools is covered in `tests/contract/mcp-cli-parity.test.ts` (SC-012).
 
 ## TODO: Not yet implemented
 
 | Area                                                          | Phase          |
 | ------------------------------------------------------------- | -------------- |
-| `update` with `.bak`, migrations, MCP path refresh            | US9–US10       |
-| `config add-agent`, combined `version` report                 | US9 (Phase 10) |
+| Config schema migration and compatibility warnings on update  | US10           |
 | Bare `spec-n-roll` Ink interactive mode                       | US1+           |
-| `--yes` on `update` and `config add-agent` (SC-009)           | US9            |
-| Agent workflow slash commands (`/spec-n-specify`, etc.)       | US3+ (skills)  |
-| Platform script install during init                           | US2            |
+| Latest published toolkit version discovery in `version`       | US9 polish     |
 
 ## Related documentation
 

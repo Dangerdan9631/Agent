@@ -1,0 +1,104 @@
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
+const tempDirs: string[] = [];
+
+/**
+ * Creates a temporary project directory for non-interactive CLI tests.
+ *
+ * @param prefix - Prefix for the temp directory name.
+ * @returns Absolute path to the created directory.
+ */
+function createTempProject(prefix: string): string {
+  const dir = path.join(os.tmpdir(), `spec-n-roll-non-interactive-${prefix}-${Date.now()}`);
+  mkdirSync(dir, { recursive: true });
+  tempDirs.push(dir);
+  return dir;
+}
+
+afterEach(() => {
+  while (tempDirs.length > 0) {
+    const dir = tempDirs.pop();
+    if (dir != null) {
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup.
+      }
+    }
+  }
+});
+
+describe('SC-009 non-interactive management commands', () => {
+  const cliPath = path.resolve('dist/cli/index.js');
+
+  beforeAll(() => {
+    if (!existsSync(cliPath)) {
+      throw new Error('Build output missing. Run `npm run build` before integration tests.');
+    }
+  });
+
+  it(
+    'completes init, update, and config add-agent with --yes and zero Ink prompts',
+    async () => {
+    const inkModule = await import('../../src/cli/ink/init-prompts.js');
+    const addAgentInkModule = await import('../../src/cli/ink/add-agent-prompt.js');
+    const updateInkModule = await import('../../src/cli/ink/update-prompts.js');
+
+    const initPromptSpy = vi.spyOn(inkModule, 'promptForAgentSelection');
+    const addAgentPromptSpy = vi.spyOn(addAgentInkModule, 'promptForAgentToAdd');
+    const updatePromptSpy = vi.spyOn(updateInkModule, 'promptForUpdateConfirmation');
+
+    const projectRoot = createTempProject('sc009');
+
+    const initResult = spawnSync(
+      process.execPath,
+      [cliPath, 'init', projectRoot, '--yes', '--agents', 'cursor'],
+      { encoding: 'utf8' },
+    );
+    expect(initResult.status).toBe(0);
+    expect(initPromptSpy).not.toHaveBeenCalled();
+
+    const updateResult = spawnSync(process.execPath, [cliPath, 'update', '--yes'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    expect(updateResult.status).toBe(0);
+    expect(updatePromptSpy).not.toHaveBeenCalled();
+
+    const addAgentResult = spawnSync(
+      process.execPath,
+      [cliPath, 'config', 'add-agent', '--yes', '--agent', 'claude-code'],
+      { cwd: projectRoot,
+        encoding: 'utf8',
+      },
+    );
+    expect(addAgentResult.status).toBe(0);
+    expect(addAgentPromptSpy).not.toHaveBeenCalled();
+
+    expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll'))).toBe(
+      true,
+    );
+    expect(existsSync(path.join(projectRoot, 'CLAUDE.md'))).toBe(true);
+
+    const workflowConfig = JSON.parse(
+      readFileSync(
+        path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json'),
+        'utf8',
+      ),
+    ) as { agents: Array<{ id: string }> };
+    expect(workflowConfig.agents.map((agent) => agent.id).sort()).toEqual([
+      'claude-code',
+      'cursor',
+    ]);
+
+    initPromptSpy.mockRestore();
+    addAgentPromptSpy.mockRestore();
+    updatePromptSpy.mockRestore();
+  },
+    30_000,
+  );
+});

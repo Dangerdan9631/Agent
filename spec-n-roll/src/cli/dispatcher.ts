@@ -241,7 +241,7 @@ export function resolveDelegation(argv: string[], options: DispatchOptions = {})
 
         const result = spawnSync(resolved, args, {
           cwd,
-          env,
+          env: buildDelegatedCliEnv(env),
           stdio: 'inherit',
           shell: process.platform === 'win32',
         });
@@ -290,6 +290,33 @@ export function dispatch(argv: string[], options: DispatchOptions = {}): number 
     case 'continue':
       return 0;
   }
+}
+
+/**
+ * Resolves the node_modules directory adjacent to the installed toolkit package.
+ *
+ * @returns Absolute path to node_modules for dependency resolution when exec'ing local CLI.
+ */
+export function resolveToolkitNodeModulesPath(): string {
+  const dispatcherDir = path.dirname(fileURLToPath(import.meta.url));
+  return path.join(dispatcherDir, '..', '..', 'node_modules');
+}
+
+/**
+ * Builds environment variables for delegated local CLI execution.
+ *
+ * @param baseEnv - Parent process environment to extend.
+ * @returns Environment including delegation marker and NODE_PATH for local CLI imports.
+ */
+export function buildDelegatedCliEnv(baseEnv: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const nodeModulesPath = resolveToolkitNodeModulesPath();
+  const mergedNodePath = [nodeModulesPath, baseEnv.NODE_PATH].filter(Boolean).join(path.delimiter);
+
+  return {
+    ...baseEnv,
+    SPEC_N_ROLL_DISPATCHED: '1',
+    NODE_PATH: mergedNodePath,
+  };
 }
 
 /**

@@ -313,14 +313,12 @@ Optional implementation focus or vertical slice to start with.
 }
 
 /**
- * Writes workflow agent skill files into `.agents/skills/`.
+ * Returns project-relative workflow skill files and their expected toolkit content.
  *
- * @param projectRoot - Absolute path to the project root.
+ * @returns Skill file paths paired with UTF-8 markdown bodies.
  */
-export async function generateWorkflowSkills(projectRoot: string): Promise<void> {
-  await ensureAgentSkillsDirectory(projectRoot);
-
-  const skillFiles: Array<{ relativePath: string; content: string }> = [
+export function listWorkflowSkillUpdates(): Array<{ relativePath: string; content: string }> {
+  return [
     { relativePath: SPECIFY_SKILL_RELATIVE_PATH, content: buildSpecifySkillContent() },
     { relativePath: CLARIFY_SKILL_RELATIVE_PATH, content: buildClarifySkillContent() },
     { relativePath: ROLL_SKILL_RELATIVE_PATH, content: buildRollSkillContent() },
@@ -329,8 +327,17 @@ export async function generateWorkflowSkills(projectRoot: string): Promise<void>
     { relativePath: ANALYZE_SKILL_RELATIVE_PATH, content: buildAnalyzeSkillContent() },
     { relativePath: IMPLEMENT_SKILL_RELATIVE_PATH, content: buildImplementSkillContent() },
   ];
+}
 
-  for (const skill of skillFiles) {
+/**
+ * Writes workflow agent skill files into `.agents/skills/`.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ */
+export async function generateWorkflowSkills(projectRoot: string): Promise<void> {
+  await ensureAgentSkillsDirectory(projectRoot);
+
+  for (const skill of listWorkflowSkillUpdates()) {
     const absolutePath = path.join(projectRoot, skill.relativePath);
     await fse.ensureDir(path.dirname(absolutePath));
     await atomicWriteText(absolutePath, skill.content);

@@ -5,7 +5,10 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { handleConfigAddAgentCommand } from './commands/config-add-agent.js';
 import { handleInitCommand } from './commands/init.js';
+import { handleUpdateCommand } from './commands/update.js';
+import { argvRequestsVersion, handleVersionCommand, printVersionReport } from './commands/version.js';
 import { registerCoreCommands } from './commands/core.js';
 import { stripGlobalFlag } from './dispatcher.js';
 
@@ -21,15 +24,6 @@ function readPackageVersion(): string {
   );
   const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string };
   return pkg.version;
-}
-
-/**
- * Logs a placeholder message for commands that are not yet implemented.
- *
- * @param commandName - The name of the command that is not implemented.
- */
-function notImplemented(commandName: string): void {
-  console.log(`${commandName}: not implemented`);
 }
 
 /**
@@ -59,25 +53,35 @@ function createProgram(): Command {
   program
     .command('update')
     .option('--dry-run', 'Preview update changes without applying them')
+    .option('--yes', 'Non-interactive mode; skip confirmation prompts')
+    .option('--confirm-migration', 'Apply breaking config migrations without prompting (US10)')
     .description('Update the toolkit to the latest version')
-    .action(() => {
-      notImplemented('update');
-    });
+    .action(
+      async (commandOptions: {
+        dryRun?: boolean;
+        yes?: boolean;
+        confirmMigration?: boolean;
+      }) => {
+        await handleUpdateCommand(commandOptions);
+      },
+    );
 
   const config = program.command('config').description('Configure spec-n-roll settings');
 
   config
     .command('add-agent')
     .description('Add an agent to the project configuration')
-    .action(() => {
-      notImplemented('config add-agent');
+    .option('--yes', 'Non-interactive mode; requires --agent')
+    .option('--agent <id>', 'Bundled agent id to add (e.g. copilot)')
+    .action(async (commandOptions: { yes?: boolean; agent?: string }) => {
+      await handleConfigAddAgentCommand(commandOptions);
     });
 
   program
     .command('version')
     .description('Show installed spec-n-roll versions')
     .action(() => {
-      notImplemented('version');
+      handleVersionCommand();
     });
 
   registerCoreCommands(program);
@@ -93,6 +97,12 @@ function createProgram(): Command {
 export function main(argv: string[] = process.argv): void {
   const rawArgs = argv.slice(2);
   const { args } = stripGlobalFlag(rawArgs);
+
+  if (argvRequestsVersion(args)) {
+    printVersionReport({ executedBinaryPath: argv[1] });
+    return;
+  }
+
   const program = createProgram();
   program.parse(args, { from: 'user' });
 }

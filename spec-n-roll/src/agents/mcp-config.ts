@@ -2,6 +2,7 @@ import path from 'node:path';
 import fse from 'fs-extra';
 
 import { atomicWriteJson } from '../core/atomic-write.js';
+import type { ExtensionManifest } from '../extensions/manifest.js';
 
 /**
  * Project-relative path to the project-local MCP server binary.
@@ -171,4 +172,115 @@ export async function mergeAgentMcpConfig(options: MergeAgentMcpConfigOptions): 
     options.mcpBinaryRelativePath,
   );
   await atomicWriteJson(filePath, merged);
+}
+
+/**
+ * Outcome of refreshing one agent MCP configuration target during update.
+ */
+export interface McpConfigRefreshResult {
+  /**
+   * Bundled agent extension id whose MCP config was refreshed.
+   */
+  agentId: string;
+  /**
+   * Project-relative MCP configuration file path that was updated.
+   */
+  targetPath: string;
+  /**
+   * True when the spec-n-roll MCP server entry was upserted successfully.
+   */
+  refreshed: boolean;
+  /**
+   * Error message when refresh failed for this target.
+   */
+  error?: string;
+}
+
+/**
+ * Refreshes the spec-n-roll MCP server entry for one bundled agent extension.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param agentId - Bundled agent extension id to refresh.
+ * @param manifest - Validated extension manifest containing MCP config targets.
+ * @returns Refresh results for each configured MCP target path.
+ */
+export async function refreshAgentMcpConfigFromManifest(
+  projectRoot: string,
+  agentId: string,
+  manifest: Pick<ExtensionManifest, 'agentSetup'>,
+): Promise<McpConfigRefreshResult[]> {
+  const mcpConfig = manifest.agentSetup?.mcpConfig;
+  if (mcpConfig == null) {
+    return [
+      {
+        agentId,
+        targetPath: '',
+        refreshed: false,
+        error: `Agent ${agentId} has no agentSetup.mcpConfig in its manifest.`,
+      },
+    ];
+  }
+
+  const results: McpConfigRefreshResult[] = [];
+
+  for (const target of mcpConfig.targets) {
+    try {
+      await mergeAgentMcpConfig({
+        projectRoot,
+        targetPath: target.path,
+        format: mcpConfig.format as McpConfigFormat,
+        serverId: mcpConfig.serverId,
+        mcpBinaryRelativePath: MCP_BINARY_RELATIVE_PATH,
+      });
+      results.push({
+        agentId,
+        targetPath: target.path,
+        refreshed: true,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      results.push({
+        agentId,
+        targetPath: target.path,
+        refreshed: false,
+        error: message,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Refreshes spec-n-roll MCP server paths for all configured bundled agent extensions.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param agentIds - Enabled bundled agent ids from workflow configuration.
+ * @param loadManifest - Loads a validated manifest for the given agent id.
+ * @returns Combined refresh results across all agents and MCP targets.
+ */
+export async function refreshConfiguredAgentMcpConfigs(
+  projectRoot: string,
+  agentIds: readonly string[],
+  loadManifest: (agentId: string) => Promise<Pick<ExtensionManifest, 'agentSetup'>>,
+): Promise<McpConfigRefreshResult[]> {
+  const results: McpConfigRefreshResult[] = [];
+
+  for (const agentId of agentIds) {
+    try {
+      const manifest = await loadManifest(agentId);
+      const agentResults = await refreshAgentMcpConfigFromManifest(projectRoot, agentId, manifest);
+      results.push(...agentResults);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      results.push({
+        agentId,
+        targetPath: '',
+        refreshed: false,
+        error: message,
+      });
+    }
+  }
+
+  return results;
 }
