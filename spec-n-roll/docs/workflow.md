@@ -1,6 +1,6 @@
 # Workflow
 
-spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 9 (US7)** TDD Cucumber cycle in implement, **Phase 8 (US5)** living specification maintenance, **Phase 7 (US6)** lifecycle enforcement, **Phase 6 (US4)** roll advancement, plan/tasks tier steps, analyze, FR-009 living-spec-first tasks rules, and Phase 5 specify/triage/clarify.
+spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects shipped behavior through **Phase 12 (US8)** extensions plus **Phase 9 (US7)** TDD, **Phase 8 (US5)** living specs, **Phase 7 (US6)** lifecycle, **Phase 6 (US4)** roll advancement, and Phase 5 specify/triage/clarify. Custom extension steps and hooks are documented in `extension-quickstart.md`.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -252,12 +252,6 @@ Agent skill: `.agents/skills/spec-n-implement/SKILL.md`
 | Refactor guidance      | Toolkit verifies tests stay green on `refactor` phase; detailed refactor heuristics left to agent skill prose |
 | Vertical-slice picker  | No interactive slice selection UI — agent chooses behavior from `tasks.md`                                    |
 | Cucumber install check | Clear error when `@cucumber/cucumber` cannot be resolved in the project                                       |
-
-## TODO: Not yet implemented
-
-| Area                                                 | Phase |
-| ---------------------------------------------------- | ----- |
-| Extension step replacement and custom workflow hooks | US8   |
 
 ### TODO: Lifecycle nuances (US6 follow-ups)
 

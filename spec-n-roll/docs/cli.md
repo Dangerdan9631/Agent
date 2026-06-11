@@ -1,6 +1,6 @@
 # CLI Reference
 
-Command-line interface for spec-n-roll. This document reflects **Phase 1 (Setup)**, **Phase 2 (Foundational)**, and **Phase 3 (US1 — init)** shipped behavior: triple-binary packaging, dispatcher delegation, project initialization, core-library subcommands, and MCP tool registration.
+Command-line interface for spec-n-roll. This document reflects shipped behavior through **Phase 11 (US10)**: triple-binary packaging, dispatcher delegation, project initialization, management commands (`init`, `update`, `config add-agent`, `version`), non-interactive `--yes` mode, config schema migration and compatibility warnings on update, core-library subcommands, and MCP tool registration.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects by `init` or `update`.
 
@@ -97,8 +97,7 @@ spec-n-roll init . --yes --agents cursor,claude-code
 - `.spec-n-roll/config/workflow.config.json` (papercut, quick, full tiers)
 - `.spec-n-roll/config/project-metadata.json` (`nextTaskSpecId: 1`)
 - `.spec-n-roll/compatibility.json` (empty incompatible combinations)
-
-> **TODO:** Ink layout confirmation prompts; platform script install (US2).
+- `.spec-n-roll/scripts/` paired `.sh` and `.ps1` automation scripts (see `platform-scripts.md`)
 
 ## `update` (implemented)
 
@@ -122,8 +121,8 @@ spec-n-roll update --dry-run
 - Preserves user-owned files byte-for-byte (`.spec-n-roll/config/`, `specs/`, `living-specs/`).
 - Writes `.bak` siblings for locally modified toolkit-owned files before overwrite (`src/updates/backup.ts`).
 - Refreshes spec-n-roll MCP server paths for all configured agents.
-
-> **TODO:** Config schema migration and extension compatibility warnings at update time (US10).
+- Plans and applies config schema migrations (`src/updates/migration.ts`).
+- Reports extension compatibility warnings from `.spec-n-roll/compatibility.json` (warnings never block completion).
 
 ## `config add-agent` (implemented)
 
@@ -164,7 +163,11 @@ Prints combined report: toolkit version, invocation target (`local` / `global` /
 | `config add-agent` | Implemented | `--yes`, `--agent`                         |
 | `version`          | Implemented | — (also `-v` / `--version` on full CLI)    |
 
-> **TODO:** Bare `spec-n-roll` Ink mode (no subcommand).
+### Interactive vs non-interactive invocation
+
+- `spec-n-roll <subcommand>` runs non-interactively, prints help or results, and exits.
+- Management subcommands support `--yes` for automation (SC-009).
+- Bare `spec-n-roll` without a subcommand currently prints Commander usage and exits non-zero — a dedicated Ink home screen is not yet implemented (see TODO below).
 
 ## Core library subcommands (implemented)
 
@@ -228,11 +231,11 @@ MCP/CLI parity for all eight core tools is covered in `tests/contract/mcp-cli-pa
 
 ## TODO: Not yet implemented
 
-| Area                                                          | Phase          |
-| ------------------------------------------------------------- | -------------- |
-| Config schema migration and compatibility warnings on update  | US10           |
-| Bare `spec-n-roll` Ink interactive mode                       | US1+           |
-| Latest published toolkit version discovery in `version`       | US9 polish     |
+| Area                                                    | Notes                                      |
+| ------------------------------------------------------- | ------------------------------------------ |
+| Bare `spec-n-roll` Ink interactive home screen          | No subcommand today shows Commander usage  |
+| Latest published toolkit version discovery in `version` | Registry lookup not wired                    |
+| Init layout confirmation Ink prompts                    | Agent/workflow selection only today        |
 
 ## Related documentation
 

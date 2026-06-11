@@ -1,6 +1,6 @@
 # Multi-Agent Setup
 
-spec-n-roll configures multiple AI coding agents from bundled extensions during `init` and (eventually) `config add-agent`. This document reflects **Phase 3 (US1)** shipped behavior.
+spec-n-roll configures multiple AI coding agents from bundled extensions during `init` and `config add-agent`. This document reflects **Phase 3 (US1)** and **Phase 10 (US9)** shipped behavior.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -17,7 +17,7 @@ Four out-of-the-box bundled agent extensions ship with the toolkit:
 
 Implementation: `src/agents/generators/` and `src/agents/extension-loader.ts`.
 
-Each pointer file is a thin reference to the canonical rules at `.spec-n-roll/AGENTS.md`. Skills scaffolding is created under `.agents/skills/` (full skill content is added in later workflow phases).
+Each pointer file is a thin reference to the canonical rules at `.spec-n-roll/AGENTS.md`. Workflow skill files (for example `spec-n-specify`, `/spec-n-roll`, `/spec-n-implement`) are generated under `.agents/skills/` during `init` and refreshed on `update`.
 
 ## Canonical rules
 
@@ -59,12 +59,14 @@ Selected agent manifests are written to `.spec-n-roll/bundled-extensions/{id}/ma
 
 The global dispatcher resolves and exec's the local full CLI when present.
 
+## Adding agents later
+
+`spec-n-roll config add-agent` adds rules, skills, bundled extension manifest, and MCP config merge for **one new agent** without modifying existing agents. Supports interactive Ink selection or `config add-agent --yes --agent <id>`. Idempotent when the agent is already configured. See `cli.md`.
+
+`spec-n-roll update` refreshes MCP server paths for all configured agents when local binaries change.
+
 ## TODO: Not yet implemented
 
-| Area                                      | Phase        |
-| ----------------------------------------- | ------------ |
-| `config add-agent` for adding agents later  | US9          |
-| MCP path refresh on `update`              | US9          |
-| Generated workflow skill file content     | US3–US4      |
-| Platform script install during init       | US2          |
-| Init layout confirmation Ink prompts      | US1+         |
+| Area                                 | Notes                               |
+| ------------------------------------ | ----------------------------------- |
+| Init layout confirmation Ink prompts | Workflow/agent selection only today |

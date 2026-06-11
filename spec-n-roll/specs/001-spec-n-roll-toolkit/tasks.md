@@ -376,8 +376,8 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 **Purpose**: Final documentation review, end-to-end validation, and integration verification. Phase docs are authored inline as features ship (repository root `docs/` only — not installed into user projects).
 
-- [ ] T133 [P] Review all docs/ files for accuracy against implemented behavior, resolve stale TODOs, and ensure SC-008 readability without source inspection
-- [ ] T134 Run all quickstart.md validation scenarios (Scenarios 1–12) against fixture projects in tests/integration/ and confirm expected outcomes
+- [x] T133 [P] Review all docs/ files for accuracy against implemented behavior, resolve stale TODOs, and ensure SC-008 readability without source inspection
+- [x] T134 Run all quickstart.md validation scenarios (Scenarios 1–12) against fixture projects in tests/integration/ and confirm expected outcomes
 
 **Checkpoint**: All quickstart scenarios pass; documentation covers SC-008 without requiring source inspection.
 

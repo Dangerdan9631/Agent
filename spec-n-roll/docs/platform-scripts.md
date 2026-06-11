@@ -54,8 +54,11 @@ TODO: Expand remediation with distro-specific package manager examples and detec
 
 Source pairs live in `src/scripts/` in the toolkit repository and are copied to `dist/scripts/` during `npm run build`.
 
+## Update behavior
+
+`spec-n-roll update` refreshes bundled script pairs in `.spec-n-roll/scripts/` alongside other toolkit-owned files.
+
 ## TODO (not yet implemented)
 
-- Additional automation script pairs beyond `check-prerequisites` (e.g. plan/tasks setup helpers referenced by agent skills in later phases).
-- Script installation refresh during `spec-n-roll update` (US9).
-- Workflow step handlers that invoke scripts as part of `/spec-n-roll` advancement (US4+).
+- Additional automation script pairs beyond `check-prerequisites`.
+- Workflow step handlers that invoke scripts as part of `/spec-n-roll` tier advancement (`runAutomationScript` exists but is not yet wired into default step dispatch).
