@@ -1,6 +1,6 @@
 # Workflow
 
-spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 7 (US6)** lifecycle enforcement plus **Phase 6 (US4)** roll advancement, plan/tasks tier steps, analyze, and FR-009 living-spec-first tasks rules (and Phase 5 specify/triage/clarify).
+spec-n-roll drives specification-driven development through agent slash commands and deterministic MCP/CLI mutations. This document reflects **Phase 8 (US5)** living specification maintenance plus **Phase 7 (US6)** lifecycle enforcement, **Phase 6 (US4)** roll advancement, plan/tasks tier steps, analyze, FR-009 living-spec-first tasks rules, and Phase 5 specify/triage/clarify.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -181,11 +181,50 @@ The toolkit `tasks.md` template (`src/templates/tasks.md`) and `/spec-n-tasks` h
 
 Living spec file edits remain agent-managed under `living-specs/` (outside MCP/CLI).
 
+## Living specifications (`living-specs/`)
+
+Living specs are Cucumber Gherkin `.feature` files — one per application domain at `living-specs/{kebab-case-domain}.feature` (e.g. `living-specs/user-authentication.feature`). They are the executable behavior source of truth; step definitions live in the project's standard test location.
+
+**Implementation**: `src/living-specs/gherkin.ts`, `src/living-specs/tags.ts`
+
+### Domain routing
+
+At implement entry, the toolkit infers the target domain semantically from the feature description (`inferDomainFromDescription` / `routeLivingSpecFile`). Keyword heuristics map authentication, payment, order, notification, and related phrases to canonical domain files; unmatched descriptions fall back to a kebab-case phrase derived from the description. Planned targets should still be documented in `plan.md` and `tasks.md` for developer review.
+
+### Scenario tagging
+
+New or modified scenarios receive additive `@spec-n-roll-{taskSpecId}` tags (`src/living-specs/tags.ts`). Prior tags — including earlier task tags and custom tags such as `@smoke` — are preserved; tags are never removed by the toolkit.
+
+### Deprecated scenarios
+
+When behavior is removed, deprecated scenarios are deleted from living spec files entirely. Version control history is the sole archive — no in-repo archive directory or archive tags.
+
+### Parsing and edits
+
+`parseFeatureFile` / `readFeatureFile` extract scenarios with tags and steps. `updateLivingSpecFile` applies additions, in-place updates by scenario name, and deprecated removals before writing the feature file.
+
+## /spec-n-implement
+
+**Command**: `/spec-n-implement`
+
+**Orchestration**: `src/specs/implement.ts` → `runImplement`
+
+Implement entry performs **living spec updates first** (FR-009) before any test or production code:
+
+1. Route to `living-specs/{domain}.feature` from the feature description (create file when absent)
+2. Remove deprecated scenarios when `deprecatedScenarioNames` are supplied
+3. Add or update scenarios with additive `@spec-n-roll-{taskSpecId}` tags
+4. Set `workflow-state.json` `currentStepId: implement` via core library
+
+`/spec-n-roll` still claims the single implement slot and returns `{ action: 'implement' }` for the agent to invoke `runImplement` with scenario payloads.
+
+Agent skill: `.agents/skills/spec-n-implement/SKILL.md`
+
 ## TODO: Not yet implemented
 
 | Area | Phase |
 | ---- | ----- |
-| `/spec-n-implement` TDD entry and living-spec automation | US5–US7 |
+| `/spec-n-implement` Cucumber red-green-refactor cycle | US7 |
 | Extension step replacement and custom workflow hooks | US8 |
 
 ### TODO: Lifecycle nuances (US6 follow-ups)

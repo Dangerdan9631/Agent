@@ -238,22 +238,22 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 5
 
-- [ ] T085 [P] [US5] Write failing integration test for living spec operations in tests/integration/living-specs.test.ts (create new, update existing, additive tags preserved, deprecated removed)
-- [ ] T086 [P] [US5] Write failing unit test for domain routing in tests/unit/gherkin-routing.test.ts (semantic domain inferred from description → correct {kebab-domain}.feature path)
+- [x] T085 [P] [US5] Write failing integration test for living spec operations in tests/integration/living-specs.test.ts (create new, update existing, additive tags preserved, deprecated removed)
+- [x] T086 [P] [US5] Write failing unit test for domain routing in tests/unit/gherkin-routing.test.ts (semantic domain inferred from description → correct {kebab-domain}.feature path)
 
 ### Implementation for User Story 5
 
-- [ ] T087 [P] [US5] Implement Gherkin file reader and scenario parser in src/living-specs/gherkin.ts (parse .feature files, return scenario list with existing tags)
-- [ ] T088 [US5] Implement domain inference and target feature file routing in src/living-specs/gherkin.ts (semantic domain from feature description → living-specs/{kebab-case-domain}.feature; create if absent)
-- [ ] T089 [US5] Implement additive task tag application to new/modified scenarios in src/living-specs/tags.ts (append @spec-n-roll-{taskSpecId}; preserve all prior tags; never remove)
-- [ ] T090 [US5] Implement deprecated scenario removal from living spec files in src/living-specs/gherkin.ts (delete scenario block; version control is the archive)
-- [ ] T091 [US5] Integrate living spec update as first action in /spec-n-implement entry in src/specs/implement.ts (update living-specs/ before any test or production code writes; planned targets documented in plan.md and listed as first task(s) in task-spec tasks.md per FR-009)
+- [x] T087 [P] [US5] Implement Gherkin file reader and scenario parser in src/living-specs/gherkin.ts (parse .feature files, return scenario list with existing tags)
+- [x] T088 [US5] Implement domain inference and target feature file routing in src/living-specs/gherkin.ts (semantic domain from feature description → living-specs/{kebab-case-domain}.feature; create if absent)
+- [x] T089 [US5] Implement additive task tag application to new/modified scenarios in src/living-specs/tags.ts (append @spec-n-roll-{taskSpecId}; preserve all prior tags; never remove)
+- [x] T090 [US5] Implement deprecated scenario removal from living spec files in src/living-specs/gherkin.ts (delete scenario block; version control is the archive)
+- [x] T091 [US5] Integrate living spec update as first action in /spec-n-implement entry in src/specs/implement.ts (update living-specs/ before any test or production code writes; planned targets documented in plan.md and listed as first task(s) in task-spec tasks.md per FR-009)
 
 **Checkpoint**: Living spec integration tests pass; tags are additive; domain routing is correct.
 
 ### Documentation (US5)
 
-- [ ] T092 [P] Update docs/workflow.md living-spec sections to match implemented Gherkin routing, tagging, and implementation-entry updates; TODO for deprecated-scenario removal if not complete
+- [x] T092 [P] Update docs/workflow.md living-spec sections to match implemented Gherkin routing, tagging, and implementation-entry updates; TODO for deprecated-scenario removal if not complete
 
 ---
 
