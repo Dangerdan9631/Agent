@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { handleInitCommand } from './commands/init.js';
 import { registerCoreCommands } from './commands/core.js';
 import { stripGlobalFlag } from './dispatcher.js';
 
@@ -49,8 +50,10 @@ function createProgram(): Command {
     .command('init')
     .argument('[path]', 'Project directory to initialize', '.')
     .description('Initialize spec-n-roll in a project')
-    .action(() => {
-      notImplemented('init');
+    .option('--yes', 'Non-interactive mode; requires --agents')
+    .option('--agents <agents>', 'Comma-separated bundled agent ids (e.g. cursor,claude-code)')
+    .action(async (targetPath: string, commandOptions: { yes?: boolean; agents?: string }) => {
+      await handleInitCommand(targetPath, commandOptions);
     });
 
   program

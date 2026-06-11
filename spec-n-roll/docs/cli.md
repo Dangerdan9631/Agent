@@ -1,6 +1,6 @@
 # CLI Reference
 
-Command-line interface for spec-n-roll. This document reflects **Phase 1 (Setup)** and **Phase 2 (Foundational)** shipped behavior: triple-binary packaging, dispatcher delegation, core-library subcommands, and MCP tool registration.
+Command-line interface for spec-n-roll. This document reflects **Phase 1 (Setup)**, **Phase 2 (Foundational)**, and **Phase 3 (US1 — init)** shipped behavior: triple-binary packaging, dispatcher delegation, project initialization, core-library subcommands, and MCP tool registration.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects by `init` or `update`.
 
@@ -31,7 +31,7 @@ dist/
     └── tasks.md
 ```
 
-### Install locations (planned)
+### Install locations
 
 | Binary     | Global npm install            | Project-local (after `init`)           |
 | ---------- | ----------------------------- | -------------------------------------- |
@@ -39,7 +39,7 @@ dist/
 | Full CLI   | Co-bundled with dispatcher    | `.spec-n-roll/cli/bin/spec-n-roll`     |
 | MCP server | No (project-local only)       | `.spec-n-roll/cli/bin/spec-n-roll-mcp` |
 
-> **TODO:** Document project-local binary install during `init` (Phase 3, US1).
+During `init`, the toolkit copies `dist/cli/index.js` and `dist/mcp/server.js` into `.spec-n-roll/cli/bin/` as `spec-n-roll` and `spec-n-roll-mcp`. On Windows, `.cmd` wrappers are created alongside the binaries. Implementation: `src/cli/commands/init.ts`.
 
 ## Global dispatcher (implemented)
 
@@ -68,18 +68,48 @@ node dist/cli/index.js --help
 npm run build && npx spec-n-roll-cli workflow state read --help
 ```
 
+## `init` (implemented)
+
+Implementation: `src/cli/commands/init.ts`, agent prompts in `src/cli/ink/init-prompts.tsx`.
+
+```bash
+spec-n-roll init [path]
+spec-n-roll init . --yes --agents cursor,claude-code
+```
+
+| Flag               | Description                                                                 |
+| ------------------ | --------------------------------------------------------------------------- |
+| `[path]`           | Project directory to initialize (default: `.`)                              |
+| `--yes`            | Non-interactive mode; requires `--agents`                                   |
+| `--agents <list>`  | Comma-separated bundled agent ids: `cursor`, `claude-code`, `copilot`, `codex` |
+
+**Interactive mode** (default): Ink multi-select for bundled agents.
+
+**Non-interactive mode** (`--yes`): skips Ink; `--agents` is required with at least one id.
+
+**Outputs:**
+
+- `.spec-n-roll/cli/bin/spec-n-roll` and `spec-n-roll-mcp` (+ `.cmd` on Windows)
+- `.spec-n-roll/AGENTS.md` canonical rules
+- `.agents/skills/` directory scaffolding
+- Per-agent pointer files and MCP config merge (see `multi-agent.md`)
+- `.spec-n-roll/bundled-extensions/{id}/manifest.json` for selected agents
+- `.spec-n-roll/config/workflow.config.json` (papercut, quick, full tiers)
+- `.spec-n-roll/config/project-metadata.json` (`nextTaskSpecId: 1`)
+- `.spec-n-roll/compatibility.json` (empty incompatible combinations)
+
+> **TODO:** Ink layout confirmation prompts; platform script install (US2).
+
 ## Management commands (stubs)
 
-These commands are registered but still print `{command}: not implemented`:
+| Command            | Status        | Registered flags |
+| ------------------ | ------------- | ---------------- |
+| `init [path]`      | Implemented   | `--yes`, `--agents` |
+| `update`           | Not implemented | `--dry-run`    |
+| `config add-agent` | Not implemented | —              |
+| `version`          | Not implemented | —              |
 
-| Command            | Registered flags |
-| ------------------ | ---------------- |
-| `init [path]`      | —                |
-| `update`           | `--dry-run`      |
-| `config add-agent` | —                |
-| `version`          | —                |
-
-> **TODO:** Implement `init`, `update`, `config add-agent`, `version`, Ink bare invocation, and `--yes` non-interactive mode (Phases 3 and 10).
+> **TODO:** Implement `update`, `config add-agent`, `version`, bare `spec-n-roll` Ink mode, and `--yes` on remaining management commands (US9).
 
 ## Core library subcommands (implemented)
 
@@ -145,17 +175,18 @@ MCP uses `process.cwd()` as the project root. Agent MCP configuration must point
 
 | Area                                                          | Phase          |
 | ------------------------------------------------------------- | -------------- |
-| `init` with agent selection, binary install, MCP config merge | US1 (Phase 3)  |
 | `update` with `.bak`, migrations, MCP path refresh            | US9–US10       |
 | `config add-agent`, combined `version` report                 | US9 (Phase 10) |
 | Bare `spec-n-roll` Ink interactive mode                       | US1+           |
-| `--yes` on management commands (SC-009)                       | US9            |
-| Agent workflow slash commands (`/spec-n-specify`, etc.)       | US1+ (skills)  |
+| `--yes` on `update` and `config add-agent` (SC-009)           | US9            |
+| Agent workflow slash commands (`/spec-n-specify`, etc.)       | US3+ (skills)  |
+| Platform script install during init                           | US2            |
 
 ## Related documentation
 
 | Topic                    | File                                                      |
 | ------------------------ | --------------------------------------------------------- |
+| Multi-agent init setup   | `multi-agent.md`                                          |
 | File ownership on update | `updates-and-migrations.md`                               |
 | Full command contracts   | `specs/001-spec-n-roll-toolkit/contracts/cli-commands.md` |
 | MCP tool contracts       | `specs/001-spec-n-roll-toolkit/contracts/mcp-tools.md`    |

@@ -92,29 +92,29 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T034 [P] [US1] Write failing integration test for multi-agent init in tests/integration/init.test.ts (two agents → skills, rules, pointer files, MCP config merge, workflow config, project-metadata, CLI + MCP binaries)
-- [ ] T035 [P] [US1] Write failing unit test for default workflow.config.json in tests/unit/workflow-config.test.ts (papercut/quick/full each reference shared specify step as step 1)
-- [ ] T036 [P] [US1] Write failing contract test for agent MCP config merge in tests/contract/agent-mcp-config.test.ts (upsert spec-n-roll serverId; preserve unrelated MCP servers; idempotent re-run)
+- [x] T034 [P] [US1] Write failing integration test for multi-agent init in tests/integration/init.test.ts (two agents → skills, rules, pointer files, MCP config merge, workflow config, project-metadata, CLI + MCP binaries)
+- [x] T035 [P] [US1] Write failing unit test for default workflow.config.json in tests/unit/workflow-config.test.ts (papercut/quick/full each reference shared specify step as step 1)
+- [x] T036 [P] [US1] Write failing contract test for agent MCP config merge in tests/contract/agent-mcp-config.test.ts (upsert spec-n-roll serverId; preserve unrelated MCP servers; idempotent re-run)
 
 ### Implementation for User Story 1
 
-- [ ] T037 [P] [US1] Implement cursor bundled extension manifest and generator in src/agents/generators/cursor.ts (agentSetup.mcpConfig targets .cursor/mcp.json; rules pointer to .spec-n-roll/AGENTS.md; skills in .agents/skills/)
-- [ ] T038 [P] [US1] Implement claude-code bundled extension manifest and generator in src/agents/generators/claude-code.ts (CLAUDE.md pointer + MCP config per manifest)
-- [ ] T039 [P] [US1] Implement copilot bundled extension manifest and generator in src/agents/generators/copilot.ts (extension id `copilot`; .github/copilot-instructions.md pointer + MCP config per manifest)
-- [ ] T040 [P] [US1] Implement codex bundled extension manifest and generator in src/agents/generators/codex.ts (AGENTS.md pointer + MCP config per manifest)
-- [ ] T041 [US1] Implement canonical AGENTS.md writer in src/agents/generators/agents-md.ts (toolkit-owned .spec-n-roll/AGENTS.md with workflow command and MCP tool reference)
-- [ ] T042 [US1] Implement extension loader for bundled extensions in src/agents/extension-loader.ts (discovers .spec-n-roll/bundled-extensions/{id}/; validates manifest including agentSetup.mcpConfig)
-- [ ] T043 [US1] Implement MCP config format adapters and idempotent merge in src/agents/mcp-config.ts (read/upsert/write per contracts/agent-mcp-config.md; bundled adapters for cursor, claude-code, copilot, codex)
-- [ ] T044 [US1] Implement Ink multi-select prompts for agent selection in src/cli/ink/init-prompts.tsx (skipped when `--yes` supplies `--agents`)
-- [ ] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; bundled agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
-- [ ] T046 [US1] Install full CLI and MCP binaries to .spec-n-roll/cli/bin/ during init in src/cli/commands/init.ts (copy from T009 build outputs: spec-n-roll + spec-n-roll-mcp; .cmd wrappers on Windows; version-matched pair)
-- [ ] T047 [US1] Implement `spec-n-roll init [path] [--yes]` command orchestration in src/cli/commands/init.ts (Ink prompts or `--yes` with `--agents` → agent generators → MCP config merge → config files → bundled-extensions copy → script install; copies built binaries from T009)
+- [x] T037 [P] [US1] Implement cursor bundled extension manifest and generator in src/agents/generators/cursor.ts (agentSetup.mcpConfig targets .cursor/mcp.json; rules pointer to .spec-n-roll/AGENTS.md; skills in .agents/skills/)
+- [x] T038 [P] [US1] Implement claude-code bundled extension manifest and generator in src/agents/generators/claude-code.ts (CLAUDE.md pointer + MCP config per manifest)
+- [x] T039 [P] [US1] Implement copilot bundled extension manifest and generator in src/agents/generators/copilot.ts (extension id `copilot`; .github/copilot-instructions.md pointer + MCP config per manifest)
+- [x] T040 [P] [US1] Implement codex bundled extension manifest and generator in src/agents/generators/codex.ts (AGENTS.md pointer + MCP config per manifest)
+- [x] T041 [US1] Implement canonical AGENTS.md writer in src/agents/generators/agents-md.ts (toolkit-owned .spec-n-roll/AGENTS.md with workflow command and MCP tool reference)
+- [x] T042 [US1] Implement extension loader for bundled extensions in src/agents/extension-loader.ts (discovers .spec-n-roll/bundled-extensions/{id}/; validates manifest including agentSetup.mcpConfig)
+- [x] T043 [US1] Implement MCP config format adapters and idempotent merge in src/agents/mcp-config.ts (read/upsert/write per contracts/agent-mcp-config.md; bundled adapters for cursor, claude-code, copilot, codex)
+- [x] T044 [US1] Implement Ink multi-select prompts for agent selection in src/cli/ink/init-prompts.tsx (skipped when `--yes` supplies `--agents`)
+- [x] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; bundled agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
+- [x] T046 [US1] Install full CLI and MCP binaries to .spec-n-roll/cli/bin/ during init in src/cli/commands/init.ts (copy from T009 build outputs: spec-n-roll + spec-n-roll-mcp; .cmd wrappers on Windows; version-matched pair)
+- [x] T047 [US1] Implement `spec-n-roll init [path] [--yes]` command orchestration in src/cli/commands/init.ts (Ink prompts or `--yes` with `--agents` → agent generators → MCP config merge → config files → bundled-extensions copy → script install; copies built binaries from T009)
 
 **Checkpoint**: `spec-n-roll init .` with two agents produces all expected files, MCP configs reference local MCP binary, and T034–T036 pass.
 
 ### Documentation (US1)
 
-- [ ] T048 [P] Update docs/multi-agent.md and docs/cli.md init sections to match implemented init behavior (agent generators, MCP config merge, workflow.config.json, binary install); TODO for unimplemented init flags and edge cases
+- [x] T048 [P] Update docs/multi-agent.md and docs/cli.md init sections to match implemented init behavior (agent generators, MCP config merge, workflow.config.json, binary install); TODO for unimplemented init flags and edge cases
 
 ---
 
