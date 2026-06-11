@@ -18,7 +18,7 @@ npm run build
 npm link
 ```
 
-Expected outcome: `spec-n-roll version` reports the global CLI version.
+Expected outcome: `spec-n-roll version` (non-interactive) reports the dispatcher and full CLI versions via the combined version report.
 
 ## Scenario 1: Initialize a Project with Multiple Agents
 
@@ -36,14 +36,34 @@ During the Ink prompts:
 
 Expected outcomes:
 
-- A local CLI copy is installed into the project.
+- Full CLI binary is installed at `.spec-n-roll/cli/bin/spec-n-roll` (+ `.cmd` on Windows).
+- MCP server binary is installed at `.spec-n-roll/cli/bin/spec-n-roll-mcp` (+ `.cmd` on Windows).
+- Each selected agent's project-local native MCP config file (per `contracts/agent-mcp-config.md`) contains a `spec-n-roll` server entry pointing at the local MCP binary (stdio) — not the global dispatcher or full CLI.
+- Unrelated MCP server entries in pre-existing agent config files are preserved (merge is idempotent).
 - Agent-specific rules/skills/commands are generated for each selected agent.
 - `workflow.config.json` contains papercut, quick, and full tier variants — each listing shared `specify` as step 1.
 - `project-metadata.json` includes `nextTaskSpecId: 1`.
 - Toolkit-owned and user-owned directories are separate.
 - The CLI does not verify that selected agents are installed.
 
-## Scenario 2: Global CLI Delegates to Local CLI
+## Scenario 1b: Add Agent MCP Configuration
+
+In an initialized multi-agent project:
+
+```powershell
+spec-n-roll config add-agent
+```
+
+Select an agent not yet configured.
+
+Expected outcomes:
+
+- Rules and skills are generated for the new agent only.
+- The new agent's project-local MCP config file is created or merged with a `spec-n-roll` server entry → `.spec-n-roll/cli/bin/spec-n-roll-mcp`.
+- Previously configured agents' MCP config files are unchanged.
+- Re-running `config add-agent` for the same agent is idempotent (no duplicate server entries).
+
+## Scenario 2: Dispatcher Exec's Local Full CLI
 
 From inside the initialized project:
 
@@ -54,9 +74,22 @@ spec-n-roll --global version
 
 Expected outcomes:
 
-- Without `--global`, the global CLI delegates to the local project CLI.
-- With `--global`, the global CLI runs directly.
-- Output identifies global and local versions when both are available.
+- Without `--global`, the global dispatcher exec's the local full CLI binary (does not load full CLI code in-process).
+- With `--global`, the co-bundled global full CLI executes; local binary is not consulted.
+- Combined version report shows dispatcher version, executed binary version, `local`/`global` target, and absolute local binary path when local.
+- Direct invocation of `.spec-n-roll/cli/bin/spec-n-roll -v` reports binary version and indicates direct invocation.
+
+## Scenario 2b: Interactive vs Non-Interactive CLI
+
+```powershell
+spec-n-roll
+spec-n-roll init --help
+```
+
+Expected outcomes:
+
+- Bare `spec-n-roll` spawns the Ink interactive terminal.
+- `spec-n-roll <subcommand>` runs non-interactively, prints help or result, and exits synchronously.
 
 ## Scenario 3: Interactive Specification with Embedded Triage
 
@@ -73,8 +106,9 @@ Expected outcomes:
 - The agent asks exactly one targeted question at a time during the interview.
 - Each question includes a recommended answer.
 - Resolved answers are recorded in the task spec and are not re-asked.
-- The resulting `spec.md` has YAML frontmatter with `status: Active` and no unresolved critical placeholders.
-- `workflow-state.json` contains numeric `taskSpecId` and required `slug`.
+- `spec.md` is instantiated via MCP `step_output_instantiate` (or CLI `step instantiate`) before prose edits.
+- The resulting `spec.md` has YAML frontmatter with `status: Active` (set via MCP/CLI, not direct YAML edit) and no unresolved critical placeholders.
+- `workflow-state.json` contains numeric `taskSpecId` and required `slug` (written via MCP/CLI).
 
 ## Scenario 4: `/spec-n-roll` Advances Workflow State
 
@@ -160,6 +194,7 @@ Expected outcomes:
 - Config schema migrations happen only during update.
 - Extension compatibility mismatches appear as warnings.
 - Warnings do not block update completion.
+- All configured agents' project-local MCP config files have refreshed `spec-n-roll` server paths when the local MCP binary or `.cmd` wrapper changes.
 
 ## Scenario 9: Extension Workflow Variant
 
@@ -168,11 +203,25 @@ Register an extension that replaces built-in triage logic within `specify` and c
 Expected outcomes:
 
 - The extension manifest validates against `contracts/extension-manifest.schema.json`.
+- Extension step contributions use `stepId` (open kebab-case string), not a closed `phase` enum.
+- Hook events use `before_{stepId}` / `after_{stepId}` pattern validation (e.g. `before_specify`, `after_custom-gate`).
+- `before_update` / `after_update` are rejected by schema validation.
 - Extension `entrypoint` is invoked in-process via Node `import()`.
 - The workflow config validates against `contracts/workflow-config.schema.json`.
 - `/spec-n-specify` can select a workflow tier through embedded triage.
 - Shared built-in steps are referenced rather than duplicated.
 - If the extension is disabled, the built-in behavior is used.
+
+## Scenario 9b: Extension Hook Validation
+
+Register an extension with a hook targeting an unknown `stepId` (e.g. `before_typo-step`).
+
+Expected outcomes:
+
+- Manifest load succeeds (non-blocking).
+- The toolkit emits a warning identifying the unknown `stepId`.
+- The invalid hook is skipped at dispatch.
+- Workflow execution continues normally for registered steps.
 
 ## Scenario 10: Task Spec Lifecycle and Locking
 
@@ -184,14 +233,29 @@ Expected outcomes:
 - When a different task spec begins a non-specify step, prior Complete specs transition to `status: Locked` in frontmatter.
 - Write attempts to Locked task spec directories are rejected.
 
-## Scenario 11: Documentation Completeness
+## Scenario 11: MCP/CLI Parity for Deterministic Mutations
+
+Using an initialized project with an Active task spec:
+
+1. Set task status via CLI: `spec-n-roll task status set --task-spec-id 001 --slug <slug> --status Complete`
+2. Verify the same operation is available as MCP tool `task_spec_status_set`.
+3. Attempt to toggle a `tasks.md` checkbox via MCP `task_checkbox_set` and confirm CLI `task checkbox set` produces identical file state.
+
+Expected outcomes:
+
+- Each core-library mutation in `contracts/mcp-tools.md` has a matching non-interactive CLI subcommand.
+- Machine-readable fields are not modified by direct agent file edits in skills.
+- Living spec files remain outside MCP/CLI scope.
+
+## Scenario 12: Documentation Completeness
 
 Review `docs/`.
 
 Expected outcomes:
 
 - Overall workflow documentation covers all steps and interactions (including triage embedded in specify).
-- CLI documentation covers setup, update, modify/configuration, local delegation, and `--global`.
+- CLI documentation covers setup, update, modify/configuration, dispatcher exec model, MCP registration, interactive vs non-interactive modes, and `--global`.
+- MCP tool documentation mirrors CLI subcommands for deterministic mutations.
 - Multi-agent setup and switching are documented.
 - Platform script variant behavior is documented.
 - Extension documentation includes a quick-start, reference, and fully worked example.

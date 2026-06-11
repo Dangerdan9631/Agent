@@ -1,19 +1,24 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/001-spec-n-roll-toolkit/plan.md`.
+shell commands, and other important information, read the current plan
+at specs/001-spec-n-roll-toolkit/plan.md
 <!-- SPECKIT END -->
 
 ## Coding Conventions
 
 ### Doc Comments
 
-Add doc comments to all top level functions, types, and values.
+Add doc comments to all top level functions, types, and values. All schema 
+fields should also have doc comments.
 
 - Doc comments should be 1-2 plain english sentences.
-- Explain the "why".
-- Parameter comments should focus on constraints and form.
+- Doc comments look inward. They should not explain how the code is used by
+  other parts of the app, but should explain the intent of the code and how it
+  should be used.
+- Parameter and field comments should include details on constraints and form.
 - All non-void return types should have a comment describing the return value.
-- Always use the multiline format. Never put the comment on a single line, even if it is short.
+- Always use the multiline format. Never put the comment on a single line, even
+  if it is short.
 
 Example:
 ```ts
@@ -33,6 +38,15 @@ export function isExecutable(filePath: string): boolean {
   }
 }
 ```
+
+Each `src/` subdirectory should also have a `README.md` with a high level 
+overview of the purpose and contents of the directory.
+- The overview should be concise and focused on the intent of the code rather 
+  than implementation details.
+- The overview should not be a list of the files in the directory, but rather a
+  description of the responsibilities and abstractions contained within.
+- Modifying files in the directory should not typically require changes to the
+  README.
 
 ### OBEY Clean Code by Robert C. Martin
 

@@ -37,3 +37,4 @@
 - TypeScript (CLI tool) and Gherkin/Cucumber (living specs) are explicitly user-stated technology constraints, not AI-generated implementation choices. They are accepted in the spec in the same way a user-specified platform or protocol constraint would be.
 - Extension version compatibility warnings are advisory only — they surface at upgrade time and never block execution. Runtime extension failures fail the current step with a clear error.
 - Deprecated living spec scenarios are removed from files; version control is the archival record.
+- 2026-06-10: Agent identifier alignment — canonical bundled GitHub Copilot extension `id` is `copilot` (not `github-copilot`); data-model.md updated to match spec/plan/tasks.

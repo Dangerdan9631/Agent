@@ -28,11 +28,13 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "phase", "command", "entrypoint"],
+        "required": ["id", "stepId", "command", "entrypoint"],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
-          "phase": {
-            "enum": ["specify", "clarify", "plan", "tasks", "analyze", "implement"]
+          "stepId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "Open kebab-case workflow step identifier this extension replaces or augments. Must match a step registered in the merged workflow step registry (built-in, on-demand, or extension-defined)."
           },
           "command": {
             "type": "string",
@@ -57,22 +59,9 @@
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "event": {
-            "enum": [
-              "before_specify",
-              "after_specify",
-              "before_clarify",
-              "after_clarify",
-              "before_plan",
-              "after_plan",
-              "before_tasks",
-              "after_tasks",
-              "before_analyze",
-              "after_analyze",
-              "before_implement",
-              "after_implement",
-              "before_update",
-              "after_update"
-            ]
+            "type": "string",
+            "pattern": "^(before|after)_(?!update$)[a-z0-9][a-z0-9-]*$",
+            "description": "Dynamic hook event: before_{stepId} or after_{stepId} for any registered workflow step ID. before_update and after_update are reserved and rejected. Unknown step IDs warn at manifest load and skip dispatch."
           },
           "entrypoint": {
             "type": "string",
@@ -103,6 +92,57 @@
         },
         "additionalProperties": false
       }
+    },
+    "agentSetup": {
+      "type": "object",
+      "description": "Agent integration block. Required for bundled agent extensions; omitted for workflow-only extensions.",
+      "required": ["mcpConfig"],
+      "properties": {
+        "mcpConfig": {
+          "type": "object",
+          "required": ["serverId", "format", "targets"],
+          "properties": {
+            "serverId": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "description": "Stable merge key for the spec-n-roll MCP server entry (default: spec-n-roll)."
+            },
+            "format": {
+              "type": "string",
+              "minLength": 1,
+              "description": "MCP config format adapter id (e.g. cursor-mcp-json, claude-mcp-json)."
+            },
+            "targets": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["path"],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Project-relative path to the agent's native MCP configuration file."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "ruleTargets": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Project-relative paths for generated rule pointer files."
+        },
+        "skillTargets": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Project-relative paths for generated skill/command files."
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

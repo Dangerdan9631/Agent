@@ -18,14 +18,43 @@
 - Python CLI matching Spec Kit's `specify` implementation: rejected because Ink is a TypeScript/React CLI framework.
 - Non-interactive command flags only: rejected because setup, update confirmation, agent selection, script selection, triage override, and interrupted-step recovery all require guided interaction.
 
-## Decision: Use global CLI dispatch with local project delegation
+## Decision: Use a lightweight global dispatcher that exec's the full CLI binary
 
-**Rationale**: The spec requires globally installed CLI invocations to check for a local project copy and delegate to it, with `--global` as an override. This supports stable per-project toolkit versions while allowing a single developer entry point.
+**Rationale**: The globally installed npm artifact contains only local-vs-global resolution logic. It walks parent directories from `cwd` to find `.spec-n-roll/cli/bin/spec-n-roll`, then exec's the resolved full CLI as a separate child process — it MUST NOT import or load full CLI, core library, or MCP code when dispatching local. When no local binary exists (or `--global` is passed), it exec's the co-bundled global full CLI resolved relative to the dispatcher install path. `-v`/`--version` is forwarded unchanged; the full CLI prints the combined report (dispatcher version, executed binary version, `local`/`global` target, local path when applicable). If local resolution succeeds but exec fails, the dispatcher fails clearly — it does not silently fall back to global unless `--global` was passed.
 
 **Alternatives considered**:
 
-- Always use the global CLI: rejected because projects could silently change behavior when the global package updates.
+- In-process global delegation to local CLI: rejected because it would load the wrong toolkit version and violate the lightweight dispatcher requirement.
+- Always use the global full CLI: rejected because projects could silently change behavior when the global package updates.
 - Always require local `npx` or package scripts: rejected because setup must be usable before local project wiring exists.
+
+## Decision: Ship a project-local MCP server sharing the core library with the full CLI
+
+**Rationale**: Agents need a deterministic interface for machine-readable mutations. A project-local MCP server at `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio transport, registered at `init`) exposes tools that invoke the same `src/core/` operations as parallel CLI subcommands. MCP MUST always target this local binary — never the global dispatcher or full CLI directly. The MCP server and full CLI MUST share the same toolkit version; `init` installs both binaries together. Version skew surfaces as errors with remediation to re-run update or init.
+
+**Alternatives considered**:
+
+- MCP as a CLI subcommand: rejected because agent MCP config needs a stable stdio entrypoint separate from interactive Ink.
+- Duplicate mutation logic in MCP and CLI layers: rejected because SC-012 requires parity and a single writer for deterministic state.
+- Global MCP server: rejected because mutations must be version-locked to the project-local toolkit.
+
+## Decision: Centralize deterministic mutations in a shared core library
+
+**Rationale**: Machine-readable state — `workflow-state.json`, `spec.md` YAML frontmatter (`status`), `project-metadata.json`, and task completion checkboxes in `tasks.md` — MUST be written only via the core library, exposed as MCP tools (agents) and matching non-interactive CLI subcommands (developers). Agents MAY edit prose bodies in `spec.md`, `plan.md`, and `tasks.md` after template instantiation. Living spec `.feature` files remain fully agent-managed with no MCP/CLI involvement.
+
+**Alternatives considered**:
+
+- Agent direct file edits for all artifacts: rejected because machine-readable fields would drift from workflow engine expectations.
+- JIT validation/repair of agent-edited JSON/frontmatter: rejected because prevention at the contract boundary is simpler and testable.
+
+## Decision: Instantiate step outputs from toolkit-owned templates via MCP/CLI
+
+**Rationale**: Step output files (`spec.md`, `plan.md`, `tasks.md`) are created by copying toolkit-owned templates into the task spec directory via MCP/CLI instantiate commands. Frontmatter values required at creation are passed as command arguments. Templates contain inline fill instructions; agent skills document the instantiate command and prose-editing workflow — not duplicate template structure. After instantiation, agents edit prose directly; frontmatter updates use MCP/CLI only. Editing a non-existent step output file is out of contract.
+
+**Alternatives considered**:
+
+- Agents create step output files from scratch: rejected because structure and frontmatter contracts would be inconsistent.
+- MCP/CLI template instantiation for living specs: rejected because living specs are semantic Gherkin content unsuited to fixed templates.
 
 ## Decision: Treat specification creation as a grill-me style interview
 
@@ -135,6 +164,35 @@
 - Code-only plugin registration: rejected because workflow definitions must be configurable in project files.
 - Subprocess extension execution: rejected because TypeScript in-process handlers enable shared types and lower latency.
 - Separate versioning for each interface: rejected because the spec says the toolkit's semver governs extension interfaces as a whole.
+
+## Decision: Use open `stepId` strings and dynamic `before_{stepId}` / `after_{stepId}` hook events
+
+**Rationale**: Workflows define which step IDs exist per project — built-in steps (`specify`, `plan`, `tasks`, `implement`), on-demand steps (`clarify`, `analyze`), and custom extension-defined steps. Extension manifest `steps` use a `stepId` field (not a closed `phase` enum) to reference the workflow slot they replace or augment. Hook events follow `before_{stepId}` and `after_{stepId}` for any registered step ID; the schema validates the pattern, not a fixed event list. `/spec-n-roll` fires hooks for the underlying step only.
+
+**Alternatives considered**:
+
+- Fixed `phase` and hook event enums: rejected because extensions and workflows must define custom steps without schema changes.
+- `before_update` / `after_update` CLI lifecycle hooks: rejected — upgrade integration uses CLI commands and documented extension mechanisms instead.
+- Fail manifest validation on unknown hook `stepId`: rejected in favor of warn-at-load and skip-dispatch (non-blocking) to support optional steps and variant-specific workflows.
+
+## Decision: Merge workflow and extension manifests into a step registry at load time
+
+**Rationale**: The merged step registry is the union of step definitions from `workflow.config.json` and all enabled extension manifests (including extension-defined steps and variants). Hook registration validates parsed `{stepId}` against this registry; unknown IDs produce warnings and are skipped at dispatch without blocking workflow execution.
+
+**Alternatives considered**:
+
+- Validate hooks only at dispatch against the active workflow variant: rejected because load-time warnings catch typos earlier.
+- Silently ignore unknown hook step IDs: rejected because developers need visibility into misconfigured manifests.
+
+## Decision: Agent extensions own project-local MCP config targets and merge rules
+
+**Rationale**: `init` and `config add-agent` must create or idempotently update each selected agent's project-local native MCP configuration file(s) to reference `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio). Each bundled agent extension declares `agentSetup.mcpConfig` in its manifest: target path(s), config format adapter, and a stable `serverId` for merge. Generators upsert only the spec-n-roll MCP server entry and preserve unrelated MCP servers. `update` refreshes the binary path and platform wrapper (`.cmd` on Windows) in all configured agents' MCP config files.
+
+**Alternatives considered**:
+
+- Single global MCP config path for all agents: rejected because each agent uses different native configuration file locations and formats.
+- Manual MCP setup documented only: rejected because FR-001/FR-030 require automated setup on init and add-agent.
+- Overwrite entire agent MCP config file: rejected because developers may have other MCP servers configured; merge must be idempotent and non-destructive.
 
 ## Decision: Use file-system state as the source of workflow continuity
 

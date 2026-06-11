@@ -74,21 +74,9 @@ if (Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue) {
 
 if ($null -eq $Options) {
     # ConvertFrom-Yaml unavailable or failed; fall back to Python+PyYAML.
-    $pythonCmd = $null
-    foreach ($candidate in @('python3', 'python')) {
-        if (Get-Command $candidate -ErrorAction SilentlyContinue) {
-            # Verify it is Python 3
-            $verOut = & $candidate --version 2>&1
-            if ($verOut -match 'Python 3') {
-                $pythonCmd = $candidate
-                break
-            }
-        }
-    }
-
-    if ($pythonCmd) {
-        try {
-            $jsonOut = & $pythonCmd -c @'
+    # Use stdin script (python -) instead of python -c: PowerShell strips double
+    # quotes from -c argument strings on Windows.
+    $parseYamlScript = @'
 import json
 import sys
 try:
@@ -114,9 +102,25 @@ if not isinstance(data, dict):
     data = {}
 
 print(json.dumps(data))
-'@ $ExtConfig
+'@
+
+    foreach ($candidate in @('python3', 'python')) {
+        if (-not (Get-Command $candidate -ErrorAction SilentlyContinue)) {
+            continue
+        }
+        $verOut = & $candidate --version 2>&1
+        if ($verOut -notmatch 'Python 3') {
+            continue
+        }
+
+        try {
+            $jsonOut = $parseYamlScript | & $candidate - $ExtConfig 2>&1
             if ($LASTEXITCODE -eq 0 -and $jsonOut) {
-                $Options = $jsonOut | ConvertFrom-Json -ErrorAction Stop
+                $jsonLine = ($jsonOut | Where-Object { $_ -match '^\s*\{' } | Select-Object -First 1)
+                if ($jsonLine) {
+                    $Options = $jsonLine | ConvertFrom-Json -ErrorAction Stop
+                    break
+                }
             }
         } catch {
             $Options = $null
@@ -177,7 +181,11 @@ if (-not $PlanPath) {
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
         if ($candidate) {
-            $PlanPath = [System.IO.Path]::GetRelativePath($ProjectRoot, $candidate.FullName).Replace('\','/')
+            $root = (Resolve-Path -LiteralPath $ProjectRoot).Path.TrimEnd('\', '/')
+            $full = $candidate.FullName
+            if ($full.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $PlanPath = $full.Substring($root.Length).TrimStart('\', '/').Replace('\', '/')
+            }
         }
     } catch {
         # Non-fatal: continue without a plan path.
