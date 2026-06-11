@@ -1,0 +1,103 @@
+# Extension Example: Custom Triage
+
+This walkthrough replaces built-in triage inside `/spec-n-specify` with project-local logic while keeping shared built-in steps (`plan`, `tasks`, `implement`) referenced from the default tier variants.
+
+## Directory layout
+
+```text
+.spec-n-roll/config/extensions/custom-triage/
+├── manifest.json
+└── triage-handler.mjs
+```
+
+## manifest.json
+
+```json
+{
+  "manifestVersion": "1",
+  "id": "custom-triage",
+  "name": "Custom Triage",
+  "description": "Forces papercut tier for demo features.",
+  "targetToolkitVersion": "0.1.0",
+  "steps": [
+    {
+      "id": "custom-triage-step",
+      "stepId": "triage",
+      "command": "spec-n-triage",
+      "entrypoint": ".spec-n-roll/config/extensions/custom-triage/triage-handler.mjs",
+      "priority": 10,
+      "enabledByDefault": true
+    }
+  ],
+  "hooks": [
+    {
+      "id": "before-specify-audit",
+      "event": "before_specify",
+      "entrypoint": ".spec-n-roll/config/extensions/custom-triage/before-specify.mjs",
+      "optional": true
+    }
+  ]
+}
+```
+
+## triage-handler.mjs
+
+```javascript
+export async function handler(context) {
+  return {
+    mode: 'heuristic',
+    proposedWorkflowVariantId: 'papercut',
+    rationale: 'Custom extension triage selected papercut.',
+    availableWorkflowVariantIds: context.availableWorkflowIds.filter((id) =>
+      ['papercut', 'quick', 'full'].includes(id),
+    ),
+    defaultWorkflowVariantId: context.defaultWorkflowId,
+  };
+}
+```
+
+## Register in workflow.config.json
+
+Add to the `extensions` array:
+
+```json
+{
+  "id": "custom-triage",
+  "manifestPath": ".spec-n-roll/config/extensions/custom-triage/manifest.json",
+  "enabled": true
+}
+```
+
+## Expected behavior
+
+1. `/spec-n-specify Fix button label` runs the extension triage handler via `import()`.
+2. The toolkit logs that extension `custom-triage` is the active handler for step `triage`.
+3. Setting `"enabled": false` on the registration restores built-in triage heuristics.
+4. `before_specify` runs before built-in specify work when the hook module exists.
+5. A hook such as `before_typo-step` would warn at load and never dispatch.
+
+## Shared steps across variants
+
+Default `workflow.config.json` from `spec-n-roll init` defines each step once under `steps[]` and references ids from `workflows[]`:
+
+```json
+{
+  "steps": [
+    { "id": "specify", "kind": "built-in", "command": "spec-n-specify", "enabled": true },
+    { "id": "plan", "kind": "built-in", "command": "spec-n-plan", "enabled": true },
+    { "id": "tasks", "kind": "built-in", "command": "spec-n-tasks", "enabled": true },
+    { "id": "implement", "kind": "built-in", "command": "spec-n-implement", "enabled": true }
+  ],
+  "workflows": [
+    { "id": "quick", "name": "Quick", "steps": ["specify", "tasks", "implement"] },
+    { "id": "full", "name": "Full", "steps": ["specify", "plan", "tasks", "implement"] }
+  ]
+}
+```
+
+Both `quick` and `full` reference the same `tasks` step definition.
+
+## TODO
+
+- Example replacing `plan` with a custom extension handler.
+- Example contributing a new `workflowVariants[]` entry for a non-tier workflow.

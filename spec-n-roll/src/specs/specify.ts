@@ -19,7 +19,8 @@ import {
   type InterviewSession,
 } from './interview.js';
 import { checkSpecQuality } from './quality.js';
-import { assessTriage, type TriageAssessment, type WorkflowTierId } from './triage.js';
+import { runTriageWithExtensions } from '../extensions/hooks.js';
+import { type TriageAssessment, type WorkflowTierId } from './triage.js';
 
 const SLUG_MAX_LENGTH = 48;
 
@@ -197,7 +198,8 @@ export async function runSpecify(options: SpecifyOptions): Promise<SpecifyResult
   const { taskSpecId } = await allocateNextTaskSpecId(projectRoot);
   const slug = options.slug?.trim() || deriveSlugFromDescription(options.description);
 
-  const triageAssessment = assessTriage({
+  const triageAssessment = await runTriageWithExtensions({
+    projectRoot,
     description: options.description,
     defaultWorkflowId: workflowConfig.defaultWorkflowId,
     availableWorkflowIds: workflowConfig.workflows.map((workflow) => workflow.id),

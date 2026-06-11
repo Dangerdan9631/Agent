@@ -351,24 +351,24 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ### Tests for User Story 8
 
-- [ ] T123 [P] [US8] Write failing contract test for extension step invocation in tests/contract/extension-step.test.ts (extension handler via import(); invoked instead of built-in; disabled→built-in)
-- [ ] T124 [P] [US8] Write failing unit test for workflow variant loading in tests/unit/workflow-variants.test.ts (papercut/quick/full from config; shared step references not duplicated; unknown hook stepId warns and skips)
+- [x] T123 [P] [US8] Write failing contract test for extension step invocation in tests/contract/extension-step.test.ts (extension handler via import(); invoked instead of built-in; disabled→built-in)
+- [x] T124 [P] [US8] Write failing unit test for workflow variant loading in tests/unit/workflow-variants.test.ts (papercut/quick/full from config; shared step references not duplicated; unknown hook stepId warns and skips)
 
 ### Implementation for User Story 8
 
-- [ ] T125 [P] [US8] Implement extension manifest Zod validation in src/extensions/manifest.ts (entrypoint, steps[], hooks[] pattern before_{stepId}/after_{stepId}, agentSetup; reject before_update/after_update)
-- [ ] T126 [P] [US8] Implement in-process extension handler invocation via Node import() in src/extensions/hooks.ts (dynamic import; invoke exported handler; fail step with remediation on error)
-- [ ] T127 [US8] Implement workflow step priority resolution in src/workflow/engine.ts (multiple extensions per stepId → highest priority wins; inform developer of active handler)
-- [ ] T128 [US8] Implement disabled extension fallback in src/workflow/engine.ts (all disabled for stepId → built-in handler)
-- [ ] T129 [US8] Implement workflow variant loading from workflow.config.json in src/workflow/engine.ts (named variants; shared step definitions by reference)
-- [ ] T130 [P] [US8] Implement dynamic hook dispatch in src/extensions/hooks.ts (parse before_{stepId}/after_{stepId}; merged step registry at load; warn and skip unknown stepIds)
-- [ ] T131 [US8] Validate bundled extension manifests against contracts/extension-manifest.schema.json in tests/contract/bundled-extensions.test.ts
+- [x] T125 [P] [US8] Implement extension manifest Zod validation in src/extensions/manifest.ts (entrypoint, steps[], hooks[] pattern before_{stepId}/after_{stepId}, agentSetup; reject before_update/after_update)
+- [x] T126 [P] [US8] Implement in-process extension handler invocation via Node import() in src/extensions/hooks.ts (dynamic import; invoke exported handler; fail step with remediation on error)
+- [x] T127 [US8] Implement workflow step priority resolution in src/workflow/engine.ts (multiple extensions per stepId → highest priority wins; inform developer of active handler)
+- [x] T128 [US8] Implement disabled extension fallback in src/workflow/engine.ts (all disabled for stepId → built-in handler)
+- [x] T129 [US8] Implement workflow variant loading from workflow.config.json in src/workflow/engine.ts (named variants; shared step definitions by reference)
+- [x] T130 [P] [US8] Implement dynamic hook dispatch in src/extensions/hooks.ts (parse before_{stepId}/after_{stepId}; merged step registry at load; warn and skip unknown stepIds)
+- [x] T131 [US8] Validate bundled extension manifests against contracts/extension-manifest.schema.json in tests/contract/bundled-extensions.test.ts
 
 **Checkpoint**: Extension contract tests pass; custom step replaces built-in; disabled fallback works.
 
 ### Documentation (US8)
 
-- [ ] T132 [P] Update docs/extension-quickstart.md, docs/extension-reference.md, and docs/extension-example.md to match implemented extension manifest, hook dispatch, and custom step replacement; TODO for advanced extension scenarios
+- [x] T132 [P] Update docs/extension-quickstart.md, docs/extension-reference.md, and docs/extension-example.md to match implemented extension manifest, hook dispatch, and custom step replacement; TODO for advanced extension scenarios
 
 ---
 

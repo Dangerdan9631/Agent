@@ -1,5 +1,5 @@
 # Extensions
 
-Contracts for agent and workflow extensions bundled with or registered in a project. This layer describes how third-party or built-in packages declare steps, hooks, and workflow variants without prescribing how they are loaded or executed.
+Contracts and runtime loading for agent and workflow extensions bundled with or registered in a project.
 
-Extension manifests capture identity, toolkit compatibility, contributed workflow steps (bound to open step IDs), dynamic before/after hook events, and optional variant definitions. Validation enforces naming conventions and rejects unsupported lifecycle hooks so the extension surface stays predictable across agents.
+`manifest.ts` validates extension manifests, including dynamic `before_{stepId}` / `after_{stepId}` hooks and rejection of `before_update` / `after_update`. `hooks.ts` loads registrations from `workflow.config.json`, builds the merged step registry, resolves highest-priority step handlers, dispatches hooks, and invokes handler modules in-process via Node `import()`. `compatibility.ts` surfaces non-blocking toolkit version warnings during update.

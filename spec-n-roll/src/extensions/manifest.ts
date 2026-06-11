@@ -231,3 +231,13 @@ export const extensionManifestSchema = z
  * Complete extension manifest type with all extension metadata.
  */
 export type ExtensionManifest = z.infer<typeof extensionManifestSchema>;
+
+/**
+ * Parses and validates an extension manifest, rejecting unsupported lifecycle hooks.
+ *
+ * @param raw - Untrusted manifest JSON value.
+ * @returns Validated extension manifest.
+ */
+export function parseExtensionManifest(raw: unknown): ExtensionManifest {
+  return extensionManifestSchema.parse(raw);
+}

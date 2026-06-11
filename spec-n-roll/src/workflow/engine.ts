@@ -1,10 +1,18 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
+import type { WorkflowConfig, WorkflowStep, WorkflowVariant } from '../config/schema.js';
 import {
   claimImplementSlot,
   clearImplementSlot,
 } from '../core/project-metadata.js';
+import {
+  dispatchStepHooks,
+  invokeExtensionHandler,
+  loadExtensionRegistry,
+  resolveActiveStepHandler,
+  type ExtensionRegistry,
+} from '../extensions/hooks.js';
 import {
   lockCompleteTaskSpecs,
   readTaskSpecStatus,
@@ -155,6 +163,76 @@ export type RollResult =
   | { action: 'paused'; taskSpecId: string; slug: string };
 
 const TASK_SPEC_DIR_PATTERN = /^(\d{3})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+
+/**
+ * Workflow configuration, variants, shared step registry, and extension state for a project.
+ */
+export interface WorkflowDefinition {
+  /** Parsed workflow.config.json for the project. */
+  config: WorkflowConfig;
+  /** Named workflow variants from config plus enabled extension contributions. */
+  variants: WorkflowVariant[];
+  /** Shared step definitions keyed by step id. */
+  stepById: Map<string, WorkflowStep>;
+  /** Loaded extension registry used for handler resolution and hook dispatch. */
+  extensionRegistry: ExtensionRegistry;
+}
+
+/**
+ * Resolves configured step ids for a workflow variant, including extension variants when config exists.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param workflowConfig - Parsed workflow configuration, if present.
+ * @param variantId - Workflow variant id to resolve.
+ * @returns Ordered step ids for the variant when configured.
+ */
+async function resolveVariantSteps(
+  projectRoot: string,
+  workflowConfig: WorkflowConfig | null,
+  variantId: string,
+): Promise<string[] | undefined> {
+  const configuredSteps = workflowConfig?.workflows.find((workflow) => workflow.id === variantId)
+    ?.steps;
+  if (workflowConfig == null) {
+    return configuredSteps;
+  }
+
+  const extensionRegistry = await loadExtensionRegistry(projectRoot);
+  const extensionVariants = extensionRegistry.extensions
+    .filter((extension) => extension.enabled)
+    .flatMap((extension) => extension.manifest.workflowVariants ?? []);
+
+  return (
+    [...workflowConfig.workflows, ...extensionVariants].find((workflow) => workflow.id === variantId)
+      ?.steps ?? configuredSteps
+  );
+}
+
+/**
+ * Loads workflow variants and shared step definitions from workflow.config.json.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @returns Workflow definition including extension registry state.
+ */
+export async function loadWorkflowDefinition(projectRoot: string): Promise<WorkflowDefinition> {
+  const config = await readWorkflowConfig(projectRoot);
+  if (config == null) {
+    throw new Error('workflow.config.json not found');
+  }
+
+  const extensionRegistry = await loadExtensionRegistry(projectRoot);
+  const stepById = new Map(config.steps.map((step) => [step.id, step]));
+  const extensionVariants = extensionRegistry.extensions
+    .filter((extension) => extension.enabled)
+    .flatMap((extension) => extension.manifest.workflowVariants ?? []);
+
+  return {
+    config,
+    variants: [...config.workflows, ...extensionVariants],
+    stepById,
+    extensionRegistry,
+  };
+}
 
 /**
  * Parses a task spec directory name into id and slug components.
@@ -507,19 +585,44 @@ async function executeTierStep(
   taskSpecId: string,
   slug: string,
   stepId: string,
+  extensionRegistry: ExtensionRegistry,
 ): Promise<string> {
+  const resolved = resolveActiveStepHandler(extensionRegistry, stepId);
+  const hookContext = { projectRoot, taskSpecId, slug, stepId };
+
+  await dispatchStepHooks(projectRoot, extensionRegistry, 'before', stepId, hookContext);
+
+  if (resolved.kind === 'extension') {
+    console.info(resolved.activeHandlerNotice);
+    await invokeExtensionHandler(projectRoot, resolved.entrypoint!, {
+      ...hookContext,
+      extensionId: resolved.extensionId,
+    });
+    await dispatchStepHooks(projectRoot, extensionRegistry, 'after', stepId, hookContext);
+    return stepId;
+  }
+
+  console.info(resolved.activeHandlerNotice);
+
+  let completedStepId: string;
   switch (stepId) {
     case 'plan':
       await runPlan({ projectRoot, taskSpecId, slug });
-      return 'plan';
+      completedStepId = 'plan';
+      break;
     case 'tasks':
       await runTasks({ projectRoot, taskSpecId, slug });
-      return 'tasks';
+      completedStepId = 'tasks';
+      break;
     case 'implement':
-      return 'implement';
+      completedStepId = 'implement';
+      break;
     default:
       throw new Error(`Unsupported automatic tier step: ${stepId}`);
   }
+
+  await dispatchStepHooks(projectRoot, extensionRegistry, 'after', stepId, hookContext);
+  return completedStepId;
 }
 
 /**
@@ -546,8 +649,7 @@ async function resolveWorkflowProgress(
   const taskDirectory = taskSpecDir(projectRoot, taskSpecId, slug);
   const state = await readWorkflowState(projectRoot, taskSpecId, slug);
   const variantId = state?.workflowVariantId ?? workflowConfig?.defaultWorkflowId ?? 'quick';
-  const configuredSteps = workflowConfig?.workflows.find((workflow) => workflow.id === variantId)
-    ?.steps;
+  const configuredSteps = await resolveVariantSteps(projectRoot, workflowConfig, variantId);
   const variantSteps = getVariantStepIds(variantId, configuredSteps);
 
   const artifactLastCompleted = await inferLastCompletedStepFromArtifacts(
@@ -736,7 +838,14 @@ export async function runRoll(options: RunRollOptions): Promise<RollResult> {
   }
 
   await lockCompleteSpecsBeforeStep(projectRoot, nextStepId);
-  const completedStepId = await executeTierStep(projectRoot, taskSpecId, slug, nextStepId);
+  const extensionRegistry = await loadExtensionRegistry(projectRoot);
+  const completedStepId = await executeTierStep(
+    projectRoot,
+    taskSpecId,
+    slug,
+    nextStepId,
+    extensionRegistry,
+  );
   return { action: 'step_completed', stepId: completedStepId, taskSpecId, slug };
 }
 
