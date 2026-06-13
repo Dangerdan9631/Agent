@@ -1,10 +1,15 @@
-import React from 'react';
-import { Box, Text } from 'ink';
+import React, { useCallback, useMemo } from 'react';
+import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import type { RouteId } from '../../app/navigation.js';
+import {
+  appendBackMenuItem,
+  isBackMenuItem,
+  type BackMenuItem,
+} from '../../components/menu/back-menu-item.js';
 
 /**
  * Selectable task-specific mutation command shown from a selected spec.
@@ -53,6 +58,22 @@ const SPEC_MUTATION_ITEMS: readonly SpecMutationItem[] = [
 ];
 
 /**
+ * Resolves the parent route id used when building a Back row.
+ *
+ * @param navigationStack - Current navigation stack entries.
+ * @param binaryContext - Active CLI invocation target.
+ * @returns Parent route id for the Back row.
+ */
+function parentRouteId(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): RouteId {
+  return (
+    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
+  );
+}
+
+/**
  * Renders shortcuts to mutation flows for the selected task spec.
  *
  * @param props - Route slot row budget from app scaffolding.
@@ -62,10 +83,45 @@ export function SpecMutationsScreen(props: RoutedScreenProps): React.ReactElemen
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const slotHeight = props.routeContentRows > 0 ? props.routeContentRows : undefined;
+  const items = useMemo(
+    (): readonly (SpecMutationItem | BackMenuItem)[] =>
+      appendBackMenuItem(
+        SPEC_MUTATION_ITEMS,
+        parentRouteId(session.navigationStack, session.binaryContext),
+      ),
+    [session.binaryContext, session.navigationStack],
+  );
+  const backItem = useMemo(
+    () => items.find((item): item is BackMenuItem => isBackMenuItem(item)),
+    [items],
+  );
 
-  const openMutation = (item: SpecMutationItem): void => {
-    session.pushRoute(item.routeId, selected?.label);
-  };
+  const openMutation = useCallback(
+    (item: SpecMutationItem | BackMenuItem): void => {
+      if (isBackMenuItem(item)) {
+        session.popRoute();
+        return;
+      }
+
+      session.pushRoute(item.routeId, selected?.label);
+    },
+    [selected?.label, session],
+  );
+
+  useInput((input) => {
+    if (backItem != null && input === backItem.key) {
+      session.popRoute();
+      return;
+    }
+
+    const index = Number.parseInt(input, 10);
+    if (!Number.isNaN(index) && index >= 1 && index <= SPEC_MUTATION_ITEMS.length) {
+      const item = SPEC_MUTATION_ITEMS[index - 1];
+      if (item != null) {
+        openMutation(item);
+      }
+    }
+  });
 
   return (
     <Box flexDirection="column" height={slotHeight}>
@@ -75,7 +131,7 @@ export function SpecMutationsScreen(props: RoutedScreenProps): React.ReactElemen
       ) : (
         <>
           <Text color="gray">target: {selected.label}</Text>
-          <SelectableList items={SPEC_MUTATION_ITEMS} onSelect={openMutation} />
+          <SelectableList items={items} onSelect={openMutation} />
         </>
       )}
     </Box>

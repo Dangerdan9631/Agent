@@ -9,6 +9,7 @@ import { registerProjectCommand } from './commands/project.js';
 import { registerSpecCommand } from './commands/spec.js';
 import { registerStepCommand } from './commands/step.js';
 import { registerTaskCommand } from './commands/task.js';
+import { registerRemoveCommand } from './commands/remove.js';
 import { registerUpdateCommand } from './commands/update.js';
 import {
   argvRequestsVersion,
@@ -39,6 +40,7 @@ function createProgram(): Command {
   registerVersionCommand(program);
   registerListCommand(program);
   registerUpdateCommand(program);
+  registerRemoveCommand(program);
   registerConfigCommand(program);
   registerWorkflowCommand(program);
   registerTaskCommand(program);

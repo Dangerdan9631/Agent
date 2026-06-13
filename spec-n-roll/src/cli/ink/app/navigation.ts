@@ -1,8 +1,14 @@
+import type { VersionInvocationTarget } from '../../commands/version.js';
+
 /**
  * Identifies every screen route handled by the interactive Ink application.
  */
 export type RouteId =
   | 'main-menu'
+  | 'global-home'
+  | 'local-home'
+  | 'project-hub'
+  | 'manage-local'
   | 'specs-list'
   | 'spec-detail'
   | 'spec-mutations'
@@ -60,15 +66,17 @@ export interface KeyHintDescriptor {
  */
 export const ROUTE_SUPPLEMENTAL_HINTS: Partial<
   Readonly<Record<RouteId, readonly KeyHintDescriptor[]>>
-> = {
-  'main-menu': [{ key: '1-5', label: 'jump' }],
-};
+> = {};
 
 /**
  * Human-readable route titles for breadcrumb and placeholder rendering.
  */
 export const ROUTE_TITLES: Readonly<Record<RouteId, string>> = {
   'main-menu': 'Main Menu',
+  'global-home': 'Global Home',
+  'local-home': 'Local Home',
+  'project-hub': 'Project',
+  'manage-local': 'Manage Spec N\' Roll',
   'specs-list': 'Task Specs',
   'spec-detail': 'Spec Detail',
   'spec-mutations': 'Spec Mutations',
@@ -80,8 +88,8 @@ export const ROUTE_TITLES: Readonly<Record<RouteId, string>> = {
   'agents-list': 'Agents',
   'agent-add': 'Add Agent',
   'agent-remove': 'Remove Agent',
-  'project-metadata-view': 'Project',
-  'project-metadata-edit': 'Edit Project',
+  'project-metadata-view': 'Project Metadata',
+  'project-metadata-edit': 'Edit Project Metadata',
   'setup-menu': 'Setup',
   'setup-init': 'Initialize Project',
   'setup-version': 'Version Info',
@@ -109,6 +117,13 @@ export interface RouteContext {
  */
 export const ROUTE_FALLBACK_SUMMARIES: Readonly<Record<RouteId, string>> = {
   'main-menu': 'Choose a section to inspect specs, workflows, agents, project metadata, or setup.',
+  'global-home':
+    'Inspect install source, version freshness, and project lifecycle actions for the global CLI.',
+  'local-home':
+    'Review local version status, project orientation, and navigate to project hubs and management.',
+  'project-hub': 'Review specification health and open specs or project metadata.',
+  'manage-local':
+    'Manage local binary updates, project upgrades, removal, and re-installation actions.',
   'specs-list': 'Browse task specs and inspect lifecycle, workflow, and artifact status.',
   'spec-detail': 'Review the selected task spec and choose read or mutation actions.',
   'spec-mutations': 'Choose the task spec mutation to run after reviewing the selected spec.',
@@ -132,11 +147,30 @@ export const ROUTE_FALLBACK_SUMMARIES: Readonly<Record<RouteId, string>> = {
 };
 
 /**
- * Initial navigation stack rooted at the main menu.
+ * Initial navigation stack for global CLI instances.
  */
-export const ROOT_NAVIGATION_STACK: readonly NavigationStackEntry[] = [
-  { routeId: 'main-menu', title: ROUTE_TITLES['main-menu'] },
+export const ROOT_NAVIGATION_STACK_GLOBAL: readonly NavigationStackEntry[] = [
+  { routeId: 'global-home', title: ROUTE_TITLES['global-home'] },
 ];
+
+/**
+ * Initial navigation stack for project-local CLI instances.
+ */
+export const ROOT_NAVIGATION_STACK_LOCAL: readonly NavigationStackEntry[] = [
+  { routeId: 'local-home', title: ROUTE_TITLES['local-home'] },
+];
+
+/**
+ * Returns the navigation root stack for the active CLI invocation target.
+ *
+ * @param invocation - Binary resolution context for the current CLI process.
+ * @returns Root navigation stack for the instance type.
+ */
+export function rootNavigationStackFor(
+  invocation: VersionInvocationTarget,
+): readonly NavigationStackEntry[] {
+  return invocation === 'local' ? ROOT_NAVIGATION_STACK_LOCAL : ROOT_NAVIGATION_STACK_GLOBAL;
+}
 
 /**
  * Returns the title associated with a route id.
@@ -174,7 +208,7 @@ export function contextForRoute(routeId: RouteId): RouteContext {
 /**
  * Pushes a route onto the navigation stack and preserves the existing entries.
  *
- * @param stack - Existing stack with at least the main-menu root entry.
+ * @param stack - Existing stack with at least one root entry.
  * @param routeId - Route identifier to append.
  * @param contextLabel - Optional short qualifier for the appended route.
  * @returns New navigation stack with the route appended.
@@ -188,14 +222,14 @@ export function pushRoute(
 }
 
 /**
- * Pops one child route while preserving the main-menu root.
+ * Pops one child route while preserving the instance home root.
  *
- * @param stack - Existing stack with at least the main-menu root entry.
+ * @param stack - Existing stack with at least one root entry.
  * @returns New stack with one child route removed, or the original root stack.
  */
 export function popRoute(stack: readonly NavigationStackEntry[]): NavigationStackEntry[] {
   if (stack.length <= 1) {
-    return [...ROOT_NAVIGATION_STACK];
+    return [...stack];
   }
 
   return stack.slice(0, -1);
@@ -208,7 +242,7 @@ export function popRoute(stack: readonly NavigationStackEntry[]): NavigationStac
  * @returns Current route id represented by the final stack entry.
  */
 export function currentRoute(stack: readonly NavigationStackEntry[]): RouteId {
-  return stack.at(-1)?.routeId ?? 'main-menu';
+  return stack.at(-1)?.routeId ?? 'global-home';
 }
 
 /**

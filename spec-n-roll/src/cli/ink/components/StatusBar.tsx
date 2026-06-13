@@ -19,11 +19,22 @@ function abbreviateProjectRoot(projectRoot: string): string {
 }
 
 /**
+ * Props for the persistent status footer.
+ */
+export interface StatusBarProps {
+  /**
+   * Optional quit confirmation message shown while awaiting a second `q` press.
+   */
+  quitConfirmationMessage?: string | null;
+}
+
+/**
  * Renders persistent project, binary, and breadcrumb status.
  *
+ * @param props - Optional quit confirmation overlay text.
  * @returns React element for the app footer.
  */
-export function StatusBar(): React.ReactElement {
+export function StatusBar(props: StatusBarProps = {}): React.ReactElement {
   const session = useSession();
   const breadcrumb = formatBreadcrumb(session.navigationStack);
   const versionReport = useMemo(() => {
@@ -50,6 +61,12 @@ export function StatusBar(): React.ReactElement {
       </Text>
       <Text color="white">{' | '}</Text>
       <Text color="grey">{breadcrumb}</Text>
+      {props.quitConfirmationMessage != null ? (
+        <>
+          <Text color="white">{' | '}</Text>
+          <Text color="yellow">{props.quitConfirmationMessage}</Text>
+        </>
+      ) : null}
     </Box>
   );
 }

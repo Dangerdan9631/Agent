@@ -1,6 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Box, useInput } from 'ink';
 
+import {
+  appendBackMenuItem,
+  isBackMenuItem,
+  type BackMenuItem,
+} from '../../components/menu/back-menu-item.js';
 import { useSession } from '../../app/session-context.js';
 import type { RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
@@ -30,9 +35,6 @@ interface SetupMenuItem extends SelectableListItem {
  */
 export type SetupMenuScreenProps = RoutedScreenProps;
 
-/**
- * Setup and maintenance operations exposed by User Story 3.
- */
 const SETUP_MENU_ITEMS: readonly SetupMenuItem[] = [
   {
     id: 'init',
@@ -82,6 +84,35 @@ const SETUP_MENU_ITEMS: readonly SetupMenuItem[] = [
 ];
 
 /**
+ * Resolves the parent route id used when building a Back row.
+ *
+ * @param navigationStack - Current navigation stack entries.
+ * @param binaryContext - Active CLI invocation target.
+ * @returns Parent route id for the Back row.
+ */
+function parentRouteId(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): RouteId {
+  return (
+    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
+  );
+}
+
+/**
+ * Setup and maintenance operations exposed by User Story 3.
+ */
+function buildSetupMenuItems(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): readonly (SetupMenuItem | BackMenuItem)[] {
+  return appendBackMenuItem(
+    SETUP_MENU_ITEMS,
+    parentRouteId(navigationStack, binaryContext),
+  );
+}
+
+/**
  * Renders project setup and toolkit maintenance entry points.
  *
  * @param props - Route slot row budget from app scaffolding.
@@ -90,6 +121,14 @@ const SETUP_MENU_ITEMS: readonly SetupMenuItem[] = [
 export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement {
   const session = useSession();
   const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
+  const menuItems = useMemo(
+    () => buildSetupMenuItems(session.navigationStack, session.binaryContext),
+    [session.binaryContext, session.navigationStack],
+  );
+  const backItem = useMemo(
+    () => menuItems.find((item): item is BackMenuItem => isBackMenuItem(item)),
+    [menuItems],
+  );
   const contextState = useMemo(
     (): ContextContentState => ({
       routeTitle: 'Setup / Maintenance',
@@ -99,16 +138,31 @@ export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement
     [selectedContext],
   );
   const openItem = useCallback(
-    (item: SetupMenuItem): void => {
-      session.pushRoute(item.routeId);
+    (item: SetupMenuItem | BackMenuItem): void => {
+      if (isBackMenuItem(item)) {
+        session.popRoute();
+        return;
+      }
+
+      session.pushRoute((item as SetupMenuItem).routeId);
     },
     [session],
   );
-  const reportFocusedContext = useCallback((item: SetupMenuItem | undefined): void => {
-    setSelectedContext(item?.context);
+  const reportFocusedContext = useCallback((item: SetupMenuItem | BackMenuItem | undefined): void => {
+    if (item == null || isBackMenuItem(item)) {
+      setSelectedContext(undefined);
+      return;
+    }
+
+    setSelectedContext((item as SetupMenuItem).context);
   }, []);
 
   useInput((input) => {
+    if (backItem != null && input === backItem.key) {
+      session.popRoute();
+      return;
+    }
+
     const item = SETUP_MENU_ITEMS.find((candidate) => candidate.key === input);
     if (item != null) {
       openItem(item);
@@ -122,7 +176,7 @@ export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement
       selection={
         <Box flexDirection="column">
           <SelectableList
-            items={SETUP_MENU_ITEMS}
+            items={menuItems}
             onFocusChange={reportFocusedContext}
             onSelect={openItem}
           />

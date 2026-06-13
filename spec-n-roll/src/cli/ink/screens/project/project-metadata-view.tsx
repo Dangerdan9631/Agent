@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
+import type { RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -9,6 +10,11 @@ import type {
   ContextContentState,
   SelectedOptionContext,
 } from '../../components/ContextContent.js';
+import {
+  appendBackMenuItem,
+  isBackMenuItem,
+  type BackMenuItem,
+} from '../../components/menu/back-menu-item.js';
 import {
   loadProjectMetadataView,
   type ProjectMetadataView,
@@ -55,10 +61,7 @@ function projectOverviewContext(metadata: ProjectMetadataView): SelectedOptionCo
     title: 'Project Metadata',
     summary: `Current task: ${formatCurrentTask(metadata)}.`,
     status: metadata.raw == null ? 'Metadata file is missing.' : 'Metadata file is loaded.',
-    details: [
-      `Next task spec id: ${metadata.nextTaskSpecId ?? 'unknown'}.`,
-      `Implementation started: ${metadata.implementationStartedAt ?? 'none'}.`,
-    ],
+    details: [`Next task spec id: ${metadata.nextTaskSpecId ?? 'unknown'}.`],
     warnings: metadata.raw == null ? ['Create project metadata before editing values.'] : [],
     nextStep: 'Focus the edit action to change project metadata.',
   };
@@ -92,6 +95,22 @@ function buildEditMetadataAction(metadata: ProjectMetadataView): ProjectMetadata
 }
 
 /**
+ * Resolves the parent route id used when building a Back row.
+ *
+ * @param navigationStack - Current navigation stack entries.
+ * @param binaryContext - Active CLI invocation target.
+ * @returns Parent route id for the Back row.
+ */
+function parentRouteId(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): RouteId {
+  return (
+    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
+  );
+}
+
+/**
  * Renders project metadata in a read-only view.
  *
  * @param props - Route slot row budget from app scaffolding.
@@ -104,20 +123,34 @@ export function ProjectMetadataViewScreen(
   const [metadata, setMetadata] = useState<ProjectMetadataView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
-  const items = useMemo(
+  const dataItems = useMemo(
     () => (metadata == null ? [] : [buildEditMetadataAction(metadata)]),
     [metadata],
+  );
+  const items = useMemo((): readonly (ProjectMetadataActionItem | BackMenuItem)[] => {
+    if (metadata == null) {
+      return [];
+    }
+
+    return appendBackMenuItem(
+      dataItems,
+      parentRouteId(session.navigationStack, session.binaryContext),
+    );
+  }, [dataItems, metadata, session.binaryContext, session.navigationStack]);
+  const backItem = useMemo(
+    () => items.find((item): item is BackMenuItem => isBackMenuItem(item)),
+    [items],
   );
   const contextState = useMemo((): ContextContentState => {
     if (metadata == null) {
       return {
-        routeTitle: 'Project',
+        routeTitle: 'Project Metadata',
         fallbackSummary: 'Inspect current task ownership and id allocation.',
       };
     }
 
     return {
-      routeTitle: 'Project',
+      routeTitle: 'Project Metadata',
       fallbackSummary: 'Inspect current task ownership and id allocation.',
       selectedContext: selectedContext ?? projectOverviewContext(metadata),
     };
@@ -125,11 +158,35 @@ export function ProjectMetadataViewScreen(
   const editMetadata = useCallback((): void => {
     session.pushRoute('project-metadata-edit');
   }, [session]);
-  const reportFocusedContext = useCallback((item: ProjectMetadataActionItem | undefined): void => {
-    setSelectedContext(item?.context);
-  }, []);
+  const handleSelect = useCallback(
+    (item: ProjectMetadataActionItem | BackMenuItem): void => {
+      if (isBackMenuItem(item)) {
+        session.popRoute();
+        return;
+      }
+
+      editMetadata();
+    },
+    [editMetadata, session],
+  );
+  const reportFocusedContext = useCallback(
+    (item: ProjectMetadataActionItem | BackMenuItem | undefined): void => {
+      if (item == null || isBackMenuItem(item)) {
+        setSelectedContext(undefined);
+        return;
+      }
+
+      setSelectedContext(item.context);
+    },
+    [],
+  );
 
   useInput((input) => {
+    if (backItem != null && input === backItem.key) {
+      session.popRoute();
+      return;
+    }
+
     if (input === 'e') {
       editMetadata();
     }
@@ -162,7 +219,7 @@ export function ProjectMetadataViewScreen(
         flexDirection="column"
         height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
       >
-        <Text bold>Project</Text>
+        <Text bold>Project Metadata</Text>
         <Text color="red">{error}</Text>
       </Box>
     );
@@ -174,7 +231,7 @@ export function ProjectMetadataViewScreen(
         flexDirection="column"
         height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
       >
-        <Text bold>Project</Text>
+        <Text bold>Project Metadata</Text>
         <Text color="gray">Loading project metadata...</Text>
       </Box>
     );
@@ -188,7 +245,7 @@ export function ProjectMetadataViewScreen(
         <SelectableList
           items={items}
           onFocusChange={reportFocusedContext}
-          onSelect={() => editMetadata()}
+          onSelect={handleSelect}
         />
       }
     />

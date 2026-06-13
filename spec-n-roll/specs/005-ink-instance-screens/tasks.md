@@ -18,9 +18,9 @@
 
 **Purpose**: Review design artifacts and existing interactive CLI boundaries before implementation.
 
-- [ ] T001 Review instance screen contracts in `specs/005-ink-instance-screens/contracts/interactive-instances.md`, `specs/005-ink-instance-screens/contracts/cli-remove-command.md`, and `specs/005-ink-instance-screens/contracts/task-metadata.schema.json`
-- [ ] T002 [P] Review current navigation, session, and launch flow in `src/cli/ink/app/navigation.ts`, `src/cli/ink/app/session-context.tsx`, and `src/cli/interactive/launch.ts`
-- [ ] T003 [P] Review version detection and project orchestrators in `src/cli/commands/version.ts`, `src/cli/commands/init.ts`, `src/cli/commands/update.ts`, and `src/cli/local-binaries.ts`
+- [X] T001 Review instance screen contracts in `specs/005-ink-instance-screens/contracts/interactive-instances.md`, `specs/005-ink-instance-screens/contracts/cli-remove-command.md`, and `specs/005-ink-instance-screens/contracts/task-metadata.schema.json`
+- [X] T002 [P] Review current navigation, session, and launch flow in `src/cli/ink/app/navigation.ts`, `src/cli/ink/app/session-context.tsx`, and `src/cli/interactive/launch.ts`
+- [X] T003 [P] Review version detection and project orchestrators in `src/cli/commands/version.ts`, `src/cli/commands/init.ts`, `src/cli/commands/update.ts`, and `src/cli/local-binaries.ts`
 
 ---
 
@@ -30,23 +30,23 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Create `scripts/write-source-package-root.mjs` and invoke it from the `build` script in `package.json` to write `dist/cli/.source-package-root` (excluded from npm publish via existing `"files": ["dist"]` packaging rules)
-- [ ] T005 [P] Implement `readInstallSource` read model in `src/cli/ink/read-models/install-source.ts` per `specs/005-ink-instance-screens/data-model.md`
-- [ ] T006 [P] Implement version comparison read model (npm registry, linked source, global install targets) in `src/cli/ink/read-models/version-comparison.ts`
-- [ ] T007 [P] Implement per-task metadata read/write API in `src/core/task-metadata.ts` per `specs/005-ink-instance-screens/contracts/task-metadata.schema.json`
-- [ ] T008 Add route ids `global-home`, `local-home`, `project-hub`, and `manage-local` with titles, fallback summaries, and instance-specific root stacks in `src/cli/ink/app/navigation.ts`
-- [ ] T009 Update `launchInteractiveApp` and `SessionProvider` to seed the navigation root from `binaryContext` in `src/cli/interactive/launch.ts` and `src/cli/ink/app/session-context.tsx`
-- [ ] T010 [P] Create `StaticContentBlock` labeled-field renderer in `src/cli/ink/components/StaticContentBlock.tsx`
-- [ ] T011 [P] Create shared `buildBackMenuItem` helper in `src/cli/ink/components/menu/back-menu-item.ts`
-- [ ] T012 Implement `reloadInteractiveApp` spawn-and-exit helper in `src/cli/ink/reload.ts`
-- [ ] T013 Implement `runProjectRemove` orchestrator and Commander registration in `src/cli/commands/remove.ts` per `specs/005-ink-instance-screens/contracts/cli-remove-command.md`
-- [ ] T014 Register `remove` command on the full CLI program in `src/cli/index.ts`
-- [ ] T015 Update `claimImplementSlot` to write `implementationStartedAt` to task metadata and stop persisting `implementationStartedAt` on project metadata in `src/core/project-metadata.ts`
-- [ ] T016 Write `createdAt` to task metadata when a task spec directory is created in `src/specs/specify.ts`
-- [ ] T017 [P] Add failing unit tests for install source and version comparison in `tests/unit/interactive/read-models/version-comparison.test.ts`
-- [ ] T018 [P] Add failing unit tests for task metadata read/write in `tests/unit/core/task-metadata.test.ts`
-- [ ] T019 [P] Add failing unit tests for `runProjectRemove` in `tests/unit/cli/remove.test.ts`
-- [ ] T020 Add `RouteRenderer` cases for new route ids (placeholder components acceptable until story phases) in `src/cli/ink/app/App.tsx`
+- [X] T004 Create `scripts/write-source-package-root.mjs` and invoke it from the `build` script in `package.json` to write `dist/cli/.source-package-root` (excluded from npm publish via existing `"files": ["dist"]` packaging rules)
+- [X] T005 [P] Implement `readInstallSource` read model in `src/cli/ink/read-models/install-source.ts` per `specs/005-ink-instance-screens/data-model.md`
+- [X] T006 [P] Implement version comparison read model (npm registry, linked source, global install targets) in `src/cli/ink/read-models/version-comparison.ts`
+- [X] T007 [P] Implement per-task metadata read/write API in `src/core/task-metadata.ts` per `specs/005-ink-instance-screens/contracts/task-metadata.schema.json`
+- [X] T008 Add route ids `global-home`, `local-home`, `project-hub`, and `manage-local` with titles, fallback summaries, and instance-specific root stacks in `src/cli/ink/app/navigation.ts`
+- [X] T009 Update `launchInteractiveApp` and `SessionProvider` to seed the navigation root from `binaryContext` in `src/cli/interactive/launch.ts` and `src/cli/ink/app/session-context.tsx`
+- [X] T010 [P] Create `StaticContentBlock` labeled-field renderer in `src/cli/ink/components/StaticContentBlock.tsx`
+- [X] T011 [P] Create shared `buildBackMenuItem` helper in `src/cli/ink/components/menu/back-menu-item.ts`
+- [X] T012 Implement `reloadInteractiveApp` spawn-and-exit helper in `src/cli/ink/reload.ts`
+- [X] T013 Implement `runProjectRemove` orchestrator and Commander registration in `src/cli/commands/remove.ts` per `specs/005-ink-instance-screens/contracts/cli-remove-command.md`
+- [X] T014 Register `remove` command on the full CLI program in `src/cli/index.ts`
+- [X] T015 Update `claimImplementSlot` to write `implementationStartedAt` to task metadata and stop persisting `implementationStartedAt` on project metadata in `src/core/project-metadata.ts`
+- [X] T016 Write `createdAt` to task metadata when a task spec directory is created in `src/specs/specify.ts`
+- [X] T017 [P] Add failing unit tests for install source and version comparison in `tests/unit/interactive/read-models/version-comparison.test.ts`
+- [X] T018 [P] Add failing unit tests for task metadata read/write in `tests/unit/core/task-metadata.test.ts`
+- [X] T019 [P] Add failing unit tests for `runProjectRemove` in `tests/unit/cli/remove.test.ts`
+- [X] T020 Add `RouteRenderer` cases for new route ids (placeholder components acceptable until story phases) in `src/cli/ink/app/App.tsx`
 
 **Checkpoint**: Navigation roots, read models, task metadata persistence, remove orchestrator, and build marker are ready.
 
@@ -60,16 +60,16 @@
 
 ### Tests for User Story 1
 
-- [ ] T021 [P] [US1] Add failing integration tests for global home content and menu enablement in `tests/integration/interactive-global-home.test.ts`
+- [X] T021 [P] [US1] Add failing integration tests for global home content and menu enablement in `tests/integration/interactive-global-home.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T022 [P] [US1] Implement `loadGlobalHomeContent` read model in `src/cli/ink/read-models/global-home-content.ts`
-- [ ] T023 [US1] Implement `GlobalHomeScreen` with static content area and five menu options in `src/cli/ink/screens/global-home.tsx`
-- [ ] T024 [US1] Wire Update Spec N' Roll (linked-source build + reload vs `npm install -g` + reload) in `src/cli/ink/screens/global-home.tsx` using `src/cli/ink/reload.ts`
-- [ ] T025 [US1] Wire Init Project action to existing init orchestrator in `src/cli/ink/screens/global-home.tsx`
-- [ ] T026 [US1] Wire Remove and Re-install actions with `ConfirmDialog` calling `runProjectRemove` and init in `src/cli/ink/screens/global-home.tsx`
-- [ ] T027 [US1] Verify User Story 1 with `npm test -- tests/integration/interactive-global-home.test.ts`
+- [X] T022 [P] [US1] Implement `loadGlobalHomeContent` read model in `src/cli/ink/read-models/global-home-content.ts`
+- [X] T023 [US1] Implement `GlobalHomeScreen` with static content area and five menu options in `src/cli/ink/screens/global-home.tsx`
+- [X] T024 [US1] Wire Update Spec N' Roll (linked-source build + reload vs `npm install -g` + reload) in `src/cli/ink/screens/global-home.tsx` using `src/cli/ink/reload.ts`
+- [X] T025 [US1] Wire Init Project action to existing init orchestrator in `src/cli/ink/screens/global-home.tsx`
+- [X] T026 [US1] Wire Remove and Re-install actions with `ConfirmDialog` calling `runProjectRemove` and init in `src/cli/ink/screens/global-home.tsx`
+- [X] T027 [US1] Verify User Story 1 with `npm test -- tests/integration/interactive-global-home.test.ts`
 
 **Checkpoint**: User Story 1 is fully functional and independently testable on global instance.
 
@@ -83,15 +83,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T028 [P] [US2] Add failing unit tests for local home content blocks in `tests/unit/interactive/read-models/local-home-content.test.ts`
-- [ ] T029 [P] [US2] Add failing integration tests for local home routing in `tests/integration/interactive-local-home.test.ts`
+- [X] T028 [P] [US2] Add failing unit tests for local home content blocks in `tests/unit/interactive/read-models/local-home-content.test.ts`
+- [X] T029 [P] [US2] Add failing integration tests for local home routing in `tests/integration/interactive-local-home.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T030 [P] [US2] Implement `loadLocalHomeContent` read model (project metadata + task metadata timestamps) in `src/cli/ink/read-models/local-home-content.ts`
-- [ ] T031 [US2] Implement `LocalHomeScreen` with static content and six menu options in `src/cli/ink/screens/local-home.tsx`
-- [ ] T032 [US2] Wire navigation to `project-hub`, `agents-list`, `workflows-list`, `manage-local`, and permanently disabled Extensions in `src/cli/ink/screens/local-home.tsx`
-- [ ] T033 [US2] Verify User Story 2 with `npm test -- tests/unit/interactive/read-models/local-home-content.test.ts tests/integration/interactive-local-home.test.ts`
+- [X] T030 [P] [US2] Implement `loadLocalHomeContent` read model (project metadata + task metadata timestamps) in `src/cli/ink/read-models/local-home-content.ts`
+- [X] T031 [US2] Implement `LocalHomeScreen` with static content and six menu options in `src/cli/ink/screens/local-home.tsx`
+- [X] T032 [US2] Wire navigation to `project-hub`, `agents-list`, `workflows-list`, `manage-local`, and permanently disabled Extensions in `src/cli/ink/screens/local-home.tsx`
+- [X] T033 [US2] Verify User Story 2 with `npm test -- tests/unit/interactive/read-models/local-home-content.test.ts tests/integration/interactive-local-home.test.ts`
 
 **Checkpoint**: User Stories 1 and 2 both work independently on their respective instance types.
 
@@ -105,14 +105,14 @@
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] Add failing unit tests for project hub aggregation in `tests/unit/interactive/read-models/project-hub.test.ts`
+- [X] T034 [P] [US3] Add failing unit tests for project hub aggregation in `tests/unit/interactive/read-models/project-hub.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T035 [P] [US3] Implement `loadProjectHubView` read model in `src/cli/ink/read-models/project-hub.ts`
-- [ ] T036 [US3] Implement `ProjectHubScreen` with summary content and Specs / Project Metadata / Back options in `src/cli/ink/screens/project/project-hub.tsx`
-- [ ] T037 [US3] Rename all Project Metadata titles and labels from "Project" in `src/cli/ink/screens/project/project-metadata-view.tsx` and `src/cli/ink/app/navigation.ts`
-- [ ] T038 [US3] Verify User Story 3 with `npm test -- tests/unit/interactive/read-models/project-hub.test.ts`
+- [X] T035 [P] [US3] Implement `loadProjectHubView` read model in `src/cli/ink/read-models/project-hub.ts`
+- [X] T036 [US3] Implement `ProjectHubScreen` with summary content and Specs / Project Metadata / Back options in `src/cli/ink/screens/project/project-hub.tsx`
+- [X] T037 [US3] Rename all Project Metadata titles and labels from "Project" in `src/cli/ink/screens/project/project-metadata-view.tsx` and `src/cli/ink/app/navigation.ts`
+- [X] T038 [US3] Verify User Story 3 with `npm test -- tests/unit/interactive/read-models/project-hub.test.ts`
 
 **Checkpoint**: Project hub is reachable from local home and independently testable.
 
@@ -126,11 +126,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T039 [P] [US4] Implement `ManageLocalScreen` with static content and five menu options in `src/cli/ink/screens/manage/manage-local.tsx`
-- [ ] T040 [US4] Wire Update Spec N' Roll to copy global binary via `installProjectBinaries` and reload in `src/cli/ink/screens/manage/manage-local.tsx`
-- [ ] T041 [US4] Wire Upgrade Project to `runUpdate` orchestrator in `src/cli/ink/screens/manage/manage-local.tsx`
-- [ ] T042 [US4] Wire Remove and Re-install with confirmation using `runProjectRemove` and init in `src/cli/ink/screens/manage/manage-local.tsx`
-- [ ] T043 [US4] Extend manage screen coverage in `tests/integration/interactive-local-home.test.ts`
+- [X] T039 [P] [US4] Implement `ManageLocalScreen` with static content and five menu options in `src/cli/ink/screens/manage/manage-local.tsx`
+- [X] T040 [US4] Wire Update Spec N' Roll to copy global binary via `installProjectBinaries` and reload in `src/cli/ink/screens/manage/manage-local.tsx`
+- [X] T041 [US4] Wire Upgrade Project to `runUpdate` orchestrator in `src/cli/ink/screens/manage/manage-local.tsx`
+- [X] T042 [US4] Wire Remove and Re-install with confirmation using `runProjectRemove` and init in `src/cli/ink/screens/manage/manage-local.tsx`
+- [X] T043 [US4] Extend manage screen coverage in `tests/integration/interactive-local-home.test.ts`
 
 **Checkpoint**: Manage screen actions work independently of Project hub navigation.
 
@@ -144,14 +144,14 @@
 
 ### Tests for User Story 5
 
-- [ ] T044 [P] [US5] Add failing unit tests for quit confirmation timing and cancellation in `tests/unit/interactive/quit-confirmation.test.ts`
+- [X] T044 [P] [US5] Add failing unit tests for quit confirmation timing and cancellation in `tests/unit/interactive/quit-confirmation.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T045 [US5] Implement `useQuitConfirmation` hook with 3-second pending state in `src/cli/ink/hooks/use-quit-confirmation.ts`
-- [ ] T046 [US5] Replace immediate `q` exit with quit confirmation flow in `src/cli/ink/app/App.tsx`
-- [ ] T047 [US5] Route home-screen `Esc` through quit confirmation while preserving sub-screen `popRoute` for `Esc` in `src/cli/ink/app/App.tsx`
-- [ ] T048 [US5] Verify User Story 5 with `npm test -- tests/unit/interactive/quit-confirmation.test.ts`
+- [X] T045 [US5] Implement `useQuitConfirmation` hook with 3-second pending state in `src/cli/ink/hooks/use-quit-confirmation.ts`
+- [X] T046 [US5] Replace immediate `q` exit with quit confirmation flow in `src/cli/ink/app/App.tsx`
+- [X] T047 [US5] Route home-screen `Esc` through quit confirmation while preserving sub-screen `popRoute` for `Esc` in `src/cli/ink/app/App.tsx`
+- [X] T048 [US5] Verify User Story 5 with `npm test -- tests/unit/interactive/quit-confirmation.test.ts`
 
 **Checkpoint**: Quit confirmation applies globally without breaking back navigation on sub-screens.
 
@@ -165,13 +165,13 @@
 
 ### Tests for User Story 6
 
-- [ ] T049 [P] [US6] Add assertions that local home ignores project metadata timestamp fields in `tests/unit/interactive/read-models/local-home-content.test.ts`
+- [X] T049 [P] [US6] Add assertions that local home ignores project metadata timestamp fields in `tests/unit/interactive/read-models/local-home-content.test.ts`
 
 ### Implementation for User Story 6
 
-- [ ] T050 [US6] Remove `implementationStartedAt` from project metadata edit flow in `src/cli/ink/screens/project/project-metadata-edit.tsx`
-- [ ] T051 [US6] Remove `implementationStartedAt` display from project metadata view read model usage in `src/cli/ink/read-models/project-metadata.ts` and `src/cli/ink/screens/project/project-metadata-view.tsx`
-- [ ] T052 [US6] Verify task metadata writers and readers with `npm test -- tests/unit/core/task-metadata.test.ts tests/unit/interactive/read-models/local-home-content.test.ts`
+- [X] T050 [US6] Remove `implementationStartedAt` from project metadata edit flow in `src/cli/ink/screens/project/project-metadata-edit.tsx`
+- [X] T051 [US6] Remove `implementationStartedAt` display from project metadata view read model usage in `src/cli/ink/read-models/project-metadata.ts` and `src/cli/ink/screens/project/project-metadata-view.tsx`
+- [X] T052 [US6] Verify task metadata writers and readers with `npm test -- tests/unit/core/task-metadata.test.ts tests/unit/interactive/read-models/local-home-content.test.ts`
 
 **Checkpoint**: Task provenance is task-scoped; legacy project metadata fields are ignored.
 
@@ -181,13 +181,13 @@
 
 **Purpose**: Back navigation rows, legacy route cleanup, documentation, and full validation.
 
-- [ ] T053 Append Back as last selectable item on list routes (`specs-list`, `workflows-list`, `agents-list`, `setup-menu`, `project-metadata-view`, and other non-home list screens) using `src/cli/ink/components/menu/back-menu-item.ts`
-- [ ] T054 Retire `main-menu` as root route and remove primary navigation to `setup-menu` in `src/cli/ink/app/App.tsx` and `src/cli/ink/app/navigation.ts`
-- [ ] T055 [P] Update directory README overviews in `src/cli/ink/screens/README.md`, `src/cli/ink/read-models/README.md`, and `src/cli/ink/hooks/README.md`
-- [ ] T056 [P] Extend Back navigation assertions in `tests/integration/interactive-browse.test.ts`
-- [ ] T057 Add non-interactive `remove --yes` scenario in `tests/integration/cli-non-interactive.test.ts`
-- [ ] T058 Run quickstart validation commands from `specs/005-ink-instance-screens/quickstart.md`
-- [ ] T059 Run `npm test` and `npm run lint` for all affected interactive and CLI areas
+- [X] T053 Append Back as last selectable item on list routes (`specs-list`, `workflows-list`, `agents-list`, `setup-menu`, `project-metadata-view`, and other non-home list screens) using `src/cli/ink/components/menu/back-menu-item.ts`
+- [X] T054 Retire `main-menu` as root route and remove primary navigation to `setup-menu` in `src/cli/ink/app/App.tsx` and `src/cli/ink/app/navigation.ts`
+- [X] T055 [P] Update directory README overviews in `src/cli/ink/screens/README.md`, `src/cli/ink/read-models/README.md`, and `src/cli/ink/hooks/README.md`
+- [X] T056 [P] Extend Back navigation assertions in `tests/integration/interactive-browse.test.ts`
+- [X] T057 Add non-interactive `remove --yes` scenario in `tests/integration/cli-non-interactive.test.ts`
+- [X] T058 Run quickstart validation commands from `specs/005-ink-instance-screens/quickstart.md`
+- [X] T059 Run `npm test` and `npm run lint` for all affected interactive and CLI areas
 
 ---
 

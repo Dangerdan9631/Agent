@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-13
 
-**Status**: Draft
+**Status**: Completed
 
 **Input**: User description: "The ink CLI app should show different options based on whether it's running as the local or global instance."
 

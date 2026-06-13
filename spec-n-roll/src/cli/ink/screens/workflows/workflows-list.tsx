@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -7,7 +7,13 @@ import type {
   ContextContentState,
   SelectedOptionContext,
 } from '../../components/ContextContent.js';
+import {
+  appendBackMenuItem,
+  isBackMenuItem,
+  type BackMenuItem,
+} from '../../components/menu/back-menu-item.js';
 import { useSession } from '../../app/session-context.js';
+import type { RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listWorkflowVariantSummaries,
@@ -79,6 +85,22 @@ function buildWorkflowItems(
 }
 
 /**
+ * Resolves the parent route id used when building a Back row.
+ *
+ * @param navigationStack - Current navigation stack entries.
+ * @param binaryContext - Active CLI invocation target.
+ * @returns Parent route id for the Back row.
+ */
+function parentRouteId(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): RouteId {
+  return (
+    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
+  );
+}
+
+/**
  * Renders configured workflow variants for read-only browsing.
  *
  * @param props - Route slot row budget from app scaffolding.
@@ -89,9 +111,23 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
   const [summaries, setSummaries] = useState<WorkflowVariantSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
-  const items = useMemo(
+  const dataItems = useMemo(
     () => (summaries == null ? [] : buildWorkflowItems(summaries)),
     [summaries],
+  );
+  const items = useMemo((): readonly (WorkflowListItem | BackMenuItem)[] => {
+    if (summaries == null) {
+      return [];
+    }
+
+    return appendBackMenuItem(
+      dataItems,
+      parentRouteId(session.navigationStack, session.binaryContext),
+    );
+  }, [dataItems, session.binaryContext, session.navigationStack, summaries]);
+  const backItem = useMemo(
+    () => items.find((item): item is BackMenuItem => isBackMenuItem(item)),
+    [items],
   );
   const contextState = useMemo(
     (): ContextContentState => ({
@@ -101,9 +137,32 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
     }),
     [selectedContext],
   );
-  const reportFocusedContext = useCallback((item: WorkflowListItem | undefined): void => {
-    setSelectedContext(item?.context);
+  const reportFocusedContext = useCallback((item: WorkflowListItem | BackMenuItem | undefined): void => {
+    if (item == null || isBackMenuItem(item)) {
+      setSelectedContext(undefined);
+      return;
+    }
+
+    setSelectedContext(item.context);
   }, []);
+
+  const handleSelect = useCallback(
+    (item: WorkflowListItem | BackMenuItem): void => {
+      if (isBackMenuItem(item)) {
+        session.popRoute();
+        return;
+      }
+
+      session.pushRoute('workflow-detail', item.summary.variantId);
+    },
+    [session],
+  );
+
+  useInput((input) => {
+    if (backItem != null && input === backItem.key) {
+      session.popRoute();
+    }
+  });
 
   useEffect(() => {
     let active = true;
@@ -158,7 +217,7 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
         <SelectableList
           items={items}
           onFocusChange={reportFocusedContext}
-          onSelect={(item) => session.pushRoute('workflow-detail', item.summary.variantId)}
+          onSelect={handleSelect}
         />
       }
     />

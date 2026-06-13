@@ -110,12 +110,23 @@ describe('interactive read-only navigation', () => {
       React.createElement(App, {
         projectRoot,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
     await waitForFrame();
     app.stdin.write('1');
+    await waitForFrame();
+    app.stdin.write('1');
+    await waitForFrame();
+    app.stdin.write('\r');
+    await waitForFrame();
+    app.stdin.write('\u001b');
+    app.stdin.write('\u001b');
+    app.stdin.write('\u001b');
+    await waitForFrame();
+
+    app.stdin.write('3');
     await waitForFrame();
     app.stdin.write('\r');
     await waitForFrame();
@@ -125,21 +136,17 @@ describe('interactive read-only navigation', () => {
 
     app.stdin.write('2');
     await waitForFrame();
-    app.stdin.write('\r');
-    await waitForFrame();
-    app.stdin.write('\u001b');
-    app.stdin.write('\u001b');
-    await waitForFrame();
-
-    app.stdin.write('3');
-    await waitForFrame();
     app.stdin.write('t');
     await waitForFrame();
-    app.stdin.write('\u001b');
-
-    app.stdin.write('4');
+    app.stdin.write('5');
     await waitForFrame();
-    app.stdin.write('\u001b');
+
+    app.stdin.write('1');
+    await waitForFrame();
+    app.stdin.write('2');
+    await waitForFrame();
+    app.stdin.write('2');
+    await waitForFrame();
 
     expect(await snapshotProjectFiles(projectRoot)).toEqual(before);
     app.unmount();
@@ -153,7 +160,7 @@ describe('interactive read-only navigation', () => {
       React.createElement(App, {
         projectRoot,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
@@ -164,8 +171,8 @@ describe('interactive read-only navigation', () => {
     await waitForFrame();
 
     const frame = app.lastFrame() ?? '';
-    expect(frame).toContain('Agents');
-    expect(frame).toContain('> 3 Agents');
+    expect(frame).toContain('Workflows');
+    expect(frame).toContain('> 3 Workflows');
     expect(frame).not.toContain('Shows configured, available, and missing');
     expect(await snapshotProjectFiles(projectRoot)).toEqual(before);
 

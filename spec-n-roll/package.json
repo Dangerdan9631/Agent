@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc --noEmit && tsup && node scripts/copy-wrappers.mjs",
+    "build": "tsc --noEmit && tsup && node scripts/copy-wrappers.mjs && node scripts/write-source-package-root.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cucumber": "cucumber-js",

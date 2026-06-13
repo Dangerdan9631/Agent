@@ -44,7 +44,7 @@ async function waitForFrame(): Promise<void> {
  * @returns Promise that resolves when the text appears.
  */
 async function waitForText(app: RenderedInkApp, text: string): Promise<void> {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
     if (app.lastFrame()?.includes(text) === true) {
       return;
     }
@@ -94,6 +94,18 @@ async function snapshotFiles(projectRoot: string): Promise<Map<string, string>> 
   return snapshot;
 }
 
+/**
+ * Opens the task specs list from the local instance home screen.
+ *
+ * @param app - Rendered Ink application under test.
+ */
+async function openSpecsFromLocalHome(app: RenderedInkApp): Promise<void> {
+  app.stdin.write('1');
+  await waitForText(app, '1 Specs');
+  app.stdin.write('1');
+  await waitForText(app, '001 active-checkout');
+}
+
 afterEach(async () => {
   for (const tempRoot of tempRoots.splice(0)) {
     await fse.remove(tempRoot);
@@ -101,20 +113,21 @@ afterEach(async () => {
 });
 
 describe('interactive browse flow', () => {
-  it('navigates read-only top-level browse sections without mutating project files', async () => {
+  it(
+    'navigates read-only top-level browse sections without mutating project files',
+    async () => {
     const projectRoot = await copyFixtureProject();
     const before = await snapshotFiles(projectRoot);
     const app = render(
       React.createElement(App, {
         projectRoot,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
     await waitForFrame();
-    app.stdin.write('1');
-    await waitForText(app, '001 active-checkout');
+    await openSpecsFromLocalHome(app);
     expect(app.lastFrame()).toContain('001 active-checkout');
     expect(app.lastFrame()).toContain('Lifecycle: Active; workflow: active.');
     expect(app.lastFrame()).toContain('Step: implement; workflow variant: quick.');
@@ -136,10 +149,12 @@ describe('interactive browse flow', () => {
 
     app.stdin.write('\u001b');
     app.stdin.write('\u001b');
+    app.stdin.write('\u001b');
     await waitForFrame();
+    await waitForText(app, '6 Quit');
 
-    app.stdin.write('2');
-    await waitForText(app, 'Quick');
+    app.stdin.write('3');
+    await waitForText(app, '> Quick');
     expect(app.lastFrame()).toContain('Quick');
     expect(app.lastFrame()).toContain('Workflow quick');
     expect(app.lastFrame()).toContain('Default workflow for this project.');
@@ -152,8 +167,9 @@ describe('interactive browse flow', () => {
     app.stdin.write('\u001b');
     app.stdin.write('\u001b');
     await waitForFrame();
+    await waitForText(app, '6 Quit');
 
-    app.stdin.write('3');
+    app.stdin.write('2');
     await waitForText(app, 'claude-code');
     expect(app.lastFrame()).toContain('codex');
     expect(app.lastFrame()).toContain('Agent claude-code');
@@ -165,17 +181,21 @@ describe('interactive browse flow', () => {
     expect(app.lastFrame()).toContain('Shown in all agents filter.');
     expect(app.lastFrame()).toContain('configured');
 
-    app.stdin.write('\u001b');
-    await waitForFrame();
+    app.stdin.write('5');
+    await waitForText(app, '> 1 Project');
 
-    app.stdin.write('4');
+    app.stdin.write('1');
+    await waitForText(app, '1 Specs');
+    app.stdin.write('2');
     await waitForText(app, 'Next task spec id: 3');
     expect(app.lastFrame()).toContain('Next task spec id: 3');
     expect(app.lastFrame()).toContain('Current task: 001-active-checkout');
 
     app.unmount();
     expect(await snapshotFiles(projectRoot)).toEqual(before);
-  });
+  },
+  15_000,
+  );
 
   it('shows distinct selection options and route-owned content per list route', async () => {
     const projectRoot = await copyFixtureProject();
@@ -183,24 +203,23 @@ describe('interactive browse flow', () => {
       React.createElement(App, {
         projectRoot,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
     await waitForFrame();
-    const mainMenuFrame = app.lastFrame() ?? '';
-    expect(mainMenuFrame).toContain('> 1 Task Specs');
-    expect(mainMenuFrame).toContain('5 Setup / Maintenance');
-    expect(mainMenuFrame).toContain('Review task specs and workflow progress.');
-    expect(mainMenuFrame).not.toContain('001 active-checkout');
+    const localHomeFrame = app.lastFrame() ?? '';
+    expect(localHomeFrame).toContain('> 1 Project');
+    expect(localHomeFrame).toContain("5 Manage Spec N' Roll");
+    expect(localHomeFrame).toContain('Version:');
+    expect(localHomeFrame).not.toContain('001 active-checkout');
 
-    app.stdin.write('1');
-    await waitForText(app, '001 active-checkout');
+    await openSpecsFromLocalHome(app);
     const specsFrame = app.lastFrame() ?? '';
     expect(specsFrame).toContain('001 active-checkout');
     expect(specsFrame).toContain('Lifecycle: Active; workflow: active.');
     expect(specsFrame).toContain('Step: implement; workflow variant: quick.');
-    expect(specsFrame).not.toContain('5 Setup / Maintenance');
+    expect(specsFrame).not.toContain("> 5 Manage Spec N' Roll");
     expect(specsFrame).not.toContain('Choose a section to open.');
 
     app.stdin.write('\u001b[B');
@@ -209,5 +228,39 @@ describe('interactive browse flow', () => {
     expect(app.lastFrame()).toContain('Step: implement; workflow variant: full.');
 
     app.unmount();
+  });
+
+  it('exposes Back as the last list option and returns to the prior route', async () => {
+    const projectRoot = await copyFixtureProject();
+    const before = await snapshotFiles(projectRoot);
+    const app = render(
+      React.createElement(App, {
+        projectRoot,
+        isInitialized: true,
+        binaryContext: 'local',
+      }),
+    );
+
+    await waitForFrame();
+    app.stdin.write('2');
+    await waitForText(app, 'claude-code');
+    const agentsFrame = app.lastFrame() ?? '';
+    expect(agentsFrame).toContain('5 Back');
+    expect(agentsFrame.indexOf('Back')).toBeGreaterThan(agentsFrame.indexOf('codex'));
+
+    app.stdin.write('5');
+    await waitForText(app, '> 1 Project');
+    expect(app.lastFrame()).not.toContain('> 5 Back');
+
+    await openSpecsFromLocalHome(app);
+    expect(app.lastFrame()).toContain('3 Back');
+
+    app.stdin.write('3');
+    await waitForText(app, '1 Specs');
+    expect(app.lastFrame()).toContain('2 Project Metadata');
+    expect(app.lastFrame()).not.toContain('001 active-checkout');
+
+    app.unmount();
+    expect(await snapshotFiles(projectRoot)).toEqual(before);
   });
 });

@@ -18,10 +18,6 @@ export interface ProjectMetadataView {
    */
   currentTaskSlug: string | null;
   /**
-   * ISO timestamp for when implementation began, or null when absent.
-   */
-  implementationStartedAt: string | null;
-  /**
    * Raw parsed metadata for future edit flows.
    */
   raw: ProjectMetadata | null;
@@ -40,7 +36,6 @@ export async function loadProjectMetadataView(projectRoot: string): Promise<Proj
     nextTaskSpecId: metadata?.nextTaskSpecId ?? null,
     currentTaskSpecId: metadata?.currentTaskSpecId ?? null,
     currentTaskSlug: metadata?.currentTaskSlug ?? null,
-    implementationStartedAt: metadata?.implementationStartedAt ?? null,
     raw: metadata,
   };
 }

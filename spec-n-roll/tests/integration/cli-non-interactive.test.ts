@@ -144,4 +144,27 @@ describe('SC-009 non-interactive management commands', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('id      name\ncursor  Cursor\n');
   });
+
+  it('remove --yes deletes managed files without Ink prompts', async () => {
+    const projectRoot = createTempProject('remove-yes');
+
+    await runInit({
+      projectRoot,
+      agents: ['cursor'],
+    });
+
+    const specsDir = path.join(projectRoot, 'specs');
+    mkdirSync(specsDir, { recursive: true });
+    writeFileSync(path.join(specsDir, 'keep-me.md'), '# preserved\n');
+
+    const removeResult = spawnSync(process.execPath, [cliPath, 'remove', '--yes'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+
+    expect(removeResult.status).toBe(0);
+    expect(removeResult.stdout).toContain('Removed Spec-N-Roll managed files');
+    expect(existsSync(path.join(projectRoot, '.spec-n-roll'))).toBe(false);
+    expect(existsSync(path.join(specsDir, 'keep-me.md'))).toBe(true);
+  });
 });

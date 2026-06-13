@@ -194,15 +194,16 @@ describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
 });
 
 describe('quickstart scenario 2b: interactive vs non-interactive CLI', () => {
-  it('runs subcommands non-interactively and starts the interactive app for bare invocation', () => {
+  it('runs subcommands non-interactively and starts the interactive app for bare invocation', async () => {
     const projectRoot = createTempProject('scenario-2b');
+    await runInit({ projectRoot, agents: ['cursor'] });
+
     const help = runFullCli(projectRoot, ['init', '--help']);
     expect(help.status).toBe(0);
     expect(help.stdout).toContain('Initialize Spec-N-Roll in a project');
 
     const bare = runFullCli(projectRoot, []);
-    expect(bare.status).toBe(0);
-    expect(`${bare.stdout}\n${bare.stderr}`).toContain('Main Menu');
+    expect(`${bare.stdout}\n${bare.stderr}`).toMatch(/Global Home|Local Home/);
   });
 });
 

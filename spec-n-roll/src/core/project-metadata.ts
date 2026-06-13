@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 
 import { projectMetadataSchema, type ProjectMetadata } from '../config/schema.js';
 import { formatTaskSpecId } from '../workflow/state.js';
+import { writeTaskMetadata } from './task-metadata.js';
 import { atomicWriteJson } from './atomic-write.js';
 import { CoreMutationError } from './errors.js';
 import { readTaskSpecStatus } from './task-lifecycle.js';
@@ -145,7 +146,10 @@ export async function claimImplementSlot(
   await writeProjectMetadata(projectRoot, {
     currentTaskSpecId: taskSpecId,
     currentTaskSlug: slug,
-    implementationStartedAt: metadata?.implementationStartedAt ?? new Date().toISOString(),
+  });
+
+  await writeTaskMetadata(projectRoot, taskSpecId, slug, {
+    implementationStartedAt: new Date().toISOString(),
   });
 }
 
@@ -158,6 +162,5 @@ export async function clearImplementSlot(projectRoot: string): Promise<void> {
   await writeProjectMetadata(projectRoot, {
     currentTaskSpecId: null,
     currentTaskSlug: null,
-    implementationStartedAt: null,
   });
 }

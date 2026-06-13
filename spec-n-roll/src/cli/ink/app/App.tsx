@@ -10,11 +10,15 @@ import {
 } from '../components/ContextContent.js';
 import { KeyHintOverlay } from '../components/KeyHintOverlay.js';
 import { StatusBar } from '../components/StatusBar.js';
+import { useQuitConfirmation, isHomeRoute } from '../hooks/use-quit-confirmation.js';
 import { useTerminalSize } from '../hooks/use-terminal-size.js';
 import { AgentAddScreen } from '../screens/agents/agent-add.js';
 import { AgentsListScreen } from '../screens/agents/agents-list.js';
 import { AgentRemoveScreen } from '../screens/agents/agent-remove.js';
-import { MainMenu } from '../screens/main-menu.js';
+import { GlobalHomeScreen } from '../screens/global-home.js';
+import { LocalHomeScreen } from '../screens/local-home.js';
+import { ManageLocalScreen } from '../screens/manage/manage-local.js';
+import { ProjectHubScreen } from '../screens/project/project-hub.js';
 import { ProjectMetadataEditScreen } from '../screens/project/project-metadata-edit.js';
 import { ProjectMetadataViewScreen } from '../screens/project/project-metadata-view.js';
 import { SetupInitScreen } from '../screens/setup/setup-init.js';
@@ -113,8 +117,6 @@ function RouteRenderer(props: RouteRendererProps): React.ReactElement {
   const routeProps: RoutedScreenProps = { routeContentRows: props.routeContentRows };
 
   switch (session.routeId) {
-    case 'main-menu':
-      return <MainMenu {...routeProps} />;
     case 'specs-list':
       return <SpecsListScreen {...routeProps} />;
     case 'spec-detail':
@@ -153,6 +155,14 @@ function RouteRenderer(props: RouteRendererProps): React.ReactElement {
       return <StepInstantiateScreen {...routeProps} />;
     case 'setup-frontmatter-update':
       return <SpecFrontmatterUpdateScreen {...routeProps} />;
+    case 'global-home':
+      return <GlobalHomeScreen {...routeProps} />;
+    case 'local-home':
+      return <LocalHomeScreen {...routeProps} />;
+    case 'project-hub':
+      return <ProjectHubScreen {...routeProps} />;
+    case 'manage-local':
+      return <ManageLocalScreen {...routeProps} />;
     default:
       return <PlaceholderScreen routeId={session.routeId} {...routeProps} />;
   }
@@ -166,6 +176,9 @@ function RouteRenderer(props: RouteRendererProps): React.ReactElement {
 function AppShell(): React.ReactElement {
   const session = useSession();
   const app = useApp();
+  const quit = useQuitConfirmation(() => {
+    app.exit();
+  });
   const { rows: terminalRows } = useTerminalSize();
   const [showHints, setShowHints] = useState(true);
   const keyHintRows = showHints ? KEY_HINT_REGION_ROWS : 0;
@@ -175,10 +188,16 @@ function AppShell(): React.ReactElement {
     keyHintRows,
     minimumRouteContentRows: MINIMUM_ROUTE_CONTENT_ROWS,
   });
+  const onHomeScreen = isHomeRoute(session.routeId);
 
   useInput((input, key) => {
     if (input === 'q') {
-      app.exit();
+      quit.onQuitKey();
+      return;
+    }
+
+    if (quit.pending) {
+      quit.onOtherKey();
       return;
     }
 
@@ -188,6 +207,11 @@ function AppShell(): React.ReactElement {
     }
 
     if (input === 'b' || key.escape) {
+      if (onHomeScreen && key.escape) {
+        quit.onQuitKey();
+        return;
+      }
+
       session.popRoute();
     }
   });
@@ -203,7 +227,7 @@ function AppShell(): React.ReactElement {
   return (
     <Box flexDirection="column" height={layout.terminalRows}>
       <Box flexShrink={0} height={layout.statusRows}>
-        <StatusBar />
+        <StatusBar quitConfirmationMessage={quit.message} />
       </Box>
       <Box
         flexGrow={1}

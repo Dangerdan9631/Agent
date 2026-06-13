@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Box } from 'ink';
+import { Box, Text } from 'ink';
 
 import { useTerminalSize } from '../hooks/use-terminal-size.js';
 import {
@@ -30,6 +30,10 @@ export interface RouteContentLayoutProps {
    * Selection list slot rendered in the lower sub-region. May report row requirements through selection providers.
    */
   selection: React.ReactNode;
+  /**
+   * Optional static content rendered instead of focus-driven context content for home and manage routes.
+   */
+  staticContent?: React.ReactNode;
 }
 
 /**
@@ -71,7 +75,14 @@ export function RouteContentLayout(props: RouteContentLayoutProps): React.ReactE
         height={layout.contentRows > 0 ? layout.contentRows : undefined}
         width={columns}
       >
-        <ContextContent state={contentState} />
+        {props.staticContent != null ? (
+          <Box flexDirection="column">
+            <Text bold>{props.contextState.routeTitle}</Text>
+            {props.staticContent}
+          </Box>
+        ) : (
+          <ContextContent state={contentState} />
+        )}
       </Box>
       <Box flexGrow={0} flexShrink={0} width={columns}>
         <SelectionRowProvider onRowCountChange={setSelectionRows}>

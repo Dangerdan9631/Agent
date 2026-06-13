@@ -48,16 +48,12 @@ export async function applyInteractiveProjectMetadataWrite(
 /**
  * Editable project metadata field ids.
  */
-type MetadataFieldId = 'nextTaskSpecId' | 'currentTaskSpecId' | 'implementationStartedAt';
+type MetadataFieldId = 'nextTaskSpecId' | 'currentTaskSpecId';
 
 /**
  * Ordered metadata fields edited by the compact terminal form.
  */
-const METADATA_FIELDS: readonly MetadataFieldId[] = [
-  'nextTaskSpecId',
-  'currentTaskSpecId',
-  'implementationStartedAt',
-];
+const METADATA_FIELDS: readonly MetadataFieldId[] = ['nextTaskSpecId', 'currentTaskSpecId'];
 
 /**
  * Formats metadata values as editable field text.
@@ -69,7 +65,6 @@ function metadataToFields(metadata: ProjectMetadata | null): Record<MetadataFiel
   return {
     nextTaskSpecId: String(metadata?.nextTaskSpecId ?? 1),
     currentTaskSpecId: metadata?.currentTaskSpecId ?? '',
-    implementationStartedAt: metadata?.implementationStartedAt ?? '',
   };
 }
 
@@ -85,10 +80,6 @@ function fieldsToMetadataInput(fields: Record<MetadataFieldId, string>): Project
     currentTaskSpecId:
       fields.currentTaskSpecId.trim().length > 0 ? fields.currentTaskSpecId.trim() : null,
     currentTaskSlug: fields.currentTaskSpecId.trim().length > 0 ? undefined : null,
-    implementationStartedAt:
-      fields.implementationStartedAt.trim().length > 0
-        ? fields.implementationStartedAt.trim()
-        : null,
   };
 }
 

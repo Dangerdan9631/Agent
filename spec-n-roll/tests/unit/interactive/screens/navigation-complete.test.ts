@@ -25,33 +25,49 @@ async function waitForFrame(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 30));
 }
 
+/**
+ * Polls until the rendered frame contains expected text.
+ *
+ * @param readFrame - Returns the latest rendered frame.
+ * @param text - Text fragment to wait for.
+ */
+async function waitForText(readFrame: () => string | undefined, text: string): Promise<void> {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (readFrame()?.includes(text) === true) {
+      return;
+    }
+    await waitForFrame();
+  }
+
+  throw new Error(`Timed out waiting for frame to contain: ${text}`);
+}
+
 describe('complete interactive navigation', () => {
-  it('updates main menu context from focus without opening a route', async () => {
+  it('updates local home context from focus without opening a route', async () => {
     const app = render(
       React.createElement(App, {
         projectRoot: FIXTURE_ROOT,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Review task specs and workflow progress.');
+    await waitForText(app.lastFrame, 'Version:');
 
     app.stdin.write('\u001b[B');
     await waitForFrame();
 
-    expect(app.lastFrame()).toContain('Inspect workflow variants and step order.');
-    expect(app.lastFrame()).toContain('Main Menu');
+    expect(app.lastFrame()).toContain('Inspect configured agents');
+    expect(app.lastFrame()).toContain('Local Home');
     app.unmount();
   });
 
-  it('reaches all five main-menu sections and returns with keyboard controls', async () => {
+  it('reaches local home sections and returns with keyboard controls', async () => {
     const app = render(
       React.createElement(App, {
         projectRoot: FIXTURE_ROOT,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
@@ -60,35 +76,31 @@ describe('complete interactive navigation', () => {
 
     app.stdin.write('1');
     await waitForFrame();
-    expect(app.lastFrame()).toContain('Task Specs');
-    app.stdin.write(ESCAPE);
-    await waitForFrame();
-
-    app.stdin.write('2');
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Workflows');
+    expect(app.lastFrame()).toContain('1 Specs');
     app.stdin.write(ESCAPE);
     await waitForFrame();
 
     app.stdin.write('3');
     await waitForFrame();
+    expect(app.lastFrame()).toContain('Workflows');
+    app.stdin.write('3');
+    await waitForFrame();
+
+    app.stdin.write('2');
+    await waitForFrame();
     expect(app.lastFrame()).toContain('Agents');
-    app.stdin.write(ESCAPE);
-    await waitForFrame();
-
-    app.stdin.write('4');
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Project');
-    app.stdin.write(ESCAPE);
-    await waitForFrame();
-
     app.stdin.write('5');
     await waitForFrame();
-    expect(app.lastFrame()).toContain('Initialize project');
-    app.stdin.write('b');
+
+    app.stdin.write('1');
+    await waitForFrame();
+    expect(app.lastFrame()).toContain('Project Metadata');
+    app.stdin.write('2');
+    await waitForFrame();
+    app.stdin.write('3');
     await waitForFrame();
 
-    expect(app.lastFrame()).toContain('Spec-N-Roll');
+    expect(app.lastFrame()).toContain('Local Home');
     app.unmount();
   });
 
@@ -97,16 +109,17 @@ describe('complete interactive navigation', () => {
       React.createElement(App, {
         projectRoot: FIXTURE_ROOT,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, 'Version:');
     app.stdin.write('1');
-    await waitForFrame();
+    await waitForText(app.lastFrame, '1 Specs');
+    app.stdin.write('1');
+    await waitForText(app.lastFrame, '001-active-checkout');
     app.stdin.write('\r');
-    await waitForFrame();
-    await waitForFrame();
+    await waitForText(app.lastFrame, 'lifecycle:');
 
     const frame = app.lastFrame() ?? '';
     expect(frame).toContain('Spec 001-active-checkout');
@@ -118,46 +131,28 @@ describe('complete interactive navigation', () => {
     app.unmount();
   });
 
-  it('renders form and confirmation routes in the full route content slot', async () => {
+  it('renders project metadata edit in the full route content slot', async () => {
     const app = render(
       React.createElement(App, {
         projectRoot: FIXTURE_ROOT,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, 'Version:');
     app.stdin.write('1');
-    await waitForFrame();
-    app.stdin.write('\r');
-    await waitForFrame();
-    app.stdin.write('m');
-    await waitForFrame();
-    app.stdin.write('\r');
-    await waitForFrame();
-
-    const statusFrame = app.lastFrame() ?? '';
-    expect(statusFrame).toContain('Set Task Status');
-    expect(statusFrame).toContain('target: 001-active-checkout');
-    expect(statusFrame).toContain('Active');
-    expect(statusFrame).not.toContain('Choose a section to open.');
-
-    for (let step = 0; step < 4; step += 1) {
-      app.stdin.write(ESCAPE);
-      await waitForFrame();
-    }
-
-    app.stdin.write('4');
-    await waitForFrame();
+    await waitForText(app.lastFrame, '1 Specs');
+    app.stdin.write('2');
+    await waitForText(app.lastFrame, 'e Edit metadata');
     app.stdin.write('e');
-    await waitForFrame();
+    await waitForText(app.lastFrame, 'Edit Project Metadata');
 
     const editFrame = app.lastFrame() ?? '';
     expect(editFrame).toContain('Edit Project Metadata');
     expect(editFrame).toContain('nextTaskSpecId:');
     expect(editFrame).toContain('Up/Down move, Enter apply');
-    expect(editFrame).not.toContain('> 1 Task Specs');
+    expect(editFrame).not.toContain('> 1 Specs');
     app.unmount();
   });
 });

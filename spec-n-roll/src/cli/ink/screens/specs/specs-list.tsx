@@ -1,10 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
 import type { ContextContentState, SelectedOptionContext } from '../../components/ContextContent.js';
+import {
+  appendBackMenuItem,
+  isBackMenuItem,
+  type BackMenuItem,
+} from '../../components/menu/back-menu-item.js';
 import { useSession } from '../../app/session-context.js';
+import type { RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listTaskSpecSummaries,
@@ -19,7 +25,7 @@ interface TaskSpecListItem extends SelectableListItem {
   /**
    * Read-only task spec summary represented by this row.
    */
-  summary: TaskSpecSummary;
+  summary?: TaskSpecSummary;
 }
 
 /**
@@ -103,6 +109,22 @@ function buildTaskSpecItems(summaries: readonly TaskSpecSummary[]): readonly Tas
 }
 
 /**
+ * Resolves the parent route id used when building a Back row.
+ *
+ * @param navigationStack - Current navigation stack entries.
+ * @param binaryContext - Active CLI invocation target.
+ * @returns Parent route id for the Back row.
+ */
+function parentRouteId(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): RouteId {
+  return (
+    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
+  );
+}
+
+/**
  * Builds detail lines for unrecognized task spec directories.
  *
  * @param directories - Unrecognized task spec summaries.
@@ -132,9 +154,23 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
   const [summaries, setSummaries] = useState<TaskSpecSummaryList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
-  const items = useMemo(
+  const dataItems = useMemo(
     () => (summaries == null ? [] : buildTaskSpecItems(summaries.recognized)),
     [summaries],
+  );
+  const items = useMemo((): readonly (TaskSpecListItem | BackMenuItem)[] => {
+    if (summaries == null) {
+      return [];
+    }
+
+    return appendBackMenuItem(
+      dataItems,
+      parentRouteId(session.navigationStack, session.binaryContext),
+    );
+  }, [dataItems, session.binaryContext, session.navigationStack, summaries]);
+  const backItem = useMemo(
+    () => items.find((item): item is BackMenuItem => isBackMenuItem(item)),
+    [items],
   );
   const contextState = useMemo((): ContextContentState => {
     if (selectedContext == null || summaries == null) {
@@ -163,8 +199,13 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
       },
     };
   }, [selectedContext, summaries]);
-  const reportFocusedContext = useCallback((item: TaskSpecListItem | undefined): void => {
-    setSelectedContext(item?.context);
+  const reportFocusedContext = useCallback((item: TaskSpecListItem | BackMenuItem | undefined): void => {
+    if (item == null || isBackMenuItem(item)) {
+      setSelectedContext(undefined);
+      return;
+    }
+
+    setSelectedContext(item.context);
   }, []);
 
   useEffect(() => {
@@ -187,18 +228,36 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
     };
   }, [session.projectRoot]);
 
-  const openSummary = (item: TaskSpecListItem): void => {
-    if (item.summary.taskSpecId == null || item.summary.slug == null) {
-      return;
-    }
+  const openSummary = useCallback(
+    (item: TaskSpecListItem | BackMenuItem): void => {
+      if (isBackMenuItem(item)) {
+        session.popRoute();
+        return;
+      }
 
-    session.setSelectedTaskSpec({
-      taskSpecId: item.summary.taskSpecId,
-      slug: item.summary.slug,
-      label: item.summary.directoryName,
-    });
-    session.pushRoute('spec-detail', item.summary.directoryName);
-  };
+      if (item.summary == null) {
+        return;
+      }
+
+      if (item.summary.taskSpecId == null || item.summary.slug == null) {
+        return;
+      }
+
+      session.setSelectedTaskSpec({
+        taskSpecId: item.summary.taskSpecId,
+        slug: item.summary.slug,
+        label: item.summary.directoryName,
+      });
+      session.pushRoute('spec-detail', item.summary.directoryName);
+    },
+    [session],
+  );
+
+  useInput((input) => {
+    if (backItem != null && input === backItem.key) {
+      session.popRoute();
+    }
+  });
 
   if (error != null) {
     return (
@@ -230,7 +289,7 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
       contextState={contextState}
       selection={
         summaries.recognized.length === 0 ? (
-          <Text color="gray">No recognized task specs found.</Text>
+          <SelectableList items={items} onSelect={openSummary} />
         ) : (
           <SelectableList
             items={items}

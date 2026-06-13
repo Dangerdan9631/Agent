@@ -5,6 +5,7 @@ import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../cli/commands/init.js';
 import { workflowConfigSchema } from '../config/schema.js';
 import { parseFrontmatterDocument, serializeFrontmatterDocument } from '../core/frontmatter.js';
 import { allocateNextTaskSpecId } from '../core/project-metadata.js';
+import { writeTaskMetadata } from '../core/task-metadata.js';
 import { taskSpecFilePath } from '../core/paths.js';
 import { setTaskSpecStatus } from '../core/task-lifecycle.js';
 import { instantiateStepOutput } from '../core/templates.js';
@@ -226,6 +227,9 @@ export async function runSpecify(options: SpecifyOptions): Promise<SpecifyResult
 
   await instantiateStepOutput(projectRoot, taskSpecId, slug, 'specify', {
     frontmatter: { status: 'Active' },
+  });
+  await writeTaskMetadata(projectRoot, taskSpecId, slug, {
+    createdAt: new Date().toISOString(),
   });
   await setTaskSpecStatus(projectRoot, taskSpecId, slug, 'Active');
 

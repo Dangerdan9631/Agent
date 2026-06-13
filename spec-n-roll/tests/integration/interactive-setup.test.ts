@@ -96,7 +96,7 @@ afterEach(async () => {
 });
 
 describe('interactive setup and maintenance flows', () => {
-  it('initializes an empty project through the setup menu', async () => {
+  it('initializes an empty project through the global home init action', async () => {
     const projectRoot = await createEmptyProject();
     const app = render(
       React.createElement(App, {
@@ -107,9 +107,7 @@ describe('interactive setup and maintenance flows', () => {
     );
 
     await waitForInk();
-    app.stdin.write('5');
-    await waitForInk();
-    app.stdin.write('\r');
+    app.stdin.write('2');
     await waitForInk();
     app.stdin.write(' ');
     await waitForInk();
@@ -125,7 +123,7 @@ describe('interactive setup and maintenance flows', () => {
     app.unmount();
   }, 15_000);
 
-  it('shows version information from the setup menu', async () => {
+  it('shows version information on the global home screen', async () => {
     const projectRoot = await copyFixtureProject('version');
     const app = render(
       React.createElement(App, {
@@ -135,44 +133,36 @@ describe('interactive setup and maintenance flows', () => {
       }),
     );
 
-    await waitForInk();
-    app.stdin.write('5');
-    await waitForInk();
-    app.stdin.write('2');
-    await waitForInk();
+    const frame = await waitForFrameContaining(() => app.lastFrame(), 'Version:');
 
-    expect(app.lastFrame()).toContain('Version Info');
-    expect(app.lastFrame()).toContain('toolkit version:');
-    expect(app.lastFrame()).toContain('invocation:');
+    expect(frame).toContain('Version:');
+    expect(frame).toContain('(global)');
+    expect(frame).toContain('Install Source:');
     app.unmount();
   });
 
-  it('runs update dry-run and apply through the setup menu confirmation', async () => {
+  it('runs update dry-run and apply through the manage screen upgrade flow', async () => {
     const projectRoot = await copyFixtureProject('update');
     const app = render(
       React.createElement(App, {
         projectRoot,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
     await waitForInk();
     app.stdin.write('5');
     await waitForInk();
-    app.stdin.write('3');
+    app.stdin.write('2');
     await waitForInk();
 
-    app.stdin.write('d');
-    expect(await waitForFrameContaining(() => app.lastFrame(), 'dry run:')).toContain('dry run:');
-
-    app.stdin.write('a');
     expect(await waitForFrameContaining(() => app.lastFrame(), 'Update toolkit')).toContain(
       'Update toolkit',
     );
 
     app.stdin.write('y');
-    expect(await waitForFrameContaining(() => app.lastFrame(), 'updated:')).toContain('updated:');
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'Upgraded')).toContain('Upgraded');
     app.unmount();
   }, 15_000);
 });

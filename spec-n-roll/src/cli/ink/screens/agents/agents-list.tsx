@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
+import type { RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -9,6 +10,11 @@ import type {
   ContextContentState,
   SelectedOptionContext,
 } from '../../components/ContextContent.js';
+import {
+  appendBackMenuItem,
+  isBackMenuItem,
+  type BackMenuItem,
+} from '../../components/menu/back-menu-item.js';
 import { listAgentSummaries, type AgentSummary } from '../../read-models/agents.js';
 
 /**
@@ -78,6 +84,22 @@ function buildAgentItems(
 }
 
 /**
+ * Resolves the parent route id used when building a Back row.
+ *
+ * @param navigationStack - Current navigation stack entries.
+ * @param binaryContext - Active CLI invocation target.
+ * @returns Parent route id for the Back row.
+ */
+function parentRouteId(
+  navigationStack: readonly { routeId: RouteId }[],
+  binaryContext: 'local' | 'global',
+): RouteId {
+  return (
+    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
+  );
+}
+
+/**
  * Renders and configured agents with a local configured-only toggle.
  *
  * @param props - Route slot row budget from app scaffolding.
@@ -89,9 +111,23 @@ export function AgentsListScreen(props: AgentsListScreenProps): React.ReactEleme
   const [agents, setAgents] = useState<AgentSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
-  const items = useMemo(
+  const dataItems = useMemo(
     () => (agents == null ? [] : buildAgentItems(agents, configuredOnly)),
     [agents, configuredOnly],
+  );
+  const items = useMemo((): readonly (AgentListItem | BackMenuItem)[] => {
+    if (agents == null) {
+      return [];
+    }
+
+    return appendBackMenuItem(
+      dataItems,
+      parentRouteId(session.navigationStack, session.binaryContext),
+    );
+  }, [agents, dataItems, session.binaryContext, session.navigationStack]);
+  const backItem = useMemo(
+    () => items.find((item): item is BackMenuItem => isBackMenuItem(item)),
+    [items],
   );
   const contextState = useMemo(
     (): ContextContentState => ({
@@ -101,12 +137,29 @@ export function AgentsListScreen(props: AgentsListScreenProps): React.ReactEleme
     }),
     [selectedContext],
   );
-  const reportFocusedContext = useCallback((item: AgentListItem | undefined): void => {
-    setSelectedContext(item?.context);
+  const reportFocusedContext = useCallback((item: AgentListItem | BackMenuItem | undefined): void => {
+    if (item == null || isBackMenuItem(item)) {
+      setSelectedContext(undefined);
+      return;
+    }
+
+    setSelectedContext(item.context);
   }, []);
-  const ignoreAgentRowActivation = useCallback((): void => undefined, []);
+  const ignoreAgentRowActivation = useCallback(
+    (item: AgentListItem | BackMenuItem): void => {
+      if (isBackMenuItem(item)) {
+        session.popRoute();
+      }
+    },
+    [session],
+  );
 
   useInput((input) => {
+    if (backItem != null && input === backItem.key) {
+      session.popRoute();
+      return;
+    }
+
     if (input === 't') {
       setConfiguredOnly((current) => !current);
       return;
@@ -177,7 +230,7 @@ export function AgentsListScreen(props: AgentsListScreenProps): React.ReactEleme
             filter: {configuredOnly ? 'configured' : 'all'} (t toggle, a add, r remove)
           </Text>
           {agents.length === 0 ? (
-            <Text color="gray">No agents found.</Text>
+            <SelectableList items={items} onSelect={ignoreAgentRowActivation} />
           ) : (
             <SelectableList
               items={items}

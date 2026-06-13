@@ -84,7 +84,7 @@ function createApp(): React.ReactElement {
   return React.createElement(App, {
     projectRoot: FIXTURE_ROOT,
     isInitialized: true,
-    binaryContext: 'global',
+    binaryContext: 'local',
   });
 }
 
@@ -157,11 +157,18 @@ describe('interactive shell fullscreen layout', () => {
     const restoreRows = setTerminalRows(14);
     const app = render(createApp());
 
-    await waitForFrame();
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await waitForFrame();
+      if ((app.lastFrame() ?? '').includes('> 1 Project')) {
+        break;
+      }
+    }
+
     const frame = app.lastFrame() ?? '';
 
-    expect(frame.indexOf('Spec-N-Roll')).toBeLessThan(frame.indexOf('> 1 Task Specs'));
-    expect(frame.indexOf('> 1 Task Specs')).toBeLessThan(frame.indexOf('q quit'));
+    expect(frame.indexOf('Spec-N-Roll')).toBeGreaterThanOrEqual(0);
+    expect(frame.indexOf('> 1 Project')).toBeGreaterThan(frame.indexOf('Spec-N-Roll'));
+    expect(frame.indexOf('> 1 Project')).toBeLessThan(frame.indexOf('q quit'));
 
     app.unmount();
     restoreRows();
@@ -198,15 +205,15 @@ describe('interactive shell fullscreen layout', () => {
     app.stdin.write(DOWN_ARROW);
     await waitForFrame();
 
-    expect(app.lastFrame()).toContain('> 2 Workflows');
+    expect(app.lastFrame()).toContain('> 2 Agents');
 
     setTerminalRows(12);
     resizeTestStdout(app.stdout, 12);
     await waitForFrame();
 
     const resizedFrame = app.lastFrame() ?? '';
-    expect(resizedFrame).toContain('> 2 Workflows');
-    expect(resizedFrame).toContain('Main Menu');
+    expect(resizedFrame).toContain('> 2 Agents');
+    expect(resizedFrame).toContain('Local Home');
 
     app.unmount();
     restoreRows();
@@ -219,8 +226,8 @@ describe('interactive shell fullscreen layout', () => {
     await waitForFrame();
     const frame = app.lastFrame() ?? '';
 
-    expect(frame).toContain('> 1 Task Specs');
-    expect(frame).toContain('5 Setup / Maintenance');
+    expect(frame).toContain('> 1 Project');
+    expect(frame).toContain("5 Manage Spec N' Roll");
 
     app.unmount();
     restoreRows();
@@ -235,7 +242,7 @@ describe('interactive shell fullscreen layout', () => {
 
     expect(frame).toContain('Terminal is too small');
     expect(frame).toContain(`Resize to at least ${SCAFFOLDING_MINIMUM_ROWS} rows`);
-    expect(frame).not.toContain('> 1 Task Specs');
+    expect(frame).not.toContain('> 1 Project');
     expect(frame).not.toContain('q quit');
 
     app.unmount();
@@ -306,8 +313,8 @@ describe('app scaffolding shell layout', () => {
     await waitForFrame();
     const frame = app.lastFrame() ?? '';
 
-    expect(frame.indexOf('Spec-N-Roll')).toBeLessThan(frame.indexOf('> 1 Task Specs'));
-    expect(frame.indexOf('> 1 Task Specs')).toBeLessThan(frame.indexOf('q quit'));
+    expect(frame.indexOf('Spec-N-Roll')).toBeLessThan(frame.indexOf('> 1 Project'));
+    expect(frame.indexOf('> 1 Project')).toBeLessThan(frame.indexOf('q quit'));
 
     app.unmount();
     restoreRows();
@@ -321,7 +328,7 @@ describe('app scaffolding shell layout', () => {
     const frame = app.lastFrame() ?? '';
 
     expect(frame).not.toContain('Terminal is too small');
-    expect(frame).toContain('> 1 Task Specs');
+    expect(frame).toContain('> 1 Project');
 
     app.unmount();
     restoreRows();
@@ -370,14 +377,16 @@ describe('app scaffolding shell layout', () => {
     const app = render(createApp());
 
     await waitForFrame();
-    const mainMenuLines = (app.lastFrame() ?? '').split('\n');
-    const mainMenuMiddle = mainMenuLines
+    const homeLines = (app.lastFrame() ?? '').split('\n');
+    const homeMiddle = homeLines
       .slice(STATUS_REGION_ROWS, -KEY_HINT_REGION_ROWS)
       .join('\n');
 
-    expect(mainMenuMiddle).toContain('> 1 Task Specs');
-    expect(mainMenuMiddle).toContain('5 Setup / Maintenance');
+    expect(homeMiddle).toContain('> 1 Project');
+    expect(homeMiddle).toContain("5 Manage Spec N' Roll");
 
+    app.stdin.write('1');
+    await waitForFrame();
     app.stdin.write('1');
     await waitForFrame();
     await waitForFrame();
@@ -388,7 +397,7 @@ describe('app scaffolding shell layout', () => {
     expect(specsLines.slice(0, STATUS_REGION_ROWS).length).toBe(STATUS_REGION_ROWS);
     expect(specsLines.slice(-KEY_HINT_REGION_ROWS).length).toBe(KEY_HINT_REGION_ROWS);
     expect(specsLines.slice(STATUS_REGION_ROWS, -KEY_HINT_REGION_ROWS).join('\n')).not.toContain(
-      '5 Setup / Maintenance',
+      "5 Manage Spec N' Roll",
     );
     expect(specsFrame).toContain('Task Specs');
     expect(specsFrame).toMatch(/001|active-checkout/);

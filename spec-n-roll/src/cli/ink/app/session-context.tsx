@@ -6,7 +6,7 @@ import {
   currentRoute,
   popRoute,
   pushRoute,
-  ROOT_NAVIGATION_STACK,
+  rootNavigationStackFor,
   type NavigationStackEntry,
   type RouteId,
 } from './navigation.js';
@@ -74,7 +74,7 @@ export interface SessionContextValue {
    */
   pushRoute: (routeId: RouteId, contextLabel?: string) => void;
   /**
-   * Pops one child route while preserving the main menu as root.
+   * Pops one child route while preserving the instance home root.
    */
   popRoute: () => void;
   /**
@@ -95,8 +95,9 @@ const SessionContext = createContext<SessionContextValue | null>(null);
  * @returns React element wrapping children with session context.
  */
 export function SessionProvider(props: SessionProviderProps): React.ReactElement {
-  const [navigationStack, setNavigationStack] =
-    useState<readonly NavigationStackEntry[]>(ROOT_NAVIGATION_STACK);
+  const [navigationStack, setNavigationStack] = useState<readonly NavigationStackEntry[]>(() =>
+    rootNavigationStackFor(props.binaryContext),
+  );
   const [selectedTaskSpec, setSelectedTaskSpec] = useState<TaskSpecIdentity | null>(null);
 
   const value = useMemo<SessionContextValue>(
