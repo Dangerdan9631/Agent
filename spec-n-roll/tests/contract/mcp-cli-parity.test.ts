@@ -66,8 +66,6 @@ describe('MCP/CLI parity', () => {
       'write',
       '--task-spec-id',
       '001',
-      '--slug',
-      'sample-feature',
       '--workflow-variant-id',
       'quick',
       '--status',
@@ -100,8 +98,6 @@ describe('MCP/CLI parity', () => {
       'read',
       '--task-spec-id',
       '001',
-      '--slug',
-      'read-parity',
     ]);
     const fromCore = await readWorkflowState(projectRoot, '001', 'read-parity');
     expect(fromCli).toEqual(fromCore);
@@ -122,9 +118,6 @@ describe('MCP/CLI parity', () => {
       'set',
       '--task-spec-id',
       '001',
-      '--slug',
-      'status-parity',
-      '--status',
       'Complete',
     ]);
 
@@ -135,6 +128,7 @@ describe('MCP/CLI parity', () => {
   it('project_metadata_read and write via CLI match core operations', async () => {
     const projectRoot = createTempProject('metadata');
     mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
+    mkdirSync(path.join(projectRoot, 'specs', '002-active-task'), { recursive: true });
 
     await writeProjectMetadata(projectRoot, { nextTaskSpecId: 1 });
 
@@ -146,14 +140,13 @@ describe('MCP/CLI parity', () => {
       '3',
       '--current-task-spec-id',
       '002',
-      '--current-task-slug',
-      'active-task',
     ]);
 
     const fromCli = runCliJson(projectRoot, ['project', 'metadata', 'read']);
     const fromCore = await readProjectMetadata(projectRoot);
     expect(fromCli).toEqual(fromCore);
     expect(fromCore?.nextTaskSpecId).toBe(3);
+    expect(fromCore?.currentTaskSlug).toBe('active-task');
   });
 
   it('task_checkbox_set via CLI matches core checkbox updates', async () => {
@@ -171,14 +164,11 @@ describe('MCP/CLI parity', () => {
       'task',
       'checkbox',
       'set',
+      'true',
       '--task-spec-id',
       '001',
-      '--slug',
-      'checkbox-parity',
       '--task-id',
       'T100',
-      '--completed',
-      'true',
     ]);
 
     const tasksContent = readFileSync(path.join(specDir, 'tasks.md'), 'utf8');
@@ -197,8 +187,6 @@ describe('MCP/CLI parity', () => {
       'instantiate',
       '--task-spec-id',
       '002',
-      '--slug',
-      'cli-parity',
       '--step-id',
       'specify',
       '--frontmatter',
@@ -227,8 +215,6 @@ describe('MCP/CLI parity', () => {
       'update',
       '--task-spec-id',
       '001',
-      '--slug',
-      'frontmatter-parity',
       '--field',
       'title=Updated Title',
       '--field',

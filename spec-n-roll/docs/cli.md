@@ -1,247 +1,423 @@
 # CLI Reference
 
-Command-line interface for spec-n-roll. This document reflects shipped behavior through **Phase 11 (US10)**: triple-binary packaging, dispatcher delegation, project initialization, management commands (`init`, `update`, `config add-agent`, `version`), non-interactive `--yes` mode, config schema migration and compatibility warnings on update, core-library subcommands, and MCP tool registration.
+When you run the `spec-n-roll` CLI, it locates the appropriate binary to execute based on your current working directory and command.
 
-Toolkit docs live in the repository root `docs/` only — they are not installed into user projects by `init` or `update`.
+It first looks for a project-local binary by walking up the directory tree looking for `.spec-n-roll/cli/bin/spec-n-roll`. If not found, it falls back to the globally installed binary instance.
 
-## Three binaries
+## spec-n-roll
 
-spec-n-roll ships as three separate Node.js entry points compiled from `src/` into `dist/`:
+Specification-driven workflow toolkit for AI coding agents
 
-| Binary         | npm `bin` name    | Source                  | Built output             | Role                                                                                            |
-| -------------- | ----------------- | ----------------------- | ------------------------ | ----------------------------------------------------------------------------------------------- |
-| **Dispatcher** | `spec-n-roll`     | `src/cli/dispatcher.ts` | `dist/cli/dispatcher.js` | Global npm entry point; resolves local vs global CLI and exec's the full CLI as a child process |
-| **Full CLI**   | `spec-n-roll-cli` | `src/cli/index.ts`      | `dist/cli/index.js`      | Argument parsing, subcommands, and (eventually) Ink UI                                          |
-| **MCP server** | `spec-n-roll-mcp` | `src/mcp/server.ts`     | `dist/mcp/server.js`     | stdio MCP transport; thin interface over `src/core/`                                            |
-
-After `npm run build`, the primary runnable artifacts are:
-
-```text
-dist/
-├── cli/
-│   ├── dispatcher.js
-│   ├── index.js
-│   ├── spec-n-roll.cmd
-│   └── spec-n-roll-mcp.cmd
-├── mcp/
-│   └── server.js
-└── templates/
-    ├── spec.md
-    ├── plan.md
-    └── tasks.md
+usage:
+```shell
+spec-n-roll [options] [command]
 ```
 
-### Install locations
+| Command               | Description                                 |
+| --------------------- | ------------------------------------------- |
+| [init](#init)         | Initialize Spec-N-Roll in a project         |
+| [version](#version)   | Show installed Spec-N-Roll versions         |
+| [list](#list)         | List toolkit resources                      |
+| [update](#update)     | Update the toolkit to the latest version    |
+| [config](#config)     | Configure Spec-N-Roll project settings      |
+| [workflow](#workflow) | Workflow state operations                   |
+| [task](#task)         | Task spec lifecycle and checkbox operations |
+| [project](#project)   | Project metadata operations                 |
+| [step](#step)         | Step output template operations             |
+| [spec](#spec)         | spec.md frontmatter operations              |
 
-| Binary     | Global npm install            | Project-local (after `init`)           |
-| ---------- | ----------------------------- | -------------------------------------- |
-| Dispatcher | Yes (`spec-n-roll` on `PATH`) | No                                     |
-| Full CLI   | Co-bundled with dispatcher    | `.spec-n-roll/cli/bin/spec-n-roll`     |
-| MCP server | No (project-local only)       | `.spec-n-roll/cli/bin/spec-n-roll-mcp` |
+Running the CLI with no command starts it in interactive mode.
 
-During `init`, the toolkit copies `dist/cli/index.js` and `dist/mcp/server.js` into `.spec-n-roll/cli/bin/` as `spec-n-roll` and `spec-n-roll-mcp`. On Windows, `.cmd` wrappers are created alongside the binaries. Implementation: `src/cli/commands/init.ts`.
+## init
 
-## Global dispatcher (implemented)
+Initialize Spec-N-Roll in a project
 
-Implementation: `src/cli/dispatcher.ts`.
-
-When you run the global `spec-n-roll` binary (dispatcher):
-
-1. Unless `--global` is present, walk from `cwd` upward to find `.spec-n-roll/cli/bin/spec-n-roll`.
-2. If found and executable, **exec** the local full CLI as a child process (dispatcher does not load full CLI/core/MCP in-process).
-3. If not found, exec the co-bundled global full CLI (`dist/cli/index.js`, or `spec-n-roll.cmd` on Windows).
-4. `--global` skips local resolution and always uses the co-bundled global full CLI.
-
-| Behavior                                     | Status                                                              |
-| -------------------------------------------- | ------------------------------------------------------------------- |
-| Parent walk for local CLI                    | Implemented                                                         |
-| Child process exec with inherited stdio      | Implemented                                                         |
-| `--global` bypass                            | Implemented                                                         |
-| Windows `.cmd` preference for local CLI      | Implemented                                                         |
-| Clear error when local CLI is not executable | Implemented                                                         |
-| Forward `-v` / `--version` unchanged         | Implemented — combined version report via full CLI                    |
-
-Direct full CLI access for development:
-
-```bash
-node dist/cli/index.js --help
-npm run build && npx spec-n-roll-cli workflow state read --help
+Usage:
+```shell
+spec-n-roll init [options] [path]
 ```
 
-## `init` (implemented)
+| Flag                | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| `[path]`            | Project directory to initialize (default: ".")      |
+| `--agents <agents>` | Comma-separated agent ids (e.g. cursor,claude-code) |
 
-Implementation: `src/cli/commands/init.ts`, agent prompts in `src/cli/ink/init-prompts.tsx`.
+Available agents can be found using the `spec-n-roll list agents` command.
 
-```bash
-spec-n-roll init [path]
-spec-n-roll init . --yes --agents cursor,claude-code
+## version
+
+Show installed Spec-N-Roll versions
+
+Usage:
+```shell
+spec-n-roll version [options]
 ```
 
-| Flag               | Description                                                                 |
-| ------------------ | --------------------------------------------------------------------------- |
-| `[path]`           | Project directory to initialize (default: `.`)                              |
-| `--yes`            | Non-interactive mode; requires `--agents`                                   |
-| `--agents <list>`  | Comma-separated bundled agent ids: `cursor`, `claude-code`, `copilot`, `codex` |
+## list
 
-**Interactive mode** (default): Ink multi-select for bundled agents.
+List toolkit resources
 
-**Non-interactive mode** (`--yes`): skips Ink; `--agents` is required with at least one id.
-
-**Outputs:**
-
-- `.spec-n-roll/cli/bin/spec-n-roll` and `spec-n-roll-mcp` (+ `.cmd` on Windows)
-- `.spec-n-roll/AGENTS.md` canonical rules
-- `.agents/skills/` directory scaffolding
-- Per-agent pointer files and MCP config merge (see `multi-agent.md`)
-- `.spec-n-roll/bundled-extensions/{id}/manifest.json` for selected agents
-- `.spec-n-roll/config/workflow.config.json` (papercut, quick, full tiers)
-- `.spec-n-roll/config/project-metadata.json` (`nextTaskSpecId: 1`)
-- `.spec-n-roll/compatibility.json` (empty incompatible combinations)
-- `.spec-n-roll/scripts/` paired `.sh` and `.ps1` automation scripts (see `platform-scripts.md`)
-
-## `update` (implemented)
-
-Implementation: `src/cli/commands/update.ts`, MCP refresh in `src/agents/mcp-config.ts`.
-
-```bash
-spec-n-roll update
-spec-n-roll update --yes
-spec-n-roll update --dry-run
+Usage:
+```shell
+spec-n-roll list [command]
 ```
 
-| Flag                   | Description                                              |
-| ---------------------- | -------------------------------------------------------- |
-| `--dry-run`            | Preview toolkit-owned files to overwrite and `.bak` plan |
-| `--yes`                | Non-interactive mode; skip Ink confirmation              |
-| `--confirm-migration`  | Apply breaking config migrations without prompting (US10 hook) |
+| Command                | Description               |
+| ---------------------- | ------------------------- |
+| [agents](#list-agents) | List all available agents |
+
+### list agents
+
+List all available agents
+
+Usage:
+```shell
+spec-n-roll list agents [options]
+```
+
+| Flag       | Description                                                       |
+| ---------- | ----------------------------------------------------------------- |
+| `--enabled` | List only agents installed and enabled in this project's config |
+
+Prints each agent id and display name. Use these ids with `init --agents` and `config agent add`.
+
+## update
+
+Update the toolkit to the latest version
+
+Usage:
+```shell
+spec-n-roll update [options]
+```
+
+| Flag                  | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `--dry-run`           | Preview update changes without applying them |
+| `--force`             | Apply breaking config migrations             |
 
 **Behavior:**
 
-- Overwrites toolkit-owned paths (`.spec-n-roll/` except `config/`, `.agents/`, binaries, scripts, skills, bundled extensions).
-- Preserves user-owned files byte-for-byte (`.spec-n-roll/config/`, `specs/`, `living-specs/`).
-- Writes `.bak` siblings for locally modified toolkit-owned files before overwrite (`src/updates/backup.ts`).
-- Refreshes spec-n-roll MCP server paths for all configured agents.
-- Plans and applies config schema migrations (`src/updates/migration.ts`).
-- Reports extension compatibility warnings from `.spec-n-roll/compatibility.json` (warnings never block completion).
+- Preserves user-owned files
+  - `.spec-n-roll/config/`
+  - `specs/` (migrates config file schemas)
+  - `living-specs/`
+- Overwrites binaries, scripts, skills, and extensions in toolkit-owned paths
+  - `.agents/skills/spec-n-*`
+  - `.spec-n-roll/` (except `config/`)
+- Writes `.bak` backups for locally modified toolkit-owned files before overwrite.
+- Refreshes Spec-N-Roll MCP server paths for all configured agents.
+- Applies config schema migrations.
+- Reports extension compatibility warnings.
 
-## `config add-agent` (implemented)
+## config
 
-Implementation: `src/cli/commands/config-add-agent.ts`.
+Configure Spec-N-Roll settings
 
-```bash
-spec-n-roll config add-agent
-spec-n-roll config add-agent --yes --agent copilot
+Usage:
+```shell
+spec-n-roll config [command]
 ```
 
-| Flag            | Description                                        |
-| --------------- | -------------------------------------------------- |
-| `--yes`         | Non-interactive mode; requires `--agent`           |
-| `--agent <id>`  | Bundled agent id: `cursor`, `claude-code`, `copilot`, `codex` |
+| Command                    | Description                               |
+| -------------------------- | ----------------------------------------- |
+| [agent](#config-agent)     | Manage configured AI coding agents        |
 
-Adds rules, skills pointers, bundled extension manifest, and MCP config merge for the new agent only. Existing agents remain unchanged. Idempotent when the agent is already configured.
+### config agent
 
-## `version` (implemented)
+Manage configured AI coding agents
 
-Implementation: `src/cli/commands/version.ts`.
-
-```bash
-spec-n-roll version
-spec-n-roll -v
-spec-n-roll --version
+Usage:
+```shell
+spec-n-roll config agent [command]
 ```
 
-Prints combined report: toolkit version, invocation target (`local` / `global` / `direct`), dispatcher version when delegated, and local CLI path when running project-local.
+| Command                              | Description                               |
+| ------------------------------------ | ----------------------------------------- |
+| [add](#config-agent-add)             | Add agents to the project configuration   |
+| [remove](#config-agent-remove)       | Remove agents from the project configuration |
 
-> **TODO:** Discover and report latest published toolkit version from registry.
+### config agent add
 
-## Management commands summary
+Add agents to the project configuration
 
-| Command            | Status      | Flags                                      |
-| ------------------ | ----------- | ------------------------------------------ |
-| `init [path]`      | Implemented | `--yes`, `--agents`                        |
-| `update`           | Implemented | `--dry-run`, `--yes`, `--confirm-migration` |
-| `config add-agent` | Implemented | `--yes`, `--agent`                         |
-| `version`          | Implemented | — (also `-v` / `--version` on full CLI)    |
-
-### Interactive vs non-interactive invocation
-
-- `spec-n-roll <subcommand>` runs non-interactively, prints help or results, and exits.
-- Management subcommands support `--yes` for automation (SC-009).
-- Bare `spec-n-roll` without a subcommand currently prints Commander usage and exits non-zero — a dedicated Ink home screen is not yet implemented (see TODO below).
-
-## Core library subcommands (implemented)
-
-Non-interactive subcommands invoke `src/core/` — the same operations exposed as MCP tools (SC-012). Implementation: `src/cli/commands/core.ts`.
-
-| Subcommand                                                                                                                                                                                   | MCP tool twin             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| `spec-n-roll workflow state read --task-spec-id <id> --slug <slug>`                                                                                                                          | `workflow_state_read`     |
-| `spec-n-roll workflow state write --task-spec-id <id> --slug <slug> --workflow-variant-id <id> --status <active\|paused\|complete> [--last-completed-step-id <id>] [--current-step-id <id>]` | `workflow_state_write`    |
-| `spec-n-roll task status set --task-spec-id <id> --slug <slug> --status <Active\|Complete\|Locked>`                                                                                          | `task_spec_status_set`    |
-| `spec-n-roll project metadata read`                                                                                                                                                          | `project_metadata_read`   |
-| `spec-n-roll project metadata write [options]`                                                                                                                                               | `project_metadata_write`  |
-| `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id...> --completed <true\|false>`                                                                                | `task_checkbox_set`       |
-| `spec-n-roll step instantiate --task-spec-id <id> --slug <slug> --step-id <specify\|plan\|tasks> [--frontmatter key=value ...]`                                                              | `step_output_instantiate` |
-| `spec-n-roll spec frontmatter update --task-spec-id <id> --slug <slug> [--field key=value ...]`                                                                                              | `spec_frontmatter_update` |
-
-Example:
-
-```bash
-node dist/cli/index.js step instantiate \
-  --task-spec-id 001 --slug my-feature --step-id specify \
-  --frontmatter status=Active
-
-node dist/cli/index.js workflow state write \
-  --task-spec-id 001 --slug my-feature \
-  --workflow-variant-id quick --status active
+Usage:
+```shell
+spec-n-roll config agent add <agents>
 ```
 
-**Notes:**
+| Argument  | Description                                              |
+| --------- | -------------------------------------------------------- |
+| `<agents>` | Comma-separated agent ids to add (e.g. `copilot,claude-code`) |
 
-- `task status set` is the only supported path for `status` frontmatter changes.
-- `spec frontmatter update` rejects `status` fields.
-- Locked task specs reject mutations with a clear error.
+Adds rules, skills pointers, extension manifests, and MCP config for the specified agents. Existing agents remain unchanged.
+Available agents can be found using the `spec-n-roll list agents` command.
 
-## MCP server (implemented)
+### config agent remove
 
-Implementation: `src/mcp/server.ts`, tool handlers in `src/mcp/tools.ts`.
+Remove agents from the project configuration
 
-Start locally:
-
-```bash
-node dist/mcp/server.js
+Usage:
+```shell
+spec-n-roll config agent remove <agents>
 ```
 
-Registered tools (stdio transport):
+| Argument  | Description                                                 |
+| --------- | ----------------------------------------------------------- |
+| `<agents>` | Comma-separated agent ids to remove (e.g. `copilot,claude-code`) |
 
-| Tool                      | Purpose                                                |
-| ------------------------- | ------------------------------------------------------ |
-| `workflow_state_read`     | Read `workflow-state.json` for a task spec             |
-| `workflow_state_write`    | Write workflow state after step completion or recovery |
-| `task_spec_status_set`    | Set `status` in `spec.md` frontmatter                  |
-| `project_metadata_read`   | Read `.spec-n-roll/config/project-metadata.json`       |
-| `project_metadata_write`  | Update project metadata fields                         |
-| `task_checkbox_set`       | Toggle `tasks.md` completion checkbox by task ID       |
-| `step_output_instantiate` | Copy step output template into task spec directory     |
-| `spec_frontmatter_update` | Update non-status `spec.md` frontmatter fields         |
+Removes the agents from `workflow.config.json`, deletes agent-specific rules and extension manifests, and removes the Spec-N-Roll MCP server entry from each agent's MCP config. Other configured agents and unrelated MCP servers remain unchanged.
 
-MCP uses `process.cwd()` as the project root. Agent MCP configuration must point at `.spec-n-roll/cli/bin/spec-n-roll-mcp` — never the dispatcher or full CLI binary.
+## workflow
 
-MCP/CLI parity for all eight core tools is covered in `tests/contract/mcp-cli-parity.test.ts` (SC-012).
+Workflow state operations
 
-## TODO: Not yet implemented
+Usage:
+```shell
+spec-n-roll workflow [command]
+```
 
-| Area                                                    | Notes                                      |
-| ------------------------------------------------------- | ------------------------------------------ |
-| Bare `spec-n-roll` Ink interactive home screen          | No subcommand today shows Commander usage  |
-| Latest published toolkit version discovery in `version` | Registry lookup not wired                    |
-| Init layout confirmation Ink prompts                    | Agent/workflow selection only today        |
+| Command                  | Description                    |
+| ------------------------ | ------------------------------ |
+| [state](#workflow-state) | read and write workflow-state.json |
 
-## Related documentation
+### workflow state
 
-| Topic                    | File                                                      |
-| ------------------------ | --------------------------------------------------------- |
-| Multi-agent init setup   | `multi-agent.md`                                          |
-| File ownership on update | `updates-and-migrations.md`                               |
-| Full command contracts   | `specs/001-spec-n-roll-toolkit/contracts/cli-commands.md` |
-| MCP tool contracts       | `specs/001-spec-n-roll-toolkit/contracts/mcp-tools.md`    |
+Read and write workflow-state.json
+
+Usage:
+```shell
+spec-n-roll workflow state [command]
+```
+
+| Command                        | Description                          |
+| ------------------------------ | ------------------------------------ |
+| [read](#workflow-state-read)   | Read workflow state for a task spec  |
+| [write](#workflow-state-write) | Write workflow state for a task spec |
+
+### workflow state read
+
+Read workflow state for a task spec
+
+Usage:
+```shell
+spec-n-roll workflow state read [options]
+```
+
+| Flag                  | Description                     |
+| --------------------- | ------------------------------- |
+| `--task-spec-id <id>` | Numeric task spec id (e.g. 001) |
+
+The slug is resolved automatically from the matching `specs/{id}-{slug}/` directory.
+
+### workflow state write
+
+Write workflow state for a task spec
+
+Usage:
+```shell
+spec-n-roll workflow state write [options]
+```
+
+| Flag                            | Description                                  |
+| ------------------------------- | -------------------------------------------- |
+| `--task-spec-id <id>`           | Numeric task spec id                         |
+| `--workflow-variant-id <id>`    | Workflow variant id                          |
+| `--last-completed-step-id <id>` | Last completed step id                       |
+| `--current-step-id <id>`        | Current in-progress step id                  |
+| `--status <status>`             | Operational status: active\|paused\|complete |
+
+## task
+
+Task spec lifecycle and checkbox operations
+
+Usage:
+```shell
+spec-n-roll task [command]
+```
+
+| Command                    | Description                 |
+| -------------------------- | --------------------------- |
+| [status](#task-status)     | Task spec lifecycle status  |
+| [checkbox](#task-checkbox) | tasks.md checkbox toggles   |
+
+### task status
+
+Task spec lifecycle status
+
+Usage:
+```shell
+spec-n-roll task status [command]
+```
+
+| Command                 | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| [set](#task-status-set) | Set task spec lifecycle status in spec.md frontmatter |
+
+### task status set
+
+Set task spec lifecycle status in spec.md frontmatter
+
+Usage:
+```shell
+spec-n-roll task status set [options] <status>
+```
+
+| Argument | Description              |
+| -------- | ------------------------ |
+| `status` | Active\|Complete\|Locked |
+
+| Flag                  | Description          |
+| --------------------- | -------------------- |
+| `--task-spec-id <id>` | Numeric task spec id |
+
+### task checkbox
+
+tasks.md checkbox toggles
+
+Usage:
+```shell
+spec-n-roll task checkbox [command]
+```
+
+| Command                   | Description                                       |
+| ------------------------- | ------------------------------------------------- |
+| [set](#task-checkbox-set) | Toggle one or more tasks.md checkboxes by task id |
+
+### task checkbox set
+
+Toggle one or more tasks.md checkboxes by task id
+
+Usage:
+```shell
+spec-n-roll task checkbox set <completed> [options]
+```
+
+| Argument    | Description   |
+| ----------- | ------------- |
+| `completed` | true or false |
+
+| Flag                  | Description                           |
+| --------------------- | ------------------------------------- |
+| `--task-spec-id <id>` | Numeric task spec id                  |
+| `--task-id <ids...>`  | One or more task ids (e.g. T042 T043) |
+
+## project
+
+Project metadata operations
+
+Usage:
+```shell
+spec-n-roll project [command]
+```
+
+| Command                         | Description                      |
+| ------------------------------- | -------------------------------- |
+| [metadata](#project-metadata)   | project-metadata.json read/write |
+
+### project metadata
+
+project-metadata.json read/write
+
+Usage:
+```shell
+spec-n-roll project metadata [command]
+```
+
+| Command                          | Description                         |
+| -------------------------------- | ----------------------------------- |
+| [read](#project-metadata-read)   | Read project-metadata.json          |
+| [write](#project-metadata-write) | Update project-metadata.json fields |
+
+### project metadata read
+
+Read project-metadata.json
+
+Usage:
+```shell
+spec-n-roll project metadata read [options]
+```
+
+### project metadata write
+
+Update project-metadata.json fields
+
+Usage:
+```shell
+spec-n-roll project metadata write [options]
+```
+
+| Flag                                | Description                         |
+| ----------------------------------- | ----------------------------------- |
+| `--next-task-spec-id <n>`           | Next task spec id counter           |
+| `--current-task-spec-id <id>`       | Current implementation task spec id |
+| `--implementation-started-at <iso>` | Implementation start timestamp      |
+
+When `--current-task-spec-id` is provided, the slug is resolved from the matching task spec directory.
+
+## step
+
+Step output template operations
+
+Usage:
+```shell
+spec-n-roll step [command]
+```
+
+| Command                          | Description                                                   |
+| -------------------------------- | ------------------------------------------------------------- |
+| [instantiate](#step-instantiate) | Instantiate a step output template into a task spec directory |
+
+### step instantiate
+
+Instantiate a step output template into a task spec directory
+
+Usage:
+```shell
+spec-n-roll step instantiate [options]
+```
+
+| Flag                      | Description                             |
+| ------------------------- | --------------------------------------- |
+| `--task-spec-id <id>`     | Numeric task spec id                    |
+| `--step-id <id>`          | Step id: specify\|plan\|tasks           |
+| `--frontmatter <pair...>` | Frontmatter key=value pairs for spec.md |
+
+## spec
+
+spec.md frontmatter operations
+
+Usage:
+```shell
+spec-n-roll spec [command]
+```
+
+| Command                          | Description                    |
+| -------------------------------- | ------------------------------ |
+| [frontmatter](#spec-frontmatter) | Non-status frontmatter updates |
+
+### spec frontmatter
+
+Non-status frontmatter updates
+
+Usage:
+```shell
+spec-n-roll spec frontmatter [command]
+```
+
+| Command                            | Description                                      |
+| ---------------------------------- | ------------------------------------------------ |
+| [update](#spec-frontmatter-update) | Merge non-status fields into spec.md frontmatter |
+
+### spec frontmatter update
+
+Merge non-status fields into spec.md frontmatter
+
+Usage:
+```shell
+spec-n-roll spec frontmatter update [options]
+```
+
+| Flag                  | Description                   |
+| --------------------- | ----------------------------- |
+| `--task-spec-id <id>` | Numeric task spec id          |
+| `--field <pair...>`   | Frontmatter key=value pairs   |

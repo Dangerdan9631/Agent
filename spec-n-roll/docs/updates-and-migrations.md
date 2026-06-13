@@ -1,6 +1,6 @@
 # Updates and Migrations
 
-How spec-n-roll classifies project files during updates and what is safe to overwrite.
+How Spec-N-Roll classifies project files during updates and what is safe to overwrite.
 
 Toolkit docs live in the repository root `docs/` only — they are **not** installed into user projects by `init` or `update`.
 
@@ -34,20 +34,20 @@ Repository root `docs/` (toolkit-authored documentation) is never copied into us
 Implementation: `src/cli/commands/update.ts`, backup helper `src/updates/backup.js`, MCP refresh `src/agents/mcp-config.ts`.
 
 ```bash
-spec-n-roll update --yes
+spec-n-roll update
 spec-n-roll update --dry-run
-spec-n-roll update --yes --confirm-migration
+spec-n-roll update --force
 ```
 
-When `update` runs (interactively or with `--yes`):
+When `update` runs:
 
 1. Read configured agents from `.spec-n-roll/config/workflow.config.json`.
 2. Plan user-owned config schema migrations (`src/updates/migration.ts`).
 3. Evaluate extension compatibility warnings from `.spec-n-roll/compatibility.json` (`src/extensions/compatibility.ts`).
-4. Plan toolkit-owned overwrites: binaries, platform scripts, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, bundled extension manifests, and `compatibility.json`.
+4. Plan toolkit-owned overwrites: binaries, platform scripts, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, extension manifests, and `compatibility.json`.
 5. For each toolkit-owned file that exists and differs from the new toolkit content, write a `.bak` sibling before overwrite.
 6. Apply confirmed config migrations, then apply toolkit-owned overwrites. User-owned paths outside migrated configs (`specs/`, `living-specs/`) remain byte-identical.
-7. Refresh the spec-n-roll MCP server entry in every configured agent's MCP config targets (stdio path `.spec-n-roll/cli/bin/spec-n-roll-mcp`).
+7. Refresh the Spec-N-Roll MCP server entry in every configured agent's MCP config targets (stdio path `.spec-n-roll/cli/bin/spec-n-roll-mcp`).
 
 `--dry-run` reports the same plan without writing files, migrating configs, or refreshing MCP config.
 
@@ -58,10 +58,8 @@ Implementation: tolerant reader `src/config/reader.ts`, migration planner/applie
 - Config files carry a `schemaVersion` field. New projects are initialized at workflow config schema version `2`.
 - The tolerant reader parses prior schema versions, ignores unknown fields, and maps legacy field names (for example `workflowVariants` → `workflows`, `installedToolkitVersion` → `toolkitVersion`).
 - Migrations run **only** during `spec-n-roll update`, not at runtime.
-- Non-breaking migrations apply automatically (including with `--yes`).
-- Breaking migrations (for example removal of deprecated `legacyTierRouting`) require explicit confirmation:
-  - Interactive update: confirm in the Ink prompt.
-  - Non-interactive: pass both `--yes` and `--confirm-migration`.
+- Non-breaking migrations apply automatically.
+- Breaking migrations (for example removal of deprecated `legacyTierRouting`) require `--force`.
 
 Migrated files:
 

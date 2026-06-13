@@ -46,7 +46,7 @@ globs: *
 alwaysApply: true
 ---
 
-Canonical spec-n-roll workflow rules live in [.spec-n-roll/AGENTS.md](../../.spec-n-roll/AGENTS.md).
+Canonical Spec-N-Roll workflow rules live in [.spec-n-roll/AGENTS.md](../../.spec-n-roll/AGENTS.md).
 `;
   await atomicWriteText(filePath, content);
 }

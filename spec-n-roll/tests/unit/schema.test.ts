@@ -31,6 +31,32 @@ describe('workflowConfigSchema', () => {
     expect(parsed.defaultWorkflowId).toBe('quick');
   });
 
+  it('allows an empty agents list', () => {
+    const parsed = workflowConfigSchema.parse({
+      schemaVersion: '1',
+      toolkitVersion: '0.1.0',
+      agents: [],
+      steps: [
+        {
+          id: 'specify',
+          kind: 'built-in',
+          command: 'spec-n-specify',
+          enabled: true,
+        },
+      ],
+      workflows: [
+        {
+          id: 'quick',
+          name: 'Quick',
+          steps: ['specify', 'tasks', 'implement'],
+        },
+      ],
+      defaultWorkflowId: 'quick',
+    });
+
+    expect(parsed.agents).toEqual([]);
+  });
+
   it('rejects step ids that are not kebab-case', () => {
     expect(() =>
       workflowConfigSchema.parse({

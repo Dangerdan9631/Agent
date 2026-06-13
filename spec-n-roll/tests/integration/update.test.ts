@@ -63,7 +63,6 @@ describe('spec-n-roll update', () => {
     await runInit({
       projectRoot,
       agents: ['cursor'],
-      yes: true,
     });
 
     const workflowConfigBefore = readFileSync(workflowConfigPath, 'utf8');
@@ -84,7 +83,6 @@ describe('spec-n-roll update', () => {
 
     const result = await runUpdate({
       projectRoot,
-      yes: true,
     });
 
     expect(result.backupConflicts.length).toBeGreaterThanOrEqual(1);

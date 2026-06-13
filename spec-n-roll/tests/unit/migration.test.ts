@@ -142,7 +142,6 @@ describe('applyUserConfigMigrations', () => {
     const plan = await planUserConfigMigrations(projectRoot, '0.2.0');
     const result = await applyUserConfigMigrations(projectRoot, plan, {
       targetToolkitVersion: '0.2.0',
-      yes: true,
     });
 
     expect(result.applied).toHaveLength(1);
@@ -156,7 +155,7 @@ describe('applyUserConfigMigrations', () => {
     expect(migrated.workflows).toEqual(minimalWorkflowVariants);
   });
 
-  it('requires confirmation before applying breaking migrations with --yes', async () => {
+  it('requires confirmation before applying breaking migrations without --force', async () => {
     const projectRoot = createTempDir('apply-breaking-blocked');
     const configPath = path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json');
     mkdirSync(path.dirname(configPath), { recursive: true });
@@ -175,8 +174,7 @@ describe('applyUserConfigMigrations', () => {
     await expect(
       applyUserConfigMigrations(projectRoot, plan, {
         targetToolkitVersion: '0.2.0',
-        yes: true,
-        confirmBreaking: false,
+        force: false,
       }),
     ).rejects.toThrow(BreakingMigrationError);
   });
@@ -198,8 +196,7 @@ describe('applyUserConfigMigrations', () => {
     const plan = await planUserConfigMigrations(projectRoot, '0.2.0');
     const result = await applyUserConfigMigrations(projectRoot, plan, {
       targetToolkitVersion: '0.2.0',
-      yes: true,
-      confirmBreaking: true,
+      force: true,
     });
 
     expect(result.applied).toHaveLength(1);

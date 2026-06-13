@@ -93,7 +93,7 @@ describe('workflow variant loading', () => {
 
     const tasksReferences = definition.variants
       .filter((variant) => variant.steps.includes('tasks'))
-      .map((variant) => definition.stepById.get('tasks'));
+      .map(() => definition.stepById.get('tasks'));
 
     expect(tasksReferences).toHaveLength(2);
     expect(new Set(tasksReferences).size).toBe(1);

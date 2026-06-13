@@ -56,7 +56,7 @@ Initializes toolkit files in a project.
 - MCP server binary at `.spec-n-roll/cli/bin/spec-n-roll-mcp` (+ `.cmd` on Windows).
 - For each selected agent extension: create or idempotently merge project-local native MCP configuration file(s) per `agentSetup.mcpConfig.targets` in the extension manifest — upsert `serverId` entry pointing at the local MCP binary (stdio). See `contracts/agent-mcp-config.md`.
 - Default workflow configuration.
-- Agent-specific rules/skills/commands for selected agents (bundled extensions at `.spec-n-roll/bundled-extensions/`).
+- Agent-specific rules/skills/commands for selected agents (extensions at `.spec-n-roll/bundled-extensions/`).
 
 **Acceptance**:
 
@@ -82,7 +82,7 @@ Applies a toolkit version update.
 **Outputs**:
 
 - Updated toolkit-owned files (including full CLI and MCP binaries).
-- Refreshed spec-n-roll MCP server entry in all configured agents' project-local MCP config files when binary path or platform wrapper changes.
+- Refreshed Spec-N-Roll MCP server entry in all configured agents' project-local MCP config files when binary path or platform wrapper changes.
 - `.bak` copies for modified toolkit-owned files.
 - Migrated user-owned config files only after confirmed migration.
 - Update summary (includes MCP config refresh results per agent).
@@ -95,19 +95,42 @@ Applies a toolkit version update.
 
 ## Configure
 
-### `spec-n-roll config add-agent`
+### `spec-n-roll config agent add <agents>`
 
-Adds a configured agent to an initialized project.
+Adds one or more configured agents to an initialized project.
+
+**Arguments**:
+
+- `<agents>` — comma-separated bundled agent ids (e.g. `copilot,claude-code`).
 
 **Outputs**:
 
-- Rules, skills, and workflow commands for the new agent.
-- Project-local native MCP configuration file(s) created or merged for the new agent only (per extension `agentSetup.mcpConfig`).
+- Rules, skills, and workflow commands for each new agent.
+- Project-local native MCP configuration file(s) created or merged for each new agent only (per extension `agentSetup.mcpConfig`).
 
 **Acceptance**:
 
 - Existing agents' MCP config and rules remain unchanged.
 - Merge is idempotent — unrelated MCP servers preserved.
+
+### `spec-n-roll config agent remove <agents>`
+
+Removes one or more configured agents from an initialized project.
+
+**Arguments**:
+
+- `<agents>` — comma-separated bundled agent ids (e.g. `copilot,claude-code`).
+
+**Outputs**:
+
+- Updated `workflow.config.json` without the removed agents.
+- Deleted agent-specific rule pointer files and extension manifests.
+- Spec-N-Roll MCP server entry removed from each removed agent's MCP config file(s).
+
+**Acceptance**:
+
+- Other configured agents' MCP config and rules remain unchanged.
+- Removal is idempotent when the agent is not configured.
 
 ## Version
 
@@ -126,7 +149,7 @@ Each subcommand invokes the same `src/core/` operation as its MCP tool twin.
 
 ### Task spec lifecycle
 
-- `spec-n-roll task status set --task-spec-id <id> --slug <slug> --status Active|Complete|Locked`
+- `spec-n-roll task status set --task-spec-id <id> --slug <slug> <Active|Complete|Locked>`
 
 ### Project metadata
 
@@ -135,7 +158,7 @@ Each subcommand invokes the same `src/core/` operation as its MCP tool twin.
 
 ### Task checkboxes
 
-- `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id...> --completed <true|false>`
+- `spec-n-roll task checkbox set <true|false> --task-spec-id <id> --slug <slug> --task-id <id...>`
 
 ### Step output templates
 

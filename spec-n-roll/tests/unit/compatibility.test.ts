@@ -208,7 +208,6 @@ describe('runUpdate extension compatibility', () => {
 
     const result = await runUpdate({
       projectRoot,
-      yes: true,
     });
 
     expect(result.extensionWarnings.length).toBeGreaterThanOrEqual(1);

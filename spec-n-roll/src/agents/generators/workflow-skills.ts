@@ -58,7 +58,7 @@ Create a new task spec under \`specs/{numeric-id}-{slug}/\` from a feature descr
 
 1. **Triage (embedded)** — Evaluate complexity and propose papercut, quick, or full tier with rationale. Confirm or override with the developer before continuing.
 2. **Allocate task spec id** — Use MCP \`project_metadata_read\` / \`project_metadata_write\` or matching CLI to allocate the next numeric id (handled by toolkit orchestration).
-3. **Instantiate spec.md** — Call MCP \`step_output_instantiate\` with \`stepId: specify\` and \`frontmatter: { status: Active }\` **before** editing prose. CLI parallel: \`spec-n-roll step instantiate --task-spec-id <id> --slug <slug> --step-id specify --frontmatter status=Active\`.
+3. **Instantiate spec.md** — Call MCP \`step_output_instantiate\` with \`stepId: specify\` and \`frontmatter: { status: Active }\` **before** editing prose. CLI parallel: \`spec-n-roll step instantiate --task-spec-id <id> --step-id specify --frontmatter status=Active\`.
 4. **Set lifecycle status** — Confirm \`status: Active\` via MCP \`task_spec_status_set\` (do not edit YAML frontmatter directly).
 5. **Persist workflow variant** — Write \`workflow-state.json\` with \`workflowVariantId\` via MCP \`workflow_state_write\` before the interview proceeds.
 6. **Interview** — Ask exactly **one** targeted question at a time with a recommended answer. Explore the repository before asking anything answerable from code. Do not re-ask resolved questions.

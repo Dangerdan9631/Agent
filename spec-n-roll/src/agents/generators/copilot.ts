@@ -10,7 +10,7 @@ export const copilotExtensionManifest: ExtensionManifest = {
   manifestVersion: '1',
   id: 'copilot',
   name: 'GitHub Copilot',
-  description: 'GitHub Copilot agent integration for spec-n-roll workflow commands and MCP tools.',
+  description: 'GitHub Copilot agent integration for Spec-N-Roll workflow commands and MCP tools.',
   targetToolkitVersion: '0.1.0',
   agentSetup: {
     mcpConfig: {

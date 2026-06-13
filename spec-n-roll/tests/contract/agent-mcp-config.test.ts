@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 describe('agent MCP config merge', () => {
-  it('upserts spec-n-roll serverId and preserves unrelated MCP servers', async () => {
+  it('upserts Spec-N-Roll serverId and preserves unrelated MCP servers', async () => {
     const projectRoot = createTempDir('upsert');
     const targetPath = '.cursor/mcp.json';
     const existingPath = path.join(projectRoot, targetPath);

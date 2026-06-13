@@ -67,7 +67,7 @@ Updates `status` in `spec.md` YAML frontmatter (`Active` | `Complete` | `Locked`
 
 **Returns**: Confirmation with previous and new status.
 
-**CLI parallel**: `spec-n-roll task status set --task-spec-id <id> --slug <slug> --status <status>`
+**CLI parallel**: `spec-n-roll task status set --task-spec-id <id> --slug <slug> <status>`
 
 ---
 
@@ -108,7 +108,7 @@ Toggles a task completion checkbox in `tasks.md`.
 
 **Returns**: Confirmation with updated checkbox state for each task id.
 
-**CLI parallel**: `spec-n-roll task checkbox set --task-spec-id <id> --slug <slug> --task-id <id...> --completed <true|false>`
+**CLI parallel**: `spec-n-roll task checkbox set <true|false> --task-spec-id <id> --slug <slug> --task-id <id...>`
 
 ---
 

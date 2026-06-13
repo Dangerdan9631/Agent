@@ -135,7 +135,7 @@ export type ExtensionMcpConfigTarget = z.infer<typeof extensionMcpConfigTargetSc
 export const extensionAgentMcpConfigSchema = z
   .object({
     /**
-     * Stable merge key for the spec-n-roll MCP server entry (default `spec-n-roll`).
+     * Stable merge key for the Spec-N-Roll MCP server entry (default `spec-n-roll`).
      */
     serverId: kebabCaseIdSchema,
     /**

@@ -8,7 +8,7 @@
 
 ## Summary
 
-Build `spec-n-roll` as a TypeScript toolkit with a three-binary CLI architecture (global dispatcher, project-local full CLI, project-local MCP server) over a shared core library that owns all deterministic mutations. Agent workflow commands bring a Spec Kit-style specification-driven workflow to multiple AI coding agents via bundled extensions. `init`, `config add-agent`, and `update` each run agent-extension generators that create or idempotently update project-local native MCP configuration files (per extension manifest targets) so every configured agent references `.spec-n-roll/cli/bin/spec-n-roll-mcp` without manual setup. The implementation centers on versioned workflow artifacts, three default workflow tiers (papercut/quick/full) with triage embedded in the `specify` step, on-demand clarify/analyze steps, living Cucumber Gherkin specifications at `living-specs/{domain}.feature` (agent-managed, outside MCP/CLI), task spec lifecycle in `spec.md` frontmatter (MCP/CLI-only), step output template instantiation via MCP/CLI before agent prose edits, split-root file ownership (`.spec-n-roll/` + `.agents/`), in-process Node extension handlers with open `stepId` registration and dynamic `before_{stepId}`/`after_{stepId}` hook events, and a CLI-managed update/configuration model. Every MCP tool has a matching non-interactive CLI subcommand invoking the same core-library operation (SC-012). Development will follow behavior-first TDD: one observable workflow behavior at a time, using public CLI/MCP/workflow interfaces and the red-green-refactor loop rather than bulk test generation.
+Build `spec-n-roll` as a TypeScript toolkit with a three-binary CLI architecture (global dispatcher, project-local full CLI, project-local MCP server) over a shared core library that owns all deterministic mutations. Agent workflow commands bring a Spec Kit-style specification-driven workflow to multiple AI coding agents via extensions. `init`, `config add-agent`, and `update` each run agent-extension generators that create or idempotently update project-local native MCP configuration files (per extension manifest targets) so every configured agent references `.spec-n-roll/cli/bin/spec-n-roll-mcp` without manual setup. The implementation centers on versioned workflow artifacts, three default workflow tiers (papercut/quick/full) with triage embedded in the `specify` step, on-demand clarify/analyze steps, living Cucumber Gherkin specifications at `living-specs/{domain}.feature` (agent-managed, outside MCP/CLI), task spec lifecycle in `spec.md` frontmatter (MCP/CLI-only), step output template instantiation via MCP/CLI before agent prose edits, split-root file ownership (`.spec-n-roll/` + `.agents/`), in-process Node extension handlers with open `stepId` registration and dynamic `before_{stepId}`/`after_{stepId}` hook events, and a CLI-managed update/configuration model. Every MCP tool has a matching non-interactive CLI subcommand invoking the same core-library operation (SC-012). Development will follow behavior-first TDD: one observable workflow behavior at a time, using public CLI/MCP/workflow interfaces and the red-green-refactor loop rather than bulk test generation.
 
 ## Technical Context
 
@@ -113,7 +113,7 @@ src/
 │   └── step-stubs.ts
 ├── agents/
 │   ├── extension-loader.ts
-│   ├── mcp-config.ts          # merge/upsert spec-n-roll MCP entry per agent targets
+│   ├── mcp-config.ts          # merge/upsert Spec-N-Roll MCP entry per agent targets
 │   └── generators/
 ├── extensions/
 │   ├── manifest.ts
@@ -154,7 +154,7 @@ docs/
 project-root/
 ├── .spec-n-roll/                    # toolkit-owned (except config/)
 │   ├── cli/bin/
-│   │   ├── spec-n-roll              # full CLI binary (+ .cmd on Windows)
+│   │   ├── Spec-N-Roll              # full CLI binary (+ .cmd on Windows)
 │   │   └── spec-n-roll-mcp          # MCP server binary (+ .cmd on Windows)
 │   ├── scripts/                     # .sh and .ps1 automation
 │   ├── AGENTS.md                    # canonical agent rules
@@ -181,7 +181,7 @@ project-root/
 
 Per-agent native pointer files (e.g., root `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`) reference `.spec-n-roll/AGENTS.md` — they are generated and toolkit-owned. Per-agent project-local MCP configuration files (e.g., `.cursor/mcp.json`) are created or idempotently updated by agent extension generators on `init`, `config add-agent`, and refreshed on `update` — see `contracts/agent-mcp-config.md`.
 
-Toolkit-authored documentation (`docs/` at the toolkit repository root) is **not** part of the installed project layout. Developers read it from the spec-n-roll repository or npm package source; `init` and `update` do not copy it into user projects.
+Toolkit-authored documentation (`docs/` at the toolkit repository root) is **not** part of the installed project layout. Developers read it from the Spec-N-Roll repository or npm package source; `init` and `update` do not copy it into user projects.
 
 ### Default Workflow Tiers
 
@@ -224,11 +224,11 @@ Living spec `.feature` files under `living-specs/` are **outside** this boundary
 
 | Command | MCP config action |
 |---------|-------------------|
-| `init` | For each selected agent extension: create or merge project-local MCP config file(s) with spec-n-roll server entry → `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio) |
+| `init` | For each selected agent extension: create or merge project-local MCP config file(s) with Spec-N-Roll server entry → `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio) |
 | `config add-agent` | Same for the newly added agent only; existing agents unchanged |
-| `update` | Refresh spec-n-roll MCP binary path/wrapper in all configured agents' MCP config files |
+| `update` | Refresh Spec-N-Roll MCP binary path/wrapper in all configured agents' MCP config files |
 
-Each bundled agent extension manifest declares `agentSetup.mcpConfig.targets[]` (project-relative paths + format) and `agentSetup.mcpConfig.serverId` (stable merge key). Merge is idempotent: upsert spec-n-roll entry only; preserve unrelated MCP servers.
+Each bundled agent extension manifest declares `agentSetup.mcpConfig.targets[]` (project-relative paths + format) and `agentSetup.mcpConfig.serverId` (stable merge key). Merge is idempotent: upsert Spec-N-Roll entry only; preserve unrelated MCP servers.
 
 ### Entry Points
 
@@ -241,7 +241,7 @@ Each bundled agent extension manifest declares `agentSetup.mcpConfig.targets[]` 
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Extension-only multi-agent model | Agents are delivered as bundled extensions (cursor, claude-code, copilot, codex) with `.agents/` skills and canonical `.spec-n-roll/AGENTS.md` rules | Hard-coded agent registry would block the extension-first model and OOTB extensibility |
+| Extension-only multi-agent model | Agents are delivered as extensions (cursor, claude-code, copilot, codex) with `.agents/` skills and canonical `.spec-n-roll/AGENTS.md` rules | Hard-coded agent registry would block the extension-first model and OOTB extensibility |
 | Extension and workflow registry | Workflows must be configurable, replaceable, and able to share steps across named variants; step IDs and hook events must not be closed enums | Hard-coded workflow step lists would fail extensibility requirements and force forks |
 | Versioned update/migration subsystem | Safe updates, config schema migration, toolkit/user ownership, backups, and compatibility warnings are explicit P2 requirements | Manual update instructions would not satisfy CLI-authoritative update guarantees |
 | Living Gherkin specs plus Cucumber scaffolding | Living specs are the source of truth and tests must be generated from public behavior | Plain markdown scenarios would not provide executable behavioral validation |

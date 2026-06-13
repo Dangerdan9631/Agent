@@ -6,7 +6,7 @@ import type { ExtensionManifest } from '../../extensions/manifest.js';
  */
 export interface BundledAgentGenerator {
   /**
-   * Stable bundled extension id matching manifest.id and workflow.config.json.
+   * Stable extension id matching manifest.id and workflow.config.json.
    */
   id: string;
   /**

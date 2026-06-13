@@ -4,9 +4,9 @@ import { render, Box, Text, useInput } from 'ink';
 import { getBundledAgentGenerator } from '../../agents/extension-loader.js';
 
 /**
- * Resolves a display label for a bundled agent id.
+ * Resolves a display label for a agent id.
  *
- * @param agentId - Bundled extension id.
+ * @param agentId - Extension id.
  * @returns Human-readable agent name when available.
  */
 function agentLabel(agentId: string): string {
@@ -15,9 +15,9 @@ function agentLabel(agentId: string): string {
 }
 
 /**
- * Interactive Ink flow for selecting one or more bundled agents during init.
+ * Interactive Ink flow for selecting one or more agents during init.
  *
- * @param availableAgentIds - Bundled agent ids that can be selected.
+ * @param availableAgentIds - Agent ids that can be selected.
  * @returns Promise resolving to the selected agent id list.
  */
 export function promptForAgentSelection(availableAgentIds: string[]): Promise<string[]> {
@@ -43,7 +43,7 @@ export function promptForAgentSelection(availableAgentIds: string[]): Promise<st
  */
 interface AgentMultiSelectPromptProps {
   /**
-   * Bundled agent ids available for selection.
+   * Agent ids available for selection.
    */
   availableAgentIds: string[];
   /**
@@ -110,7 +110,7 @@ function AgentMultiSelectPrompt({
 
   return (
     <Box flexDirection="column">
-      <Text>Select bundled agents (↑/↓ move, space toggle, enter confirm, esc cancel):</Text>
+      <Text>Select agents (↑/↓ move, space toggle, enter confirm, esc cancel):</Text>
       {availableAgentIds.map((agentId, index) => {
         const marker = selected.has(agentId) ? '[x]' : '[ ]';
         const pointer = index === cursorIndex ? '>' : ' ';

@@ -1,6 +1,6 @@
 # Multi-Agent Setup
 
-spec-n-roll configures multiple AI coding agents from bundled extensions during `init` and `config add-agent`. This document reflects **Phase 3 (US1)** and **Phase 10 (US9)** shipped behavior.
+spec-n-roll configures multiple AI coding agents from extensions during `init` and `config agent add`. This document reflects **Phase 3 (US1)** and **Phase 10 (US9)** shipped behavior.
 
 Toolkit docs live in the repository root `docs/` only — they are not installed into user projects.
 
@@ -35,7 +35,7 @@ Implementation: `src/agents/mcp-config.ts`. Contract: `specs/001-spec-n-roll-too
 
 Re-running `init` for the same agent produces the same effective MCP config (no duplicate server entries).
 
-## Bundled extension manifests
+## Extension manifests
 
 Selected agent manifests are written to `.spec-n-roll/bundled-extensions/{id}/manifest.json` during init. The extension loader validates `agentSetup.mcpConfig` when loading manifests from an initialized project.
 
@@ -61,7 +61,9 @@ The global dispatcher resolves and exec's the local full CLI when present.
 
 ## Adding agents later
 
-`spec-n-roll config add-agent` adds rules, skills, bundled extension manifest, and MCP config merge for **one new agent** without modifying existing agents. Supports interactive Ink selection or `config add-agent --yes --agent <id>`. Idempotent when the agent is already configured. See `cli.md`.
+`spec-n-roll config agent add <agents>` adds rules, skills, extension manifests, and MCP config merge for **one or more new agents** without modifying existing agents. Idempotent when an agent is already configured. See `cli.md`.
+
+`spec-n-roll config agent remove <agents>` removes one or more agents from project configuration, deletes agent-specific artifacts, and removes the Spec-N-Roll MCP server entry without affecting other agents.
 
 `spec-n-roll update` refreshes MCP server paths for all configured agents when local binaries change.
 

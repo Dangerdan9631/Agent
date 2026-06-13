@@ -8,6 +8,7 @@
   },
   "bin": {
     "spec-n-roll": "./dist/cli/dispatcher.js",
+    "snr": "./dist/cli/dispatcher.js",
     "spec-n-roll-cli": "./dist/cli/index.js",
     "spec-n-roll-mcp": "./dist/mcp/server.js"
   },
@@ -15,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && node scripts/copy-wrappers.mjs",
+    "build": "tsc --noEmit && tsup && node scripts/copy-wrappers.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cucumber": "cucumber-js",
@@ -43,6 +44,7 @@
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
     "prettier": "^3.5.3",
+    "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
     "vitest": "^3.0.9"

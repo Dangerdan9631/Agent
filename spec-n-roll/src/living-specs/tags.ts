@@ -9,10 +9,10 @@ export function formatSpecNRollTag(taskSpecId: string): string {
 }
 
 /**
- * Returns true when a tag is a spec-n-roll task tag for any task spec id.
+ * Returns true when a tag is a Spec-N-Roll task tag for any task spec id.
  *
  * @param tag - Gherkin tag including the leading `@`.
- * @returns True when the tag matches the spec-n-roll task tag pattern.
+ * @returns True when the tag matches the Spec-N-Roll task tag pattern.
  */
 export function isSpecNRollTaskTag(tag: string): boolean {
   return /^@spec-n-roll-\d{3}$/.test(tag);

@@ -38,7 +38,7 @@ describe('createDefaultWorkflowConfig', () => {
     ]);
   });
 
-  it('includes only selected bundled agents as enabled entries', () => {
+  it('includes only selected agents as enabled entries', () => {
     const config = createDefaultWorkflowConfig({
       toolkitVersion: '0.1.0',
       selectedAgentIds: ['cursor', 'codex'],

@@ -10,7 +10,7 @@ export const codexExtensionManifest: ExtensionManifest = {
   manifestVersion: '1',
   id: 'codex',
   name: 'Codex',
-  description: 'Codex agent integration for spec-n-roll workflow commands and MCP tools.',
+  description: 'Codex agent integration for Spec-N-Roll workflow commands and MCP tools.',
   targetToolkitVersion: '0.1.0',
   agentSetup: {
     mcpConfig: {

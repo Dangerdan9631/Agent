@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { Command } from 'commander';
 import fse from 'fs-extra';
 
 import {
@@ -35,7 +36,6 @@ import {
   BreakingMigrationError,
   planUserConfigMigrations,
 } from '../../updates/migration.js';
-import { promptForUpdateConfirmation } from '../ink/update-prompts.js';
 import {
   collectLauncherBinaryUpdates,
   installProjectBinaries,
@@ -55,13 +55,9 @@ export interface UpdateOptions {
    */
   dryRun?: boolean;
   /**
-   * When true, skip Ink confirmation prompts.
+   * When true, apply breaking config migrations without a separate confirmation step.
    */
-  yes?: boolean;
-  /**
-   * When true, allow breaking migrations without interactive confirmation (US10 hook).
-   */
-  confirmMigration?: boolean;
+  force?: boolean;
   /**
    * Absolute path to the toolkit package root containing build outputs.
    */
@@ -183,7 +179,7 @@ async function resolveConfiguredAgentIds(projectRoot: string): Promise<string[]>
 /**
  * Collects toolkit-owned text and JSON file updates for the configured agents.
  *
- * @param agentIds - Enabled bundled agent ids in the project.
+ * @param agentIds - Enabled agent ids in the project.
  * @returns Relative paths and expected UTF-8 contents from the running toolkit.
  */
 function collectTextToolkitUpdates(agentIds: readonly string[]): ToolkitFileUpdate[] {
@@ -333,7 +329,7 @@ async function writeToolkitFileUpdates(
 /**
  * Applies toolkit-owned overwrite logic and MCP path refresh for an initialized project.
  *
- * @param options - Update path, dry-run, and non-interactive options.
+ * @param options - Update path, dry-run, and migration confirmation options.
  * @returns Update summary including backups and MCP refresh results.
  */
 export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
@@ -377,33 +373,15 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
     };
   }
 
-  if (
-    options.yes === true &&
-    migrationPlan.breakingCount > 0 &&
-    options.confirmMigration !== true
-  ) {
-    throw new BreakingMigrationError(
-      'Breaking config migrations require --confirm-migration when using --yes.',
-    );
+  if (migrationPlan.breakingCount > 0 && options.force !== true) {
+    throw new BreakingMigrationError('Breaking config migrations require --force.');
   }
 
   const backupConflicts = await backupModifiedToolkitFiles(projectRoot, allUpdates);
 
-  if (options.yes !== true) {
-    await promptForUpdateConfirmation({
-      previousToolkitVersion,
-      targetToolkitVersion,
-      filesToOverwrite: allUpdates.map((update) => update.relativePath),
-      backupConflicts,
-      migrationCount: migrationPlan.migrations.length,
-      extensionWarnings,
-    });
-  }
-
   const migrationResult = await applyUserConfigMigrations(projectRoot, migrationPlan, {
     targetToolkitVersion,
-    yes: options.yes === true,
-    confirmBreaking: options.yes !== true || options.confirmMigration === true,
+    force: options.force === true,
   });
 
   await writeToolkitFileUpdates(projectRoot, allUpdates);
@@ -432,21 +410,37 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
 }
 
 /**
+ * Registers the `update` subcommand on the root Commander program.
+ *
+ * @param program - Root Commander program to attach the command to.
+ */
+export function registerUpdateCommand(program: Command): void {
+  program
+    .command('update')
+    .option('--dry-run', 'Preview update changes without applying them')
+    .option('--force', 'Apply breaking config migrations without confirmation')
+    .description('Update the toolkit to the latest version')
+    .action(
+      async (commandOptions: { dryRun?: boolean; force?: boolean }) => {
+        await handleUpdateCommand(commandOptions);
+      },
+    );
+}
+
+/**
  * Commander action handler for `spec-n-roll update`.
  *
- * @param commandOptions - Parsed Commander options including dry-run and yes flags.
+ * @param commandOptions - Parsed Commander options including dry-run and migration flags.
  */
 export async function handleUpdateCommand(commandOptions: {
   dryRun?: boolean;
-  yes?: boolean;
-  confirmMigration?: boolean;
+  force?: boolean;
 }): Promise<void> {
   try {
     const result = await runUpdate({
       projectRoot: process.cwd(),
       dryRun: commandOptions.dryRun === true,
-      yes: commandOptions.yes === true,
-      confirmMigration: commandOptions.confirmMigration === true,
+      force: commandOptions.force === true,
     });
 
     if (result.dryRun) {
@@ -463,7 +457,7 @@ export async function handleUpdateCommand(commandOptions: {
     }
 
     console.log(
-      `Updated spec-n-roll ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}`,
+      `Updated Spec-N-Roll ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}`,
     );
     console.log(`Overwrote ${result.overwrittenFiles.length} toolkit-owned file(s).`);
     if (result.configMigrations.length > 0) {

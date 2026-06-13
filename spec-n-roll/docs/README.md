@@ -1,6 +1,6 @@
 # Spec-n-Roll Documentation
 
-Toolkit-authored documentation for spec-n-roll. These Markdown files live in the spec-n-roll repository root only and are not installed into user projects by `init` or `update`.
+Toolkit-authored documentation for spec-n-roll. These Markdown files live in the Spec-N-Roll repository root only and are not installed into user projects by `init` or `update`.
 
 Reading `docs/` alone should be enough to understand the full workflow and extension mechanism (SC-008) without consulting source files.
 
@@ -15,7 +15,7 @@ Reading `docs/` alone should be enough to understand the full workflow and exten
 | File | What you learn |
 |------|----------------|
 | [`workflow.md`](workflow.md) | Slash commands (`/spec-n-specify`, `/spec-n-roll`, plan/tasks/analyze/implement), embedded triage, lifecycle (Active→Complete→Locked), living specs, and TDD red→green→refactor |
-| [`cli.md`](cli.md) | Three binaries, dispatcher exec model, `init` / `update` / `config add-agent` / `version`, `--yes` and `--global`, core-library subcommands, MCP server tools |
+| [`cli.md`](cli.md) | Three binaries, dispatcher exec model, `init` / `update` / `config agent` / `version`, `--force` and `--global`, core-library subcommands, MCP server tools |
 | [`multi-agent.md`](multi-agent.md) | Bundled agents (Cursor, Claude Code, Copilot, Codex), MCP config merge, canonical rules, adding agents later |
 | [`platform-scripts.md`](platform-scripts.md) | Paired `.sh` / `.ps1` install and runtime auto-selection |
 | [`updates-and-migrations.md`](updates-and-migrations.md) | Toolkit vs user file ownership, `.bak` backups, schema migration at update time, compatibility warnings |

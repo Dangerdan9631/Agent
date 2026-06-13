@@ -45,7 +45,7 @@ export interface MergeAgentMcpConfigOptions {
    */
   format: McpConfigFormat;
   /**
-   * Stable merge key for the spec-n-roll MCP server entry.
+   * Stable merge key for the Spec-N-Roll MCP server entry.
    */
   serverId: string;
   /**
@@ -71,7 +71,7 @@ interface McpServerEntry {
 }
 
 /**
- * Returns the stdio MCP server entry for the local spec-n-roll binary.
+ * Returns the stdio MCP server entry for the local Spec-N-Roll binary.
  *
  * @param mcpBinaryRelativePath - Project-relative MCP binary path.
  * @returns Server entry suitable for agent MCP JSON formats.
@@ -137,10 +137,10 @@ async function readMcpConfigDocument(
 }
 
 /**
- * Upserts the spec-n-roll MCP server entry without removing unrelated servers.
+ * Upserts the Spec-N-Roll MCP server entry without removing unrelated servers.
  *
  * @param document - Existing MCP config document to mutate.
- * @param serverId - Stable merge key for the spec-n-roll entry.
+ * @param serverId - Stable merge key for the Spec-N-Roll entry.
  * @param mcpBinaryRelativePath - Project-relative MCP binary path.
  * @returns Updated MCP config document.
  */
@@ -159,7 +159,7 @@ export function upsertSpecNRollMcpServer(
 }
 
 /**
- * Creates or merges the spec-n-roll MCP server entry in an agent config file.
+ * Creates or merges the Spec-N-Roll MCP server entry in an agent config file.
  *
  * @param options - Merge target, format, and server identity options.
  */
@@ -175,6 +175,78 @@ export async function mergeAgentMcpConfig(options: MergeAgentMcpConfigOptions): 
 }
 
 /**
+ * Options for removing the Spec-N-Roll MCP server entry from an agent target file.
+ */
+export interface RemoveAgentMcpConfigOptions {
+  /**
+   * Absolute path to the project root.
+   */
+  projectRoot: string;
+  /**
+   * Project-relative path to the agent MCP configuration file.
+   */
+  targetPath: string;
+  /**
+   * Format adapter id declared in the extension manifest.
+   */
+  format: McpConfigFormat;
+  /**
+   * Stable merge key for the Spec-N-Roll MCP server entry.
+   */
+  serverId: string;
+}
+
+/**
+ * Removes the Spec-N-Roll MCP server entry without deleting unrelated servers.
+ *
+ * @param document - Existing MCP config document to mutate.
+ * @param serverId - Stable merge key for the Spec-N-Roll entry.
+ * @returns Updated document, or null when the entry was already absent.
+ */
+export function removeSpecNRollMcpServer(
+  document: McpServersDocument,
+  serverId: string,
+): McpServersDocument | null {
+  if (!(serverId in document.mcpServers)) {
+    return null;
+  }
+
+  const { [serverId]: _removed, ...remainingServers } = document.mcpServers;
+  return {
+    ...document,
+    mcpServers: remainingServers,
+  };
+}
+
+/**
+ * Removes the Spec-N-Roll MCP server entry from an agent config file.
+ *
+ * @param options - Target path, format, and server identity options.
+ */
+export async function removeAgentMcpConfig(options: RemoveAgentMcpConfigOptions): Promise<void> {
+  const filePath = path.join(options.projectRoot, options.targetPath);
+  if (!(await fse.pathExists(filePath))) {
+    return;
+  }
+
+  const existing = await readMcpConfigDocument(filePath, options.format);
+  const updated = removeSpecNRollMcpServer(existing, options.serverId);
+  if (updated == null) {
+    return;
+  }
+
+  if (Object.keys(updated.mcpServers).length === 0) {
+    const otherTopLevelKeys = Object.keys(updated).filter((key) => key !== 'mcpServers');
+    if (otherTopLevelKeys.length === 0) {
+      await fse.remove(filePath);
+      return;
+    }
+  }
+
+  await atomicWriteJson(filePath, updated);
+}
+
+/**
  * Outcome of refreshing one agent MCP configuration target during update.
  */
 export interface McpConfigRefreshResult {
@@ -187,7 +259,7 @@ export interface McpConfigRefreshResult {
    */
   targetPath: string;
   /**
-   * True when the spec-n-roll MCP server entry was upserted successfully.
+   * True when the Spec-N-Roll MCP server entry was upserted successfully.
    */
   refreshed: boolean;
   /**
@@ -197,7 +269,7 @@ export interface McpConfigRefreshResult {
 }
 
 /**
- * Refreshes the spec-n-roll MCP server entry for one bundled agent extension.
+ * Refreshes the Spec-N-Roll MCP server entry for one bundled agent extension.
  *
  * @param projectRoot - Absolute path to the project root.
  * @param agentId - Bundled agent extension id to refresh.
@@ -252,10 +324,10 @@ export async function refreshAgentMcpConfigFromManifest(
 }
 
 /**
- * Refreshes spec-n-roll MCP server paths for all configured bundled agent extensions.
+ * Refreshes Spec-N-Roll MCP server paths for all configured bundled agent extensions.
  *
  * @param projectRoot - Absolute path to the project root.
- * @param agentIds - Enabled bundled agent ids from workflow configuration.
+ * @param agentIds - Enabled agent ids from workflow configuration.
  * @param loadManifest - Loads a validated manifest for the given agent id.
  * @returns Combined refresh results across all agents and MCP targets.
  */

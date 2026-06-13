@@ -89,13 +89,9 @@ export interface ApplyMigrationOptions {
    */
   targetToolkitVersion: string;
   /**
-   * When true, non-interactive mode rules apply for breaking migrations.
+   * When true, allows breaking migrations without a separate confirmation step.
    */
-  yes?: boolean;
-  /**
-   * When true with `--yes`, allows breaking migrations without a separate prompt.
-   */
-  confirmBreaking?: boolean;
+  force?: boolean;
 }
 
 /**
@@ -249,14 +245,8 @@ export async function applyUserConfigMigrations(
   plan: ConfigMigrationPlan,
   options: ApplyMigrationOptions,
 ): Promise<ApplyMigrationResult> {
-  if (
-    plan.breakingCount > 0 &&
-    options.yes === true &&
-    options.confirmBreaking !== true
-  ) {
-    throw new BreakingMigrationError(
-      'Breaking config migration requires --confirm-migration when using --yes.',
-    );
+  if (plan.breakingCount > 0 && options.force !== true) {
+    throw new BreakingMigrationError('Breaking config migration requires --force.');
   }
 
   const applied: ConfigMigrationPlanEntry[] = [];

@@ -175,6 +175,40 @@ export async function listTaskSpecDirectoryIdentities(
 }
 
 /**
+ * Resolves the slug for a task spec id by matching a directory under `specs/`.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecId - Zero-padded numeric task spec id.
+ * @returns Kebab-case slug paired with the task spec id.
+ */
+export async function resolveTaskSpecSlug(
+  projectRoot: string,
+  taskSpecId: string,
+): Promise<string> {
+  const identities = await listTaskSpecDirectoryIdentities(projectRoot);
+  const matches = identities.filter((identity) => identity.taskSpecId === taskSpecId);
+
+  if (matches.length === 0) {
+    throw new CoreMutationError(
+      'TASK_SPEC_NOT_FOUND',
+      `No task spec directory found for id ${taskSpecId}.`,
+      `Create a task spec under specs/${taskSpecId}-<slug>/ or verify the id.`,
+    );
+  }
+
+  if (matches.length > 1) {
+    const slugs = matches.map((identity) => identity.slug).join(', ');
+    throw new CoreMutationError(
+      'TASK_SPEC_AMBIGUOUS',
+      `Multiple task spec directories found for id ${taskSpecId}: ${slugs}.`,
+      'Only one directory per task spec id is supported.',
+    );
+  }
+
+  return matches[0]!.slug;
+}
+
+/**
  * Transitions every Complete task spec in the project to Locked.
  *
  * @param projectRoot - Absolute path to the project root.

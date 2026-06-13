@@ -48,7 +48,7 @@ describe('/spec-n-roll integration', () => {
   it('advances through remaining tier steps using workflow state', async () => {
     const projectRoot = createTempProject('advance');
 
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add email notification when an order ships',
@@ -100,7 +100,7 @@ describe('/spec-n-roll integration', () => {
   it('falls back to tier-aware artifact detection when workflow state is missing', async () => {
     const projectRoot = createTempProject('artifact-fallback');
 
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add email notification when an order ships',
@@ -132,7 +132,7 @@ describe('/spec-n-roll integration', () => {
   it('presents partial recovery choices when partial artifacts exist for the next step', async () => {
     const projectRoot = createTempProject('partial');
 
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
     const specifyResult = await runSpecify({
       projectRoot,
       description:

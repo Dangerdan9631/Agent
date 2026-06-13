@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { runInit } from '../../src/cli/commands/init.js';
-import { runConfigAddAgent } from '../../src/cli/commands/config-add-agent.js';
+import { runConfigAgentAdd } from '../../src/cli/commands/config-agent-add.js';
 import { CoreMutationError } from '../../src/core/errors.js';
 import { buildDelegatedCliEnv } from '../../src/cli/dispatcher.js';
 import { readProjectMetadata } from '../../src/core/project-metadata.js';
@@ -99,7 +99,7 @@ describe('quickstart scenario 1: initialize project with multiple agents', () =>
       'utf8',
     );
 
-    await runInit({ projectRoot, agents: ['cursor', 'claude-code'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor', 'claude-code'] });
 
     expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll'))).toBe(
       true,
@@ -142,18 +142,18 @@ describe('quickstart scenario 1: initialize project with multiple agents', () =>
 describe('quickstart scenario 1b: add agent MCP configuration', () => {
   it('adds a new agent without changing existing MCP configs and is idempotent', async () => {
     const projectRoot = createTempProject('scenario-1b');
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const cursorBefore = readFileSync(path.join(projectRoot, '.cursor', 'mcp.json'), 'utf8');
 
-    await runConfigAddAgent({ projectRoot, agent: 'copilot', yes: true });
+    await runConfigAgentAdd({ projectRoot, agents: ['copilot'] });
     expect(existsSync(path.join(projectRoot, '.github', 'copilot-instructions.md'))).toBe(true);
     expect(existsSync(path.join(projectRoot, '.vscode', 'mcp.json'))).toBe(true);
 
     const cursorAfter = readFileSync(path.join(projectRoot, '.cursor', 'mcp.json'), 'utf8');
     expect(cursorAfter).toBe(cursorBefore);
 
-    await runConfigAddAgent({ projectRoot, agent: 'copilot', yes: true });
+    await runConfigAgentAdd({ projectRoot, agents: ['copilot'] });
     const copilotMcp = JSON.parse(
       readFileSync(path.join(projectRoot, '.vscode', 'mcp.json'), 'utf8'),
     ) as { mcpServers: Record<string, unknown> };
@@ -164,7 +164,7 @@ describe('quickstart scenario 1b: add agent MCP configuration', () => {
 describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
   it('delegates to local CLI and supports --global bypass with combined version report', async () => {
     const projectRoot = createTempProject('scenario-2');
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const delegated = spawnSync(process.execPath, [dispatcherPath, 'version'], {
       cwd: projectRoot,
@@ -209,7 +209,7 @@ describe('quickstart scenario 2b: interactive vs non-interactive CLI', () => {
 describe('quickstart scenario 3: interactive specification with embedded triage', () => {
   it('instantiates spec.md, runs triage and interview, and writes workflow state', async () => {
     const projectRoot = createTempProject('scenario-3');
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const askedQuestions: string[] = [];
     const result = await runSpecify({
@@ -240,7 +240,7 @@ describe('quickstart scenario 3: interactive specification with embedded triage'
 describe('quickstart scenario 4: /spec-n-roll advances workflow state', () => {
   it('advances to the next tier step and tolerates missing plan.md on quick tier', async () => {
     const projectRoot = createTempProject('scenario-4');
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const specifyResult = await runSpecify({
       projectRoot,
@@ -282,7 +282,7 @@ describe('quickstart scenario 5: interrupted step recovery', () => {
     partialPath: string;
   }> {
     const projectRoot = createTempProject(`scenario-5-${suffix}`);
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add password reset email',
@@ -516,7 +516,7 @@ describe('quickstart scenario 9: extension workflow variant', () => {
       'utf8',
     );
 
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
     const configPath = path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json');
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as {
       extensions: Array<{ id: string; manifestPath: string; enabled: boolean }>;
@@ -554,7 +554,7 @@ describe('quickstart scenario 9: extension workflow variant', () => {
 describe('quickstart scenario 9b: extension hook validation', () => {
   it('warns and skips hooks targeting unknown step ids', async () => {
     const projectRoot = createTempProject('scenario-9b');
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const extensionDir = path.join(projectRoot, '.spec-n-roll', 'config', 'extensions', 'hooky');
     mkdirSync(extensionDir, { recursive: true });
@@ -640,11 +640,11 @@ describe('quickstart scenario 12: documentation completeness', () => {
     },
     {
       file: 'cli.md',
-      mustContain: ['init', 'update', 'dispatcher', 'MCP server', '--global', '--yes'],
+      mustContain: ['init', 'update', 'dispatcher', 'MCP server', '--global', '--agents', '--force'],
     },
     {
       file: 'multi-agent.md',
-      mustContain: ['MCP configuration', 'cursor', 'config add-agent'],
+      mustContain: ['MCP configuration', 'cursor', 'config agent add'],
     },
     {
       file: 'platform-scripts.md',

@@ -51,7 +51,6 @@ describe('platform script integration', () => {
     await runInit({
       projectRoot,
       agents: ['cursor'],
-      yes: true,
     });
 
     const scriptsDir = path.join(projectRoot, '.spec-n-roll', 'scripts');
@@ -70,7 +69,6 @@ describe('platform script integration', () => {
     await runInit({
       projectRoot,
       agents: ['cursor'],
-      yes: true,
     });
 
     const spawned: string[] = [];
@@ -98,7 +96,6 @@ describe('platform script integration', () => {
     await runInit({
       projectRoot,
       agents: ['cursor'],
-      yes: true,
     });
 
     const spawned: string[] = [];
@@ -126,7 +123,6 @@ describe('platform script integration', () => {
     await runInit({
       projectRoot,
       agents: ['cursor'],
-      yes: true,
     });
 
     await expect(

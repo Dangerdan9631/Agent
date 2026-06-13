@@ -99,17 +99,26 @@ export function collectLauncherBinaryUpdates(): Array<{ relativePath: string; ex
       expectedContent: launcher,
     },
     {
+      relativePath: path.posix.join('.spec-n-roll', 'cli', 'bin', 'snr'),
+      expectedContent: launcher,
+    },
+    {
       relativePath: path.posix.join('.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp'),
       expectedContent: mcpLauncher,
     },
   ];
 
   if (process.platform === 'win32') {
+    const cliCmdShim =
+      '@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll" %*\r\n';
     updates.push(
       {
         relativePath: path.posix.join('.spec-n-roll', 'cli', 'bin', 'spec-n-roll.cmd'),
-        expectedContent:
-          '@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll" %*\r\n',
+        expectedContent: cliCmdShim,
+      },
+      {
+        relativePath: path.posix.join('.spec-n-roll', 'cli', 'bin', 'snr.cmd'),
+        expectedContent: cliCmdShim,
       },
       {
         relativePath: path.posix.join('.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp.cmd'),
@@ -141,7 +150,7 @@ export async function installProjectBinaries(
 
   if (!existsSync(cliSource) || !existsSync(mcpSource)) {
     throw new Error(
-      'Toolkit build outputs are missing. Run `npm run build` in the spec-n-roll package before init.',
+      'Toolkit build outputs are missing. Run `npm run build` in the Spec-N-Roll package before init.',
     );
   }
 
@@ -152,21 +161,24 @@ export async function installProjectBinaries(
   await atomicWriteJson(path.join(cliDir, 'install.json'), manifest);
 
   const cliTarget = path.join(binDir, 'spec-n-roll');
+  const snrTarget = path.join(binDir, 'snr');
   const mcpTarget = path.join(binDir, 'spec-n-roll-mcp');
-  writeFileSync(cliTarget, buildCliLauncherSource(), 'utf8');
+  const launcher = buildCliLauncherSource();
+  writeFileSync(cliTarget, launcher, 'utf8');
+  writeFileSync(snrTarget, launcher, 'utf8');
   writeFileSync(mcpTarget, buildMcpLauncherSource(), 'utf8');
 
   if (process.platform !== 'win32') {
     chmodSync(cliTarget, 0o755);
+    chmodSync(snrTarget, 0o755);
     chmodSync(mcpTarget, 0o755);
   }
 
   if (process.platform === 'win32') {
-    writeFileSync(
-      path.join(binDir, 'spec-n-roll.cmd'),
-      '@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll" %*\r\n',
-      'utf8',
-    );
+    const cliCmdShim =
+      '@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll" %*\r\n';
+    writeFileSync(path.join(binDir, 'spec-n-roll.cmd'), cliCmdShim, 'utf8');
+    writeFileSync(path.join(binDir, 'snr.cmd'), cliCmdShim, 'utf8');
     writeFileSync(
       path.join(binDir, 'spec-n-roll-mcp.cmd'),
       `@ECHO off\r\nSETLOCAL ENABLEEXTENSIONS\r\nSET DP0=%~dp0\r\nnode "%DP0%spec-n-roll-mcp" %*\r\n`,

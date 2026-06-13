@@ -21,7 +21,7 @@ delete extensionManifestJsonSchema.$schema;
 const ajv = new Ajv({ allErrors: true, strict: false });
 const validateAgainstJsonSchema = ajv.compile(extensionManifestJsonSchema);
 
-describe('bundled extension manifests', () => {
+describe('extension manifests', () => {
   it('validate against contracts/extension-manifest.schema.json and Zod', () => {
     for (const agentId of listBundledAgentIds()) {
       const generator = getBundledAgentGenerator(agentId);

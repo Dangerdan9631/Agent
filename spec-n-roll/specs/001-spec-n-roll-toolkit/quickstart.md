@@ -236,7 +236,7 @@ Expected outcomes:
 
 Using an initialized project with an Active task spec:
 
-1. Set task status via CLI: `spec-n-roll task status set --task-spec-id 001 --slug <slug> --status Complete`
+1. Set task status via CLI: `spec-n-roll task status set --task-spec-id 001 --slug <slug> Complete`
 2. Verify the same operation is available as MCP tool `task_spec_status_set`.
 3. Attempt to toggle a `tasks.md` checkbox via MCP `task_checkbox_set` and confirm CLI `task checkbox set` produces identical file state.
 

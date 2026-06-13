@@ -55,7 +55,6 @@ describe('spec-n-roll init', () => {
     await runInit({
       projectRoot,
       agents: ['cursor', 'claude-code'],
-      yes: true,
     });
 
     expect(existsSync(path.join(projectRoot, '.agents', 'skills'))).toBe(true);
@@ -104,14 +103,19 @@ describe('spec-n-roll init', () => {
     expect(claudeMcp.mcpServers['spec-n-roll']).toBeDefined();
 
     const localCli = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll');
+    const localSnr = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'snr');
     const localMcp = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp');
     expect(existsSync(localCli)).toBe(true);
+    expect(existsSync(localSnr)).toBe(true);
     expect(existsSync(localMcp)).toBe(true);
 
     if (process.platform === 'win32') {
       expect(
         existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll.cmd')),
       ).toBe(true);
+      expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'snr.cmd'))).toBe(
+        true,
+      );
       expect(
         existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp.cmd')),
       ).toBe(true);

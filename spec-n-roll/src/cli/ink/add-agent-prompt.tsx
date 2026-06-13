@@ -4,9 +4,9 @@ import { render, Box, Text, useInput } from 'ink';
 import { getBundledAgentGenerator } from '../../agents/extension-loader.js';
 
 /**
- * Resolves a display label for a bundled agent id.
+ * Resolves a display label for a agent id.
  *
- * @param agentId - Bundled extension id.
+ * @param agentId - Extension id.
  * @returns Human-readable agent name when available.
  */
 function agentLabel(agentId: string): string {
@@ -17,7 +17,7 @@ function agentLabel(agentId: string): string {
 /**
  * Interactive Ink flow for selecting one bundled agent to add.
  *
- * @param availableAgentIds - Bundled agent ids that can be added.
+ * @param availableAgentIds - Agent ids that can be added.
  * @returns Promise resolving to the selected agent id.
  */
 export function promptForAgentToAdd(availableAgentIds: string[]): Promise<string> {
@@ -43,7 +43,7 @@ export function promptForAgentToAdd(availableAgentIds: string[]): Promise<string
  */
 interface AgentSingleSelectPromptProps {
   /**
-   * Bundled agent ids available for selection.
+   * Agent ids available for selection.
    */
   availableAgentIds: string[];
   /**

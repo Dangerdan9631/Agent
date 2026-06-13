@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Command } from 'commander';
 import fse from 'fs-extra';
 
 import {
@@ -12,8 +13,10 @@ import {
 import { writeCanonicalAgentsMd } from '../../agents/generators/agents-md.js';
 import { generateWorkflowSkills } from '../../agents/generators/workflow-skills.js';
 import { MCP_BINARY_RELATIVE_PATH } from '../../agents/mcp-config.js';
+import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
 import type { AgentConfig, WorkflowConfig } from '../../config/schema.js';
 import { atomicWriteJson } from '../../core/atomic-write.js';
+import { findToolkitPackageRoot } from '../../core/paths.js';
 import { WORKFLOW_CONFIG_SCHEMA_VERSION } from '../../updates/migration.js';
 import { writeProjectMetadata } from '../../core/project-metadata.js';
 import { installProjectBinaries } from '../local-binaries.js';
@@ -47,13 +50,9 @@ export interface InitOptions {
    */
   projectRoot: string;
   /**
-   * Selected bundled agent ids; required when `yes` is true.
+   * Selected agent ids; when provided, skips Ink prompts.
    */
   agents?: string[];
-  /**
-   * When true, skip Ink prompts and require explicit `agents`.
-   */
-  yes?: boolean;
   /**
    * Absolute path to the toolkit package root containing `dist/` build outputs.
    */
@@ -69,7 +68,7 @@ export interface InitResult {
    */
   projectRoot: string;
   /**
-   * Bundled agent ids configured during initialization.
+   * Agent ids configured during initialization.
    */
   selectedAgents: string[];
 }
@@ -83,7 +82,7 @@ export interface DefaultWorkflowConfigInput {
    */
   toolkitVersion: string;
   /**
-   * Bundled agent ids selected during initialization.
+   * Agent ids selected during initialization.
    */
   selectedAgentIds: readonly string[];
 }
@@ -94,13 +93,13 @@ export interface DefaultWorkflowConfigInput {
  * @returns Absolute path to the toolkit repository/package root.
  */
 export function resolveToolkitRoot(): string {
-  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+  return findToolkitPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
 }
 
 /**
  * Builds the default workflow configuration for a newly initialized project.
  *
- * @param input - Toolkit version and selected bundled agent ids.
+ * @param input - Toolkit version and selected agent ids.
  * @returns Workflow configuration object ready for schema validation.
  */
 export function createDefaultWorkflowConfig(input: DefaultWorkflowConfigInput): WorkflowConfig {
@@ -230,37 +229,12 @@ async function ensureUserOwnedDirectories(projectRoot: string): Promise<void> {
 }
 
 /**
- * Parses a comma-separated agent list from CLI flags.
- *
- * @param agentsFlag - Comma-separated bundled agent ids.
- * @returns Trimmed non-empty agent id list.
- */
-export function parseAgentsFlag(agentsFlag: string | undefined): string[] {
-  if (agentsFlag == null || agentsFlag.trim().length === 0) {
-    return [];
-  }
-
-  return agentsFlag
-    .split(',')
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
-}
-
-/**
  * Resolves selected agent ids from options and optional interactive prompts.
  *
- * @param options - Initialization options including `yes` and `agents`.
- * @returns Validated bundled agent ids to configure.
+ * @param options - Initialization options including optional `agents`.
+ * @returns Validated agent ids to configure.
  */
 async function resolveSelectedAgents(options: InitOptions): Promise<string[]> {
-  if (options.yes === true) {
-    const fromFlag = options.agents ?? [];
-    if (fromFlag.length === 0) {
-      throw new Error('Non-interactive init requires --agents with at least one bundled agent id.');
-    }
-    return validateSelectedAgentIds(fromFlag);
-  }
-
   if (options.agents != null && options.agents.length > 0) {
     return validateSelectedAgentIds(options.agents);
   }
@@ -269,7 +243,7 @@ async function resolveSelectedAgents(options: InitOptions): Promise<string[]> {
 }
 
 /**
- * Initializes spec-n-roll in a project with selected bundled agents.
+ * Initializes Spec-N-Roll in a project with selected agents.
  *
  * @param options - Initialization path, agent selection, and toolkit root options.
  * @returns Summary of the initialized project and selected agents.
@@ -289,7 +263,7 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
   for (const agentId of selectedAgents) {
     const generator = getBundledAgentGenerator(agentId);
     if (generator == null) {
-      throw new Error(`Unknown bundled agent id: ${agentId}`);
+      throw new Error(`Unknown agent id: ${agentId}`);
     }
     await generator.generate(projectRoot);
   }
@@ -308,27 +282,42 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
 }
 
 /**
+ * Registers the `init` subcommand on the root Commander program.
+ *
+ * @param program - Root Commander program to attach the command to.
+ */
+export function registerInitCommand(program: Command): void {
+  program
+    .command('init')
+    .argument('[path]', 'Project directory to initialize', '.')
+    .description('Initialize Spec-N-Roll in a project')
+    .option('--agents <agents>', 'Comma-separated agent ids (e.g. cursor,claude-code)')
+    .action(async (targetPath: string, commandOptions: { agents?: string }) => {
+      await handleInitCommand(targetPath, commandOptions);
+    });
+}
+
+/**
  * Commander action handler for `spec-n-roll init`.
  *
  * @param targetPath - Optional project path relative to cwd.
- * @param commandOptions - Parsed Commander options including `yes` and `agents`.
+ * @param commandOptions - Parsed Commander options including `agents`.
  */
 export async function handleInitCommand(
   targetPath: string,
-  commandOptions: { yes?: boolean; agents?: string },
+  commandOptions: { agents?: string } = {},
 ): Promise<void> {
   const projectRoot = path.resolve(process.cwd(), targetPath);
-  const agents = parseAgentsFlag(commandOptions.agents);
+  const agents = parseCommaSeparatedAgentList(commandOptions.agents);
 
   try {
     const result = await runInit({
       projectRoot,
-      yes: commandOptions.yes === true,
       agents: agents.length > 0 ? agents : undefined,
     });
 
     console.log(
-      `Initialized spec-n-roll in ${result.projectRoot} for agents: ${result.selectedAgents.join(', ')}`,
+      `Initialized Spec-N-Roll in ${result.projectRoot} for agents: ${result.selectedAgents.join(', ')}`,
     );
     console.log(`MCP server: ${MCP_BINARY_RELATIVE_PATH}`);
   } catch (error) {

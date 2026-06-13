@@ -94,20 +94,20 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 - [x] T034 [P] [US1] Write failing integration test for multi-agent init in tests/integration/init.test.ts (two agents → skills, rules, pointer files, MCP config merge, workflow config, project-metadata, CLI + MCP binaries)
 - [x] T035 [P] [US1] Write failing unit test for default workflow.config.json in tests/unit/workflow-config.test.ts (papercut/quick/full each reference shared specify step as step 1)
-- [x] T036 [P] [US1] Write failing contract test for agent MCP config merge in tests/contract/agent-mcp-config.test.ts (upsert spec-n-roll serverId; preserve unrelated MCP servers; idempotent re-run)
+- [x] T036 [P] [US1] Write failing contract test for agent MCP config merge in tests/contract/agent-mcp-config.test.ts (upsert Spec-N-Roll serverId; preserve unrelated MCP servers; idempotent re-run)
 
 ### Implementation for User Story 1
 
-- [x] T037 [P] [US1] Implement cursor bundled extension manifest and generator in src/agents/generators/cursor.ts (agentSetup.mcpConfig targets .cursor/mcp.json; rules pointer to .spec-n-roll/AGENTS.md; skills in .agents/skills/)
-- [x] T038 [P] [US1] Implement claude-code bundled extension manifest and generator in src/agents/generators/claude-code.ts (CLAUDE.md pointer + MCP config per manifest)
-- [x] T039 [P] [US1] Implement copilot bundled extension manifest and generator in src/agents/generators/copilot.ts (extension id `copilot`; .github/copilot-instructions.md pointer + MCP config per manifest)
-- [x] T040 [P] [US1] Implement codex bundled extension manifest and generator in src/agents/generators/codex.ts (AGENTS.md pointer + MCP config per manifest)
+- [x] T037 [P] [US1] Implement cursor extension manifest and generator in src/agents/generators/cursor.ts (agentSetup.mcpConfig targets .cursor/mcp.json; rules pointer to .spec-n-roll/AGENTS.md; skills in .agents/skills/)
+- [x] T038 [P] [US1] Implement claude-code extension manifest and generator in src/agents/generators/claude-code.ts (CLAUDE.md pointer + MCP config per manifest)
+- [x] T039 [P] [US1] Implement copilot extension manifest and generator in src/agents/generators/copilot.ts (extension id `copilot`; .github/copilot-instructions.md pointer + MCP config per manifest)
+- [x] T040 [P] [US1] Implement codex extension manifest and generator in src/agents/generators/codex.ts (AGENTS.md pointer + MCP config per manifest)
 - [x] T041 [US1] Implement canonical AGENTS.md writer in src/agents/generators/agents-md.ts (toolkit-owned .spec-n-roll/AGENTS.md with workflow command and MCP tool reference)
-- [x] T042 [US1] Implement extension loader for bundled extensions in src/agents/extension-loader.ts (discovers .spec-n-roll/bundled-extensions/{id}/; validates manifest including agentSetup.mcpConfig)
+- [x] T042 [US1] Implement extension loader for extensions in src/agents/extension-loader.ts (discovers .spec-n-roll/bundled-extensions/{id}/; validates manifest including agentSetup.mcpConfig)
 - [x] T043 [US1] Implement MCP config format adapters and idempotent merge in src/agents/mcp-config.ts (read/upsert/write per contracts/agent-mcp-config.md; bundled adapters for cursor, claude-code, copilot, codex)
 - [x] T044 [US1] Implement Ink multi-select prompts for agent selection in src/cli/ink/init-prompts.tsx (skipped when `--yes` supplies `--agents`)
-- [x] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; bundled agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
-- [x] T046 [US1] Install full CLI and MCP binaries to .spec-n-roll/cli/bin/ during init in src/cli/commands/init.ts (copy from T009 build outputs: spec-n-roll + spec-n-roll-mcp; .cmd wrappers on Windows; version-matched pair)
+- [x] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
+- [x] T046 [US1] Install full CLI and MCP binaries to .spec-n-roll/cli/bin/ during init in src/cli/commands/init.ts (copy from T009 build outputs: Spec-N-Roll + spec-n-roll-mcp; .cmd wrappers on Windows; version-matched pair)
 - [x] T047 [US1] Implement `spec-n-roll init [path] [--yes]` command orchestration in src/cli/commands/init.ts (Ink prompts or `--yes` with `--agents` → agent generators → MCP config merge → config files → bundled-extensions copy → script install; copies built binaries from T009)
 
 **Checkpoint**: `spec-n-roll init .` with two agents produces all expected files, MCP configs reference local MCP binary, and T034–T036 pass.
@@ -285,7 +285,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ## Phase 10: User Story 9 — CLI-Based Toolkit Setup, Update, and Configuration (Priority: P2)
 
-**Goal**: Developer manages spec-n-roll installation entirely via CLI — interactively (Ink) or non-interactively (`--yes` flags per SC-009). `init`, `update`, `config add-agent`, and `version` work without manual file editing. Dispatcher exec's local full CLI; update refreshes agent MCP config paths.
+**Goal**: Developer manages Spec-N-Roll installation entirely via CLI — interactively (Ink) or non-interactively (`--yes` flags per SC-009). `init`, `update`, `config add-agent`, and `version` work without manual file editing. Dispatcher exec's local full CLI; update refreshes agent MCP config paths.
 
 **Independent Test**: Run `spec-n-roll init --yes`, `spec-n-roll update --yes`, and `spec-n-roll config add-agent --yes --agent <id>` with no Ink prompts and no manual file edits (SC-009). User-owned files preserved on update; MCP config paths refreshed; new agent MCP merge does not break existing agents.
 
@@ -300,7 +300,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 - [x] T104 [US9] Implement `spec-n-roll update [--dry-run] [--yes]` command in src/cli/commands/update.ts (Ink UI when interactive; skip prompts with `--yes`; versions, toolkit-owned diff, .bak conflicts, migrations, extension warnings, MCP refresh summary; require confirm for breaking migrations unless `--yes` with explicit `--confirm-migration`)
 - [x] T105 [US9] Implement toolkit-owned file update logic in src/cli/commands/update.ts (overwrite toolkit-owned including CLI + MCP binaries; call src/updates/backup.ts for locally modified files)
-- [x] T106 [US9] Refresh spec-n-roll MCP server paths in all configured agents during update in src/agents/mcp-config.ts (invoke from src/cli/commands/update.ts per contracts/agent-mcp-config.md)
+- [x] T106 [US9] Refresh Spec-N-Roll MCP server paths in all configured agents during update in src/agents/mcp-config.ts (invoke from src/cli/commands/update.ts per contracts/agent-mcp-config.md)
 - [x] T107 [US9] Implement `spec-n-roll config add-agent` command in src/cli/commands/config-add-agent.ts (Ink agent select or `--yes` with `--agent` flags → generators → MCP config merge for new agent only; preserve existing agents)
 - [x] T108 [P] [US9] Implement `spec-n-roll version` combined report in src/cli/commands/version.ts (dispatcher version when applicable, executed binary version, local/global target, local path, latest available when discoverable)
 - [x] T110 [US9] Complete MCP/CLI parity contract tests in tests/contract/mcp-cli-parity.test.ts (all tools in contracts/mcp-tools.md have matching CLI subcommand with identical outcomes — SC-012)
@@ -362,7 +362,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 - [x] T128 [US8] Implement disabled extension fallback in src/workflow/engine.ts (all disabled for stepId → built-in handler)
 - [x] T129 [US8] Implement workflow variant loading from workflow.config.json in src/workflow/engine.ts (named variants; shared step definitions by reference)
 - [x] T130 [P] [US8] Implement dynamic hook dispatch in src/extensions/hooks.ts (parse before_{stepId}/after_{stepId}; merged step registry at load; warn and skip unknown stepIds)
-- [x] T131 [US8] Validate bundled extension manifests against contracts/extension-manifest.schema.json in tests/contract/bundled-extensions.test.ts
+- [x] T131 [US8] Validate extension manifests against contracts/extension-manifest.schema.json in tests/contract/bundled-extensions.test.ts
 
 **Checkpoint**: Extension contract tests pass; custom step replaces built-in; disabled fallback works.
 
@@ -438,7 +438,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 
 ```text
 # After T009 build + T031 fixtures ready, start in parallel:
-Task T037: cursor bundled extension in src/agents/generators/cursor.ts
+Task T037: cursor extension in src/agents/generators/cursor.ts
 Task T038: claude-code generator in src/agents/generators/claude-code.ts
 Task T039: copilot generator in src/agents/generators/copilot.ts
 Task T040: codex generator in src/agents/generators/codex.ts

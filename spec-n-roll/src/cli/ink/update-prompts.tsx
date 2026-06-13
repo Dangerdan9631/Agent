@@ -24,7 +24,7 @@ export interface UpdateConfirmationInput {
    */
   backupConflicts: BackupConflict[];
   /**
-   * Number of pending config migrations (US10).
+   * Number of pending config migrations.
    */
   migrationCount: number;
   /**

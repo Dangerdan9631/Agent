@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
+import { isCurrentModuleEntrypoint } from '../core/paths.js';
 import { registerCoreMcpTools } from './tools.js';
 
 /**
@@ -54,9 +55,10 @@ export async function main(): Promise<void> {
   await startMcpServer();
 }
 
-const isMainModule =
-  process.argv[1] != null &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+const isMainModule = isCurrentModuleEntrypoint(process.argv[1], import.meta.url, [
+  'server.js',
+  'server.ts',
+]);
 
 if (isMainModule) {
   main().catch((error: unknown) => {

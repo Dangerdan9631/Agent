@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Command } from 'commander';
 
+import { findToolkitPackageRoot } from '../../core/paths.js';
 import { findLocalCli } from '../dispatcher.js';
 
 /**
@@ -55,10 +57,8 @@ export interface VersionReportOptions {
  * @returns Semver string for the running toolkit package.
  */
 export function readToolkitPackageVersion(): string {
-  const packageJsonPath = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '../../../package.json',
-  );
+  const packageRoot = findToolkitPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
+  const packageJsonPath = path.join(packageRoot, 'package.json');
   const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string };
   return pkg.version;
 }
@@ -153,6 +153,20 @@ export function formatVersionReport(report: VersionReport): string {
 export function printVersionReport(options: VersionReportOptions = {}): void {
   const report = buildVersionReport(options);
   process.stdout.write(formatVersionReport(report));
+}
+
+/**
+ * Registers the `version` subcommand on the root Commander program.
+ *
+ * @param program - Root Commander program to attach the command to.
+ */
+export function registerVersionCommand(program: Command): void {
+  program
+    .command('version')
+    .description('Show installed Spec-N-Roll versions')
+    .action(() => {
+      handleVersionCommand();
+    });
 }
 
 /**

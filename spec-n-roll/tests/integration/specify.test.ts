@@ -47,7 +47,7 @@ describe('/spec-n-specify integration', () => {
 
   it('runs triage, instantiates spec.md, interviews, and writes state via core', async () => {
     const projectRoot = createTempProject('full-flow');
-    await runInit({ projectRoot, agents: ['cursor'], yes: true });
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const questionsAsked: InterviewQuestion[] = [];
     let triageSeen: TriageAssessment | undefined;

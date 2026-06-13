@@ -50,7 +50,6 @@ describe('global dispatcher local exec', () => {
     await runInit({
       projectRoot,
       agents: ['cursor'],
-      yes: true,
     });
 
     const delegated = spawnSync(process.execPath, [dispatcherPath, '-v'], {

@@ -10,7 +10,7 @@ export const cursorExtensionManifest: ExtensionManifest = {
   manifestVersion: '1',
   id: 'cursor',
   name: 'Cursor',
-  description: 'Cursor agent integration for spec-n-roll workflow commands and MCP tools.',
+  description: 'Cursor agent integration for Spec-N-Roll workflow commands and MCP tools.',
   targetToolkitVersion: '0.1.0',
   agentSetup: {
     mcpConfig: {

@@ -10,7 +10,7 @@ export const claudeCodeExtensionManifest: ExtensionManifest = {
   manifestVersion: '1',
   id: 'claude-code',
   name: 'Claude Code',
-  description: 'Claude Code agent integration for spec-n-roll workflow commands and MCP tools.',
+  description: 'Claude Code agent integration for Spec-N-Roll workflow commands and MCP tools.',
   targetToolkitVersion: '0.1.0',
   agentSetup: {
     mcpConfig: {

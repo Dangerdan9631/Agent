@@ -186,7 +186,7 @@
 
 ## Decision: Agent extensions own project-local MCP config targets and merge rules
 
-**Rationale**: `init` and `config add-agent` must create or idempotently update each selected agent's project-local native MCP configuration file(s) to reference `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio). Each bundled agent extension declares `agentSetup.mcpConfig` in its manifest: target path(s), config format adapter, and a stable `serverId` for merge. Generators upsert only the spec-n-roll MCP server entry and preserve unrelated MCP servers. `update` refreshes the binary path and platform wrapper (`.cmd` on Windows) in all configured agents' MCP config files.
+**Rationale**: `init` and `config add-agent` must create or idempotently update each selected agent's project-local native MCP configuration file(s) to reference `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio). Each bundled agent extension declares `agentSetup.mcpConfig` in its manifest: target path(s), config format adapter, and a stable `serverId` for merge. Generators upsert only the Spec-N-Roll MCP server entry and preserve unrelated MCP servers. `update` refreshes the binary path and platform wrapper (`.cmd` on Windows) in all configured agents' MCP config files.
 
 **Alternatives considered**:
 

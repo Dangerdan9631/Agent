@@ -27,7 +27,7 @@ export const semverSchema = z.string().regex(semverPattern);
 export const specNCommandPattern = /^spec-n-[a-z0-9-]+$/;
 
 /**
- * Zod schema for spec-n-roll workflow command names exposed to agents.
+ * Zod schema for Spec-N-Roll workflow command names exposed to agents.
  */
 export const specNCommandSchema = z.string().regex(specNCommandPattern);
 
@@ -195,9 +195,9 @@ export const workflowConfigSchema = z
      */
     toolkitVersion: semverSchema,
     /**
-     * Non-empty list of agent entries; each declares one configured agent environment.
+     * List of agent entries; each declares one configured agent environment.
      */
-    agents: z.array(agentConfigSchema).min(1),
+    agents: z.array(agentConfigSchema),
     /**
      * Non-empty registry of reusable step definitions composed by workflow variants.
      */

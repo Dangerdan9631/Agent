@@ -15,7 +15,7 @@ export const CANONICAL_AGENTS_MD_RELATIVE_PATH = '.spec-n-roll/AGENTS.md';
 export function buildCanonicalAgentsMdContent(): string {
   return `# Spec-n-Roll Agent Rules
 
-This file is the canonical source for spec-n-roll workflow guidance in this project.
+This file is the canonical source for Spec-N-Roll workflow guidance in this project.
 
 ## Workflow commands
 
@@ -64,7 +64,7 @@ export async function writeCanonicalAgentsMd(projectRoot: string): Promise<void>
 export function buildRulesPointerContent(pointerLabel: string): string {
   return `# ${pointerLabel}
 
-Canonical spec-n-roll workflow rules live in [.spec-n-roll/AGENTS.md](.spec-n-roll/AGENTS.md).
+Canonical Spec-N-Roll workflow rules live in [.spec-n-roll/AGENTS.md](.spec-n-roll/AGENTS.md).
 
 Read and follow that file for workflow commands, MCP usage, and living-spec guidance.
 `;

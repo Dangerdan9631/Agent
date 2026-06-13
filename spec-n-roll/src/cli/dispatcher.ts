@@ -1,7 +1,11 @@
+#!/usr/bin/env node
+
 import { spawnSync } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { isCurrentModuleEntrypoint } from '../core/paths.js';
 
 /**
  * Defines the standard installation location for project-local CLI versions
@@ -198,7 +202,7 @@ export class LocalCliNotExecutableError extends Error {
 
   constructor(projectRoot: string, cliPath: string) {
     super(
-      `Local spec-n-roll CLI found at ${cliPath} but is not executable. ` +
+      `Local Spec-N-Roll CLI found at ${cliPath} but is not executable. ` +
         `Run: chmod +x "${cliPath}" (Unix) or verify the Windows .cmd shim.`,
     );
     this.name = 'LocalCliNotExecutableError';
@@ -361,7 +365,7 @@ export function execGlobalCli(argv: string[], options: DispatchOptions = {}): nu
 
   if (result.error != null) {
     console.error(
-      `Failed to execute global spec-n-roll CLI at ${cliPath}: ${result.error.message}`,
+      `Failed to execute global Spec-N-Roll CLI at ${cliPath}: ${result.error.message}`,
     );
     return 1;
   }
@@ -396,9 +400,10 @@ export function runDispatcher(
   return execGlobalCli(rawArgs, options);
 }
 
-const isDispatcherMain =
-  process.argv[1] != null &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+const isDispatcherMain = isCurrentModuleEntrypoint(process.argv[1], import.meta.url, [
+  'dispatcher.js',
+  'dispatcher.ts',
+]);
 
 if (isDispatcherMain) {
   process.exit(runDispatcher());

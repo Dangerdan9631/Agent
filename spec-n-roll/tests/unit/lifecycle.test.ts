@@ -9,6 +9,7 @@ import { writeProjectMetadata } from '../../src/core/project-metadata.js';
 import {
   lockCompleteTaskSpecs,
   readTaskSpecStatus,
+  resolveTaskSpecSlug,
   setTaskSpecStatus,
 } from '../../src/core/task-lifecycle.js';
 import { writeWorkflowState } from '../../src/core/workflow-state.js';
@@ -147,6 +148,16 @@ describe('task lifecycle', () => {
     expect(rollResult.action).toBe('step_completed');
     expect(await readTaskSpecStatus(projectRoot, '001', 'done-feature')).toBe('Locked');
     expect(await readTaskSpecStatus(projectRoot, '002', 'next-feature')).toBe('Active');
+  });
+
+  it('resolves slug from task spec id via resolveTaskSpecSlug', async () => {
+    const projectRoot = createProjectRoot('resolve-slug');
+    seedTaskSpec(projectRoot, '001', 'my-feature', 'Active');
+
+    await expect(resolveTaskSpecSlug(projectRoot, '001')).resolves.toBe('my-feature');
+    await expect(resolveTaskSpecSlug(projectRoot, '999')).rejects.toMatchObject({
+      code: 'TASK_SPEC_NOT_FOUND',
+    });
   });
 
   it('locks Complete specs via lockCompleteTaskSpecs', async () => {

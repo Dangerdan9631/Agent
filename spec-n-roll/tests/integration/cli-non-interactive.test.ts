@@ -1,8 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { runInit } from '../../src/cli/commands/init.js';
+import { resolveListedAgents } from '../../src/cli/commands/list-agents.js';
 
 const tempDirs: string[] = [];
 
@@ -42,63 +45,108 @@ describe('SC-009 non-interactive management commands', () => {
   });
 
   it(
-    'completes init, update, and config add-agent with --yes and zero Ink prompts',
+    'completes init with --agents, update, and config agent add with zero Ink prompts',
     async () => {
-    const inkModule = await import('../../src/cli/ink/init-prompts.js');
-    const addAgentInkModule = await import('../../src/cli/ink/add-agent-prompt.js');
-    const updateInkModule = await import('../../src/cli/ink/update-prompts.js');
+      const inkModule = await import('../../src/cli/ink/init-prompts.js');
+      const addAgentInkModule = await import('../../src/cli/ink/add-agent-prompt.js');
+      const updateInkModule = await import('../../src/cli/ink/update-prompts.js');
 
-    const initPromptSpy = vi.spyOn(inkModule, 'promptForAgentSelection');
-    const addAgentPromptSpy = vi.spyOn(addAgentInkModule, 'promptForAgentToAdd');
-    const updatePromptSpy = vi.spyOn(updateInkModule, 'promptForUpdateConfirmation');
+      const initPromptSpy = vi.spyOn(inkModule, 'promptForAgentSelection');
+      const addAgentPromptSpy = vi.spyOn(addAgentInkModule, 'promptForAgentToAdd');
+      const updatePromptSpy = vi.spyOn(updateInkModule, 'promptForUpdateConfirmation');
 
-    const projectRoot = createTempProject('sc009');
+      const projectRoot = createTempProject('sc009');
 
-    const initResult = spawnSync(
-      process.execPath,
-      [cliPath, 'init', projectRoot, '--yes', '--agents', 'cursor'],
-      { encoding: 'utf8' },
+      const initResult = spawnSync(
+        process.execPath,
+        [cliPath, 'init', projectRoot, '--agents', 'cursor'],
+        { encoding: 'utf8' },
+      );
+      expect(initResult.status).toBe(0);
+      expect(initPromptSpy).not.toHaveBeenCalled();
+
+      const updateResult = spawnSync(process.execPath, [cliPath, 'update'], {
+        cwd: projectRoot,
+        encoding: 'utf8',
+      });
+      expect(updateResult.status).toBe(0);
+      expect(updatePromptSpy).not.toHaveBeenCalled();
+
+      const addAgentResult = spawnSync(
+        process.execPath,
+        [cliPath, 'config', 'agent', 'add', 'claude-code'],
+        {
+          cwd: projectRoot,
+          encoding: 'utf8',
+        },
+      );
+      expect(addAgentResult.status).toBe(0);
+      expect(addAgentPromptSpy).not.toHaveBeenCalled();
+
+      expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll'))).toBe(
+        true,
+      );
+      expect(existsSync(path.join(projectRoot, 'CLAUDE.md'))).toBe(true);
+
+      const workflowConfig = JSON.parse(
+        readFileSync(
+          path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json'),
+          'utf8',
+        ),
+      ) as { agents: Array<{ id: string }> };
+      expect(workflowConfig.agents.map((agent) => agent.id).sort()).toEqual([
+        'claude-code',
+        'cursor',
+      ]);
+
+      initPromptSpy.mockRestore();
+      addAgentPromptSpy.mockRestore();
+      updatePromptSpy.mockRestore();
+    },
+    30_000,
+  );
+
+  it('lists agents non-interactively via list agents', () => {
+    const result = spawnSync(process.execPath, [cliPath, 'list', 'agents'], {
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('id           name');
+    expect(result.stdout).toContain('claude-code  Claude Code');
+    expect(result.stdout).toContain('codex        Codex');
+    expect(result.stdout).toContain('copilot      GitHub Copilot');
+    expect(result.stdout).toContain('cursor       Cursor');
+  });
+
+  it('lists only enabled project agents when --enabled is passed', async () => {
+    const projectRoot = createTempProject('list-enabled');
+
+    await runInit({
+      projectRoot,
+      agents: ['cursor', 'claude-code'],
+    });
+
+    const workflowConfigPath = path.join(
+      projectRoot,
+      '.spec-n-roll',
+      'config',
+      'workflow.config.json',
     );
-    expect(initResult.status).toBe(0);
-    expect(initPromptSpy).not.toHaveBeenCalled();
+    const workflowConfig = JSON.parse(readFileSync(workflowConfigPath, 'utf8')) as {
+      agents: Array<{ id: string; enabled: boolean }>;
+    };
+    workflowConfig.agents = workflowConfig.agents.map((agent) =>
+      agent.id === 'claude-code' ? { ...agent, enabled: false } : agent,
+    );
+    writeFileSync(workflowConfigPath, `${JSON.stringify(workflowConfig, null, 2)}\n`);
 
-    const updateResult = spawnSync(process.execPath, [cliPath, 'update', '--yes'], {
+    const result = spawnSync(process.execPath, [cliPath, 'list', 'agents', '--enabled'], {
       cwd: projectRoot,
       encoding: 'utf8',
     });
-    expect(updateResult.status).toBe(0);
-    expect(updatePromptSpy).not.toHaveBeenCalled();
 
-    const addAgentResult = spawnSync(
-      process.execPath,
-      [cliPath, 'config', 'add-agent', '--yes', '--agent', 'claude-code'],
-      { cwd: projectRoot,
-        encoding: 'utf8',
-      },
-    );
-    expect(addAgentResult.status).toBe(0);
-    expect(addAgentPromptSpy).not.toHaveBeenCalled();
-
-    expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll'))).toBe(
-      true,
-    );
-    expect(existsSync(path.join(projectRoot, 'CLAUDE.md'))).toBe(true);
-
-    const workflowConfig = JSON.parse(
-      readFileSync(
-        path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json'),
-        'utf8',
-      ),
-    ) as { agents: Array<{ id: string }> };
-    expect(workflowConfig.agents.map((agent) => agent.id).sort()).toEqual([
-      'claude-code',
-      'cursor',
-    ]);
-
-    initPromptSpy.mockRestore();
-    addAgentPromptSpy.mockRestore();
-    updatePromptSpy.mockRestore();
-  },
-    30_000,
-  );
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('id      name\ncursor  Cursor\n');
+  });
 });

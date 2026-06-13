@@ -1,6 +1,6 @@
 # Agent MCP Configuration Contract
 
-Project-local agent MCP configuration files connect each configured AI coding agent to the spec-n-roll MCP server. This contract applies to `init`, `config add-agent`, and `update`.
+Project-local agent MCP configuration files connect each configured AI coding agent to the Spec-N-Roll MCP server. This contract applies to `init`, `config add-agent`, and `update`.
 
 ## MCP Server Reference
 
@@ -36,7 +36,7 @@ Bundled agent extensions declare MCP integration in `extension-manifest.schema.j
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `serverId` | Yes | Stable key used to upsert the spec-n-roll MCP server entry |
+| `serverId` | Yes | Stable key used to upsert the Spec-N-Roll MCP server entry |
 | `format` | Yes | Config format adapter id (e.g. `cursor-mcp-json`, `claude-mcp-json`) |
 | `targets` | Yes (min 1) | Project-relative paths to native MCP config files |
 | `targets[].path` | Yes | File to create or merge |
@@ -67,7 +67,7 @@ For each enabled agent extension:
 ## Merge Rules
 
 - **Upsert by `serverId`**: If an entry with `serverId` exists, update command/args/transport only.
-- **Insert if absent**: Add spec-n-roll server entry without removing or reordering unrelated servers.
+- **Insert if absent**: Add Spec-N-Roll server entry without removing or reordering unrelated servers.
 - **Preserve unrelated entries**: Never delete or overwrite other MCP server definitions.
 - **Idempotent**: Re-running `init` or `config add-agent` for the same agent produces the same effective MCP config (no duplicates).
 
@@ -92,4 +92,4 @@ Bundled adapters (v1): one per OOTB agent extension (cursor, claude-code, copilo
 
 ## Validation (Quickstart)
 
-See quickstart Scenario 1 (init) and Scenario 1b (add-agent): each configured agent's native MCP config file contains a spec-n-roll server entry pointing at `.spec-n-roll/cli/bin/spec-n-roll-mcp`.
+See quickstart Scenario 1 (init) and Scenario 1b (add-agent): each configured agent's native MCP config file contains a Spec-N-Roll server entry pointing at `.spec-n-roll/cli/bin/spec-n-roll-mcp`.
