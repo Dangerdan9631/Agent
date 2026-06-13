@@ -42,6 +42,29 @@ export interface NavigationStackEntry {
 }
 
 /**
+ * One keyboard shortcut shown in the key hint overlay.
+ */
+export interface KeyHintDescriptor {
+  /**
+   * Key or key combo shown in the hint. Must be a non-empty display string.
+   */
+  key: string;
+  /**
+   * Short action label following the key. Must be a non-empty display string.
+   */
+  label: string;
+}
+
+/**
+ * Optional supplemental hints merged with global defaults for specific routes.
+ */
+export const ROUTE_SUPPLEMENTAL_HINTS: Partial<
+  Readonly<Record<RouteId, readonly KeyHintDescriptor[]>>
+> = {
+  'main-menu': [{ key: '1-5', label: 'jump' }],
+};
+
+/**
  * Human-readable route titles for breadcrumb and placeholder rendering.
  */
 export const ROUTE_TITLES: Readonly<Record<RouteId, string>> = {
@@ -123,6 +146,16 @@ export const ROOT_NAVIGATION_STACK: readonly NavigationStackEntry[] = [
  */
 export function titleForRoute(routeId: RouteId): string {
   return ROUTE_TITLES[routeId];
+}
+
+/**
+ * Returns supplemental key hints for a route when the route defines them.
+ *
+ * @param routeId - Route identifier to resolve.
+ * @returns Route-specific hints, or an empty list when none are defined.
+ */
+export function supplementalHintsForRoute(routeId: RouteId): readonly KeyHintDescriptor[] {
+  return ROUTE_SUPPLEMENTAL_HINTS[routeId] ?? [];
 }
 
 /**

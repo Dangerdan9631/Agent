@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listWorkflowVariantSummaries,
   type WorkflowVariantSummary,
@@ -22,7 +23,7 @@ function currentContextLabel(stack: readonly { contextLabel?: string }[]): strin
  *
  * @returns React element for the workflow detail screen.
  */
-export function WorkflowDetailScreen(): React.ReactElement {
+export function WorkflowDetailScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const variantId = currentContextLabel(session.navigationStack);
   const [summary, setSummary] = useState<WorkflowVariantSummary | null>(null);

@@ -4,6 +4,7 @@ import { Box, Text, useInput } from 'ink';
 import { runUpdate, type UpdateResult } from '../../../commands/update.js';
 import { UpdateConfirmPrompt } from '../../update-prompts.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
 /**
  * Input accepted by the interactive update path.
@@ -48,7 +49,7 @@ export async function applyInteractiveUpdate(input: InteractiveUpdateInput): Pro
  *
  * @returns React element for the update screen.
  */
-export function SetupUpdateScreen(): React.ReactElement {
+export function SetupUpdateScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const [plan, setPlan] = useState<UpdateResult | null>(null);
   const [result, setResult] = useState<UpdateResult | null>(null);

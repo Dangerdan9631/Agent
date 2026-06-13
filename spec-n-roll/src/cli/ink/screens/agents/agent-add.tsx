@@ -10,6 +10,7 @@ import {
   type AgentSingleSelectPromptProps,
 } from '../../add-agent-prompt.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { listAgentSummaries } from '../../read-models/agents.js';
 
 /**
@@ -43,7 +44,7 @@ export async function applyInteractiveAgentAdd(
  *
  * @returns React element for the add-agent screen.
  */
-export function AgentAddScreen(): React.ReactElement {
+export function AgentAddScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const [availableAgentIds, setAvailableAgentIds] = useState<string[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);

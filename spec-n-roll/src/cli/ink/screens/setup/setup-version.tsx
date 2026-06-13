@@ -3,13 +3,14 @@ import { Box, Text } from 'ink';
 
 import { buildVersionReport, formatVersionReport } from '../../../commands/version.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
 /**
  * Renders version information from the shared version report builder.
  *
  * @returns React element for the version screen.
  */
-export function SetupVersionScreen(): React.ReactElement {
+export function SetupVersionScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const report = buildVersionReport({ cwd: session.projectRoot });
 

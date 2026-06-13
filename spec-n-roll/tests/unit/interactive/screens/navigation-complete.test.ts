@@ -84,11 +84,80 @@ describe('complete interactive navigation', () => {
 
     app.stdin.write('5');
     await waitForFrame();
-    expect(app.lastFrame()).toContain('Setup / Maintenance');
+    expect(app.lastFrame()).toContain('Initialize project');
     app.stdin.write('b');
     await waitForFrame();
 
     expect(app.lastFrame()).toContain('Spec-N-Roll');
+    app.unmount();
+  });
+
+  it('renders spec detail in the full route content slot', async () => {
+    const app = render(
+      React.createElement(App, {
+        projectRoot: FIXTURE_ROOT,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    await waitForFrame();
+    app.stdin.write('1');
+    await waitForFrame();
+    app.stdin.write('\r');
+    await waitForFrame();
+    await waitForFrame();
+
+    const frame = app.lastFrame() ?? '';
+    expect(frame).toContain('Spec 001-active-checkout');
+    expect(frame).toContain('lifecycle:');
+    expect(frame).toContain('current step:');
+    expect(frame).toContain('artifacts:');
+    expect(frame).not.toContain('> 002 completed-migration');
+    expect(frame).not.toContain('Choose a section to open.');
+    app.unmount();
+  });
+
+  it('renders form and confirmation routes in the full route content slot', async () => {
+    const app = render(
+      React.createElement(App, {
+        projectRoot: FIXTURE_ROOT,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    await waitForFrame();
+    app.stdin.write('1');
+    await waitForFrame();
+    app.stdin.write('\r');
+    await waitForFrame();
+    app.stdin.write('m');
+    await waitForFrame();
+    app.stdin.write('\r');
+    await waitForFrame();
+
+    const statusFrame = app.lastFrame() ?? '';
+    expect(statusFrame).toContain('Set Task Status');
+    expect(statusFrame).toContain('target: 001-active-checkout');
+    expect(statusFrame).toContain('Active');
+    expect(statusFrame).not.toContain('Choose a section to open.');
+
+    for (let step = 0; step < 4; step += 1) {
+      app.stdin.write(ESCAPE);
+      await waitForFrame();
+    }
+
+    app.stdin.write('4');
+    await waitForFrame();
+    app.stdin.write('e');
+    await waitForFrame();
+
+    const editFrame = app.lastFrame() ?? '';
+    expect(editFrame).toContain('Edit Project Metadata');
+    expect(editFrame).toContain('nextTaskSpecId:');
+    expect(editFrame).toContain('Up/Down move, Enter apply');
+    expect(editFrame).not.toContain('> 1 Task Specs');
     app.unmount();
   });
 });

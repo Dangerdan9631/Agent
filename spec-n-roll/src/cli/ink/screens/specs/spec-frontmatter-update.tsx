@@ -4,6 +4,7 @@ import { Box, Text, useInput } from 'ink';
 import { updateSpecFrontmatter } from '../../../../core/frontmatter.js';
 import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
 /**
  * Input accepted by the interactive spec frontmatter update path.
@@ -45,7 +46,7 @@ export async function applyInteractiveSpecFrontmatterUpdate(
  *
  * @returns React element for the frontmatter update screen.
  */
-export function SpecFrontmatterUpdateScreen(): React.ReactElement {
+export function SpecFrontmatterUpdateScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const [message, setMessage] = useState<string | null>(null);

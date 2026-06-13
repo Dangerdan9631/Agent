@@ -9,6 +9,7 @@ import {
 import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
 import type { WorkflowState } from '../../../../workflow/state.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 
 /**
@@ -94,7 +95,7 @@ function buildWorkflowStateInput(
  *
  * @returns React element for the workflow state mutation screen.
  */
-export function WorkflowStateScreen(): React.ReactElement {
+export function WorkflowStateScreen(props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const [existing, setExisting] = useState<WorkflowState | null>(null);
@@ -102,6 +103,7 @@ export function WorkflowStateScreen(): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const slotHeight = props.routeContentRows > 0 ? props.routeContentRows : undefined;
 
   useEffect(() => {
     let active = true;
@@ -187,7 +189,7 @@ export function WorkflowStateScreen(): React.ReactElement {
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={slotHeight}>
       <Text bold>Workflow State</Text>
       {selected == null ? (
         <Text color="yellow">No task spec is selected.</Text>

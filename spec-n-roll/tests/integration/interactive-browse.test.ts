@@ -169,11 +169,45 @@ describe('interactive browse flow', () => {
     await waitForFrame();
 
     app.stdin.write('4');
-    await waitForText(app, 'next task spec id: 3');
-    expect(app.lastFrame()).toContain('next task spec id: 3');
-    expect(app.lastFrame()).toContain('current task: 001-active-checkout');
+    await waitForText(app, 'Next task spec id: 3');
+    expect(app.lastFrame()).toContain('Next task spec id: 3');
+    expect(app.lastFrame()).toContain('Current task: 001-active-checkout');
 
     app.unmount();
     expect(await snapshotFiles(projectRoot)).toEqual(before);
+  });
+
+  it('shows distinct selection options and route-owned content per list route', async () => {
+    const projectRoot = await copyFixtureProject();
+    const app = render(
+      React.createElement(App, {
+        projectRoot,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    await waitForFrame();
+    const mainMenuFrame = app.lastFrame() ?? '';
+    expect(mainMenuFrame).toContain('> 1 Task Specs');
+    expect(mainMenuFrame).toContain('5 Setup / Maintenance');
+    expect(mainMenuFrame).toContain('Review task specs and workflow progress.');
+    expect(mainMenuFrame).not.toContain('001 active-checkout');
+
+    app.stdin.write('1');
+    await waitForText(app, '001 active-checkout');
+    const specsFrame = app.lastFrame() ?? '';
+    expect(specsFrame).toContain('001 active-checkout');
+    expect(specsFrame).toContain('Lifecycle: Active; workflow: active.');
+    expect(specsFrame).toContain('Step: implement; workflow variant: quick.');
+    expect(specsFrame).not.toContain('5 Setup / Maintenance');
+    expect(specsFrame).not.toContain('Choose a section to open.');
+
+    app.stdin.write('\u001b[B');
+    await waitForText(app, '002 completed-migration');
+    expect(app.lastFrame()).toContain('Lifecycle: Complete; workflow: complete.');
+    expect(app.lastFrame()).toContain('Step: implement; workflow variant: full.');
+
+    app.unmount();
   });
 });

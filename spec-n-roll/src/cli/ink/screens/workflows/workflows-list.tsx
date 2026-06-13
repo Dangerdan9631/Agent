@@ -2,9 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text } from 'ink';
 
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
+import { RouteContentLayout } from '../../components/RouteContentLayout.js';
+import type {
+  ContextContentState,
+  SelectedOptionContext,
+} from '../../components/ContextContent.js';
 import { useSession } from '../../app/session-context.js';
-import type { SelectedContextChangeHandler } from '../../app/App.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listWorkflowVariantSummaries,
   type WorkflowVariantSummary,
@@ -23,12 +27,7 @@ interface WorkflowListItem extends SelectableListItem {
 /**
  * Props for the workflows list screen.
  */
-export interface WorkflowsListScreenProps {
-  /**
-   * Called when keyboard focus moves to a workflow row with read-only context.
-   */
-  onContextChange?: SelectedContextChangeHandler;
-}
+export type WorkflowsListScreenProps = RoutedScreenProps;
 
 /**
  * Formats workflow steps with human-readable labels when available.
@@ -82,34 +81,29 @@ function buildWorkflowItems(
 /**
  * Renders configured workflow variants for read-only browsing.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the workflows list screen.
  */
 export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.ReactElement {
   const session = useSession();
   const [summaries, setSummaries] = useState<WorkflowVariantSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
   const items = useMemo(
     () => (summaries == null ? [] : buildWorkflowItems(summaries)),
     [summaries],
   );
-  const reportFocusedContext = useCallback(
-    (item: WorkflowListItem | undefined): void => {
-      props.onContextChange?.(item?.context);
-    },
-    [props.onContextChange],
+  const contextState = useMemo(
+    (): ContextContentState => ({
+      routeTitle: 'Workflows',
+      fallbackSummary: 'Inspect configured workflow variants and step order.',
+      selectedContext,
+    }),
+    [selectedContext],
   );
-  const extraRows = useMemo(() => {
-    if (error != null) {
-      return 2;
-    }
-
-    if (summaries == null) {
-      return 2;
-    }
-
-    return 1;
-  }, [error, summaries]);
-  useSelectionRowContribution(extraRows);
+  const reportFocusedContext = useCallback((item: WorkflowListItem | undefined): void => {
+    setSelectedContext(item?.context);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -134,7 +128,10 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
 
   if (error != null) {
     return (
-      <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
         <Text bold>Workflows</Text>
         <Text color="red">{error}</Text>
       </Box>
@@ -143,7 +140,10 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
 
   if (summaries == null) {
     return (
-      <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
         <Text bold>Workflows</Text>
         <Text color="gray">Loading workflows...</Text>
       </Box>
@@ -151,13 +151,16 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
   }
 
   return (
-    <Box flexDirection="column">
-      <Text bold>Workflows</Text>
-      <SelectableList
-        items={items}
-        onFocusChange={reportFocusedContext}
-        onSelect={(item) => session.pushRoute('workflow-detail', item.summary.variantId)}
-      />
-    </Box>
+    <RouteContentLayout
+      routeContentRows={props.routeContentRows}
+      contextState={contextState}
+      selection={
+        <SelectableList
+          items={items}
+          onFocusChange={reportFocusedContext}
+          onSelect={(item) => session.pushRoute('workflow-detail', item.summary.variantId)}
+        />
+      }
+    />
   );
 }

@@ -4,6 +4,7 @@ import { Box, Text } from 'ink';
 import { instantiateStepOutput } from '../../../../core/templates.js';
 import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 
 /**
@@ -70,7 +71,7 @@ export async function applyInteractiveStepInstantiate(
  *
  * @returns React element for the step instantiate screen.
  */
-export function StepInstantiateScreen(): React.ReactElement {
+export function StepInstantiateScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const [message, setMessage] = useState<string | null>(null);

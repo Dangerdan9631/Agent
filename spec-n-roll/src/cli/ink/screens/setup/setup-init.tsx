@@ -5,6 +5,7 @@ import { listBundledAgentIds } from '../../../../agents/extension-loader.js';
 import { runInit, type InitResult } from '../../../commands/init.js';
 import { AgentMultiSelectPrompt, promptForAgentSelection } from '../../init-prompts.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
 /**
  * Input accepted by the interactive init path.
@@ -36,7 +37,7 @@ export async function applyInteractiveInit(input: InteractiveInitInput): Promise
  *
  * @returns React element for the init screen.
  */
-export function SetupInitScreen(): React.ReactElement {
+export function SetupInitScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

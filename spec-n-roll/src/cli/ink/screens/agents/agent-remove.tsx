@@ -6,6 +6,7 @@ import {
   type ConfigAgentRemoveResult,
 } from '../../../commands/config-agent-remove.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { listAgentSummaries } from '../../read-models/agents.js';
@@ -60,7 +61,7 @@ export async function applyInteractiveAgentRemove(
  *
  * @returns React element for the remove-agent screen.
  */
-export function AgentRemoveScreen(): React.ReactElement {
+export function AgentRemoveScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const [items, setItems] = useState<RemovableAgentItem[] | null>(null);
   const [pendingAgent, setPendingAgent] = useState<RemovableAgentItem | null>(null);

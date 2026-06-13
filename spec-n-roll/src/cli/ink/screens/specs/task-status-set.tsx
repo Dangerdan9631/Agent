@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Text } from 'ink';
 
 import {
@@ -8,8 +8,8 @@ import {
 } from '../../../../core/task-lifecycle.js';
 import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
 
 /**
  * Input accepted by the interactive task status mutation path.
@@ -68,32 +68,15 @@ export async function applyInteractiveTaskStatusSet(
 /**
  * Renders lifecycle status choices for the selected task spec.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the task status mutation screen.
  */
-export function TaskStatusSetScreen(): React.ReactElement {
+export function TaskStatusSetScreen(props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const extraRows = useMemo(() => {
-    let rows = 1;
-    if (selected == null) {
-      rows += 1;
-    } else {
-      rows += 1;
-    }
-
-    if (message != null) {
-      rows += 1;
-    }
-
-    if (error != null) {
-      rows += 1;
-    }
-
-    return rows;
-  }, [error, message, selected]);
-  useSelectionRowContribution(extraRows);
+  const slotHeight = props.routeContentRows > 0 ? props.routeContentRows : undefined;
 
   const setStatus = (item: StatusItem): void => {
     if (selected == null) {
@@ -116,7 +99,7 @@ export function TaskStatusSetScreen(): React.ReactElement {
   };
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={slotHeight}>
       <Text bold>Set Task Status</Text>
       {selected == null ? (
         <Text color="yellow">No task spec is selected.</Text>

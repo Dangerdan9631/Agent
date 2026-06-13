@@ -58,6 +58,112 @@ export interface ContextContentState {
 }
 
 /**
+ * Fixed rows reserved for the bordered status bar region in app scaffolding.
+ */
+export const STATUS_REGION_ROWS = 3;
+
+/**
+ * Fixed rows reserved for the key hint overlay region in app scaffolding when hints are visible.
+ */
+export const KEY_HINT_REGION_ROWS = 1;
+
+/**
+ * Top-level terminal frame allocation for app scaffolding.
+ */
+export interface AppScaffoldingLayout {
+  /**
+   * Number of terminal rows available to the app. Must be a positive integer when terminal size is known.
+   */
+  terminalRows: number;
+  /**
+   * Smallest row count that can show fixed chrome plus minimal route content without overlap.
+   */
+  minimumRows: number;
+  /**
+   * Rows reserved for the status bar. Must remain constant across routes and terminal resizes.
+   */
+  statusRows: number;
+  /**
+   * Rows reserved for the key hint overlay. Must remain constant across routes and terminal resizes.
+   */
+  keyHintRows: number;
+  /**
+   * Flexible rows assigned to the active route content slot. Must absorb height changes not taken by fixed chrome.
+   */
+  routeContentRows: number;
+  /**
+   * Whether the terminal is below the minimum row count for normal scaffolding rendering.
+   */
+  minimumSize: boolean;
+}
+
+/**
+ * Inputs used to calculate app scaffolding row allocation.
+ */
+export interface AppScaffoldingLayoutRequest {
+  /**
+   * Number of terminal rows available to the app. Values below one are treated as one row.
+   */
+  terminalRows: number;
+  /**
+   * Rows reserved for the status bar. Values below zero are treated as zero rows.
+   */
+  statusRows: number;
+  /**
+   * Rows reserved for the key hint overlay. Values below zero are treated as zero rows.
+   */
+  keyHintRows: number;
+  /**
+   * Minimum rows required for route content during normal rendering. Values below zero are treated as zero rows.
+   */
+  minimumRouteContentRows: number;
+}
+
+/**
+ * Row allocation for a route content layout with upper content and lower selection sub-regions.
+ */
+export interface RouteContentLayoutAllocation {
+  /**
+   * Total rows available to the route content slot from app scaffolding.
+   */
+  routeContentRows: number;
+  /**
+   * Smallest row count that can show both selection and minimal content sub-regions without overlap.
+   */
+  minimumRows: number;
+  /**
+   * Rows available to the flexible content sub-region after selection sizing.
+   */
+  contentRows: number;
+  /**
+   * Rows reserved for the selection list based on visible option count and selection chrome.
+   */
+  selectionRows: number;
+  /**
+   * Whether the route slot is too small for normal content and selection sub-region rendering.
+   */
+  minimumSize: boolean;
+}
+
+/**
+ * Inputs used to calculate route content layout row allocation.
+ */
+export interface RouteContentLayoutRequest {
+  /**
+   * Rows allocated by app scaffolding to the route content slot. Values below zero are treated as zero rows.
+   */
+  routeContentRows: number;
+  /**
+   * Rows required by the current selection list. Values below zero are treated as zero rows.
+   */
+  selectionRows: number;
+  /**
+   * Minimum rows required for the content sub-region during normal rendering. Values below zero are treated as zero rows.
+   */
+  minimumContentRows: number;
+}
+
+/**
  * Fullscreen row allocation for the interactive shell regions.
  */
 export interface FullscreenLayout {
@@ -179,6 +285,56 @@ function buildSelectedContextLines(selectedContext: SelectedOptionContext): stri
 }
 
 /**
+ * Allocates terminal rows for fixed status and key hint chrome with a flexible route content slot.
+ *
+ * @param request - Row requirements for app scaffolding. All values are normalized before allocation.
+ * @returns App scaffolding layout with non-negative route content rows and minimum-size state.
+ */
+export function allocateAppScaffoldingLayout(
+  request: AppScaffoldingLayoutRequest,
+): AppScaffoldingLayout {
+  const terminalRows = normalizeTerminalRows(request.terminalRows);
+  const statusRows = normalizeRows(request.statusRows);
+  const keyHintRows = normalizeRows(request.keyHintRows);
+  const minimumRouteContentRows = normalizeRows(request.minimumRouteContentRows);
+  const minimumRows = statusRows + keyHintRows + minimumRouteContentRows;
+  const routeContentRows = Math.max(0, terminalRows - statusRows - keyHintRows);
+
+  return {
+    terminalRows,
+    minimumRows,
+    statusRows,
+    keyHintRows,
+    routeContentRows: terminalRows < minimumRows ? 0 : routeContentRows,
+    minimumSize: terminalRows < minimumRows,
+  };
+}
+
+/**
+ * Allocates route slot rows between a flexible content sub-region and a selection list sub-region.
+ *
+ * @param request - Row requirements for route content layout. All values are normalized before allocation.
+ * @returns Route content layout allocation with non-negative content rows and minimum-size state.
+ */
+export function allocateRouteContentLayout(
+  request: RouteContentLayoutRequest,
+): RouteContentLayoutAllocation {
+  const routeContentRows = normalizeRows(request.routeContentRows);
+  const selectionRows = normalizeRows(request.selectionRows);
+  const minimumContentRows = normalizeRows(request.minimumContentRows);
+  const minimumRows = selectionRows + minimumContentRows;
+  const contentRows = Math.max(0, routeContentRows - selectionRows);
+
+  return {
+    routeContentRows,
+    minimumRows,
+    contentRows: routeContentRows < minimumRows ? 0 : contentRows,
+    selectionRows,
+    minimumSize: routeContentRows < minimumRows,
+  };
+}
+
+/**
  * Allocates terminal rows between status, context, and selection regions.
  *
  * @param request - Row requirements for the fullscreen shell. All values are normalized before allocation.
@@ -203,12 +359,12 @@ export function allocateFullscreenLayout(request: FullscreenLayoutRequest): Full
 }
 
 /**
- * Checks whether a fullscreen layout is too small for normal region rendering.
+ * Checks whether a layout allocation is too small for normal region rendering.
  *
- * @param layout - Calculated fullscreen row allocation.
+ * @param layout - Calculated fullscreen or scaffolding row allocation.
  * @returns true when the shell should render the minimum-size message, false otherwise.
  */
-export function isMinimumLayout(layout: FullscreenLayout): boolean {
+export function isMinimumLayout(layout: { minimumSize: boolean }): boolean {
   return layout.minimumSize;
 }
 
@@ -357,6 +513,7 @@ export function ContextContent(props: ContextContentProps): React.ReactElement {
       flexGrow={1}
       flexShrink={1}
       height={viewportRows > 0 ? viewportRows : undefined}
+      width="100%"
     >
       <Box flexDirection="column" flexGrow={1}>
         {visibleLines.map((line, index) => {
@@ -364,7 +521,11 @@ export function ContextContent(props: ContextContentProps): React.ReactElement {
           const isTitle = scrollOffset + index === 0;
 
           return (
-            <Text key={`${scrollOffset + index}:${line}`} color={isWarning ? 'yellow' : undefined} bold={isTitle}>
+            <Text
+              key={`${scrollOffset + index}:${line}`}
+              color={isWarning ? 'yellow' : undefined}
+              bold={isTitle}
+            >
               {line}
             </Text>
           );

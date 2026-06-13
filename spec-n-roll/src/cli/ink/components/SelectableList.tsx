@@ -91,10 +91,7 @@ function findNextEnabledIndex(
  * @param maxVisibleItems - Explicit viewport row count override for constrained callers.
  * @returns Number of rows the list should render.
  */
-function resolveVisibleItemCount(
-  itemCount: number,
-  maxVisibleItems: number | undefined,
-): number {
+function resolveVisibleItemCount(itemCount: number, maxVisibleItems: number | undefined): number {
   if (itemCount === 0) {
     return 0;
   }
@@ -191,7 +188,7 @@ export function SelectableList<TItem extends SelectableListItem>(
   });
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" flexGrow={0} flexShrink={0} width="100%">
       {label != null ? <Text bold>{label}</Text> : null}
       {visibleItems.map((item, offset) => {
         const index = windowStart + offset;

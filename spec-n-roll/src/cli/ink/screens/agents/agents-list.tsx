@@ -2,9 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
-import type { SelectedContextChangeHandler } from '../../app/App.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
+import { RouteContentLayout } from '../../components/RouteContentLayout.js';
+import type {
+  ContextContentState,
+  SelectedOptionContext,
+} from '../../components/ContextContent.js';
 import { listAgentSummaries, type AgentSummary } from '../../read-models/agents.js';
 
 /**
@@ -20,12 +24,7 @@ interface AgentListItem extends SelectableListItem {
 /**
  * Props for the agents list screen.
  */
-export interface AgentsListScreenProps {
-  /**
-   * Called when keyboard focus moves to an agent row with read-only context.
-   */
-  onContextChange?: SelectedContextChangeHandler;
-}
+export type AgentsListScreenProps = RoutedScreenProps;
 
 /**
  * Formats the configuration state for an agent row.
@@ -81,6 +80,7 @@ function buildAgentItems(
 /**
  * Renders and configured agents with a local configured-only toggle.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the agents list screen.
  */
 export function AgentsListScreen(props: AgentsListScreenProps): React.ReactElement {
@@ -88,32 +88,23 @@ export function AgentsListScreen(props: AgentsListScreenProps): React.ReactEleme
   const [configuredOnly, setConfiguredOnly] = useState(false);
   const [agents, setAgents] = useState<AgentSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
   const items = useMemo(
     () => (agents == null ? [] : buildAgentItems(agents, configuredOnly)),
     [agents, configuredOnly],
   );
-  const reportFocusedContext = useCallback(
-    (item: AgentListItem | undefined): void => {
-      props.onContextChange?.(item?.context);
-    },
-    [props.onContextChange],
+  const contextState = useMemo(
+    (): ContextContentState => ({
+      routeTitle: 'Agents',
+      fallbackSummary: 'Inspect bundled and configured agents for this project.',
+      selectedContext,
+    }),
+    [selectedContext],
   );
+  const reportFocusedContext = useCallback((item: AgentListItem | undefined): void => {
+    setSelectedContext(item?.context);
+  }, []);
   const ignoreAgentRowActivation = useCallback((): void => undefined, []);
-  const extraRows = useMemo(() => {
-    let rows = 2;
-    if (error != null) {
-      rows += 1;
-    }
-
-    if (agents == null) {
-      rows += 1;
-    } else if (agents.length === 0) {
-      rows += 1;
-    }
-
-    return rows;
-  }, [agents, error]);
-  useSelectionRowContribution(extraRows);
 
   useInput((input) => {
     if (input === 't') {
@@ -152,22 +143,50 @@ export function AgentsListScreen(props: AgentsListScreenProps): React.ReactEleme
     };
   }, [configuredOnly, session.projectRoot]);
 
+  if (error != null) {
+    return (
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
+        <Text bold>Agents</Text>
+        <Text color="red">{error}</Text>
+      </Box>
+    );
+  }
+
+  if (agents == null) {
+    return (
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
+        <Text bold>Agents</Text>
+        <Text color="gray">Loading agents...</Text>
+      </Box>
+    );
+  }
+
   return (
-    <Box flexDirection="column">
-      <Text bold>Agents</Text>
-      <Text color="gray">
-        filter: {configuredOnly ? 'configured' : 'all'} (t toggle, a add, r remove)
-      </Text>
-      {error != null ? <Text color="red">{error}</Text> : null}
-      {agents == null ? <Text color="gray">Loading agents...</Text> : null}
-      {agents != null && agents.length === 0 ? <Text color="gray">No agents found.</Text> : null}
-      {agents != null && agents.length > 0 ? (
-        <SelectableList
-          items={items}
-          onFocusChange={reportFocusedContext}
-          onSelect={ignoreAgentRowActivation}
-        />
-      ) : null}
-    </Box>
+    <RouteContentLayout
+      routeContentRows={props.routeContentRows}
+      contextState={contextState}
+      selection={
+        <Box flexDirection="column">
+          <Text color="gray">
+            filter: {configuredOnly ? 'configured' : 'all'} (t toggle, a add, r remove)
+          </Text>
+          {agents.length === 0 ? (
+            <Text color="gray">No agents found.</Text>
+          ) : (
+            <SelectableList
+              items={items}
+              onFocusChange={reportFocusedContext}
+              onSelect={ignoreAgentRowActivation}
+            />
+          )}
+        </Box>
+      }
+    />
   );
 }

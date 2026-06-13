@@ -9,6 +9,7 @@ import {
 import { resolveTaskSpecSlug } from '../../../../core/task-lifecycle.js';
 import type { ProjectMetadata } from '../../../../config/schema.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
 /**
  * Input accepted by the interactive project metadata mutation path.
@@ -96,12 +97,13 @@ function fieldsToMetadataInput(fields: Record<MetadataFieldId, string>): Project
  *
  * @returns React element for the project metadata edit screen.
  */
-export function ProjectMetadataEditScreen(): React.ReactElement {
+export function ProjectMetadataEditScreen(props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const [fieldIndex, setFieldIndex] = useState(0);
   const [fields, setFields] = useState<Record<MetadataFieldId, string>>(metadataToFields(null));
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const slotHeight = props.routeContentRows > 0 ? props.routeContentRows : undefined;
 
   useEffect(() => {
     let active = true;
@@ -163,7 +165,7 @@ export function ProjectMetadataEditScreen(): React.ReactElement {
   });
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={slotHeight}>
       <Text bold>Edit Project Metadata</Text>
       {METADATA_FIELDS.map((field, index) => (
         <Text key={field} color={index === fieldIndex ? 'cyan' : undefined}>

@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { assembleTaskSpecSummary, type TaskSpecSummary } from '../../read-models/task-specs.js';
 
 /**
@@ -22,29 +22,15 @@ function formatArtifacts(summary: TaskSpecSummary): string {
 /**
  * Renders read-only workflow and artifact details for the selected task spec.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the task spec detail screen.
  */
-export function SpecDetailScreen(): React.ReactElement {
+export function SpecDetailScreen(props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const [summary, setSummary] = useState<TaskSpecSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const selectionRows = useMemo(() => {
-    if (selected == null) {
-      return 2;
-    }
-
-    if (error != null) {
-      return 2;
-    }
-
-    if (summary == null) {
-      return 2;
-    }
-
-    return 9 + (summary.warnings.length > 0 ? 1 + summary.warnings.length : 0);
-  }, [error, selected, summary]);
-  useSelectionRowContribution(selectionRows);
+  const slotHeight = props.routeContentRows > 0 ? props.routeContentRows : undefined;
 
   useInput((input) => {
     if (input === 'm' && selected != null) {
@@ -84,7 +70,7 @@ export function SpecDetailScreen(): React.ReactElement {
 
   if (selected == null) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" height={slotHeight}>
         <Text bold>Spec Detail</Text>
         <Text color="yellow">No task spec is selected.</Text>
       </Box>
@@ -93,7 +79,7 @@ export function SpecDetailScreen(): React.ReactElement {
 
   if (error != null) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" height={slotHeight}>
         <Text bold>Spec Detail</Text>
         <Text color="red">{error}</Text>
       </Box>
@@ -102,7 +88,7 @@ export function SpecDetailScreen(): React.ReactElement {
 
   if (summary == null) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" height={slotHeight}>
         <Text bold>Spec Detail</Text>
         <Text color="gray">Loading task spec...</Text>
       </Box>
@@ -110,7 +96,7 @@ export function SpecDetailScreen(): React.ReactElement {
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={slotHeight}>
       <Text bold>
         Spec {summary.taskSpecId}-{summary.slug}
       </Text>

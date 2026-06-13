@@ -1,6 +1,8 @@
 import { Box } from 'ink';
 import React, { createContext, useContext, useId, useLayoutEffect, useMemo, useRef } from 'react';
 
+import { useTerminalSize } from '../hooks/use-terminal-size.js';
+
 /**
  * Registry that aggregates row contributions from selection-region descendants.
  */
@@ -19,6 +21,11 @@ interface SelectionRowRegistry {
  * Context used by selection controls to report how many terminal rows they require.
  */
 const SelectionRowRegistryContext = createContext<SelectionRowRegistry | null>(null);
+
+/**
+ * Terminal rows consumed by the bordered selection region chrome outside contributor content.
+ */
+const SELECTION_REGION_BORDER_ROWS = 2;
 
 /**
  * Props for the selection row aggregation provider.
@@ -43,6 +50,8 @@ export interface SelectionRowProviderProps {
 export function SelectionRowProvider(props: SelectionRowProviderProps): React.ReactElement {
   const onRowCountChangeRef = useRef(props.onRowCountChange);
   onRowCountChangeRef.current = props.onRowCountChange;
+  const { columns: inkColumns } = useTerminalSize();
+  const columns = process.stdout.columns ?? inkColumns;
 
   const registry = useMemo(() => {
     const counts = new Map<string, number>();
@@ -58,7 +67,7 @@ export function SelectionRowProvider(props: SelectionRowProviderProps): React.Re
         total += value;
       }
 
-      const normalizedTotal = Math.max(1, total);
+      const normalizedTotal = Math.max(1, total) + SELECTION_REGION_BORDER_ROWS;
       if (normalizedTotal === reportedTotal) {
         return;
       }
@@ -80,8 +89,14 @@ export function SelectionRowProvider(props: SelectionRowProviderProps): React.Re
   }, []);
 
   return (
-
-    <Box borderStyle="single" paddingX={1}>
+    <Box
+      borderStyle="single"
+      flexDirection="column"
+      flexGrow={0}
+      flexShrink={0}
+      paddingX={1}
+      width={columns}
+    >
       <SelectionRowRegistryContext.Provider value={registry}>
         {props.children}
       </SelectionRowRegistryContext.Provider>

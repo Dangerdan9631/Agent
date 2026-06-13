@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Box, Text } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
 import type { RouteId } from '../../app/navigation.js';
 
 /**
@@ -55,20 +55,20 @@ const SPEC_MUTATION_ITEMS: readonly SpecMutationItem[] = [
 /**
  * Renders shortcuts to mutation flows for the selected task spec.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the task mutation submenu.
  */
-export function SpecMutationsScreen(): React.ReactElement {
+export function SpecMutationsScreen(props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
-  const extraRows = useMemo(() => (selected == null ? 2 : 2), [selected]);
-  useSelectionRowContribution(extraRows);
+  const slotHeight = props.routeContentRows > 0 ? props.routeContentRows : undefined;
 
   const openMutation = (item: SpecMutationItem): void => {
     session.pushRoute(item.routeId, selected?.label);
   };
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={slotHeight}>
       <Text bold>Spec Mutations</Text>
       {selected == null ? (
         <Text color="yellow">No task spec is selected.</Text>

@@ -1,15 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 
 import type { VersionInvocationTarget } from '../../commands/version.js';
 import {
-  allocateFullscreenLayout,
-  ContextContent,
+  allocateAppScaffoldingLayout,
   isMinimumLayout,
-  type SelectedOptionContext,
+  KEY_HINT_REGION_ROWS,
+  STATUS_REGION_ROWS,
 } from '../components/ContextContent.js';
 import { KeyHintOverlay } from '../components/KeyHintOverlay.js';
-import { SelectionRowProvider } from '../components/SelectionRegion.js';
 import { StatusBar } from '../components/StatusBar.js';
 import { useTerminalSize } from '../hooks/use-terminal-size.js';
 import { AgentAddScreen } from '../screens/agents/agent-add.js';
@@ -33,7 +32,8 @@ import { WorkflowStateScreen } from '../screens/specs/workflow-state.js';
 import { WorkflowDetailScreen } from '../screens/workflows/workflow-detail.js';
 import { WorkflowsListScreen } from '../screens/workflows/workflows-list.js';
 import { SessionProvider, useSession } from './session-context.js';
-import { contextForRoute, titleForRoute, type RouteId } from './navigation.js';
+import { supplementalHintsForRoute, titleForRoute, type RouteId } from './navigation.js';
+import type { RoutedScreenProps } from './routed-screen-props.js';
 
 /**
  * Startup props for the interactive application shell.
@@ -58,48 +58,14 @@ export interface AppProps {
 }
 
 /**
- * Callback used by screens to report read-only focused row context.
+ * Minimum route content rows required before the normal shell layout is considered usable.
  */
-export type SelectedContextChangeHandler = (context: SelectedOptionContext | undefined) => void;
+const MINIMUM_ROUTE_CONTENT_ROWS = 1;
 
 /**
- * Rows consumed by the bordered status bar region.
+ * Props shared by routed screens rendered inside the route content slot.
  */
-const STATUS_REGION_ROWS = 3;
-
-/**
- * Rows consumed by the bordered key hint region when visible.
- */
-const KEY_HINT_REGION_ROWS = 3;
-
-/**
- * Minimum context rows required before the normal shell layout is considered usable.
- */
-const MINIMUM_CONTEXT_ROWS = 1;
-
-/**
- * Focus context tagged with the route that produced it.
- */
-interface RouteSelectedContext {
-  /**
-   * Route id active when the context was reported.
-   */
-  routeId: RouteId;
-  /**
-   * Read-only context attached to the focused option.
-   */
-  context: SelectedOptionContext;
-}
-
-/**
- * Props shared by routed screens that can report selected option context.
- */
-interface RouteRendererProps {
-  /**
-   * Called when the active screen focus moves to a row with optional context.
-   */
-  onContextChange: SelectedContextChangeHandler;
-}
+type RouteRendererProps = RoutedScreenProps;
 
 /**
  * Renders the fallback shown when the terminal cannot fit the required shell regions.
@@ -121,69 +87,74 @@ function MinimumSizeMessage(props: { minimumRows: number }): React.ReactElement 
 /**
  * Renders a placeholder route for screens that are intentionally deferred to later phases.
  *
- * @param routeId - Current route id requiring a placeholder.
+ * @param props - Current route id and route slot row budget.
  * @returns React element for a deferred screen.
  */
-function PlaceholderScreen({ routeId }: { routeId: RouteId }): React.ReactElement {
+function PlaceholderScreen(props: RoutedScreenProps & { routeId: RouteId }): React.ReactElement {
   return (
-    <Box flexDirection="column">
-      <Text bold>{titleForRoute(routeId)}</Text>
+    <Box
+      flexDirection="column"
+      height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+    >
+      <Text bold>{titleForRoute(props.routeId)}</Text>
       <Text color="gray">This screen is reserved for a later implementation phase.</Text>
     </Box>
   );
 }
 
 /**
- * Routes the current session route id to its screen component.
+ * Routes the current session route id to its screen component inside the route content slot.
  *
+ * @param props - Route slot row budget passed to the active screen.
  * @returns React element for the active route.
  */
 function RouteRenderer(props: RouteRendererProps): React.ReactElement {
   const session = useSession();
+  const routeProps: RoutedScreenProps = { routeContentRows: props.routeContentRows };
 
   switch (session.routeId) {
     case 'main-menu':
-      return <MainMenu onContextChange={props.onContextChange} />;
+      return <MainMenu {...routeProps} />;
     case 'specs-list':
-      return <SpecsListScreen onContextChange={props.onContextChange} />;
+      return <SpecsListScreen {...routeProps} />;
     case 'spec-detail':
-      return <SpecDetailScreen />;
+      return <SpecDetailScreen {...routeProps} />;
     case 'spec-mutations':
-      return <SpecMutationsScreen />;
+      return <SpecMutationsScreen {...routeProps} />;
     case 'task-status-set':
-      return <TaskStatusSetScreen />;
+      return <TaskStatusSetScreen {...routeProps} />;
     case 'task-checkbox-set':
-      return <TaskCheckboxSetScreen />;
+      return <TaskCheckboxSetScreen {...routeProps} />;
     case 'workflow-state':
-      return <WorkflowStateScreen />;
+      return <WorkflowStateScreen {...routeProps} />;
     case 'workflows-list':
-      return <WorkflowsListScreen onContextChange={props.onContextChange} />;
+      return <WorkflowsListScreen {...routeProps} />;
     case 'workflow-detail':
-      return <WorkflowDetailScreen />;
+      return <WorkflowDetailScreen {...routeProps} />;
     case 'agents-list':
-      return <AgentsListScreen onContextChange={props.onContextChange} />;
+      return <AgentsListScreen {...routeProps} />;
     case 'agent-add':
-      return <AgentAddScreen />;
+      return <AgentAddScreen {...routeProps} />;
     case 'agent-remove':
-      return <AgentRemoveScreen />;
+      return <AgentRemoveScreen {...routeProps} />;
     case 'project-metadata-view':
-      return <ProjectMetadataViewScreen onContextChange={props.onContextChange} />;
+      return <ProjectMetadataViewScreen {...routeProps} />;
     case 'project-metadata-edit':
-      return <ProjectMetadataEditScreen />;
+      return <ProjectMetadataEditScreen {...routeProps} />;
     case 'setup-menu':
-      return <SetupMenuScreen onContextChange={props.onContextChange} />;
+      return <SetupMenuScreen {...routeProps} />;
     case 'setup-init':
-      return <SetupInitScreen />;
+      return <SetupInitScreen {...routeProps} />;
     case 'setup-version':
-      return <SetupVersionScreen />;
+      return <SetupVersionScreen {...routeProps} />;
     case 'setup-update':
-      return <SetupUpdateScreen />;
+      return <SetupUpdateScreen {...routeProps} />;
     case 'setup-step-instantiate':
-      return <StepInstantiateScreen />;
+      return <StepInstantiateScreen {...routeProps} />;
     case 'setup-frontmatter-update':
-      return <SpecFrontmatterUpdateScreen />;
+      return <SpecFrontmatterUpdateScreen {...routeProps} />;
     default:
-      return <PlaceholderScreen routeId={session.routeId} />;
+      return <PlaceholderScreen routeId={session.routeId} {...routeProps} />;
   }
 }
 
@@ -197,33 +168,13 @@ function AppShell(): React.ReactElement {
   const app = useApp();
   const { rows: terminalRows } = useTerminalSize();
   const [showHints, setShowHints] = useState(true);
-  const [selectedContext, setSelectedContext] = useState<RouteSelectedContext | null>(null);
-  const [reportedSelectionRows, setReportedSelectionRows] = useState(1);
   const keyHintRows = showHints ? KEY_HINT_REGION_ROWS : 0;
-  const selectionRows = reportedSelectionRows + keyHintRows;
-  const layout = allocateFullscreenLayout({
+  const layout = allocateAppScaffoldingLayout({
     terminalRows,
     statusRows: STATUS_REGION_ROWS,
-    selectionRows,
-    minimumContextRows: MINIMUM_CONTEXT_ROWS,
+    keyHintRows,
+    minimumRouteContentRows: MINIMUM_ROUTE_CONTENT_ROWS,
   });
-  const routeContext = contextForRoute(session.routeId);
-  const focusedContext =
-    selectedContext?.routeId === session.routeId ? selectedContext.context : undefined;
-  const contextState = useMemo(
-    () => ({
-      ...routeContext,
-      selectedContext: focusedContext,
-      availableRows: layout.contentRows,
-    }),
-    [focusedContext, layout.contentRows, routeContext],
-  );
-  const handleContextChange = useCallback(
-    (context: SelectedOptionContext | undefined) => {
-      setSelectedContext(context == null ? null : { routeId: session.routeId, context });
-    },
-    [session.routeId],
-  );
 
   useInput((input, key) => {
     if (input === 'q') {
@@ -251,16 +202,26 @@ function AppShell(): React.ReactElement {
 
   return (
     <Box flexDirection="column" height={layout.terminalRows}>
-      <Box flexShrink={0}>
+      <Box flexShrink={0} height={layout.statusRows}>
         <StatusBar />
       </Box>
-      <ContextContent state={contextState} />
-      <Box flexShrink={0} flexDirection="column">
-        <SelectionRowProvider onRowCountChange={setReportedSelectionRows}>
-          <RouteRenderer onContextChange={handleContextChange} />
-        </SelectionRowProvider>
-        <KeyHintOverlay visible={showHints} />
+      <Box
+        flexGrow={1}
+        flexShrink={1}
+        flexDirection="column"
+        height={layout.routeContentRows}
+        width="100%"
+      >
+        <RouteRenderer routeContentRows={layout.routeContentRows} />
       </Box>
+      {layout.keyHintRows > 0 ? (
+        <Box flexShrink={0} height={layout.keyHintRows}>
+          <KeyHintOverlay
+            visible={showHints}
+            supplementalHints={supplementalHintsForRoute(session.routeId)}
+          />
+        </Box>
+      ) : null}
     </Box>
   );
 }

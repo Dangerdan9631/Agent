@@ -7,6 +7,7 @@ import {
 } from '../../../../core/task-checkboxes.js';
 import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
 /**
  * Input accepted by the interactive task checkbox mutation path.
@@ -66,7 +67,7 @@ function parseTaskIds(value: string): string[] {
  *
  * @returns React element for the task checkbox mutation screen.
  */
-export function TaskCheckboxSetScreen(): React.ReactElement {
+export function TaskCheckboxSetScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
   const [taskIds, setTaskIds] = useState('');

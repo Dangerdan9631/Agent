@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text } from 'ink';
 
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
+import { RouteContentLayout } from '../../components/RouteContentLayout.js';
+import type { ContextContentState, SelectedOptionContext } from '../../components/ContextContent.js';
 import { useSession } from '../../app/session-context.js';
-import type { SelectedContextChangeHandler } from '../../app/App.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listTaskSpecSummaries,
   type TaskSpecSummary,
@@ -24,12 +25,7 @@ interface TaskSpecListItem extends SelectableListItem {
 /**
  * Props for the task specs list screen.
  */
-export interface SpecsListScreenProps {
-  /**
-   * Called when keyboard focus moves to a task spec row with read-only context.
-   */
-  onContextChange?: SelectedContextChangeHandler;
-}
+export type SpecsListScreenProps = RoutedScreenProps;
 
 /**
  * Builds the display label for a recognized task spec summary.
@@ -107,45 +103,69 @@ function buildTaskSpecItems(summaries: readonly TaskSpecSummary[]): readonly Tas
 }
 
 /**
+ * Builds detail lines for unrecognized task spec directories.
+ *
+ * @param directories - Unrecognized task spec summaries.
+ * @returns Ordered detail lines for route content display.
+ */
+function unrecognizedDetailLines(directories: readonly TaskSpecSummary[]): readonly string[] {
+  if (directories.length === 0) {
+    return [];
+  }
+
+  return [
+    'Unrecognized',
+    ...directories.map(
+      (summary) => `! ${summary.directoryName} - ${summary.warnings.join(' ')}`,
+    ),
+  ];
+}
+
+/**
  * Renders recognized and unrecognized task spec directories.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the task specs browse screen.
  */
 export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement {
   const session = useSession();
   const [summaries, setSummaries] = useState<TaskSpecSummaryList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
   const items = useMemo(
     () => (summaries == null ? [] : buildTaskSpecItems(summaries.recognized)),
     [summaries],
   );
-  const reportFocusedContext = useCallback(
-    (item: TaskSpecListItem | undefined): void => {
-      props.onContextChange?.(item?.context);
-    },
-    [props.onContextChange],
-  );
-  const extraRows = useMemo(() => {
-    if (error != null) {
-      return 2;
+  const contextState = useMemo((): ContextContentState => {
+    if (selectedContext == null || summaries == null) {
+      return {
+        routeTitle: 'Task Specs',
+        fallbackSummary: 'Browse recognized task specs and review warnings.',
+        selectedContext,
+      };
     }
 
-    if (summaries == null) {
-      return 2;
+    const unrecognizedDetails = unrecognizedDetailLines(summaries.unrecognized);
+    if (unrecognizedDetails.length === 0) {
+      return {
+        routeTitle: 'Task Specs',
+        fallbackSummary: 'Browse recognized task specs and review warnings.',
+        selectedContext,
+      };
     }
 
-    let rows = 1;
-    if (summaries.recognized.length === 0) {
-      rows += 1;
-    }
-
-    if (summaries.unrecognized.length > 0) {
-      rows += 1 + summaries.unrecognized.length;
-    }
-
-    return rows;
-  }, [error, summaries]);
-  useSelectionRowContribution(extraRows);
+    return {
+      routeTitle: 'Task Specs',
+      fallbackSummary: 'Browse recognized task specs and review warnings.',
+      selectedContext: {
+        ...selectedContext,
+        details: [...(selectedContext.details ?? []), ...unrecognizedDetails],
+      },
+    };
+  }, [selectedContext, summaries]);
+  const reportFocusedContext = useCallback((item: TaskSpecListItem | undefined): void => {
+    setSelectedContext(item?.context);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -182,7 +202,10 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
 
   if (error != null) {
     return (
-      <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
         <Text bold>Task Specs</Text>
         <Text color="red">{error}</Text>
       </Box>
@@ -191,7 +214,10 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
 
   if (summaries == null) {
     return (
-      <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
         <Text bold>Task Specs</Text>
         <Text color="gray">Loading task specs...</Text>
       </Box>
@@ -199,27 +225,20 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
   }
 
   return (
-    <Box flexDirection="column">
-      <Text bold>Task Specs</Text>
-      {summaries.recognized.length === 0 ? (
-        <Text color="gray">No recognized task specs found.</Text>
-      ) : (
-        <SelectableList
-          items={items}
-          onFocusChange={reportFocusedContext}
-          onSelect={openSummary}
-        />
-      )}
-      {summaries.unrecognized.length > 0 ? (
-        <Box flexDirection="column" marginTop={1}>
-          <Text color="yellow">Unrecognized</Text>
-          {summaries.unrecognized.map((summary) => (
-            <Text key={summary.directoryName} color="yellow">
-              ! {summary.directoryName} - {summary.warnings.join(' ')}
-            </Text>
-          ))}
-        </Box>
-      ) : null}
-    </Box>
+    <RouteContentLayout
+      routeContentRows={props.routeContentRows}
+      contextState={contextState}
+      selection={
+        summaries.recognized.length === 0 ? (
+          <Text color="gray">No recognized task specs found.</Text>
+        ) : (
+          <SelectableList
+            items={items}
+            onFocusChange={reportFocusedContext}
+            onSelect={openSummary}
+          />
+        )
+      }
+    />
   );
 }

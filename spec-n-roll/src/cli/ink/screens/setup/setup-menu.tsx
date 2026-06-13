@@ -1,11 +1,15 @@
-import React, { useCallback } from 'react';
-import { Box, Text, useInput } from 'ink';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Box, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
 import type { RouteId } from '../../app/navigation.js';
-import type { SelectedContextChangeHandler } from '../../app/App.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
+import { RouteContentLayout } from '../../components/RouteContentLayout.js';
+import type {
+  ContextContentState,
+  SelectedOptionContext,
+} from '../../components/ContextContent.js';
 
 /**
  * Setup and maintenance command row shown from the setup menu.
@@ -24,12 +28,7 @@ interface SetupMenuItem extends SelectableListItem {
 /**
  * Props for the setup menu screen.
  */
-export interface SetupMenuScreenProps {
-  /**
-   * Called when keyboard focus moves to a setup action with read-only context.
-   */
-  onContextChange?: SelectedContextChangeHandler;
-}
+export type SetupMenuScreenProps = RoutedScreenProps;
 
 /**
  * Setup and maintenance operations exposed by User Story 3.
@@ -85,23 +84,29 @@ const SETUP_MENU_ITEMS: readonly SetupMenuItem[] = [
 /**
  * Renders project setup and toolkit maintenance entry points.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the setup menu screen.
  */
 export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement {
   const session = useSession();
+  const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
+  const contextState = useMemo(
+    (): ContextContentState => ({
+      routeTitle: 'Setup / Maintenance',
+      fallbackSummary: 'Initialize or maintain the toolkit project.',
+      selectedContext,
+    }),
+    [selectedContext],
+  );
   const openItem = useCallback(
     (item: SetupMenuItem): void => {
       session.pushRoute(item.routeId);
     },
     [session],
   );
-  const reportFocusedContext = useCallback(
-    (item: SetupMenuItem | undefined): void => {
-      props.onContextChange?.(item?.context);
-    },
-    [props.onContextChange],
-  );
-  useSelectionRowContribution(1);
+  const reportFocusedContext = useCallback((item: SetupMenuItem | undefined): void => {
+    setSelectedContext(item?.context);
+  }, []);
 
   useInput((input) => {
     const item = SETUP_MENU_ITEMS.find((candidate) => candidate.key === input);
@@ -111,13 +116,18 @@ export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement
   });
 
   return (
-    <Box flexDirection="column">
-      <Text bold>Setup / Maintenance</Text>
-      <SelectableList
-        items={SETUP_MENU_ITEMS}
-        onFocusChange={reportFocusedContext}
-        onSelect={openItem}
-      />
-    </Box>
+    <RouteContentLayout
+      routeContentRows={props.routeContentRows}
+      contextState={contextState}
+      selection={
+        <Box flexDirection="column">
+          <SelectableList
+            items={SETUP_MENU_ITEMS}
+            onFocusChange={reportFocusedContext}
+            onSelect={openItem}
+          />
+        </Box>
+      }
+    />
   );
 }

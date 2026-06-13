@@ -1,11 +1,13 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { SelectableList, type SelectableListItem } from '../components/SelectableList.js';
 import { useSelectionRowContribution } from '../components/SelectionRegion.js';
+import { RouteContentLayout } from '../components/RouteContentLayout.js';
+import type { ContextContentState, SelectedOptionContext } from '../components/ContextContent.js';
 import { useSession } from '../app/session-context.js';
 import type { RouteId } from '../app/navigation.js';
-import type { SelectedContextChangeHandler } from '../app/App.js';
+import type { RoutedScreenProps } from '../app/routed-screen-props.js';
 
 /**
  * Main menu entry describing a top-level interactive section.
@@ -32,12 +34,7 @@ interface MainMenuItem extends SelectableListItem {
 /**
  * Props for the main menu screen.
  */
-export interface MainMenuProps {
-  /**
-   * Called when keyboard focus moves to a menu item with read-only context.
-   */
-  onContextChange?: SelectedContextChangeHandler;
-}
+export type MainMenuProps = RoutedScreenProps;
 
 /**
  * Top-level menu entries in numeric keyboard order.
@@ -147,14 +144,34 @@ function buildMenuItems(isInitialized: boolean): readonly MainMenuItem[] {
 }
 
 /**
+ * Renders the uninitialized-project warning inside the selection sub-region.
+ */
+function UninitializedWarning(): React.ReactElement {
+  useSelectionRowContribution(1);
+
+  return (
+    <Text color="yellow">Project is not initialized. Open Setup / Maintenance to initialize.</Text>
+  );
+}
+
+/**
  * Renders the five-section interactive main menu.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the main menu screen.
  */
 export function MainMenu(props: MainMenuProps): React.ReactElement {
   const session = useSession();
   const items = useMemo(() => buildMenuItems(session.isInitialized), [session.isInitialized]);
-  useSelectionRowContribution(!session.isInitialized ? 1 : 0);
+  const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
+  const contextState = useMemo(
+    (): ContextContentState => ({
+      routeTitle: 'Main Menu',
+      fallbackSummary: 'Choose a section to open.',
+      selectedContext,
+    }),
+    [selectedContext],
+  );
 
   const openItem = useCallback(
     (item: MainMenuItem): void => {
@@ -165,12 +182,9 @@ export function MainMenu(props: MainMenuProps): React.ReactElement {
     },
     [session],
   );
-  const reportFocusedContext = useCallback(
-    (item: MainMenuItem | undefined): void => {
-      props.onContextChange?.(item?.context);
-    },
-    [props.onContextChange],
-  );
+  const reportFocusedContext = useCallback((item: MainMenuItem | undefined): void => {
+    setSelectedContext(item?.context);
+  }, []);
 
   useInput((input) => {
     const item = items.find((candidate) => candidate.key === input);
@@ -180,13 +194,15 @@ export function MainMenu(props: MainMenuProps): React.ReactElement {
   });
 
   return (
-    <Box flexDirection="column">
-      {!session.isInitialized ? (
-        <Text color="yellow">
-          Project is not initialized. Open Setup / Maintenance to initialize.
-        </Text>
-      ) : null}
-      <SelectableList items={items} onFocusChange={reportFocusedContext} onSelect={openItem} />
-    </Box>
+    <RouteContentLayout
+      routeContentRows={props.routeContentRows}
+      contextState={contextState}
+      selection={
+        <Box flexDirection="column" flexGrow={0} flexShrink={0} width="100%">
+          {!session.isInitialized ? <UninitializedWarning /> : null}
+          <SelectableList items={items} onFocusChange={reportFocusedContext} onSelect={openItem} />
+        </Box>
+      }
+    />
   );
 }

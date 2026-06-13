@@ -2,9 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
-import type { SelectedContextChangeHandler } from '../../app/App.js';
+import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
+import { RouteContentLayout } from '../../components/RouteContentLayout.js';
+import type {
+  ContextContentState,
+  SelectedOptionContext,
+} from '../../components/ContextContent.js';
 import {
   loadProjectMetadataView,
   type ProjectMetadataView,
@@ -23,12 +27,7 @@ interface ProjectMetadataActionItem extends SelectableListItem {
 /**
  * Props for the project metadata view screen.
  */
-export interface ProjectMetadataViewScreenProps {
-  /**
-   * Called when keyboard focus moves to a project action with read-only context.
-   */
-  onContextChange?: SelectedContextChangeHandler;
-}
+export type ProjectMetadataViewScreenProps = RoutedScreenProps;
 
 /**
  * Formats the current task metadata for display.
@@ -42,6 +41,27 @@ function formatCurrentTask(metadata: ProjectMetadataView): string {
   }
 
   return `${metadata.currentTaskSpecId}-${metadata.currentTaskSlug}`;
+}
+
+/**
+ * Builds read-only overview context for project metadata.
+ *
+ * @param metadata - Loaded project metadata used to describe the view.
+ * @returns Selected option context for the project overview.
+ */
+function projectOverviewContext(metadata: ProjectMetadataView): SelectedOptionContext {
+  return {
+    id: 'project:overview',
+    title: 'Project Metadata',
+    summary: `Current task: ${formatCurrentTask(metadata)}.`,
+    status: metadata.raw == null ? 'Metadata file is missing.' : 'Metadata file is loaded.',
+    details: [
+      `Next task spec id: ${metadata.nextTaskSpecId ?? 'unknown'}.`,
+      `Implementation started: ${metadata.implementationStartedAt ?? 'none'}.`,
+    ],
+    warnings: metadata.raw == null ? ['Create project metadata before editing values.'] : [],
+    nextStep: 'Focus the edit action to change project metadata.',
+  };
 }
 
 /**
@@ -74,6 +94,7 @@ function buildEditMetadataAction(metadata: ProjectMetadataView): ProjectMetadata
 /**
  * Renders project metadata in a read-only view.
  *
+ * @param props - Route slot row budget from app scaffolding.
  * @returns React element for the project metadata screen.
  */
 export function ProjectMetadataViewScreen(
@@ -82,31 +103,31 @@ export function ProjectMetadataViewScreen(
   const session = useSession();
   const [metadata, setMetadata] = useState<ProjectMetadataView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedContext, setSelectedContext] = useState<SelectedOptionContext | undefined>();
   const items = useMemo(
     () => (metadata == null ? [] : [buildEditMetadataAction(metadata)]),
     [metadata],
   );
+  const contextState = useMemo((): ContextContentState => {
+    if (metadata == null) {
+      return {
+        routeTitle: 'Project',
+        fallbackSummary: 'Inspect current task ownership and id allocation.',
+      };
+    }
+
+    return {
+      routeTitle: 'Project',
+      fallbackSummary: 'Inspect current task ownership and id allocation.',
+      selectedContext: selectedContext ?? projectOverviewContext(metadata),
+    };
+  }, [metadata, selectedContext]);
   const editMetadata = useCallback((): void => {
     session.pushRoute('project-metadata-edit');
   }, [session]);
-  const reportFocusedContext = useCallback(
-    (item: ProjectMetadataActionItem | undefined): void => {
-      props.onContextChange?.(item?.context);
-    },
-    [props.onContextChange],
-  );
-  const extraRows = useMemo(() => {
-    if (error != null) {
-      return 2;
-    }
-
-    if (metadata == null) {
-      return 2;
-    }
-
-    return 5;
-  }, [error, metadata]);
-  useSelectionRowContribution(extraRows);
+  const reportFocusedContext = useCallback((item: ProjectMetadataActionItem | undefined): void => {
+    setSelectedContext(item?.context);
+  }, []);
 
   useInput((input) => {
     if (input === 'e') {
@@ -137,7 +158,10 @@ export function ProjectMetadataViewScreen(
 
   if (error != null) {
     return (
-      <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
         <Text bold>Project</Text>
         <Text color="red">{error}</Text>
       </Box>
@@ -146,7 +170,10 @@ export function ProjectMetadataViewScreen(
 
   if (metadata == null) {
     return (
-      <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        height={props.routeContentRows > 0 ? props.routeContentRows : undefined}
+      >
         <Text bold>Project</Text>
         <Text color="gray">Loading project metadata...</Text>
       </Box>
@@ -154,17 +181,16 @@ export function ProjectMetadataViewScreen(
   }
 
   return (
-    <Box flexDirection="column">
-      <Text bold>Project</Text>
-      <Text>next task spec id: {metadata.nextTaskSpecId ?? 'unknown'}</Text>
-      <Text>current task: {formatCurrentTask(metadata)}</Text>
-      <Text>implementation started: {metadata.implementationStartedAt ?? 'none'}</Text>
-      <Text>metadata status: {metadata.raw == null ? 'missing' : 'loaded'}</Text>
-      <SelectableList
-        items={items}
-        onFocusChange={reportFocusedContext}
-        onSelect={() => editMetadata()}
-      />
-    </Box>
+    <RouteContentLayout
+      routeContentRows={props.routeContentRows}
+      contextState={contextState}
+      selection={
+        <SelectableList
+          items={items}
+          onFocusChange={reportFocusedContext}
+          onSelect={() => editMetadata()}
+        />
+      }
+    />
   );
 }
