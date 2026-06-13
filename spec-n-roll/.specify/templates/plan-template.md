@@ -40,7 +40,17 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify the feature design against `.specify/memory/constitution.md`:
+
+| Principle | Gate |
+|-----------|------|
+| I. Documentation Standards | New public APIs, types, and `src/` directories include doc comments and directory READMEs as required |
+| II. Clean Code Is Part of Delivery | Scope preserves behavior; touched code is left cleaner without unrelated refactors |
+| III. Local Reasoning and Expressive Design | New modules favor small functions, clear names, command/query separation, and readable happy paths |
+| IV. Boundary Discipline | Framework, vendor, and persistence concerns stay behind adapters; public APIs are explicit |
+| V. Test Discipline and Validation | Behavior changes include contract tests; relevant `npm test` / lint checks are planned |
+
+Document any justified violations in **Complexity Tracking** below.
 
 ## Project Structure
 

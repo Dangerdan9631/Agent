@@ -90,7 +90,10 @@ export function readToolkitVersionFromRoot(toolkitRoot: string): string {
  *
  * @returns Relative launcher paths and UTF-8 launcher sources.
  */
-export function collectLauncherBinaryUpdates(): Array<{ relativePath: string; expectedContent: string }> {
+export function collectLauncherBinaryUpdates(): Array<{
+  relativePath: string;
+  expectedContent: string;
+}> {
   const launcher = buildCliLauncherSource();
   const mcpLauncher = buildMcpLauncherSource();
   const updates = [

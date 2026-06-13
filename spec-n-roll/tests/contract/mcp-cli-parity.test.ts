@@ -92,13 +92,7 @@ describe('MCP/CLI parity', () => {
       status: 'active',
     });
 
-    const fromCli = runCliJson(projectRoot, [
-      'workflow',
-      'state',
-      'read',
-      '--task-spec-id',
-      '001',
-    ]);
+    const fromCli = runCliJson(projectRoot, ['workflow', 'state', 'read', '--task-spec-id', '001']);
     const fromCore = await readWorkflowState(projectRoot, '001', 'read-parity');
     expect(fromCli).toEqual(fromCore);
   });
@@ -112,14 +106,7 @@ describe('MCP/CLI parity', () => {
       frontmatter: { status: 'Active' },
     });
 
-    runCliJson(projectRoot, [
-      'task',
-      'status',
-      'set',
-      '--task-spec-id',
-      '001',
-      'Complete',
-    ]);
+    runCliJson(projectRoot, ['task', 'status', 'set', '--task-spec-id', '001', 'Complete']);
 
     const specContent = readFileSync(path.join(specDir, 'spec.md'), 'utf8');
     expect(specContent).toContain('status: Complete');
@@ -154,11 +141,7 @@ describe('MCP/CLI parity', () => {
     const specDir = path.join(projectRoot, 'specs', '001-checkbox-parity');
     mkdirSync(specDir, { recursive: true });
 
-    writeFileSync(
-      path.join(specDir, 'tasks.md'),
-      '# Tasks\n\n- [ ] T100 Example task\n',
-      'utf8',
-    );
+    writeFileSync(path.join(specDir, 'tasks.md'), '# Tasks\n\n- [ ] T100 Example task\n', 'utf8');
 
     runCliJson(projectRoot, [
       'task',
@@ -174,7 +157,13 @@ describe('MCP/CLI parity', () => {
     const tasksContent = readFileSync(path.join(specDir, 'tasks.md'), 'utf8');
     expect(tasksContent).toContain('- [x] T100 Example task');
 
-    const coreResult = await setTaskCheckboxes(projectRoot, '001', 'checkbox-parity', ['T100'], true);
+    const coreResult = await setTaskCheckboxes(
+      projectRoot,
+      '001',
+      'checkbox-parity',
+      ['T100'],
+      true,
+    );
     expect(coreResult).toEqual([{ taskId: 'T100', completed: true }]);
   });
 

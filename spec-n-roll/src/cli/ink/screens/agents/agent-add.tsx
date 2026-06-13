@@ -29,7 +29,7 @@ export interface InteractiveAgentAddInput {
 /**
  * Applies the interactive agent add mutation through the CLI command orchestrator.
  *
- * @param input - Project root and selected bundled agent ids.
+ * @param input - Project root and selected agent ids.
  * @returns Add-agent orchestration result.
  */
 export async function applyInteractiveAgentAdd(
@@ -97,7 +97,7 @@ export function AgentAddScreen(): React.ReactElement {
       <Text bold>Add Agent</Text>
       {availableAgentIds == null ? <Text color="gray">Loading available agents...</Text> : null}
       {availableAgentIds != null && availableAgentIds.length === 0 ? (
-        <Text color="gray">All bundled agents are already configured.</Text>
+        <Text color="gray">All agents are already configured.</Text>
       ) : null}
       {availableAgentIds != null && availableAgentIds.length > 0 ? (
         <AgentSingleSelectPrompt

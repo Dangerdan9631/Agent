@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
+import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
 import { assembleTaskSpecSummary, type TaskSpecSummary } from '../../read-models/task-specs.js';
 
 /**
@@ -28,6 +29,22 @@ export function SpecDetailScreen(): React.ReactElement {
   const selected = session.selectedTaskSpec;
   const [summary, setSummary] = useState<TaskSpecSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const selectionRows = useMemo(() => {
+    if (selected == null) {
+      return 2;
+    }
+
+    if (error != null) {
+      return 2;
+    }
+
+    if (summary == null) {
+      return 2;
+    }
+
+    return 9 + (summary.warnings.length > 0 ? 1 + summary.warnings.length : 0);
+  }, [error, selected, summary]);
+  useSelectionRowContribution(selectionRows);
 
   useInput((input) => {
     if (input === 'm' && selected != null) {

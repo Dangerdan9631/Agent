@@ -20,7 +20,7 @@
 
 ## Decision: Use a lightweight global dispatcher that exec's the full CLI binary
 
-**Rationale**: The globally installed npm artifact contains only local-vs-global resolution logic. It walks parent directories from `cwd` to find `.spec-n-roll/cli/bin/spec-n-roll`, then exec's the resolved full CLI as a separate child process — it MUST NOT import or load full CLI, core library, or MCP code when dispatching local. When no local binary exists (or `--global` is passed), it exec's the co-bundled global full CLI resolved relative to the dispatcher install path. `-v`/`--version` is forwarded unchanged; the full CLI prints the combined report (dispatcher version, executed binary version, `local`/`global` target, local path when applicable). If local resolution succeeds but exec fails, the dispatcher fails clearly — it does not silently fall back to global unless `--global` was passed.
+**Rationale**: The globally installed npm artifact contains only local-vs-global resolution logic. It walks parent directories from `cwd` to find `.spec-n-roll/cli/bin/spec-n-roll`, then exec's the resolved full CLI as a separate child process — it MUST NOT import or load full CLI, core library, or MCP code when dispatching local. When no local binary exists (or `--global` is passed), it exec's the global full CLI resolved relative to the dispatcher install path. `-v`/`--version` is forwarded unchanged; the full CLI prints the combined report (dispatcher version, executed binary version, `local`/`global` target, local path when applicable). If local resolution succeeds but exec fails, the dispatcher fails clearly — it does not silently fall back to global unless `--global` was passed.
 
 **Alternatives considered**:
 
@@ -85,7 +85,7 @@
 
 ## Decision: Persist task spec lifecycle in `spec.md` YAML frontmatter
 
-**Rationale**: Lifecycle states (`Active`, `Complete`, `Locked`) are human-visible and co-located with requirements. Operational workflow progress (`active`/`paused`/`complete`) remains in `workflow-state.json` as a separate concern.
+**Rationale**: Lifecycle states (`Active`, `Complete`, `Locked`) are human-visible and located with requirements. Operational workflow progress (`active`/`paused`/`complete`) remains in `workflow-state.json` as a separate concern.
 
 **Alternatives considered**:
 
@@ -186,7 +186,7 @@
 
 ## Decision: Agent extensions own project-local MCP config targets and merge rules
 
-**Rationale**: `init` and `config add-agent` must create or idempotently update each selected agent's project-local native MCP configuration file(s) to reference `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio). Each bundled agent extension declares `agentSetup.mcpConfig` in its manifest: target path(s), config format adapter, and a stable `serverId` for merge. Generators upsert only the Spec-N-Roll MCP server entry and preserve unrelated MCP servers. `update` refreshes the binary path and platform wrapper (`.cmd` on Windows) in all configured agents' MCP config files.
+**Rationale**: `init` and `config add-agent` must create or idempotently update each selected agent's project-local native MCP configuration file(s) to reference `.spec-n-roll/cli/bin/spec-n-roll-mcp` (stdio). Each agent extension declares `agentSetup.mcpConfig` in its manifest: target path(s), config format adapter, and a stable `serverId` for merge. Generators upsert only the Spec-N-Roll MCP server entry and preserve unrelated MCP servers. `update` refreshes the binary path and platform wrapper (`.cmd` on Windows) in all configured agents' MCP config files.
 
 **Alternatives considered**:
 

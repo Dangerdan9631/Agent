@@ -15,7 +15,9 @@ const CHOICE_LABELS: Record<PartialRecoveryChoice, string> = {
  * @param prompt - Partial recovery prompt payload from the workflow engine.
  * @returns Promise resolving to the developer's selected recovery action.
  */
-export function promptPartialRecovery(prompt: PartialRecoveryPrompt): Promise<PartialRecoveryChoice> {
+export function promptPartialRecovery(
+  prompt: PartialRecoveryPrompt,
+): Promise<PartialRecoveryChoice> {
   return new Promise((resolve, reject) => {
     const app = render(
       <PartialRecoveryPromptView

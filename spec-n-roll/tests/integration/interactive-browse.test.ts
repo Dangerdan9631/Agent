@@ -18,6 +18,41 @@ const FIXTURE_ROOT = path.resolve('tests/fixtures/interactive-multi-spec');
 const tempRoots: string[] = [];
 
 /**
+ * Minimal rendered Ink app shape needed by polling helpers.
+ */
+interface RenderedInkApp {
+  /**
+   * Returns the most recent terminal frame, or undefined before the first render.
+   */
+  lastFrame: () => string | undefined;
+}
+
+/**
+ * Waits briefly for Ink state updates and asynchronous read models to settle.
+ *
+ * @returns Promise that resolves after the UI has had one update window.
+ */
+async function waitForFrame(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 25));
+}
+
+/**
+ * Polls the current Ink frame until expected text is visible.
+ *
+ * @param app - Rendered Ink application under test.
+ * @param text - Text fragment expected to appear in the terminal frame.
+ * @returns Promise that resolves when the text appears.
+ */
+async function waitForText(app: RenderedInkApp, text: string): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    if (app.lastFrame()?.includes(text) === true) {
+      return;
+    }
+    await waitForFrame();
+  }
+}
+
+/**
  * Creates an isolated project fixture for read-only browse tests.
  *
  * @returns Absolute path to the copied fixture root.
@@ -77,44 +112,64 @@ describe('interactive browse flow', () => {
       }),
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForFrame();
     app.stdin.write('1');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForText(app, '001 active-checkout');
     expect(app.lastFrame()).toContain('001 active-checkout');
+    expect(app.lastFrame()).toContain('Lifecycle: Active; workflow: active.');
+    expect(app.lastFrame()).toContain('Step: implement; workflow variant: quick.');
     expect(app.lastFrame()).toContain('Unrecognized');
 
+    app.stdin.write('\u001b[B');
+    await waitForText(app, '002 completed-migration');
+    expect(app.lastFrame()).toContain('002 completed-migration');
+    expect(app.lastFrame()).toContain('Lifecycle: Complete; workflow: complete.');
+    expect(app.lastFrame()).toContain('Step: implement; workflow variant: full.');
+
+    app.stdin.write('\u001b[A');
+    await waitForText(app, '001 active-checkout');
+
     app.stdin.write('\r');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForText(app, 'Workflow state');
     expect(app.lastFrame()).toContain('Workflow state');
     expect(app.lastFrame()).toContain('current step: implement');
 
     app.stdin.write('\u001b');
     app.stdin.write('\u001b');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForFrame();
 
     app.stdin.write('2');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForText(app, 'Quick');
     expect(app.lastFrame()).toContain('Quick');
+    expect(app.lastFrame()).toContain('Workflow quick');
+    expect(app.lastFrame()).toContain('Default workflow for this project.');
     expect(app.lastFrame()).toContain('specify > tasks > implement');
 
     app.stdin.write('\r');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForText(app, 'Workflow quick');
     expect(app.lastFrame()).toContain('Workflow quick');
 
     app.stdin.write('\u001b');
     app.stdin.write('\u001b');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForFrame();
 
     app.stdin.write('3');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForText(app, 'claude-code');
     expect(app.lastFrame()).toContain('codex');
+    expect(app.lastFrame()).toContain('Agent claude-code');
+    expect(app.lastFrame()).toContain('Shown in all agents filter.');
+
+    app.stdin.write('\u001b[B');
+    await waitForText(app, 'Agent codex');
+    expect(app.lastFrame()).toContain('Agent codex');
+    expect(app.lastFrame()).toContain('Shown in all agents filter.');
     expect(app.lastFrame()).toContain('configured');
 
     app.stdin.write('\u001b');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForFrame();
 
     app.stdin.write('4');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await waitForText(app, 'next task spec id: 3');
     expect(app.lastFrame()).toContain('next task spec id: 3');
     expect(app.lastFrame()).toContain('current task: 001-active-checkout');
 

@@ -66,7 +66,7 @@ Migrated files:
 | File                                        | Migration behavior                                      |
 | ------------------------------------------- | ------------------------------------------------------- |
 | `.spec-n-roll/config/workflow.config.json`  | v1 → v2 field normalization; breaking when legacy flags |
-| `.spec-n-roll/config/project-metadata.json` | v1 → current schema field normalization (non-breaking)    |
+| `.spec-n-roll/config/project-metadata.json` | v1 → current schema field normalization (non-breaking)  |
 
 ## Extension compatibility warnings (implemented)
 

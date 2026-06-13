@@ -18,6 +18,11 @@ const FIXTURE_ROOT = path.resolve('tests/fixtures/interactive-multi-spec');
 const tempRoots: string[] = [];
 
 /**
+ * Escape sequence for the terminal down-arrow key.
+ */
+const DOWN_ARROW = '\u001B[B';
+
+/**
  * Creates an isolated copy of the interactive fixture project.
  *
  * @returns Absolute path to the copied project root.
@@ -68,6 +73,29 @@ async function waitForFrame(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 30));
 }
 
+/**
+ * Sets the process stdout row count for Ink test renders.
+ *
+ * @param rows - Positive terminal row count to expose during the test.
+ * @returns Cleanup callback that restores the previous descriptor.
+ */
+function setTerminalRows(rows: number): () => void {
+  const descriptor = Object.getOwnPropertyDescriptor(process.stdout, 'rows');
+  Object.defineProperty(process.stdout, 'rows', {
+    configurable: true,
+    value: rows,
+  });
+
+  return () => {
+    if (descriptor == null) {
+      Reflect.deleteProperty(process.stdout, 'rows');
+      return;
+    }
+
+    Object.defineProperty(process.stdout, 'rows', descriptor);
+  };
+}
+
 afterEach(async () => {
   for (const tempRoot of tempRoots.splice(0)) {
     await fse.remove(tempRoot);
@@ -115,5 +143,33 @@ describe('interactive read-only navigation', () => {
 
     expect(await snapshotProjectFiles(projectRoot)).toEqual(before);
     app.unmount();
+  });
+
+  it('does not mutate files when moving focus in a constrained terminal', async () => {
+    const restoreRows = setTerminalRows(12);
+    const projectRoot = await copyFixtureProject();
+    const before = await snapshotProjectFiles(projectRoot);
+    const app = render(
+      React.createElement(App, {
+        projectRoot,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    await waitForFrame();
+    app.stdin.write(DOWN_ARROW);
+    await waitForFrame();
+    app.stdin.write(DOWN_ARROW);
+    await waitForFrame();
+
+    const frame = app.lastFrame() ?? '';
+    expect(frame).toContain('Agents');
+    expect(frame).toContain('> 3 Agents');
+    expect(frame).not.toContain('Shows configured, available, and missing');
+    expect(await snapshotProjectFiles(projectRoot)).toEqual(before);
+
+    app.unmount();
+    restoreRows();
   });
 });

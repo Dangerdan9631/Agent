@@ -4,7 +4,10 @@ import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
 
-import { listBundledAgentIds, getBundledAgentGenerator } from '../../src/agents/extension-loader.js';
+import {
+  listBundledAgentIds,
+  getBundledAgentGenerator,
+} from '../../src/agents/extension-loader.js';
 import { extensionManifestSchema, parseExtensionManifest } from '../../src/extensions/manifest.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');

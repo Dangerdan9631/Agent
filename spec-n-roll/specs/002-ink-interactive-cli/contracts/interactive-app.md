@@ -19,7 +19,7 @@ The interactive application MUST NOT spawn when argv contains a recognized subco
 |-----|---------|---------|----------------------|
 | 1 | Task Specs | `specs-list` | Recommended; empty state with guidance if not |
 | 2 | Workflows | `workflows-list` | Yes |
-| 3 | Agents | `agents-list` | Yes for configured view; bundled list always available |
+| 3 | Agents | `agents-list` | Yes for configured view; list always available |
 | 4 | Project | `project-metadata-view` | Yes |
 | 5 | Setup / Maintenance | `setup-menu` | Partial — init available when uninitialized |
 
@@ -65,7 +65,7 @@ Additional global keys on all screens:
 
 **List (`agents-list`)**:
 
-- Toggle filter: all bundled vs configured-only (equivalent to `list agents` / `list agents --enabled`)
+- Toggle filter: all vs configured-only (equivalent to `list agents` / `list agents --enabled`)
 - Columns: id, display name, configured indicator
 
 **Add (`agent-add`)**:

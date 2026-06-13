@@ -2,15 +2,15 @@ import { listBundledAgents } from '../../../agents/extension-loader.js';
 import { readWorkflowConfig } from '../../../workflow/artifacts.js';
 
 /**
- * Read-only summary of one bundled agent for the agents screen.
+ * Read-only summary of one agent for the agents screen.
  */
 export interface AgentSummary {
   /**
-   * Stable bundled agent id.
+   * Stable agent id.
    */
   agentId: string;
   /**
-   * Human-readable bundled agent name.
+   * Human-readable agent name.
    */
   displayName: string;
   /**
@@ -34,11 +34,11 @@ export interface ListAgentSummariesOptions {
 }
 
 /**
- * Lists bundled agents with project configuration status.
+ * Lists agents with project configuration status.
  *
  * @param projectRoot - Absolute path to the project root.
  * @param options - Optional filter controls.
- * @returns Agent summaries in bundled id order.
+ * @returns Agent summaries in id order.
  */
 export async function listAgentSummaries(
   projectRoot: string,

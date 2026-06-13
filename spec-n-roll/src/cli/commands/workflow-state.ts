@@ -9,7 +9,9 @@ import { registerWorkflowStateWriteCommand } from './workflow-state-write.js';
  * @param workflow - Commander `workflow` command to attach the group to.
  */
 export function registerWorkflowStateCommand(workflow: Command): void {
-  const state = workflow.command('state').description('Read and write workflow-state.json for a task spec');
+  const state = workflow
+    .command('state')
+    .description('Read and write workflow-state.json for a task spec');
 
   registerWorkflowStateReadCommand(state);
   registerWorkflowStateWriteCommand(state);

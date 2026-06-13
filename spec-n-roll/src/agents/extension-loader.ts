@@ -1,10 +1,7 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
-import {
-  extensionManifestSchema,
-  type ExtensionManifest,
-} from '../extensions/manifest.js';
+import { extensionManifestSchema, type ExtensionManifest } from '../extensions/manifest.js';
 import { atomicWriteJson } from '../core/atomic-write.js';
 import { claudeCodeGenerator } from './generators/claude-code.js';
 import { codexGenerator } from './generators/codex.js';
@@ -18,7 +15,7 @@ import type { BundledAgentGenerator } from './generators/types.js';
 export const BUNDLED_EXTENSIONS_RELATIVE_DIR = '.spec-n-roll/bundled-extensions';
 
 /**
- * All out-of-the-box bundled agent generators keyed by extension id.
+ * All out-of-the-box agent generators keyed by extension id.
  */
 export const BUNDLED_AGENT_GENERATORS: Record<string, BundledAgentGenerator> = {
   cursor: cursorGenerator,
@@ -28,7 +25,7 @@ export const BUNDLED_AGENT_GENERATORS: Record<string, BundledAgentGenerator> = {
 };
 
 /**
- * Summary of a bundled agent extension for listing and selection UIs.
+ * Summary of a agent extension for listing and selection UIs.
  */
 export interface BundledAgentSummary {
   /**
@@ -42,16 +39,16 @@ export interface BundledAgentSummary {
 }
 
 /**
- * Returns sorted ids for all bundled agent extensions.
+ * Returns sorted ids for all agent extensions.
  *
- * @returns Stable list of bundled agent extension ids.
+ * @returns Stable list of agent extension ids.
  */
 export function listBundledAgentIds(): string[] {
   return Object.keys(BUNDLED_AGENT_GENERATORS).sort();
 }
 
 /**
- * Returns sorted summaries for all bundled agent extensions.
+ * Returns sorted summaries for all agent extensions.
  *
  * @returns Stable list of agent id and display name pairs.
  */
@@ -66,7 +63,7 @@ export function listBundledAgents(): BundledAgentSummary[] {
 }
 
 /**
- * Resolves a bundled agent generator by extension id.
+ * Resolves a agent generator by extension id.
  *
  * @param agentId - Extension id such as `cursor`.
  * @returns Matching generator or null when the id is unknown.
@@ -76,14 +73,14 @@ export function getBundledAgentGenerator(agentId: string): BundledAgentGenerator
 }
 
 /**
- * Validates that each selected agent id maps to a bundled generator.
+ * Validates that each selected agent id maps to a generator.
  *
  * @param agentIds - Requested agent ids from init or add-agent flows.
  * @returns Validated non-empty agent id list.
  */
 export function validateSelectedAgentIds(agentIds: readonly string[]): string[] {
   if (agentIds.length === 0) {
-    throw new Error('At least one bundled agent must be selected.');
+    throw new Error('At least one agent must be selected.');
   }
 
   const validated: string[] = [];

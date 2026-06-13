@@ -269,7 +269,7 @@ export interface McpConfigRefreshResult {
 }
 
 /**
- * Refreshes the Spec-N-Roll MCP server entry for one bundled agent extension.
+ * Refreshes the Spec-N-Roll MCP server entry for one agent extension.
  *
  * @param projectRoot - Absolute path to the project root.
  * @param agentId - Bundled agent extension id to refresh.
@@ -324,7 +324,7 @@ export async function refreshAgentMcpConfigFromManifest(
 }
 
 /**
- * Refreshes Spec-N-Roll MCP server paths for all configured bundled agent extensions.
+ * Refreshes Spec-N-Roll MCP server paths for all configured agent extensions.
  *
  * @param projectRoot - Absolute path to the project root.
  * @param agentIds - Enabled agent ids from workflow configuration.

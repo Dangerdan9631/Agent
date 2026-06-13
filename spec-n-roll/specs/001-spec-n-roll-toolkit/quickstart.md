@@ -74,7 +74,7 @@ spec-n-roll --global version
 Expected outcomes:
 
 - Without `--global`, the global dispatcher exec's the local full CLI binary (does not load full CLI code in-process).
-- With `--global`, the co-bundled global full CLI executes; local binary is not consulted.
+- With `--global`, the global full CLI executes; local binary is not consulted.
 - Combined version report shows dispatcher version, executed binary version, `local`/`global` target, and absolute local binary path when local.
 - Invoking `.spec-n-roll/cli/bin/spec-n-roll -v` reports the local binary version and indicates local invocation.
 

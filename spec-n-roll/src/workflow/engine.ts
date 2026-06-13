@@ -2,10 +2,7 @@ import path from 'node:path';
 import fse from 'fs-extra';
 
 import type { WorkflowConfig, WorkflowStep, WorkflowVariant } from '../config/schema.js';
-import {
-  claimImplementSlot,
-  clearImplementSlot,
-} from '../core/project-metadata.js';
+import { claimImplementSlot, clearImplementSlot } from '../core/project-metadata.js';
 import {
   dispatchStepHooks,
   invokeExtensionHandler,
@@ -191,8 +188,9 @@ async function resolveVariantSteps(
   workflowConfig: WorkflowConfig | null,
   variantId: string,
 ): Promise<string[] | undefined> {
-  const configuredSteps = workflowConfig?.workflows.find((workflow) => workflow.id === variantId)
-    ?.steps;
+  const configuredSteps = workflowConfig?.workflows.find(
+    (workflow) => workflow.id === variantId,
+  )?.steps;
   if (workflowConfig == null) {
     return configuredSteps;
   }
@@ -203,8 +201,9 @@ async function resolveVariantSteps(
     .flatMap((extension) => extension.manifest.workflowVariants ?? []);
 
   return (
-    [...workflowConfig.workflows, ...extensionVariants].find((workflow) => workflow.id === variantId)
-      ?.steps ?? configuredSteps
+    [...workflowConfig.workflows, ...extensionVariants].find(
+      (workflow) => workflow.id === variantId,
+    )?.steps ?? configuredSteps
   );
 }
 
@@ -823,7 +822,8 @@ export async function runRoll(options: RunRollOptions): Promise<RollResult> {
     await lockCompleteSpecsBeforeStep(projectRoot, 'implement');
     await claimImplementSlot(projectRoot, taskSpecId, slug);
 
-    const existingState = progress.state ?? (await readWorkflowState(projectRoot, taskSpecId, slug));
+    const existingState =
+      progress.state ?? (await readWorkflowState(projectRoot, taskSpecId, slug));
     if (existingState != null) {
       await writeWorkflowState(projectRoot, {
         taskSpecId,

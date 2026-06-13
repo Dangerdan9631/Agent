@@ -174,7 +174,7 @@ You can enable or disable reading from specific tool formats in `.devin/config.j
 
 ## Skills
 
-Skills are reusable prompts and workflows bundled as `SKILL.md` files. The agent invokes them automatically when relevant, or users can trigger them with `/skill-name`.
+Skills are reusable prompts and workflows as `SKILL.md` files. The agent invokes them automatically when relevant, or users can trigger them with `/skill-name`.
 
 ### Where Skills Live
 

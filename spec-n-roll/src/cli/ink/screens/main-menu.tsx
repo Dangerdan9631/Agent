@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { SelectableList, type SelectableListItem } from '../components/SelectableList.js';
+import { useSelectionRowContribution } from '../components/SelectionRegion.js';
 import { useSession } from '../app/session-context.js';
 import type { RouteId } from '../app/navigation.js';
+import type { SelectedContextChangeHandler } from '../app/App.js';
 
 /**
  * Main menu entry describing a top-level interactive section.
  */
 interface MainMenuItem extends SelectableListItem {
+  /**
+   * Read-only context attached to the menu row. Every top-level section must describe itself.
+   */
+  context: NonNullable<SelectableListItem['context']>;
   /**
    * Route id entered when the item is selected.
    */
@@ -24,6 +30,16 @@ interface MainMenuItem extends SelectableListItem {
 }
 
 /**
+ * Props for the main menu screen.
+ */
+export interface MainMenuProps {
+  /**
+   * Called when keyboard focus moves to a menu item with read-only context.
+   */
+  onContextChange?: SelectedContextChangeHandler;
+}
+
+/**
  * Top-level menu entries in numeric keyboard order.
  */
 const MAIN_MENU_ITEMS: readonly MainMenuItem[] = [
@@ -34,6 +50,14 @@ const MAIN_MENU_ITEMS: readonly MainMenuItem[] = [
     description: 'Browse specs and task-specific actions',
     routeId: 'specs-list',
     availableWhenUninitialized: false,
+    context: {
+      id: 'main-menu:specs',
+      title: 'Task Specs',
+      summary: 'Review task specs and workflow progress.',
+      status: 'Requires initialized project configuration.',
+      details: ['Shows lifecycle status, workflow state, and recognized task spec directories.'],
+      nextStep: 'Open the task specs browser.',
+    },
   },
   {
     id: 'workflows',
@@ -42,14 +66,30 @@ const MAIN_MENU_ITEMS: readonly MainMenuItem[] = [
     description: 'Inspect configured workflow variants',
     routeId: 'workflows-list',
     availableWhenUninitialized: false,
+    context: {
+      id: 'main-menu:workflows',
+      title: 'Workflows',
+      summary: 'Inspect workflow variants and step order.',
+      status: 'Requires initialized workflow configuration.',
+      details: ['Shows configured workflow variants, defaults, and step sequences.'],
+      nextStep: 'Open the workflows browser.',
+    },
   },
   {
     id: 'agents',
     key: '3',
     label: '3 Agents',
-    description: 'Inspect bundled and configured agents',
+    description: 'Inspect and configured agents',
     routeId: 'agents-list',
-    availableWhenUninitialized: true,
+    availableWhenUninitialized: false,
+    context: {
+      id: 'main-menu:agents',
+      title: 'Agents',
+      summary: 'Inspect agents and project configuration.',
+      status: 'Available before initialization.',
+      details: ['Shows configured-only filtering and agent availability.'],
+      nextStep: 'Open the agents browser.',
+    },
   },
   {
     id: 'project',
@@ -58,6 +98,14 @@ const MAIN_MENU_ITEMS: readonly MainMenuItem[] = [
     description: 'Inspect project metadata',
     routeId: 'project-metadata-view',
     availableWhenUninitialized: false,
+    context: {
+      id: 'main-menu:project',
+      title: 'Project Metadata',
+      summary: 'Inspect current task ownership and id allocation.',
+      status: 'Requires initialized project metadata.',
+      details: ['Shows next task id, active task spec, and implementation start timestamp.'],
+      nextStep: 'Open the project metadata view.',
+    },
   },
   {
     id: 'setup',
@@ -66,6 +114,14 @@ const MAIN_MENU_ITEMS: readonly MainMenuItem[] = [
     description: 'Initialize or maintain the toolkit project',
     routeId: 'setup-menu',
     availableWhenUninitialized: true,
+    context: {
+      id: 'main-menu:setup',
+      title: 'Setup / Maintenance',
+      summary: 'Initialize or maintain the toolkit project.',
+      status: 'Available before initialization.',
+      details: ['Provides initialization, version, and update maintenance actions.'],
+      nextStep: 'Open setup and maintenance options.',
+    },
   },
 ];
 
@@ -79,6 +135,14 @@ function buildMenuItems(isInitialized: boolean): readonly MainMenuItem[] {
   return MAIN_MENU_ITEMS.map((item) => ({
     ...item,
     disabled: !isInitialized && !item.availableWhenUninitialized,
+    context:
+      !isInitialized && !item.availableWhenUninitialized
+        ? {
+            ...item.context,
+            status: 'Unavailable until setup initializes the project.',
+            warnings: ['Initialize the project before opening this section.'],
+          }
+        : item.context,
   }));
 }
 
@@ -87,16 +151,26 @@ function buildMenuItems(isInitialized: boolean): readonly MainMenuItem[] {
  *
  * @returns React element for the main menu screen.
  */
-export function MainMenu(): React.ReactElement {
+export function MainMenu(props: MainMenuProps): React.ReactElement {
   const session = useSession();
-  const items = buildMenuItems(session.isInitialized);
+  const items = useMemo(() => buildMenuItems(session.isInitialized), [session.isInitialized]);
+  useSelectionRowContribution(!session.isInitialized ? 1 : 0);
 
-  const openItem = (item: MainMenuItem): void => {
-    if (item.disabled === true) {
-      return;
-    }
-    session.pushRoute(item.routeId);
-  };
+  const openItem = useCallback(
+    (item: MainMenuItem): void => {
+      if (item.disabled === true) {
+        return;
+      }
+      session.pushRoute(item.routeId);
+    },
+    [session],
+  );
+  const reportFocusedContext = useCallback(
+    (item: MainMenuItem | undefined): void => {
+      props.onContextChange?.(item?.context);
+    },
+    [props.onContextChange],
+  );
 
   useInput((input) => {
     const item = items.find((candidate) => candidate.key === input);
@@ -112,7 +186,7 @@ export function MainMenu(): React.ReactElement {
           Project is not initialized. Open Setup / Maintenance to initialize.
         </Text>
       ) : null}
-      <SelectableList items={items} onSelect={openItem} />
+      <SelectableList items={items} onFocusChange={reportFocusedContext} onSelect={openItem} />
     </Box>
   );
 }

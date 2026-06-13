@@ -75,10 +75,7 @@ async function loadCompatibilityDocument(projectRoot: string): Promise<Compatibi
     }
 
     const combo = entry as Record<string, unknown>;
-    if (
-      typeof combo.extensionId === 'string' &&
-      typeof combo.toolkitVersion === 'string'
-    ) {
+    if (typeof combo.extensionId === 'string' && typeof combo.toolkitVersion === 'string') {
       incompatibleCombinations.push({
         extensionId: combo.extensionId,
         toolkitVersion: combo.toolkitVersion,
@@ -108,10 +105,7 @@ export async function checkExtensionCompatibility(
 
   for (const extension of extensions) {
     for (const combo of compatibility.incompatibleCombinations) {
-      if (
-        combo.extensionId === extension.id &&
-        combo.toolkitVersion === targetToolkitVersion
-      ) {
+      if (combo.extensionId === extension.id && combo.toolkitVersion === targetToolkitVersion) {
         const reasonSuffix =
           combo.reason != null && combo.reason.length > 0 ? `: ${combo.reason}` : '';
         warnings.push(

@@ -6,14 +6,14 @@ Toolkit docs live in the repository root `docs/` only — they are not installed
 
 ## Bundled agents
 
-Four out-of-the-box bundled agent extensions ship with the toolkit:
+Four out-of-the-box agent extensions ship with the toolkit:
 
-| Extension id  | Display name   | Rules pointer                         | MCP config target    |
-| ------------- | -------------- | ------------------------------------- | -------------------- |
-| `cursor`      | Cursor         | `.cursor/rules/spec-n-roll.mdc`       | `.cursor/mcp.json`   |
-| `claude-code` | Claude Code    | `CLAUDE.md`                           | `.mcp.json`          |
-| `copilot`     | GitHub Copilot | `.github/copilot-instructions.md`     | `.vscode/mcp.json`   |
-| `codex`       | Codex          | `AGENTS.md` (project root)            | `.codex/mcp.json`    |
+| Extension id  | Display name   | Rules pointer                     | MCP config target  |
+| ------------- | -------------- | --------------------------------- | ------------------ |
+| `cursor`      | Cursor         | `.cursor/rules/spec-n-roll.mdc`   | `.cursor/mcp.json` |
+| `claude-code` | Claude Code    | `CLAUDE.md`                       | `.mcp.json`        |
+| `copilot`     | GitHub Copilot | `.github/copilot-instructions.md` | `.vscode/mcp.json` |
+| `codex`       | Codex          | `AGENTS.md` (project root)        | `.codex/mcp.json`  |
 
 Implementation: `src/agents/generators/` and `src/agents/extension-loader.ts`.
 
@@ -45,7 +45,7 @@ Selected agent manifests are written to `.spec-n-roll/bundled-extensions/{id}/ma
 
 - Three tier variants: `papercut`, `quick`, `full` — each lists shared `specify` as step 1
 - Enabled entries only for agents selected during init
-- Extension references pointing at installed bundled manifests
+- Extension references pointing at installed manifests
 
 `init` also writes `.spec-n-roll/config/project-metadata.json` with `nextTaskSpecId: 1`.
 

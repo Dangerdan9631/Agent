@@ -12,16 +12,16 @@ Reading `docs/` alone should be enough to understand the full workflow and exten
 
 ## Guide map
 
-| File | What you learn |
-|------|----------------|
-| [`workflow.md`](workflow.md) | Slash commands (`/spec-n-specify`, `/spec-n-roll`, plan/tasks/analyze/implement), embedded triage, lifecycle (Active→Complete→Locked), living specs, and TDD red→green→refactor |
-| [`cli.md`](cli.md) | Three binaries, dispatcher exec model, `init` / `update` / `config agent` / `version`, `--force` and `--global`, core-library subcommands, MCP server tools |
-| [`multi-agent.md`](multi-agent.md) | Bundled agents (Cursor, Claude Code, Copilot, Codex), MCP config merge, canonical rules, adding agents later |
-| [`platform-scripts.md`](platform-scripts.md) | Paired `.sh` / `.ps1` install and runtime auto-selection |
-| [`updates-and-migrations.md`](updates-and-migrations.md) | Toolkit vs user file ownership, `.bak` backups, schema migration at update time, compatibility warnings |
-| [`extension-quickstart.md`](extension-quickstart.md) | Register an extension, replace a built-in step, add hooks |
-| [`extension-reference.md`](extension-reference.md) | Manifest fields, step priority, hook validation, handler contract |
-| [`extension-example.md`](extension-example.md) | End-to-end custom triage walkthrough |
+| File                                                     | What you learn                                                                                                                                                                  |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`workflow.md`](workflow.md)                             | Slash commands (`/spec-n-specify`, `/spec-n-roll`, plan/tasks/analyze/implement), embedded triage, lifecycle (Active→Complete→Locked), living specs, and TDD red→green→refactor |
+| [`cli.md`](cli.md)                                       | Three binaries, dispatcher exec model, `init` / `update` / `config agent` / `version`, `--force` and `--global`, core-library subcommands, MCP server tools                     |
+| [`multi-agent.md`](multi-agent.md)                       | Bundled agents (Cursor, Claude Code, Copilot, Codex), MCP config merge, canonical rules, adding agents later                                                                    |
+| [`platform-scripts.md`](platform-scripts.md)             | Paired `.sh` / `.ps1` install and runtime auto-selection                                                                                                                        |
+| [`updates-and-migrations.md`](updates-and-migrations.md) | Toolkit vs user file ownership, `.bak` backups, schema migration at update time, compatibility warnings                                                                         |
+| [`extension-quickstart.md`](extension-quickstart.md)     | Register an extension, replace a built-in step, add hooks                                                                                                                       |
+| [`extension-reference.md`](extension-reference.md)       | Manifest fields, step priority, hook validation, handler contract                                                                                                               |
+| [`extension-example.md`](extension-example.md)           | End-to-end custom triage walkthrough                                                                                                                                            |
 
 ## Typical developer journey
 

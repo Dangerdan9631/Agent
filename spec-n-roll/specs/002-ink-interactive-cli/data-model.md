@@ -93,7 +93,7 @@ Read model for agents section.
 
 **Validation**:
 
-- `list agents` equivalent: all bundled agents when showing available
+- `list agents` equivalent: all agents when showing available
 - Filter `isConfigured` when showing project agents only (FR-007, `list agents --enabled`)
 
 ## Project Metadata View

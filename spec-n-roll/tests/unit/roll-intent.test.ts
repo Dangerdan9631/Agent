@@ -56,7 +56,9 @@ describe('/spec-n-roll intent detection', () => {
     const intent = detectRollIntent({
       ...baseContext,
       totalTaskSpecCount: 1,
-      resumableTaskSpecs: [{ taskSpecId: '001', slug: 'paused-feature', label: '001-paused-feature' }],
+      resumableTaskSpecs: [
+        { taskSpecId: '001', slug: 'paused-feature', label: '001-paused-feature' },
+      ],
     });
 
     expect(intent.kind).toBe('new_or_continue');

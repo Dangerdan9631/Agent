@@ -68,6 +68,47 @@ export const ROUTE_TITLES: Readonly<Record<RouteId, string>> = {
 };
 
 /**
+ * Route-level context shown when no focused option has more specific content.
+ */
+export interface RouteContext {
+  /**
+   * Human-readable title for the route. Must match the route title vocabulary used by navigation.
+   */
+  routeTitle: string;
+  /**
+   * Section-level summary shown before a selectable row reports focused context.
+   */
+  fallbackSummary: string;
+}
+
+/**
+ * Read-only fallback summaries for every interactive route.
+ */
+export const ROUTE_FALLBACK_SUMMARIES: Readonly<Record<RouteId, string>> = {
+  'main-menu': 'Choose a section to inspect specs, workflows, agents, project metadata, or setup.',
+  'specs-list': 'Browse task specs and inspect lifecycle, workflow, and artifact status.',
+  'spec-detail': 'Review the selected task spec and choose read or mutation actions.',
+  'spec-mutations': 'Choose the task spec mutation to run after reviewing the selected spec.',
+  'task-status-set': 'Set the lifecycle status for the selected task spec.',
+  'task-checkbox-set': 'Update task checkboxes for the selected task spec.',
+  'workflow-state': 'Inspect or update workflow state for the selected task spec.',
+  'workflows-list': 'Inspect workflow variants and their ordered step sequences.',
+  'workflow-detail': 'Review the selected workflow variant and step labels.',
+  'agents-list': 'Inspect agents and whether this project has configured them.',
+  'agent-add': 'Choose a agent to enable in this project.',
+  'agent-remove': 'Choose a configured agent to remove from this project.',
+  'project-metadata-view': 'Inspect project metadata, current task ownership, and id allocation.',
+  'project-metadata-edit':
+    'Edit project metadata values used by task allocation and implementation.',
+  'setup-menu': 'Run initialization and maintenance operations for this toolkit project.',
+  'setup-init': 'Initialize missing project configuration and workflow assets.',
+  'setup-version': 'Inspect the active CLI binary and version resolution details.',
+  'setup-update': 'Update or dry-run toolkit maintenance for this project.',
+  'setup-step-instantiate': 'Instantiate a workflow step template into the project.',
+  'setup-frontmatter-update': 'Update task spec frontmatter metadata.',
+};
+
+/**
  * Initial navigation stack rooted at the main menu.
  */
 export const ROOT_NAVIGATION_STACK: readonly NavigationStackEntry[] = [
@@ -82,6 +123,19 @@ export const ROOT_NAVIGATION_STACK: readonly NavigationStackEntry[] = [
  */
 export function titleForRoute(routeId: RouteId): string {
   return ROUTE_TITLES[routeId];
+}
+
+/**
+ * Builds route-level context for a route id.
+ *
+ * @param routeId - Route identifier to describe.
+ * @returns Fallback context containing a route title and summary.
+ */
+export function contextForRoute(routeId: RouteId): RouteContext {
+  return {
+    routeTitle: titleForRoute(routeId),
+    fallbackSummary: ROUTE_FALLBACK_SUMMARIES[routeId],
+  };
 }
 
 /**

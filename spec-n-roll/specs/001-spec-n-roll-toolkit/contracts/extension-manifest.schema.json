@@ -95,7 +95,7 @@
     },
     "agentSetup": {
       "type": "object",
-      "description": "Agent integration block. Required for bundled agent extensions; omitted for workflow-only extensions.",
+      "description": "Agent integration block. Required for agent extensions; omitted for workflow-only extensions.",
       "required": ["mcpConfig"],
       "properties": {
         "mcpConfig": {

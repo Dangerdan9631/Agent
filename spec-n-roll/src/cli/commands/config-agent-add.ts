@@ -55,7 +55,7 @@ export interface ConfigAgentAddResult {
 }
 
 /**
- * Builds an agent config entry for a newly added bundled agent.
+ * Builds an agent config entry for a newly added agent.
  *
  * @param agentId - Agent id to add.
  * @returns Agent configuration entry for workflow.config.json.
@@ -77,7 +77,7 @@ function buildAgentConfigEntry(agentId: string): AgentConfig {
 }
 
 /**
- * Builds an extension reference entry for a newly added bundled agent.
+ * Builds an extension reference entry for a newly added agent.
  *
  * @param agentId - Agent id to add.
  * @returns Extension reference for workflow.config.json.
@@ -107,7 +107,7 @@ function resolveAgentsToAdd(options: ConfigAgentAddOptions): string[] {
 }
 
 /**
- * Adds bundled agents to an initialized project without changing existing agents.
+ * Adds agents to an initialized project without changing existing agents.
  *
  * @param options - Project path and agent selection.
  * @returns Summary of added or already-configured agents.

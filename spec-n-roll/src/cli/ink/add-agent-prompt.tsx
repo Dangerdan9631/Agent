@@ -15,7 +15,7 @@ export function agentLabel(agentId: string): string {
 }
 
 /**
- * Interactive Ink flow for selecting one bundled agent to add.
+ * Interactive Ink flow for selecting one agent to add.
  *
  * @param availableAgentIds - Agent ids that can be added.
  * @returns Promise resolving to the selected agent id.
@@ -57,7 +57,7 @@ export interface AgentSingleSelectPromptProps {
 }
 
 /**
- * Ink UI that selects one bundled agent with arrow keys and enter.
+ * Ink UI that selects one agent with arrow keys and enter.
  */
 export function AgentSingleSelectPrompt({
   availableAgentIds,

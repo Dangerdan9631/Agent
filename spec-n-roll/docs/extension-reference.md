@@ -2,18 +2,18 @@
 
 ## Manifest fields
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `manifestVersion` | yes | Manifest document version string. |
-| `id` | yes | Unique kebab-case extension id. |
-| `name` | yes | Human-readable title. |
-| `targetToolkitVersion` | yes | Toolkit semver the extension was built against. |
-| `description` | no | Short summary. |
-| `entrypoint` | no | Optional package-level handler module path. |
-| `steps` | no | Workflow step replacements keyed by open `stepId`. |
-| `hooks` | no | Dynamic `before_{stepId}` / `after_{stepId}` handlers. |
-| `workflowVariants` | no | Additional named variants referencing registered step ids. |
-| `agentSetup` | no | Required for bundled agent extensions; omitted for workflow-only extensions. |
+| Field                  | Required | Description                                                                  |
+| ---------------------- | -------- | ---------------------------------------------------------------------------- |
+| `manifestVersion`      | yes      | Manifest document version string.                                            |
+| `id`                   | yes      | Unique kebab-case extension id.                                              |
+| `name`                 | yes      | Human-readable title.                                                        |
+| `targetToolkitVersion` | yes      | Toolkit semver the extension was built against.                              |
+| `description`          | no       | Short summary.                                                               |
+| `entrypoint`           | no       | Optional package-level handler module path.                                  |
+| `steps`                | no       | Workflow step replacements keyed by open `stepId`.                           |
+| `hooks`                | no       | Dynamic `before_{stepId}` / `after_{stepId}` handlers.                       |
+| `workflowVariants`     | no       | Additional named variants referencing registered step ids.                   |
+| `agentSetup`           | no       | Required for agent extensions; omitted for workflow-only extensions. |
 
 Authoritative JSON Schema: `specs/001-spec-n-roll-toolkit/contracts/extension-manifest.schema.json`.
 
@@ -21,14 +21,14 @@ Authoritative JSON Schema: `specs/001-spec-n-roll-toolkit/contracts/extension-ma
 
 Each `steps[]` entry replaces or augments a workflow slot:
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | yes | Unique id within the manifest. |
-| `stepId` | yes | Open kebab-case workflow step id (`triage`, `plan`, `tasks`, custom ids). |
-| `command` | yes | Agent-facing `spec-n-*` command name. |
-| `entrypoint` | yes | Project-relative module path exported for `import()`. |
-| `priority` | no | Integer; highest value wins when multiple extensions target the same `stepId`. |
-| `enabledByDefault` | no | Defaults to `true`; set `false` to keep the step contribution off unless explicitly enabled later. |
+| Field              | Required | Description                                                                                        |
+| ------------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| `id`               | yes      | Unique id within the manifest.                                                                     |
+| `stepId`           | yes      | Open kebab-case workflow step id (`triage`, `plan`, `tasks`, custom ids).                          |
+| `command`          | yes      | Agent-facing `spec-n-*` command name.                                                              |
+| `entrypoint`       | yes      | Project-relative module path exported for `import()`.                                              |
+| `priority`         | no       | Integer; highest value wins when multiple extensions target the same `stepId`.                     |
+| `enabledByDefault` | no       | Defaults to `true`; set `false` to keep the step contribution off unless explicitly enabled later. |
 
 Resolution rules:
 

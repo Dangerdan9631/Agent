@@ -79,7 +79,7 @@ Expected outcomes:
 
 ## Scenario 5: Agent Add/Remove Parity
 
-**Interactive**: Agents → Add → select bundled agent via Ink prompt → complete
+**Interactive**: Agents → Add → select agent via Ink prompt → complete
 
 **CLI**:
 

@@ -19,12 +19,7 @@ export function registerSpecFrontmatterUpdateCommand(frontmatter: Command): void
       try {
         const slug = await resolveTaskSpecSlug(process.cwd(), options.taskSpecId);
         const fields = parseKeyValuePairs(options.field);
-        const result = await updateSpecFrontmatter(
-          process.cwd(),
-          options.taskSpecId,
-          slug,
-          fields,
-        );
+        const result = await updateSpecFrontmatter(process.cwd(), options.taskSpecId, slug, fields);
         console.log(JSON.stringify(result, null, 2));
       } catch (error) {
         exitOnCoreError(error);

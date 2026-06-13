@@ -137,7 +137,11 @@ describe('applyUserConfigMigrations', () => {
     const projectRoot = createTempDir('apply-non-breaking');
     const configPath = path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json');
     mkdirSync(path.dirname(configPath), { recursive: true });
-    writeFileSync(configPath, `${JSON.stringify(buildLegacyWorkflowConfigV1(), null, 2)}\n`, 'utf8');
+    writeFileSync(
+      configPath,
+      `${JSON.stringify(buildLegacyWorkflowConfigV1(), null, 2)}\n`,
+      'utf8',
+    );
 
     const plan = await planUserConfigMigrations(projectRoot, '0.2.0');
     const result = await applyUserConfigMigrations(projectRoot, plan, {

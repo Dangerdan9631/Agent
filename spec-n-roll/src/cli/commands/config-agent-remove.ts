@@ -58,7 +58,7 @@ export interface ConfigAgentRemoveResult {
  * Resolves agent ids to remove from CLI options.
  *
  * @param options - Remove-agent options including `agents`.
- * @returns Validated bundled agent ids to remove.
+ * @returns Validated agent ids to remove.
  */
 function resolveAgentsToRemove(options: ConfigAgentRemoveOptions): string[] {
   const agentIds = options.agents ?? [];
@@ -78,7 +78,7 @@ function resolveAgentsToRemove(options: ConfigAgentRemoveOptions): string[] {
 }
 
 /**
- * Deletes toolkit-owned rule pointer files declared for one bundled agent.
+ * Deletes toolkit-owned rule pointer files declared for one agent.
  *
  * @param projectRoot - Absolute path to the project root.
  * @param agentId - Bundled agent extension id being removed.
@@ -128,7 +128,7 @@ async function removeAgentGeneratedFiles(projectRoot: string, agentId: string): 
 }
 
 /**
- * Removes bundled agents from an initialized project without changing other agents.
+ * Removes agents from an initialized project without changing other agents.
  *
  * @param options - Project path and agent selection.
  * @returns Summary of removed or not-configured agents.

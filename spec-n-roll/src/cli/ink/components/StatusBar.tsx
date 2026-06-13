@@ -42,24 +42,14 @@ export function StatusBar(): React.ReactElement {
       <Text color="yellow" bold={true}>
         Spec-N-Roll
       </Text>
-      <Text color="white">
-        {' | '}
-      </Text>
-      <Text color="blue">
-        {abbreviateProjectRoot(session.projectRoot)}
-      </Text>
-      <Text color="white">
-        {' | '}
-      </Text>
+      <Text color="white">{' | '}</Text>
+      <Text color="blue">{abbreviateProjectRoot(session.projectRoot)}</Text>
+      <Text color="white">{' | '}</Text>
       <Text color="grey">
         {binaryContext} {localPath}
       </Text>
-      <Text color="white">
-        {' | '}
-      </Text>
-      <Text color="grey">
-         {breadcrumb}
-      </Text>
+      <Text color="white">{' | '}</Text>
+      <Text color="grey">{breadcrumb}</Text>
     </Box>
   );
 }

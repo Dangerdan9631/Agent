@@ -28,6 +28,33 @@ function waitForInk(milliseconds = 50): Promise<void> {
 }
 
 /**
+ * Waits until the rendered Ink frame contains the expected text.
+ *
+ * @param readFrame - Function that returns the latest rendered frame text.
+ * @param expectedText - Text that must appear in the frame before resolving.
+ * @param timeoutMs - Maximum wait time in milliseconds.
+ * @returns Promise that resolves with the matching frame text.
+ */
+async function waitForFrameContaining(
+  readFrame: () => string | undefined,
+  expectedText: string,
+  timeoutMs = 3_000,
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const frame = readFrame();
+    if (frame?.includes(expectedText) === true) {
+      return frame;
+    }
+
+    await waitForInk();
+  }
+
+  return readFrame() ?? '';
+}
+
+/**
  * Creates an isolated initialized project fixture.
  *
  * @param prefix - Unique prefix describing the fixture purpose.
@@ -137,16 +164,15 @@ describe('interactive setup and maintenance flows', () => {
     await waitForInk();
 
     app.stdin.write('d');
-    await waitForInk(500);
-    expect(app.lastFrame()).toContain('dry run:');
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'dry run:')).toContain('dry run:');
 
     app.stdin.write('a');
-    await waitForInk(500);
-    expect(app.lastFrame()).toContain('Update toolkit');
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'Update toolkit')).toContain(
+      'Update toolkit',
+    );
 
     app.stdin.write('y');
-    await waitForInk(1000);
-    expect(app.lastFrame()).toContain('updated:');
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'updated:')).toContain('updated:');
     app.unmount();
   }, 15_000);
 });

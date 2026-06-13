@@ -15,10 +15,10 @@ The globally installed npm artifact is a **lightweight dispatcher** only. It con
 
 **Resolution**:
 
-1. If `--global` is present, exec co-bundled global full CLI relative to dispatcher install path.
+1. If `--global` is present, exec global full CLI relative to dispatcher install path.
 2. Otherwise, walk parent directories from `cwd` to find nearest `.spec-n-roll/cli/bin/spec-n-roll`.
 3. If local binary found, exec it — MUST NOT load full CLI/core/MCP in-process.
-4. If no local binary found, exec co-bundled global full CLI.
+4. If no local binary found, exec global full CLI.
 
 **Version** (`-v` / `--version`):
 
@@ -101,7 +101,7 @@ Adds one or more configured agents to an initialized project.
 
 **Arguments**:
 
-- `<agents>` — comma-separated bundled agent ids (e.g. `copilot,claude-code`).
+- `<agents>` — comma-separated agent ids (e.g. `copilot,claude-code`).
 
 **Outputs**:
 
@@ -119,7 +119,7 @@ Removes one or more configured agents from an initialized project.
 
 **Arguments**:
 
-- `<agents>` — comma-separated bundled agent ids (e.g. `copilot,claude-code`).
+- `<agents>` — comma-separated agent ids (e.g. `copilot,claude-code`).
 
 **Outputs**:
 

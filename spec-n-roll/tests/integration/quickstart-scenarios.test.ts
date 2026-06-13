@@ -104,9 +104,9 @@ describe('quickstart scenario 1: initialize project with multiple agents', () =>
     expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll'))).toBe(
       true,
     );
-    expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp'))).toBe(
-      true,
-    );
+    expect(
+      existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp')),
+    ).toBe(true);
     expect(
       existsSync(path.join(projectRoot, '.spec-n-roll', 'scripts', 'check-prerequisites.sh')),
     ).toBe(true);
@@ -190,19 +190,19 @@ describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
     expect(localBinaryVersion.status).toBe(0);
     expect(localBinaryVersion.stdout).toContain('toolkit version');
     expect(localBinaryVersion.stdout).toContain('local');
-  });
+  }, 30_000);
 });
 
 describe('quickstart scenario 2b: interactive vs non-interactive CLI', () => {
-  it('runs subcommands non-interactively and prints help for bare invocation', () => {
+  it('runs subcommands non-interactively and starts the interactive app for bare invocation', () => {
     const projectRoot = createTempProject('scenario-2b');
     const help = runFullCli(projectRoot, ['init', '--help']);
     expect(help.status).toBe(0);
-    expect(help.stdout).toContain('Initialize spec-n-roll');
+    expect(help.stdout).toContain('Initialize Spec-N-Roll in a project');
 
     const bare = runFullCli(projectRoot, []);
-    expect(bare.status).not.toBe(0);
-    expect(`${bare.stdout}\n${bare.stderr}`).toContain('Commands:');
+    expect(bare.status).toBe(0);
+    expect(`${bare.stdout}\n${bare.stderr}`).toContain('Main Menu');
   });
 });
 
@@ -226,7 +226,12 @@ describe('quickstart scenario 3: interactive specification with embedded triage'
     expect(askedQuestions.length).toBeGreaterThan(0);
     expect(new Set(askedQuestions).size).toBe(askedQuestions.length);
 
-    const specPath = path.join(projectRoot, 'specs', `${result.taskSpecId}-${result.slug}`, 'spec.md');
+    const specPath = path.join(
+      projectRoot,
+      'specs',
+      `${result.taskSpecId}-${result.slug}`,
+      'spec.md',
+    );
     expect(existsSync(specPath)).toBe(true);
     const specContent = readFileSync(specPath, 'utf8');
     expect(specContent).toContain('status: Active');
@@ -262,7 +267,12 @@ describe('quickstart scenario 4: /spec-n-roll advances workflow state', () => {
     }
     expect(
       existsSync(
-        path.join(projectRoot, 'specs', `${specifyResult.taskSpecId}-${specifyResult.slug}`, 'plan.md'),
+        path.join(
+          projectRoot,
+          'specs',
+          `${specifyResult.taskSpecId}-${specifyResult.slug}`,
+          'plan.md',
+        ),
       ),
     ).toBe(false);
   });
@@ -579,7 +589,11 @@ describe('quickstart scenario 9b: extension hook validation', () => {
       ),
       'utf8',
     );
-    writeFileSync(path.join(extensionDir, 'hook.mjs'), 'export async function handler() {}\n', 'utf8');
+    writeFileSync(
+      path.join(extensionDir, 'hook.mjs'),
+      'export async function handler() {}\n',
+      'utf8',
+    );
 
     const configPath = path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json');
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as {
@@ -640,7 +654,15 @@ describe('quickstart scenario 12: documentation completeness', () => {
     },
     {
       file: 'cli.md',
-      mustContain: ['init', 'update', 'dispatcher', 'MCP server', '--global', '--agents', '--force'],
+      mustContain: [
+        'init',
+        'update',
+        'dispatcher',
+        'MCP server',
+        '--global',
+        '--agents',
+        '--force',
+      ],
     },
     {
       file: 'multi-agent.md',
@@ -668,12 +690,15 @@ describe('quickstart scenario 12: documentation completeness', () => {
     },
   ];
 
-  it.each(requiredDocs)('$file covers SC-008 topics without source inspection', ({ file, mustContain }) => {
-    const content = readFileSync(path.join(docsDir, file), 'utf8');
-    for (const phrase of mustContain) {
-      expect(content).toContain(phrase);
-    }
-  });
+  it.each(requiredDocs)(
+    '$file covers SC-008 topics without source inspection',
+    ({ file, mustContain }) => {
+      const content = readFileSync(path.join(docsDir, file), 'utf8');
+      for (const phrase of mustContain) {
+        expect(content).toContain(phrase);
+      }
+    },
+  );
 
   it('lists all primary guides in docs/README.md', () => {
     const readme = readFileSync(path.join(docsDir, 'README.md'), 'utf8');

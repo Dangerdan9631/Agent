@@ -34,11 +34,14 @@ function createTempDir(prefix: string): string {
  * @param projectRoot - Absolute path to the project root.
  * @param extensionEnabled - Whether the custom triage extension is enabled.
  */
-function writeProjectWithTriageExtension(
-  projectRoot: string,
-  extensionEnabled: boolean,
-): void {
-  const extensionDir = path.join(projectRoot, '.spec-n-roll', 'config', 'extensions', 'custom-triage');
+function writeProjectWithTriageExtension(projectRoot: string, extensionEnabled: boolean): void {
+  const extensionDir = path.join(
+    projectRoot,
+    '.spec-n-roll',
+    'config',
+    'extensions',
+    'custom-triage',
+  );
   mkdirSync(extensionDir, { recursive: true });
 
   const handlerPath = path.join(extensionDir, 'triage-handler.mjs');

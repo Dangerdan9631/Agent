@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
+import { Box, Text, useInput } from 'ink';
+
+import type { SelectedOptionContext } from './ContextContent.js';
+import { useSelectionRowContribution } from './SelectionRegion.js';
 
 /**
  * One selectable row displayed by SelectableList.
@@ -21,6 +24,10 @@ export interface SelectableListItem {
    * Whether the row is disabled and cannot be selected.
    */
   disabled?: boolean;
+  /**
+   * Optional read-only context for focus changes. The identifier should match or refine the row id.
+   */
+  context?: SelectedOptionContext;
 }
 
 /**
@@ -39,6 +46,10 @@ export interface SelectableListProps<TItem extends SelectableListItem> {
    * Called when Enter is pressed on an enabled item.
    */
   onSelect: (item: TItem) => void;
+  /**
+   * Called when keyboard focus moves to a different item. The callback must remain read-only.
+   */
+  onFocusChange?: (item: TItem | undefined) => void;
   /**
    * Maximum number of rows to render before scrolling. Must be a positive integer when provided.
    */
@@ -77,13 +88,11 @@ function findNextEnabledIndex(
  * Calculates the visible row count available to the list viewport.
  *
  * @param itemCount - Total number of rows in the list. Must be zero or greater.
- * @param terminalRows - Terminal height reported by Ink, if available.
  * @param maxVisibleItems - Explicit viewport row count override for constrained callers.
- * @returns Positive number of rows the list should render.
+ * @returns Number of rows the list should render.
  */
 function resolveVisibleItemCount(
   itemCount: number,
-  terminalRows: number | undefined,
   maxVisibleItems: number | undefined,
 ): number {
   if (itemCount === 0) {
@@ -94,8 +103,7 @@ function resolveVisibleItemCount(
     return Math.max(1, Math.min(itemCount, Math.floor(maxVisibleItems)));
   }
 
-  const fallbackRows = terminalRows ?? process.stdout.rows ?? itemCount;
-  return Math.max(1, Math.min(itemCount, fallbackRows - 2));
+  return itemCount;
 }
 
 /**
@@ -132,23 +140,26 @@ export function scrollWindowStartIntoView(
 export function SelectableList<TItem extends SelectableListItem>(
   props: SelectableListProps<TItem>,
 ): React.ReactElement {
-  const { stdout } = useStdout();
+  const { items, label, maxVisibleItems, onFocusChange, onSelect } = props;
   const firstEnabledIndex = Math.max(
     0,
-    props.items.findIndex((item) => item.disabled !== true),
+    items.findIndex((item) => item.disabled !== true),
   );
   const [selectedIndex, setSelectedIndex] = useState(firstEnabledIndex);
   const [windowStart, setWindowStart] = useState(0);
-  const visibleItemCount = resolveVisibleItemCount(
-    props.items.length,
-    stdout.rows,
-    props.maxVisibleItems,
-  );
-  const visibleItems = props.items.slice(windowStart, windowStart + visibleItemCount);
+  const visibleItemCount = resolveVisibleItemCount(items.length, maxVisibleItems);
+  useSelectionRowContribution(items.length + (label != null ? 1 : 0));
+  const resolvedSelectedIndex = Math.min(selectedIndex, Math.max(0, items.length - 1));
+  const focusedItem = items[resolvedSelectedIndex];
+  const visibleItems = items.slice(windowStart, windowStart + visibleItemCount);
 
   useEffect(() => {
-    setSelectedIndex((current) => Math.min(current, Math.max(0, props.items.length - 1)));
-  }, [props.items.length]);
+    setSelectedIndex((current) => Math.min(current, Math.max(0, items.length - 1)));
+  }, [items.length]);
+
+  useLayoutEffect(() => {
+    onFocusChange?.(focusedItem);
+  }, [focusedItem, onFocusChange]);
 
   useEffect(() => {
     setWindowStart((current) => {
@@ -157,34 +168,34 @@ export function SelectableList<TItem extends SelectableListItem>(
   }, [selectedIndex, visibleItemCount]);
 
   useInput((_input, key) => {
-    if (props.items.length === 0) {
+    if (items.length === 0) {
       return;
     }
 
     if (key.upArrow) {
-      setSelectedIndex((current) => findNextEnabledIndex(props.items, current, -1));
+      setSelectedIndex((current) => findNextEnabledIndex(items, current, -1));
       return;
     }
 
     if (key.downArrow) {
-      setSelectedIndex((current) => findNextEnabledIndex(props.items, current, 1));
+      setSelectedIndex((current) => findNextEnabledIndex(items, current, 1));
       return;
     }
 
     if (key.return) {
-      const item = props.items[selectedIndex];
+      const item = items[resolvedSelectedIndex];
       if (item != null && item.disabled !== true) {
-        props.onSelect(item);
+        onSelect(item);
       }
     }
   });
 
   return (
     <Box flexDirection="column">
-      {props.label != null ? <Text bold>{props.label}</Text> : null}
+      {label != null ? <Text bold>{label}</Text> : null}
       {visibleItems.map((item, offset) => {
         const index = windowStart + offset;
-        const focused = index === selectedIndex;
+        const focused = index === resolvedSelectedIndex;
         const indicator = focused ? '>' : ' ';
         const color = item.disabled === true ? 'gray' : focused ? 'cyan' : undefined;
 

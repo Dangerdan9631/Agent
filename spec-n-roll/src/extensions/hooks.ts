@@ -4,7 +4,12 @@ import fse from 'fs-extra';
 
 import { readWorkflowConfig } from '../workflow/artifacts.js';
 import { assessTriage, type TriageAssessment, type TriageInput } from '../specs/triage.js';
-import { parseExtensionManifest, type ExtensionHook, type ExtensionManifest, type ExtensionStep } from './manifest.js';
+import {
+  parseExtensionManifest,
+  type ExtensionHook,
+  type ExtensionManifest,
+  type ExtensionStep,
+} from './manifest.js';
 
 /**
  * Implicit workflow step ids that are not listed in workflow.config.json but are

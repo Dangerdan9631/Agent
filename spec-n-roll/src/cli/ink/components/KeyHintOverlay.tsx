@@ -23,8 +23,18 @@ export function KeyHintOverlay(props: KeyHintOverlayProps): React.ReactElement {
   }
 
   return (
-    <Box paddingX={1} borderStyle="single">
-      <Text color="cyan">q quit | b/Esc back | ? toggle keys | arrows move | Enter select</Text>
+    <Box flexDirection="column">
+      <Box padding={1} paddingX={0}>
+        <Text color="cyan">q quit</Text>
+        <Text color="white">{' | '}</Text>
+        <Text color="cyan">b/Esc back</Text>
+        <Text color="white">{' | '}</Text>
+        <Text color="cyan">? toggle keys</Text>
+        <Text color="white">{' | '}</Text>
+        <Text color="cyan">arrows move</Text>
+        <Text color="white">{' | '}</Text>
+        <Text color="cyan">Enter select</Text>
+      </Box>
     </Box>
   );
 }

@@ -113,7 +113,9 @@ export function readWorkflowConfigTolerant(raw: unknown): TolerantWorkflowConfig
     steps: record.steps as WorkflowStep[],
     workflows: workflows as WorkflowVariant[],
     defaultWorkflowId: readStringField(record, ['defaultWorkflowId']),
-    extensions: Array.isArray(record.extensions) ? (record.extensions as ExtensionRef[]) : undefined,
+    extensions: Array.isArray(record.extensions)
+      ? (record.extensions as ExtensionRef[])
+      : undefined,
   };
 
   if (record.legacyTierRouting != null) {

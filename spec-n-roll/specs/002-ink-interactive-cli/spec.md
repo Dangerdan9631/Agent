@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-13
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: User description: "a new spec for the interactive CLI INK application. It should provide simple navigation of the existing specs, workflows and other toolkit resources, and management of their state and configuration. Any operation supported by CLI command should be supported in the application."
 
@@ -88,7 +88,7 @@ A developer moves through menus, lists, confirmations, and forms using keyboard 
 - What happens when multiple Active task specs exist and an operation requires a single target? The application presents a numbered selection prompt, matching the interactive behavior used by agent workflow commands.
 - What happens when a read-only inspection target file is missing or unreadable? The application shows a clear error for that resource without crashing the session; the developer can navigate back and continue.
 - What happens when the developer runs a subcommand-equivalent operation that would fail validation in non-interactive mode? The same validation rules apply and the error is shown in context with remediation guidance.
-- What happens when `list agents` is invoked with no bundled agents available? The agents section shows an empty state with guidance rather than a blank screen.
+- What happens when `list agents` is invoked with no agents available? The agents section shows an empty state with guidance rather than a blank screen.
 
 ## Requirements *(mandatory)*
 
@@ -100,7 +100,7 @@ A developer moves through menus, lists, confirmations, and forms using keyboard 
 - **FR-004**: The task specs section MUST list all directories under the user-owned specs root, showing numeric id, slug, lifecycle status, workflow operational status when available, and current or last-completed step summary.
 - **FR-005**: The task spec detail view MUST display workflow state contents, lifecycle status, presence of step artifacts (spec, plan, tasks), and shortcuts to supported mutations for that spec.
 - **FR-006**: The workflows section MUST list configured workflow variants from project workflow configuration, including each variant's ordered step sequence in human-readable form.
-- **FR-007**: The agents section MUST list bundled agents and distinguish configured versus available agents, equivalent to `list agents` with and without the enabled-only filter.
+- **FR-007**: The agents section MUST list agents and distinguish configured versus available agents, equivalent to `list agents` with and without the enabled-only filter.
 - **FR-008**: The interactive application MUST support every non-interactive CLI subcommand operation defined for the toolkit: `init`, `version`, `list agents`, `update`, `config agent add`, `config agent remove`, `workflow state read`, `workflow state write`, `task status set`, `task checkbox set`, `project metadata read`, `project metadata write`, `step instantiate`, and `spec frontmatter update`.
 - **FR-009**: Each interactive mutation MUST produce the same on-disk results and honor the same validation rules, confirmations, and safety behaviors as its non-interactive CLI equivalent, routed through the shared core library.
 - **FR-010**: The interactive application MUST reuse existing Ink prompt flows where they already exist (init agent selection, update confirmation, and similar) rather than duplicating divergent UX for the same operation.
@@ -116,7 +116,7 @@ A developer moves through menus, lists, confirmations, and forms using keyboard 
 - **Interactive Session**: A running terminal UI session bound to a resolved project root, navigation stack, and optional selected task spec context.
 - **Task Spec Summary**: A read model combining directory identity (numeric id, slug), lifecycle status from spec frontmatter, workflow state, and artifact presence for display and selection.
 - **Workflow Variant Summary**: A read model of a named tier or workflow definition including its ordered step list as configured in project workflow configuration.
-- **Agent Summary**: A read model of a bundled agent id, display name, and whether it is currently configured in the project.
+- **Agent Summary**: A read model of a agent id, display name, and whether it is currently configured in the project.
 - **Project Metadata View**: A read model of project-level counters and current implementation task pointers from project metadata configuration.
 - **CLI Operation**: A named capability mapping one interactive flow to exactly one non-interactive CLI subcommand contract, sharing the same core mutation or query implementation.
 

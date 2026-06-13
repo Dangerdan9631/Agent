@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 import { listBundledAgents } from '../../src/agents/extension-loader.js';
 import { runInit } from '../../src/cli/commands/init.js';
-import { formatBundledAgentsList, resolveListedAgents } from '../../src/cli/commands/list-agents.js';
+import {
+  formatBundledAgentsList,
+  resolveListedAgents,
+} from '../../src/cli/commands/list-agents.js';
 describe('listBundledAgents', () => {
   it('returns all agents sorted by id with display names', () => {
     expect(listBundledAgents()).toEqual([
@@ -33,7 +36,7 @@ describe('formatBundledAgentsList', () => {
 });
 
 describe('resolveListedAgents', () => {
-  it('returns all bundled agents when enabledOnly is false', async () => {
+  it('returns all agents when enabledOnly is false', async () => {
     const projectRoot = path.join(os.tmpdir(), `spec-n-roll-list-agents-${Date.now()}`);
     mkdirSync(projectRoot, { recursive: true });
 

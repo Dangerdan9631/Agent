@@ -324,7 +324,7 @@ export function buildDelegatedCliEnv(baseEnv: NodeJS.ProcessEnv = process.env): 
 }
 
 /**
- * Resolves the co-bundled global full CLI binary path relative to the dispatcher
+ * Resolves the global full CLI binary path relative to the dispatcher
  * install location, preferring Windows .cmd shims when present.
  *
  * @returns Absolute path to the full CLI executable adjacent to the dispatcher.
@@ -343,7 +343,7 @@ export function resolveGlobalCliPath(): string {
 }
 
 /**
- * Executes the co-bundled global full CLI as a child process when no local CLI
+ * Executes the global full CLI as a child process when no local CLI
  * is found or when --global forces global execution.
  *
  * @param argv - Raw command-line arguments after the node executable and script path.
@@ -375,7 +375,7 @@ export function execGlobalCli(argv: string[], options: DispatchOptions = {}): nu
 
 /**
  * Global dispatcher entry point that delegates to a local CLI or exec's the
- * co-bundled full CLI binary without loading full CLI code in-process.
+ * full CLI binary without loading full CLI code in-process.
  *
  * @param argv - Full process.argv array including node and script path entries.
  * @param options - Optional dispatch configuration for cwd and environment.

@@ -26,6 +26,26 @@ async function waitForFrame(): Promise<void> {
 }
 
 describe('complete interactive navigation', () => {
+  it('updates main menu context from focus without opening a route', async () => {
+    const app = render(
+      React.createElement(App, {
+        projectRoot: FIXTURE_ROOT,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    await waitForFrame();
+    expect(app.lastFrame()).toContain('Review task specs and workflow progress.');
+
+    app.stdin.write('\u001b[B');
+    await waitForFrame();
+
+    expect(app.lastFrame()).toContain('Inspect workflow variants and step order.');
+    expect(app.lastFrame()).toContain('Main Menu');
+    app.unmount();
+  });
+
   it('reaches all five main-menu sections and returns with keyboard controls', async () => {
     const app = render(
       React.createElement(App, {

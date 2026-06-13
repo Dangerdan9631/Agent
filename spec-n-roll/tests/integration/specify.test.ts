@@ -75,7 +75,12 @@ describe('/spec-n-specify integration', () => {
     expect(result.workflowVariantId).toBe('quick');
     expect(result.qualityPassed).toBe(true);
 
-    const specPath = path.join(projectRoot, 'specs', `${result.taskSpecId}-${result.slug}`, 'spec.md');
+    const specPath = path.join(
+      projectRoot,
+      'specs',
+      `${result.taskSpecId}-${result.slug}`,
+      'spec.md',
+    );
     expect(existsSync(specPath)).toBe(true);
     const specContent = readFileSync(specPath, 'utf8');
     expect(specContent).toContain('status: Active');

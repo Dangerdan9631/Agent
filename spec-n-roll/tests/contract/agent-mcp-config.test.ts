@@ -74,9 +74,7 @@ describe('agent MCP config merge', () => {
     });
     expect(parsed.mcpServers['spec-n-roll']).toBeDefined();
     expect(parsed.mcpServers['spec-n-roll'].command).toBe('node');
-    expect(parsed.mcpServers['spec-n-roll'].args).toContain(
-      '.spec-n-roll/cli/bin/spec-n-roll-mcp',
-    );
+    expect(parsed.mcpServers['spec-n-roll'].args).toContain('.spec-n-roll/cli/bin/spec-n-roll-mcp');
   });
 
   it('is idempotent when merge runs twice for the same agent target', async () => {

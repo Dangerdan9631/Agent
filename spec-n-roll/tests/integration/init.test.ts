@@ -44,11 +44,7 @@ describe('spec-n-roll init', () => {
 
   it('initializes two agents with skills, rules, MCP config, workflow config, and binaries', async () => {
     const projectRoot = createTempProject('multi-agent');
-  const preExistingMcp = path.join(
-      projectRoot,
-      '.cursor',
-      'mcp.json',
-    );
+    const preExistingMcp = path.join(projectRoot, '.cursor', 'mcp.json');
     mkdirSync(path.dirname(preExistingMcp), { recursive: true });
     writeFixtureMcp(preExistingMcp);
 

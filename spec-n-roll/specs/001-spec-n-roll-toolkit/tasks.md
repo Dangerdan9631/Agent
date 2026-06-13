@@ -104,7 +104,7 @@ description: "Task list for Spec-n-Roll Toolkit implementation"
 - [x] T040 [P] [US1] Implement codex extension manifest and generator in src/agents/generators/codex.ts (AGENTS.md pointer + MCP config per manifest)
 - [x] T041 [US1] Implement canonical AGENTS.md writer in src/agents/generators/agents-md.ts (toolkit-owned .spec-n-roll/AGENTS.md with workflow command and MCP tool reference)
 - [x] T042 [US1] Implement extension loader for extensions in src/agents/extension-loader.ts (discovers .spec-n-roll/bundled-extensions/{id}/; validates manifest including agentSetup.mcpConfig)
-- [x] T043 [US1] Implement MCP config format adapters and idempotent merge in src/agents/mcp-config.ts (read/upsert/write per contracts/agent-mcp-config.md; bundled adapters for cursor, claude-code, copilot, codex)
+- [x] T043 [US1] Implement MCP config format adapters and idempotent merge in src/agents/mcp-config.ts (read/upsert/write per contracts/agent-mcp-config.md; adapters for cursor, claude-code, copilot, codex)
 - [x] T044 [US1] Implement Ink multi-select prompts for agent selection in src/cli/ink/init-prompts.tsx (skipped when `--yes` supplies `--agents`)
 - [x] T045 [US1] Implement default workflow.config.json writer in src/cli/commands/init.ts (papercut: specify→implement; quick: specify→tasks→implement; full: specify→plan→tasks→implement; agent ids cursor/claude-code/copilot/codex; nextTaskSpecId: 1)
 - [x] T046 [US1] Install full CLI and MCP binaries to .spec-n-roll/cli/bin/ during init in src/cli/commands/init.ts (copy from T009 build outputs: Spec-N-Roll + spec-n-roll-mcp; .cmd wrappers on Windows; version-matched pair)

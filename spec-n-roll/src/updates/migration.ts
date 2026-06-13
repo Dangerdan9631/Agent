@@ -6,10 +6,7 @@ import {
   PROJECT_METADATA_SCHEMA_VERSION,
 } from '../core/project-metadata.js';
 import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../workflow/artifacts.js';
-import {
-  readProjectMetadataTolerant,
-  readWorkflowConfigTolerant,
-} from '../config/reader.js';
+import { readProjectMetadataTolerant, readWorkflowConfigTolerant } from '../config/reader.js';
 import {
   projectMetadataSchema,
   workflowConfigSchema,

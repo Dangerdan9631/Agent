@@ -3,10 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import {
-  parseFeatureFile,
-  readFeatureFile,
-} from '../../src/living-specs/gherkin.js';
+import { parseFeatureFile, readFeatureFile } from '../../src/living-specs/gherkin.js';
 import { formatSpecNRollTag } from '../../src/living-specs/tags.js';
 import { runImplement } from '../../src/specs/implement.js';
 import { writeWorkflowState } from '../../src/core/workflow-state.js';
@@ -39,11 +36,7 @@ async function seedTaskSpecForImplement(
 ): Promise<void> {
   const specDir = path.join(projectRoot, 'specs', `${taskSpecId}-${slug}`);
   mkdirSync(specDir, { recursive: true });
-  writeFileSync(
-    path.join(specDir, 'spec.md'),
-    `---\nstatus: Active\n---\n\n# ${slug}\n`,
-    'utf8',
-  );
+  writeFileSync(path.join(specDir, 'spec.md'), `---\nstatus: Active\n---\n\n# ${slug}\n`, 'utf8');
   await writeWorkflowState(projectRoot, {
     taskSpecId,
     slug,

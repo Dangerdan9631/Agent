@@ -18,7 +18,7 @@ Represents a developer-selected AI coding agent and the files generated for that
 
 **Validation**:
 
-- Bundled OOTB extension `id` values are `cursor`, `claude-code`, `copilot`, and `codex` — each MUST match the extension manifest `id`, bundled directory name, and `workflow.config.json` agent reference. `github-copilot` is not a valid extension `id` (use `displayName` for "GitHub Copilot" when needed).
+- Bundled OOTB extension `id` values are `cursor`, `claude-code`, `copilot`, and `codex` — each MUST match the extension manifest `id`, directory name, and `workflow.config.json` agent reference. `github-copilot` is not a valid extension `id` (use `displayName` for "GitHub Copilot" when needed).
 - Selected agents are accepted as user input; the toolkit does not verify local installation.
 - `init` and `config add-agent` create or idempotently update `mcpConfigTargets` to reference `mcpBinaryPath` via stdio transport.
 - Merge upserts only the entry identified by `mcpServerId`; unrelated MCP server entries are preserved.
@@ -42,7 +42,7 @@ Globally installed lightweight binary containing only local-vs-global resolution
 - Exec's the resolved full CLI as a child process — MUST NOT load full CLI/core/MCP in-process when dispatching local.
 - Forwards `-v`/`--version` unchanged to the full CLI binary.
 - If local binary is found but exec fails, fails with clear error — no silent fallback to global unless `--global`.
-- When no local binary exists and `--global` is absent, exec's co-bundled global full CLI relative to dispatcher install path.
+- When no local binary exists and `--global` is absent, exec's global full CLI relative to dispatcher install path.
 
 ## Full CLI
 
@@ -244,7 +244,7 @@ Registered package or module that contributes steps, hooks, workflow variants, a
 - `steps`: Step contributions, each with `stepId` (open string), `command`, `entrypoint`, optional `priority`
 - `hooks`: Hook contributions with `event` matching `before_{stepId}` or `after_{stepId}`
 - `workflowVariants`: Optional workflow variants referencing registered step IDs
-- `agentSetup`: Optional agent integration block (required for bundled agent extensions) with `mcpConfig.targets`, `mcpConfig.serverId`, `mcpConfig.format`, plus `ruleTargets` and `skillTargets`
+- `agentSetup`: Optional agent integration block (required for agent extensions) with `mcpConfig.targets`, `mcpConfig.serverId`, `mcpConfig.format`, plus `ruleTargets` and `skillTargets`
 
 **Validation**:
 

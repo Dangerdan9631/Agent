@@ -151,13 +151,7 @@ export function registerCoreMcpTools(server: McpServer): void {
     async ({ taskSpecId, slug, taskIds, completed }) => {
       try {
         const projectRoot = process.cwd();
-        const result = await setTaskCheckboxes(
-          projectRoot,
-          taskSpecId,
-          slug,
-          taskIds,
-          completed,
-        );
+        const result = await setTaskCheckboxes(projectRoot, taskSpecId, slug, taskIds, completed);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

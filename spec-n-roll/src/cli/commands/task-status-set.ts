@@ -27,12 +27,7 @@ export function registerTaskStatusSetCommand(taskStatus: Command): void {
         }
         try {
           const slug = await resolveTaskSpecSlug(process.cwd(), options.taskSpecId);
-          const result = await setTaskSpecStatus(
-            process.cwd(),
-            options.taskSpecId,
-            slug,
-            status,
-          );
+          const result = await setTaskSpecStatus(process.cwd(), options.taskSpecId, slug, status);
           console.log(JSON.stringify(result, null, 2));
         } catch (error) {
           exitOnCoreError(error);

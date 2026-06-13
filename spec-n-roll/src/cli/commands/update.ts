@@ -36,10 +36,7 @@ import {
   BreakingMigrationError,
   planUserConfigMigrations,
 } from '../../updates/migration.js';
-import {
-  collectLauncherBinaryUpdates,
-  installProjectBinaries,
-} from '../local-binaries.js';
+import { collectLauncherBinaryUpdates, installProjectBinaries } from '../local-binaries.js';
 import { resolveToolkitRoot, WORKFLOW_CONFIG_RELATIVE_PATH } from './init.js';
 
 /**
@@ -173,7 +170,10 @@ async function resolveConfiguredAgentIds(projectRoot: string): Promise<string[]>
     );
   }
 
-  return workflowConfig.agents.filter((agent) => agent.enabled).map((agent) => agent.id).sort();
+  return workflowConfig.agents
+    .filter((agent) => agent.enabled)
+    .map((agent) => agent.id)
+    .sort();
 }
 
 /**
@@ -219,7 +219,7 @@ function collectTextToolkitUpdates(agentIds: readonly string[]): ToolkitFileUpda
 }
 
 /**
- * Collects toolkit-owned platform script updates from bundled script pairs.
+ * Collects toolkit-owned platform script updates from script pairs.
  *
  * @param toolkitRoot - Absolute path to the toolkit package root.
  * @returns Relative script paths and expected file bodies.
@@ -235,7 +235,10 @@ function collectPlatformScriptUpdates(toolkitRoot: string): ToolkitFileUpdate[] 
         continue;
       }
       updates.push({
-        relativePath: path.posix.join(PROJECT_SCRIPTS_RELATIVE_DIR, `${scriptBaseName}${extension}`),
+        relativePath: path.posix.join(
+          PROJECT_SCRIPTS_RELATIVE_DIR,
+          `${scriptBaseName}${extension}`,
+        ),
         expectedContent: readFileSync(sourcePath),
       });
     }
@@ -392,8 +395,10 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
     incompatibleCombinations: [],
   });
 
-  const mcpRefresh = await refreshConfiguredAgentMcpConfigs(projectRoot, agentIds, async (agentId) =>
-    loadBundledExtensionManifest(projectRoot, agentId),
+  const mcpRefresh = await refreshConfiguredAgentMcpConfigs(
+    projectRoot,
+    agentIds,
+    async (agentId) => loadBundledExtensionManifest(projectRoot, agentId),
   );
 
   return {
@@ -420,11 +425,9 @@ export function registerUpdateCommand(program: Command): void {
     .option('--dry-run', 'Preview update changes without applying them')
     .option('--force', 'Apply breaking config migrations without confirmation')
     .description('Update the toolkit to the latest version')
-    .action(
-      async (commandOptions: { dryRun?: boolean; force?: boolean }) => {
-        await handleUpdateCommand(commandOptions);
-      },
-    );
+    .action(async (commandOptions: { dryRun?: boolean; force?: boolean }) => {
+      await handleUpdateCommand(commandOptions);
+    });
 }
 
 /**

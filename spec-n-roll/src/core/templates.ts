@@ -17,7 +17,7 @@ const STEP_TEMPLATE_FILES: Record<string, string> = {
 };
 
 /**
- * Resolves the absolute path to a bundled step output template file.
+ * Resolves the absolute path to a step output template file.
  *
  * @param stepId - Workflow step id such as `specify`, `plan`, or `tasks`.
  * @returns Absolute path to the template source file.

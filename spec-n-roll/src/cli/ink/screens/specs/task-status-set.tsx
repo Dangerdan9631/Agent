@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Box, Text } from 'ink';
 
 import {
@@ -9,6 +9,7 @@ import {
 import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
+import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
 
 /**
  * Input accepted by the interactive task status mutation path.
@@ -74,6 +75,25 @@ export function TaskStatusSetScreen(): React.ReactElement {
   const selected = session.selectedTaskSpec;
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const extraRows = useMemo(() => {
+    let rows = 1;
+    if (selected == null) {
+      rows += 1;
+    } else {
+      rows += 1;
+    }
+
+    if (message != null) {
+      rows += 1;
+    }
+
+    if (error != null) {
+      rows += 1;
+    }
+
+    return rows;
+  }, [error, message, selected]);
+  useSelectionRowContribution(extraRows);
 
   const setStatus = (item: StatusItem): void => {
     if (selected == null) {

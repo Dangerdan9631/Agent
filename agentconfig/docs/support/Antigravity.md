@@ -206,7 +206,7 @@ Skills are reusable packages of knowledge that extend what the agent can do. Ant
 
 1. **Discovery** — At startup, the agent loads only the `name` and `description` of each available skill
 2. **Activation** — If a skill's description matches the current task, the agent reads the full `SKILL.md` into context
-3. **Execution** — The agent follows the skill's instructions, optionally running bundled scripts or loading referenced files
+3. **Execution** — The agent follows the skill's instructions, optionally running scripts or loading referenced files
 
 ### Skill Locations
 

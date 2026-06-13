@@ -31,7 +31,7 @@ export function findToolkitPackageRoot(startDir: string): string {
 
 /**
  * Checks whether the current module URL matches the script path Node was asked
- * to execute, with a filename fallback for bundled Windows entrypoints.
+ * to execute, with a filename fallback for Windows entrypoints.
  *
  * @param argvEntry - `process.argv[1]` from the current process. Undefined means the module was imported.
  * @param moduleUrl - `import.meta.url` from the module performing the check.

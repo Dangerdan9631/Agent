@@ -150,7 +150,7 @@ export const extensionAgentMcpConfigSchema = z
   .strict();
 
 /**
- * Agent MCP configuration block for bundled agent extensions.
+ * Agent MCP configuration block for agent extensions.
  */
 export type ExtensionAgentMcpConfig = z.infer<typeof extensionAgentMcpConfigSchema>;
 
@@ -175,7 +175,7 @@ export const extensionAgentSetupSchema = z
   .strict();
 
 /**
- * Agent setup block required for bundled agent extensions.
+ * Agent setup block required for agent extensions.
  */
 export type ExtensionAgentSetup = z.infer<typeof extensionAgentSetupSchema>;
 
@@ -209,7 +209,7 @@ export const extensionManifestSchema = z
      */
     entrypoint: z.string().min(1).optional(),
     /**
-     * Optional agent integration block; required for bundled agent extensions.
+     * Optional agent integration block; required for agent extensions.
      */
     agentSetup: extensionAgentSetupSchema.optional(),
     /**

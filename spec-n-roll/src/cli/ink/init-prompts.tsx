@@ -57,7 +57,7 @@ export interface AgentMultiSelectPromptProps {
 }
 
 /**
- * Renders the bundled agent multi-select prompt shared by init flows.
+ * Renders the agent multi-select prompt shared by init flows.
  *
  * @param props - Available agent ids and completion callbacks.
  * @returns React element for the multi-select prompt.

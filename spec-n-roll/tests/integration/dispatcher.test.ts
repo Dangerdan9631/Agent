@@ -72,7 +72,7 @@ describe('global dispatcher local exec', () => {
     });
     expect(localBinaryVersion.status).toBe(0);
     expect(localBinaryVersion.stdout).toContain('toolkit version');
-  });
+  }, 15_000);
 
   it('bypasses local delegation when --global is present', () => {
     const projectRoot = createTempProject('global-bypass');

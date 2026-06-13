@@ -126,7 +126,11 @@ describe('workflow variant loading', () => {
       )}\n`,
       'utf8',
     );
-    writeFileSync(path.join(extensionDir, 'hook.mjs'), 'export async function handler() {}\n', 'utf8');
+    writeFileSync(
+      path.join(extensionDir, 'hook.mjs'),
+      'export async function handler() {}\n',
+      'utf8',
+    );
 
     const configPath = path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH);
     const rawConfig = JSON.parse(readFileSync(configPath, 'utf8')) as ReturnType<

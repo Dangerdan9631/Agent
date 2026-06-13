@@ -1,8 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
+import type { SelectedContextChangeHandler } from '../../app/App.js';
+import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
+import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
 import { listAgentSummaries, type AgentSummary } from '../../read-models/agents.js';
+
+/**
+ * Selectable agent row with its backing summary.
+ */
+interface AgentListItem extends SelectableListItem {
+  /**
+   * Read-only agent summary represented by this row.
+   */
+  summary: AgentSummary;
+}
+
+/**
+ * Props for the agents list screen.
+ */
+export interface AgentsListScreenProps {
+  /**
+   * Called when keyboard focus moves to an agent row with read-only context.
+   */
+  onContextChange?: SelectedContextChangeHandler;
+}
 
 /**
  * Formats the configuration state for an agent row.
@@ -15,15 +38,82 @@ function agentState(agent: AgentSummary): string {
 }
 
 /**
- * Renders bundled and configured agents with a local configured-only toggle.
+ * Builds read-only focus context for an agent row.
+ *
+ * @param agent - Agent summary to describe.
+ * @param configuredOnly - Whether the screen is currently filtering to configured agents only.
+ * @returns Selected option context derived from agent metadata and project configuration.
+ */
+function agentContext(agent: AgentSummary, configuredOnly: boolean): SelectableListItem['context'] {
+  return {
+    id: `agent:${agent.agentId}`,
+    title: `Agent ${agent.agentId}`,
+    summary: `${agent.displayName} is ${agentState(agent)} in this project.`,
+    status: agent.isConfigured ? 'Configured and enabled.' : 'Bundled but not configured.',
+    details: [
+      configuredOnly ? 'Shown in configured-only filter.' : 'Shown in all agents filter.',
+      `Command generation: ${agent.isEnabled ? 'enabled' : 'disabled'}.`,
+    ],
+    nextStep: 'Use add or remove shortcuts to change project configuration.',
+  };
+}
+
+/**
+ * Builds selectable agent rows from summaries.
+ *
+ * @param agents - Agent summaries to render.
+ * @param configuredOnly - Whether the screen is currently filtering to configured agents only.
+ * @returns Selectable rows for the agents list.
+ */
+function buildAgentItems(
+  agents: readonly AgentSummary[],
+  configuredOnly: boolean,
+): readonly AgentListItem[] {
+  return agents.map((agent) => ({
+    id: agent.agentId,
+    label: `${agent.agentId} - ${agent.displayName}`,
+    description: agentState(agent),
+    context: agentContext(agent, configuredOnly),
+    summary: agent,
+  }));
+}
+
+/**
+ * Renders and configured agents with a local configured-only toggle.
  *
  * @returns React element for the agents list screen.
  */
-export function AgentsListScreen(): React.ReactElement {
+export function AgentsListScreen(props: AgentsListScreenProps): React.ReactElement {
   const session = useSession();
   const [configuredOnly, setConfiguredOnly] = useState(false);
   const [agents, setAgents] = useState<AgentSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const items = useMemo(
+    () => (agents == null ? [] : buildAgentItems(agents, configuredOnly)),
+    [agents, configuredOnly],
+  );
+  const reportFocusedContext = useCallback(
+    (item: AgentListItem | undefined): void => {
+      props.onContextChange?.(item?.context);
+    },
+    [props.onContextChange],
+  );
+  const ignoreAgentRowActivation = useCallback((): void => undefined, []);
+  const extraRows = useMemo(() => {
+    let rows = 2;
+    if (error != null) {
+      rows += 1;
+    }
+
+    if (agents == null) {
+      rows += 1;
+    } else if (agents.length === 0) {
+      rows += 1;
+    }
+
+    return rows;
+  }, [agents, error]);
+  useSelectionRowContribution(extraRows);
 
   useInput((input) => {
     if (input === 't') {
@@ -70,11 +160,14 @@ export function AgentsListScreen(): React.ReactElement {
       </Text>
       {error != null ? <Text color="red">{error}</Text> : null}
       {agents == null ? <Text color="gray">Loading agents...</Text> : null}
-      {agents?.map((agent) => (
-        <Text key={agent.agentId}>
-          {agent.agentId} - {agent.displayName} - {agentState(agent)}
-        </Text>
-      ))}
+      {agents != null && agents.length === 0 ? <Text color="gray">No agents found.</Text> : null}
+      {agents != null && agents.length > 0 ? (
+        <SelectableList
+          items={items}
+          onFocusChange={reportFocusedContext}
+          onSelect={ignoreAgentRowActivation}
+        />
+      ) : null}
     </Box>
   );
 }

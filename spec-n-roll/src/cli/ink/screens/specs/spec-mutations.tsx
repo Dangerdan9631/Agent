@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Text } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
+import { useSelectionRowContribution } from '../../components/SelectionRegion.js';
 import type { RouteId } from '../../app/navigation.js';
 
 /**
@@ -59,6 +60,8 @@ const SPEC_MUTATION_ITEMS: readonly SpecMutationItem[] = [
 export function SpecMutationsScreen(): React.ReactElement {
   const session = useSession();
   const selected = session.selectedTaskSpec;
+  const extraRows = useMemo(() => (selected == null ? 2 : 2), [selected]);
+  useSelectionRowContribution(extraRows);
 
   const openMutation = (item: SpecMutationItem): void => {
     session.pushRoute(item.routeId, selected?.label);

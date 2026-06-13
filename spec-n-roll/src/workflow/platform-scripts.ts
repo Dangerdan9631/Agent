@@ -53,7 +53,10 @@ export interface PlatformScriptDeps {
    * @param args - Arguments passed to the executable.
    * @returns Exit code and captured stdout/stderr.
    */
-  spawn: (command: string, args: string[]) => {
+  spawn: (
+    command: string,
+    args: string[],
+  ) => {
     status: number | null;
     stdout: string;
     stderr: string;
@@ -61,7 +64,7 @@ export interface PlatformScriptDeps {
 }
 
 /**
- * Base names (without extension) for bundled automation script pairs installed by init.
+ * Base names (without extension) for automation script pairs installed by init.
  */
 export const BUNDLED_SCRIPT_BASE_NAMES = ['check-prerequisites'] as const;
 
@@ -151,7 +154,7 @@ export function resolveProjectScriptPath(
 }
 
 /**
- * Resolves the toolkit directory containing bundled script source files.
+ * Resolves the toolkit directory containing script source files.
  *
  * @param toolkitRoot - Absolute path to the toolkit package root.
  * @returns Absolute path to `dist/scripts` when built, otherwise `src/scripts`.
@@ -210,13 +213,12 @@ export function checkShellRuntime(
 
   return {
     available: false,
-    remediation:
-      'Install bash and ensure it is available (for example /bin/bash or bash on PATH).',
+    remediation: 'Install bash and ensure it is available (for example /bin/bash or bash on PATH).',
   };
 }
 
 /**
- * Installs bundled paired `.sh` and `.ps1` scripts into a project.
+ * Installs paired `.sh` and `.ps1` scripts into a project.
  *
  * @param projectRoot - Absolute path to the project root.
  * @param toolkitRoot - Absolute path to the toolkit package root.

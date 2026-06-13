@@ -91,7 +91,8 @@ export interface LivingSpecRoute {
 
 const DOMAIN_RULES: ReadonlyArray<{ pattern: RegExp; domain: string }> = [
   {
-    pattern: /\b(user\s+)?auth(entication)?|login|oauth|sign[\s-]?in|sign[\s-]?up|two[\s-]?factor\b/i,
+    pattern:
+      /\b(user\s+)?auth(entication)?|login|oauth|sign[\s-]?in|sign[\s-]?up|two[\s-]?factor\b/i,
     domain: 'user-authentication',
   },
   {
@@ -367,7 +368,12 @@ export function removeDeprecatedScenarios(content: string, scenarioNames: string
     mutableLines.splice(range.start, range.end - range.start);
   }
 
-  return mutableLines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+  return (
+    mutableLines
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trimEnd() + '\n'
+  );
 }
 
 /**
@@ -394,10 +400,7 @@ export function applyScenarioChanges(
 
   for (const update of scenariosToUpdate) {
     const existing = existingByName.get(update.name);
-    const mergedTags = applyAdditiveTaskTags(
-      update.tags ?? existing?.tags ?? [],
-      taskSpecId,
-    );
+    const mergedTags = applyAdditiveTaskTags(update.tags ?? existing?.tags ?? [], taskSpecId);
     const block = renderScenarioBlock({ ...update, tags: mergedTags }, taskSpecId);
 
     if (existing != null) {

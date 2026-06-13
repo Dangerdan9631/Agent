@@ -19,7 +19,7 @@ export interface ListAgentsOptions {
 }
 
 /**
- * Formats bundled agent summaries as aligned id and display name lines with column headers.
+ * Formats agent summaries as aligned id and display name lines with column headers.
  *
  * @param agents - Bundled agent summaries to format.
  * @returns Multi-line text with a header row followed by one agent per line.
@@ -47,12 +47,14 @@ export function registerListAgentsCommand(list: Command): void {
 }
 
 /**
- * Resolves bundled agent summaries to list for the current options.
+ * Resolves agent summaries to list for the current options.
  *
  * @param options - Listing mode and project root for enabled-agent lookup.
  * @returns Agent id and display name pairs in stable id order.
  */
-export async function resolveListedAgents(options: ListAgentsOptions): Promise<BundledAgentSummary[]> {
+export async function resolveListedAgents(
+  options: ListAgentsOptions,
+): Promise<BundledAgentSummary[]> {
   const bundledAgents = listBundledAgents();
 
   if (options.enabledOnly !== true) {
@@ -76,7 +78,9 @@ export async function resolveListedAgents(options: ListAgentsOptions): Promise<B
  *
  * @param commandOptions - Parsed Commander options including `enabled`.
  */
-export async function handleListAgentsCommand(commandOptions: { enabled?: boolean } = {}): Promise<void> {
+export async function handleListAgentsCommand(
+  commandOptions: { enabled?: boolean } = {},
+): Promise<void> {
   const agents = await resolveListedAgents({
     enabledOnly: commandOptions.enabled === true,
     projectRoot: process.cwd(),

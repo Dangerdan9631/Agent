@@ -50,12 +50,7 @@ describe('spec-n-roll update', () => {
       'config',
       'workflow.config.json',
     );
-    const metadataPath = path.join(
-      projectRoot,
-      '.spec-n-roll',
-      'config',
-      'project-metadata.json',
-    );
+    const metadataPath = path.join(projectRoot, '.spec-n-roll', 'config', 'project-metadata.json');
     const specPath = path.join(projectRoot, 'specs', '001-user-owned', 'spec.md');
     const agentsMdPath = path.join(projectRoot, '.spec-n-roll', 'AGENTS.md');
     const cursorMcpPath = path.join(projectRoot, '.cursor', 'mcp.json');
@@ -110,8 +105,8 @@ describe('spec-n-roll update', () => {
     expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll'))).toBe(
       true,
     );
-    expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp'))).toBe(
-      true,
-    );
+    expect(
+      existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp')),
+    ).toBe(true);
   });
 });

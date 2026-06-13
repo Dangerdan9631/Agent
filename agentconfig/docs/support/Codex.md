@@ -205,7 +205,7 @@ Codex uses **progressive disclosure** to keep context footprint small:
 
 1. **Discovery:** At startup, only each skill's `name`, `description`, file path, and optional `openai.yaml` metadata are loaded.
 2. **Activation:** When a task matches a skill's description (explicitly via `$skill-name` or `$`, or implicitly by Codex), the full `SKILL.md` instructions are loaded into context.
-3. **Execution:** Codex follows the instructions, optionally running bundled scripts or loading referenced files.
+3. **Execution:** Codex follows the instructions, optionally running scripts or loading referenced files.
 
 ### Skill Directory Structure
 
