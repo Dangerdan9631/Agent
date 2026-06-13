@@ -12,7 +12,7 @@ A running terminal UI bound to one resolved project root.
 - `isInitialized`: Whether `workflow.config.json` exists and parses
 - `navigationStack`: Ordered list of `RouteId` values representing current drill-down path
 - `selectedTaskSpec`: Optional `TaskSpecIdentity` set when a spec is targeted for detail or mutation flows
-- `binaryContext`: `local` | `global` | `direct` — from version report resolution
+- `binaryContext`: `local` | `global` — from the actually running full CLI binary
 - `localBinaryPath`: Absolute path when operating against a project-local full CLI (nullable)
 
 **Validation**:

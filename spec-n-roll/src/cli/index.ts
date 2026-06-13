@@ -19,6 +19,7 @@ import {
 import { registerWorkflowCommand } from './commands/workflow.js';
 import { isCurrentModuleEntrypoint } from '../core/paths.js';
 import { stripGlobalFlag } from './dispatcher.js';
+import { launchInteractiveApp } from './interactive/launch.js';
 
 /**
  * Creates and configures the Commander program with all CLI commands and options.
@@ -49,6 +50,16 @@ function createProgram(): Command {
 }
 
 /**
+ * Determines whether stripped command arguments should enter the interactive app.
+ *
+ * @param args - Command arguments after global flag handling.
+ * @returns True when the full CLI was invoked without a subcommand or option.
+ */
+export function shouldLaunchInteractiveApp(args: readonly string[]): boolean {
+  return args.length === 0;
+}
+
+/**
  * Entry point for the full CLI binary that parses subcommands and options.
  *
  * @param argv - The command line arguments to parse.
@@ -59,6 +70,11 @@ export async function main(argv: string[] = process.argv): Promise<void> {
 
   if (argvRequestsVersion(args)) {
     printVersionReport({ executedBinaryPath: argv[1] });
+    return;
+  }
+
+  if (shouldLaunchInteractiveApp(args)) {
+    await launchInteractiveApp({ executedBinaryPath: argv[1] });
     return;
   }
 

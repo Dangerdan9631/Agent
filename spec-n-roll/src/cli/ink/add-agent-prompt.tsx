@@ -9,7 +9,7 @@ import { getBundledAgentGenerator } from '../../agents/extension-loader.js';
  * @param agentId - Extension id.
  * @returns Human-readable agent name when available.
  */
-function agentLabel(agentId: string): string {
+export function agentLabel(agentId: string): string {
   const generator = getBundledAgentGenerator(agentId);
   return generator?.manifest.name ?? agentId;
 }
@@ -41,7 +41,7 @@ export function promptForAgentToAdd(availableAgentIds: string[]): Promise<string
 /**
  * Props for the single-select agent picker component.
  */
-interface AgentSingleSelectPromptProps {
+export interface AgentSingleSelectPromptProps {
   /**
    * Agent ids available for selection.
    */
@@ -59,7 +59,7 @@ interface AgentSingleSelectPromptProps {
 /**
  * Ink UI that selects one bundled agent with arrow keys and enter.
  */
-function AgentSingleSelectPrompt({
+export function AgentSingleSelectPrompt({
   availableAgentIds,
   onComplete,
   onCancel,

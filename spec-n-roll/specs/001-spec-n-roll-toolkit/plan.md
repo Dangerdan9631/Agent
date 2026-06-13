@@ -205,7 +205,7 @@ Toolkit-authored documentation (`docs/` at the toolkit repository root) is **not
 | **Full CLI** | `.spec-n-roll/cli/bin/spec-n-roll` (local) or co-bundled with dispatcher (global fallback / `--global`) | Argument parsing, subcommands, Ink UI, update/config; bare `spec-n-roll` → interactive Ink; `spec-n-roll <subcommand>` → non-interactive sync exit |
 | **MCP server** | `.spec-n-roll/cli/bin/spec-n-roll-mcp` only (never global) | stdio MCP transport; thin interface over shared core library; referenced from each configured agent's project-local MCP config file(s) via `init` / `config add-agent`; paths refreshed on `update` |
 
-Version report (`-v`/`--version`): full CLI prints dispatcher version, executed binary version, `local`/`global` target, and absolute local binary path when applicable. Direct full CLI invocation (no dispatcher) reports binary version and indicates direct invocation.
+Version report (`-v`/`--version`): full CLI prints dispatcher version when available, executed binary version, `local`/`global` target, and absolute local binary path when applicable. The target is based on which full CLI binary is actually running.
 
 ### Core Library Mutations (MCP + CLI parity)
 

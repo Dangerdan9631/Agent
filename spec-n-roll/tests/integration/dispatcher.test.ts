@@ -65,13 +65,13 @@ describe('global dispatcher local exec', () => {
     const normalizedOutput = delegated.stdout.replace(/\\/g, '/');
     expect(normalizedOutput).toContain(localCliPath.replace(/\\/g, '/'));
 
-    const directLocal = spawnSync(process.execPath, [localCliPath, 'version'], {
+    const localBinaryVersion = spawnSync(process.execPath, [localCliPath, 'version'], {
       cwd: projectRoot,
       encoding: 'utf8',
       env: buildDelegatedCliEnv(process.env),
     });
-    expect(directLocal.status).toBe(0);
-    expect(directLocal.stdout).toContain('toolkit version');
+    expect(localBinaryVersion.status).toBe(0);
+    expect(localBinaryVersion.stdout).toContain('toolkit version');
   });
 
   it('bypasses local delegation when --global is present', () => {

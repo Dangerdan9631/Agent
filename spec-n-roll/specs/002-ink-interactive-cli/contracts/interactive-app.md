@@ -116,7 +116,7 @@ Screens with route ids ending in `-list`, `-detail`, `-view`, and `main-menu` MU
 Persistent footer on all screens showing:
 
 - Current `projectRoot` (abbreviated when wider than terminal)
-- Binary context: `local` / `global` / `direct` when resolvable
+- Binary context: `local` / `global` based on the actually running full CLI binary
 - Breadcrumb from `navigationStack`
 
 ## Error Handling

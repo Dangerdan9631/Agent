@@ -52,15 +52,15 @@ Project-local (or global fallback) binary with argument parsing, subcommands, In
 
 - `binaryVersion`: Version of the executed full CLI binary
 - `invocationMode`: `interactive` (bare `spec-n-roll` → Ink) or `non-interactive` (`spec-n-roll <subcommand> [args]` → sync exit)
-- `invocationContext`: `dispatcher`, `direct`, or `local-exec`
-- `dispatcherVersion`: Dispatcher version when invoked via dispatcher (nullable on direct invocation)
+- `invocationContext`: `global` or `local`
+- `dispatcherVersion`: Dispatcher version when the report is produced after dispatcher handoff (nullable otherwise)
 
 **Validation**:
 
 - Installed at `.spec-n-roll/cli/bin/spec-n-roll` (+ `.cmd` on Windows) when project-local.
 - Bare invocation spawns Ink; subcommand invocation runs synchronously and exits.
 - Shares `src/core/` with MCP server — no duplicated mutation logic.
-- `-v`/`--version` prints combined report when invoked via dispatcher; direct invocation reports binary version and indicates direct invocation.
+- `-v`/`--version` prints the running binary version and reports whether that binary is local or global.
 
 ## MCP Server
 

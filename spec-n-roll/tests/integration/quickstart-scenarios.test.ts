@@ -182,14 +182,14 @@ describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
     expect(globalVersion.stdout).not.toContain('.spec-n-roll/cli/bin/spec-n-roll');
 
     const localCliPath = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll');
-    const directLocal = spawnSync(process.execPath, [localCliPath, 'version'], {
+    const localBinaryVersion = spawnSync(process.execPath, [localCliPath, 'version'], {
       cwd: projectRoot,
       encoding: 'utf8',
       env: buildDelegatedCliEnv(process.env),
     });
-    expect(directLocal.status).toBe(0);
-    expect(directLocal.stdout).toContain('toolkit version');
-    expect(directLocal.stdout).toContain('local');
+    expect(localBinaryVersion.status).toBe(0);
+    expect(localBinaryVersion.stdout).toContain('toolkit version');
+    expect(localBinaryVersion.stdout).toContain('local');
   });
 });
 

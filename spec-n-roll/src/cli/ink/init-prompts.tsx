@@ -41,7 +41,7 @@ export function promptForAgentSelection(availableAgentIds: string[]): Promise<st
 /**
  * Props for the multi-select agent picker component.
  */
-interface AgentMultiSelectPromptProps {
+export interface AgentMultiSelectPromptProps {
   /**
    * Agent ids available for selection.
    */
@@ -57,9 +57,12 @@ interface AgentMultiSelectPromptProps {
 }
 
 /**
- * Ink UI that toggles bundled agent selection with space and confirms with enter.
+ * Renders the bundled agent multi-select prompt shared by init flows.
+ *
+ * @param props - Available agent ids and completion callbacks.
+ * @returns React element for the multi-select prompt.
  */
-function AgentMultiSelectPrompt({
+export function AgentMultiSelectPrompt({
   availableAgentIds,
   onComplete,
   onCancel,

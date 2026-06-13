@@ -7,9 +7,9 @@ import { findToolkitPackageRoot } from '../../core/paths.js';
 import { findLocalCli } from '../dispatcher.js';
 
 /**
- * Invocation target describing how the full CLI binary was executed.
+ * Invocation target describing which full CLI binary is running.
  */
-export type VersionInvocationTarget = 'local' | 'global' | 'direct';
+export type VersionInvocationTarget = 'local' | 'global';
 
 /**
  * Combined version report for dispatcher and full CLI surfaces.
@@ -24,7 +24,7 @@ export interface VersionReport {
    */
   dispatcherVersion?: string;
   /**
-   * Whether the binary ran as local, global, or direct invocation.
+   * Whether the running binary is project-local or global.
    */
   invocation: VersionInvocationTarget;
   /**
@@ -89,11 +89,7 @@ function detectLocalInvocation(
     }
   }
 
-  if (process.env.SPEC_N_ROLL_DISPATCHED === '1') {
-    return { invocation: 'global' };
-  }
-
-  return { invocation: 'direct' };
+  return { invocation: 'global' };
 }
 
 /**

@@ -25,10 +25,10 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 **Purpose**: Add interactive-layer dependencies and directory skeleton before shell implementation.
 
-- [ ] T001 Add `ink-testing-library` dev dependency in package.json for Ink screen tests
-- [ ] T002 Create interactive directory skeleton per plan.md: `src/cli/ink/app/`, `src/cli/ink/components/`, `src/cli/ink/screens/` (with `specs/`, `workflows/`, `agents/`, `project/`, `setup/` subdirs), `src/cli/ink/read-models/`, `src/cli/interactive/`, `tests/unit/interactive/`, `tests/unit/interactive/screens/`
-- [ ] T003 [P] Update `src/cli/ink/README.md` to describe app shell, screens, read-models, and reuse of existing prompt modules
-- [ ] T004 [P] Add multi-spec interactive fixture project in `tests/fixtures/interactive-multi-spec/` (initialized project with 2+ task specs, mixed lifecycle statuses, one unrecognized `specs/` directory)
+- [X] T001 Add `ink-testing-library` dev dependency in package.json for Ink screen tests
+- [X] T002 Create interactive directory skeleton per plan.md: `src/cli/ink/app/`, `src/cli/ink/components/`, `src/cli/ink/screens/` (with `specs/`, `workflows/`, `agents/`, `project/`, `setup/` subdirs), `src/cli/ink/read-models/`, `src/cli/interactive/`, `tests/unit/interactive/`, `tests/unit/interactive/screens/`
+- [X] T003 [P] Update `src/cli/ink/README.md` to describe app shell, screens, read-models, and reuse of existing prompt modules
+- [X] T004 [P] Add multi-spec interactive fixture project in `tests/fixtures/interactive-multi-spec/` (initialized project with 2+ task specs, mixed lifecycle statuses, one unrecognized `specs/` directory)
 
 **Checkpoint**: `npm install` succeeds; directory skeleton exists; fixture layout documented in fixture README if needed.
 
@@ -40,20 +40,20 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Define `RouteId` union, navigation stack helpers, and breadcrumb titles in `src/cli/ink/app/navigation.ts` per `data-model.md`
-- [ ] T006 Implement `SessionContext` provider (projectRoot, isInitialized, navigationStack, selectedTaskSpec, binaryContext) in `src/cli/ink/app/session-context.tsx`
-- [ ] T007 [P] Implement `SelectableList` keyboard list with focus indicator in `src/cli/ink/components/SelectableList.tsx`
-- [ ] T008 [P] Implement `StatusBar` footer (project root, binary context, breadcrumb) in `src/cli/ink/components/StatusBar.tsx`
-- [ ] T009 [P] Implement `ErrorBanner` inline recoverable error display in `src/cli/ink/components/ErrorBanner.tsx`
-- [ ] T010 [P] Implement `ConfirmDialog` reusable confirmation gate in `src/cli/ink/components/ConfirmDialog.tsx`
-- [ ] T011 [P] Implement `NumberedSelectionPrompt` for multi Active task spec pick in `src/cli/ink/components/NumberedSelectionPrompt.tsx` (FR-011)
-- [ ] T012 Implement `App.tsx` shell with route rendering, global `q`/`Esc`/`b`/`?` key handling in `src/cli/ink/app/App.tsx` per `contracts/interactive-app.md`
-- [ ] T013 Implement `main-menu.tsx` with five top-level sections and uninitialized guided state in `src/cli/ink/screens/main-menu.tsx` (SC-005)
-- [ ] T014 Implement `launchInteractiveApp()` with project root resolution and Ink render lifecycle in `src/cli/interactive/launch.ts`
-- [ ] T015 Implement bare-invocation detection and branch to `launchInteractiveApp()` in `src/cli/index.ts` (FR-001, FR-002; subcommands unchanged)
-- [ ] T016 [P] Implement `resolveTaskSpecForMutation()` selection helper (session context → single Active auto-select → numbered prompt → error) in `src/cli/ink/read-models/task-spec-selection.ts`
-- [ ] T017 [P] Write failing unit tests for navigation stack push/pop and route titles in `tests/unit/interactive/navigation.test.ts`
-- [ ] T018 [P] Write failing integration test that bare `spec-n-roll` launches Ink and `spec-n-roll init --help` stays non-interactive in `tests/integration/interactive-launch.test.ts`
+- [X] T005 Define `RouteId` union, navigation stack helpers, and breadcrumb titles in `src/cli/ink/app/navigation.ts` per `data-model.md`
+- [X] T006 Implement `SessionContext` provider (projectRoot, isInitialized, navigationStack, selectedTaskSpec, binaryContext) in `src/cli/ink/app/session-context.tsx`
+- [X] T007 [P] Implement `SelectableList` keyboard list with focus indicator in `src/cli/ink/components/SelectableList.tsx`
+- [X] T008 [P] Implement `StatusBar` footer (project root, binary context, breadcrumb) in `src/cli/ink/components/StatusBar.tsx`
+- [X] T009 [P] Implement `ErrorBanner` inline recoverable error display in `src/cli/ink/components/ErrorBanner.tsx`
+- [X] T010 [P] Implement `ConfirmDialog` reusable confirmation gate in `src/cli/ink/components/ConfirmDialog.tsx`
+- [X] T011 [P] Implement `NumberedSelectionPrompt` for multi Active task spec pick in `src/cli/ink/components/NumberedSelectionPrompt.tsx` (FR-011)
+- [X] T012 Implement `App.tsx` shell with route rendering, global `q`/`Esc`/`b`/`?` key handling in `src/cli/ink/app/App.tsx` per `contracts/interactive-app.md`
+- [X] T013 Implement `main-menu.tsx` with five top-level sections and uninitialized guided state in `src/cli/ink/screens/main-menu.tsx` (SC-005)
+- [X] T014 Implement `launchInteractiveApp()` with project root resolution and Ink render lifecycle in `src/cli/interactive/launch.ts`
+- [X] T015 Implement bare-invocation detection and branch to `launchInteractiveApp()` in `src/cli/index.ts` (FR-001, FR-002; subcommands unchanged)
+- [X] T016 [P] Implement `resolveTaskSpecForMutation()` selection helper (session context → single Active auto-select → numbered prompt → error) in `src/cli/ink/read-models/task-spec-selection.ts`
+- [X] T017 [P] Write failing unit tests for navigation stack push/pop and route titles in `tests/unit/interactive/navigation.test.ts`
+- [X] T018 [P] Write failing integration test that bare `spec-n-roll` launches Ink and `spec-n-roll init --help` stays non-interactive in `tests/integration/interactive-launch.test.ts`
 
 **Checkpoint**: Bare `spec-n-roll` opens main menu; `spec-n-roll version` and subcommands exit non-interactively; T017–T018 exist and fail until screens land.
 
@@ -69,22 +69,22 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T019 [P] [US1] Write failing unit tests for `assembleTaskSpecSummary` including unrecognized directories and mismatch warnings in `tests/unit/interactive/read-models.test.ts`
-- [ ] T020 [P] [US1] Write failing integration test for browse-only navigation across all top-level sections in `tests/integration/interactive-browse.test.ts`
+- [X] T019 [P] [US1] Write failing unit tests for `assembleTaskSpecSummary` including unrecognized directories and mismatch warnings in `tests/unit/interactive/read-models.test.ts`
+- [X] T020 [P] [US1] Write failing integration test for browse-only navigation across all top-level sections in `tests/integration/interactive-browse.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T021 [P] [US1] Implement `assembleTaskSpecSummary` and `listTaskSpecSummaries` in `src/cli/ink/read-models/task-specs.ts` (compose `listTaskSpecDirectoryIdentities`, frontmatter, workflow state, artifact presence)
-- [ ] T022 [P] [US1] Implement `listWorkflowVariantSummaries` in `src/cli/ink/read-models/workflow-variants.ts` from `readWorkflowConfig`
-- [ ] T023 [P] [US1] Implement `listAgentSummaries` with configured filter in `src/cli/ink/read-models/agents.ts` (equivalent to `list agents` / `--enabled`)
-- [ ] T024 [P] [US1] Implement `loadProjectMetadataView` in `src/cli/ink/read-models/project-metadata.ts`
-- [ ] T025 [US1] Implement task specs list screen with recognized and unrecognized sections in `src/cli/ink/screens/specs/specs-list.tsx` (FR-004)
-- [ ] T026 [US1] Implement task spec detail screen with workflow state, artifacts, and warnings in `src/cli/ink/screens/specs/spec-detail.tsx` (FR-005)
-- [ ] T027 [P] [US1] Implement workflows list screen in `src/cli/ink/screens/workflows/workflows-list.tsx` (FR-006)
-- [ ] T028 [P] [US1] Implement workflow detail read-only screen in `src/cli/ink/screens/workflows/workflow-detail.tsx`
-- [ ] T029 [P] [US1] Implement agents list screen with all/configured toggle in `src/cli/ink/screens/agents/agents-list.tsx` (FR-007)
-- [ ] T030 [US1] Implement project metadata read-only view screen in `src/cli/ink/screens/project/project-metadata-view.tsx`
-- [ ] T031 [US1] Wire US1 screens into `App.tsx` route table and main-menu navigation keys 1–4
+- [X] T021 [P] [US1] Implement `assembleTaskSpecSummary` and `listTaskSpecSummaries` in `src/cli/ink/read-models/task-specs.ts` (compose `listTaskSpecDirectoryIdentities`, frontmatter, workflow state, artifact presence)
+- [X] T022 [P] [US1] Implement `listWorkflowVariantSummaries` in `src/cli/ink/read-models/workflow-variants.ts` from `readWorkflowConfig`
+- [X] T023 [P] [US1] Implement `listAgentSummaries` with configured filter in `src/cli/ink/read-models/agents.ts` (equivalent to `list agents` / `--enabled`)
+- [X] T024 [P] [US1] Implement `loadProjectMetadataView` in `src/cli/ink/read-models/project-metadata.ts`
+- [X] T025 [US1] Implement task specs list screen with recognized and unrecognized sections in `src/cli/ink/screens/specs/specs-list.tsx` (FR-004)
+- [X] T026 [US1] Implement task spec detail screen with workflow state, artifacts, and warnings in `src/cli/ink/screens/specs/spec-detail.tsx` (FR-005)
+- [X] T027 [P] [US1] Implement workflows list screen in `src/cli/ink/screens/workflows/workflows-list.tsx` (FR-006)
+- [X] T028 [P] [US1] Implement workflow detail read-only screen in `src/cli/ink/screens/workflows/workflow-detail.tsx`
+- [X] T029 [P] [US1] Implement agents list screen with all/configured toggle in `src/cli/ink/screens/agents/agents-list.tsx` (FR-007)
+- [X] T030 [US1] Implement project metadata read-only view screen in `src/cli/ink/screens/project/project-metadata-view.tsx`
+- [X] T031 [US1] Wire US1 screens into `App.tsx` route table and main-menu navigation keys 1–4
 
 **Checkpoint**: Browse flows pass T019–T020; developer can locate any spec in ≤20-spec fixture within interactive latency (SC-001); browse introduces no file writes.
 
@@ -100,20 +100,20 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T032 [P] [US2] Write failing parity integration test skeleton in `tests/integration/interactive-cli-parity.test.ts` covering `task.status.set`, `task.checkbox.set`, `project.metadata.write`
-- [ ] T033 [P] [US2] Write failing parity tests for `config.agent.add`, `config.agent.remove`, `workflow.state.write` in `tests/integration/interactive-cli-parity.test.ts`
+- [X] T032 [P] [US2] Write failing parity integration test skeleton in `tests/integration/interactive-cli-parity.test.ts` covering `task.status.set`, `task.checkbox.set`, `project.metadata.write`
+- [X] T033 [P] [US2] Write failing parity tests for `config.agent.add`, `config.agent.remove`, `workflow.state.write` in `tests/integration/interactive-cli-parity.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T034 [US2] Implement spec mutations submenu screen in `src/cli/ink/screens/specs/spec-mutations.tsx` (shortcuts to supported mutations per FR-008)
-- [ ] T035 [P] [US2] Implement task status set interactive flow calling `setTaskSpecStatus` in `src/cli/ink/screens/specs/task-status-set.tsx`
-- [ ] T036 [P] [US2] Implement task checkbox set interactive flow calling `setTaskCheckboxes` in `src/cli/ink/screens/specs/task-checkbox-set.tsx`
-- [ ] T037 [US2] Implement workflow state read display and write form with overwrite confirmation in `src/cli/ink/screens/specs/workflow-state.tsx` (FR-012)
-- [ ] T038 [P] [US2] Implement agent add screen reusing `add-agent-prompt.tsx` and `runConfigAgentAdd` in `src/cli/ink/screens/agents/agent-add.tsx` (FR-010)
-- [ ] T039 [US2] Implement agent remove screen with explicit confirmation and `runConfigAgentRemove` in `src/cli/ink/screens/agents/agent-remove.tsx` (FR-012)
-- [ ] T040 [US2] Implement project metadata edit form calling `writeProjectMetadata` in `src/cli/ink/screens/project/project-metadata-edit.tsx`
-- [ ] T041 [US2] Complete parity coverage for all write rows in `contracts/cli-operation-map.md` in `tests/integration/interactive-cli-parity.test.ts` (SC-003)
-- [ ] T042 [US2] Wire mutation screens into `App.tsx` routes; ensure read-only list/detail/view routes never invoke write orchestrators (FR-013)
+- [X] T034 [US2] Implement spec mutations submenu screen in `src/cli/ink/screens/specs/spec-mutations.tsx` (shortcuts to supported mutations per FR-008)
+- [X] T035 [P] [US2] Implement task status set interactive flow calling `setTaskSpecStatus` in `src/cli/ink/screens/specs/task-status-set.tsx`
+- [X] T036 [P] [US2] Implement task checkbox set interactive flow calling `setTaskCheckboxes` in `src/cli/ink/screens/specs/task-checkbox-set.tsx`
+- [X] T037 [US2] Implement workflow state read display and write form with overwrite confirmation in `src/cli/ink/screens/specs/workflow-state.tsx` (FR-012)
+- [X] T038 [P] [US2] Implement agent add screen reusing `add-agent-prompt.tsx` and `runConfigAgentAdd` in `src/cli/ink/screens/agents/agent-add.tsx` (FR-010)
+- [X] T039 [US2] Implement agent remove screen with explicit confirmation and `runConfigAgentRemove` in `src/cli/ink/screens/agents/agent-remove.tsx` (FR-012)
+- [X] T040 [US2] Implement project metadata edit form calling `writeProjectMetadata` in `src/cli/ink/screens/project/project-metadata-edit.tsx`
+- [X] T041 [US2] Complete parity coverage for all write rows in `contracts/cli-operation-map.md` in `tests/integration/interactive-cli-parity.test.ts` (SC-003)
+- [X] T042 [US2] Wire mutation screens into `App.tsx` routes; ensure read-only list/detail/view routes never invoke write orchestrators (FR-013)
 
 **Checkpoint**: T032–T033 and T041 pass; agent add/remove and task status flows completable with on-screen key hints (SC-004 partial); destructive flows require confirmation.
 
@@ -129,18 +129,18 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T043 [P] [US3] Write failing integration test for setup menu flows (init, version, update dry-run/apply) in `tests/integration/interactive-setup.test.ts`
+- [X] T043 [P] [US3] Write failing integration test for setup menu flows (init, version, update dry-run/apply) in `tests/integration/interactive-setup.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T044 [US3] Implement setup/maintenance menu screen in `src/cli/ink/screens/setup/setup-menu.tsx`
-- [ ] T045 [P] [US3] Implement init flow reusing `promptForAgentSelection` and `runInit` in `src/cli/ink/screens/setup/setup-init.tsx` (FR-010)
-- [ ] T046 [P] [US3] Implement version info screen using `buildVersionReport` in `src/cli/ink/screens/setup/setup-version.tsx` (FR-015)
-- [ ] T047 [US3] Implement update flow reusing `update-prompts.tsx` and `runUpdate` in `src/cli/ink/screens/setup/setup-update.tsx` (FR-010, FR-012)
-- [ ] T048 [P] [US3] Implement step instantiate interactive form calling `instantiateStepOutput` in `src/cli/ink/screens/specs/step-instantiate.tsx`
-- [ ] T049 [P] [US3] Implement spec frontmatter update form calling `updateSpecFrontmatter` in `src/cli/ink/screens/specs/spec-frontmatter-update.tsx`
-- [ ] T050 [US3] Add parity tests for `init`, `update`, `step.instantiate`, `spec.frontmatter.update` in `tests/integration/interactive-cli-parity.test.ts`
-- [ ] T051 [US3] Wire setup routes into `App.tsx` and main-menu key 5; link spec-mutation shortcuts to T048–T049
+- [X] T044 [US3] Implement setup/maintenance menu screen in `src/cli/ink/screens/setup/setup-menu.tsx`
+- [X] T045 [P] [US3] Implement init flow reusing `promptForAgentSelection` and `runInit` in `src/cli/ink/screens/setup/setup-init.tsx` (FR-010)
+- [X] T046 [P] [US3] Implement version info screen using `buildVersionReport` in `src/cli/ink/screens/setup/setup-version.tsx` (FR-015)
+- [X] T047 [US3] Implement update flow reusing `update-prompts.tsx` and `runUpdate` in `src/cli/ink/screens/setup/setup-update.tsx` (FR-010, FR-012)
+- [X] T048 [P] [US3] Implement step instantiate interactive form calling `instantiateStepOutput` in `src/cli/ink/screens/specs/step-instantiate.tsx`
+- [X] T049 [P] [US3] Implement spec frontmatter update form calling `updateSpecFrontmatter` in `src/cli/ink/screens/specs/spec-frontmatter-update.tsx`
+- [X] T050 [US3] Add parity tests for `init`, `update`, `step.instantiate`, `spec.frontmatter.update` in `tests/integration/interactive-cli-parity.test.ts`
+- [X] T051 [US3] Wire setup routes into `App.tsx` and main-menu key 5; link spec-mutation shortcuts to T048–T049
 
 **Checkpoint**: 100% of `contracts/cli-operation-map.md` operations reachable from interactive UI (SC-002); T043 passes.
 
@@ -156,16 +156,16 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 > **Write these tests FIRST — they must FAIL before implementation begins**
 
-- [ ] T052 [P] [US4] Write failing `ink-testing-library` navigation test reaching all five main-menu sections and returning in `tests/unit/interactive/screens/navigation-complete.test.tsx`
-- [ ] T053 [P] [US4] Write failing read-only session test verifying no file mutations during exploratory navigation in `tests/integration/interactive-read-only.test.ts` (SC-006)
+- [X] T052 [P] [US4] Write failing `ink-testing-library` navigation test reaching all five main-menu sections and returning in `tests/unit/interactive/screens/navigation-complete.test.ts`
+- [X] T053 [P] [US4] Write failing read-only session test verifying no file mutations during exploratory navigation in `tests/integration/interactive-read-only.test.ts` (SC-006)
 
 ### Implementation for User Story 4
 
-- [ ] T054 [US4] Add scroll-into-view behavior for `SelectableList` when focused item exceeds terminal height in `src/cli/ink/components/SelectableList.tsx`
-- [ ] T055 [P] [US4] Implement global key-hint overlay toggle (`?`) in `src/cli/ink/components/KeyHintOverlay.tsx` and wire in `App.tsx`
-- [ ] T056 [US4] Ensure destructive action flows block until `ConfirmDialog` accepted across update, agent remove, and workflow overwrite screens
-- [ ] T057 [US4] Ensure `q` quit unmounts Ink without in-flight unconfirmed writes in `src/cli/interactive/launch.ts`
-- [ ] T058 [US4] Display binary context (`local`/`global`/`direct`) in `StatusBar` using `buildVersionReport` in `src/cli/ink/components/StatusBar.tsx` (FR-015)
+- [X] T054 [US4] Add scroll-into-view behavior for `SelectableList` when focused item exceeds terminal height in `src/cli/ink/components/SelectableList.tsx`
+- [X] T055 [P] [US4] Implement global key-hint overlay toggle (`?`) in `src/cli/ink/components/KeyHintOverlay.tsx` and wire in `App.tsx`
+- [X] T056 [US4] Ensure destructive action flows block until `ConfirmDialog` accepted across update, agent remove, and workflow overwrite screens
+- [X] T057 [US4] Ensure `q` quit unmounts Ink without in-flight unconfirmed writes in `src/cli/interactive/launch.ts`
+- [X] T058 [US4] Display binary context (`local`/`global`) in `StatusBar` using `buildVersionReport` in `src/cli/ink/components/StatusBar.tsx` (FR-015)
 
 **Checkpoint**: T052–T053 pass; keyboard-only flows meet User Story 4 acceptance scenarios.
 
@@ -175,11 +175,11 @@ description: "Task list for Interactive Ink CLI Application implementation"
 
 **Purpose**: Documentation, quickstart validation, and cross-story hardening.
 
-- [ ] T059 [P] Update `docs/cli.md` interactive section to document bare launch, main-menu sections, keyboard bindings, and CLI parity per `contracts/interactive-app.md`
-- [ ] T060 [P] Update `src/cli/README.md` to describe bare vs subcommand invocation and `src/cli/interactive/launch.ts` entry
-- [ ] T061 Run all scenarios in `specs/002-ink-interactive-cli/quickstart.md` and fix gaps
-- [ ] T062 [P] Add `src/cli/ink/components/README.md` describing shared list, confirm, and status primitives
-- [ ] T063 [P] Add `src/cli/ink/read-models/README.md` describing query assembly boundaries (read-only, no writes)
+- [X] T059 [P] Update `docs/cli.md` interactive section to document bare launch, main-menu sections, keyboard bindings, and CLI parity per `contracts/interactive-app.md`
+- [X] T060 [P] Update `src/cli/README.md` to describe bare vs subcommand invocation and `src/cli/interactive/launch.ts` entry
+- [X] T061 Run all scenarios in `specs/002-ink-interactive-cli/quickstart.md` and fix gaps
+- [X] T062 [P] Add `src/cli/ink/components/README.md` describing shared list, confirm, and status primitives
+- [X] T063 [P] Add `src/cli/ink/read-models/README.md` describing query assembly boundaries (read-only, no writes)
 
 ---
 

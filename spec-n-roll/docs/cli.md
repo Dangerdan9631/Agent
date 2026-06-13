@@ -1,14 +1,15 @@
 # CLI Reference
 
-When you run the `spec-n-roll` CLI, it locates the appropriate binary to execute based on your current working directory and command.
+When you run the `spec-n-roll` CLI, its dispatcher locates the appropriate binary to execute based on your current working directory and command.
 
-It first looks for a project-local binary by walking up the directory tree looking for `.spec-n-roll/cli/bin/spec-n-roll`. If not found, it falls back to the globally installed binary instance.
+It first looks for a project-local binary by walking up the directory tree looking for `.spec-n-roll/cli/bin/spec-n-roll`. If not found, it falls back to the globally installed binary instance. Use `--global` to bypass the project-local handoff and run the globally installed CLI directly.
 
 ## spec-n-roll
 
 Specification-driven workflow toolkit for AI coding agents
 
 usage:
+
 ```shell
 spec-n-roll [options] [command]
 ```
@@ -26,13 +27,43 @@ spec-n-roll [options] [command]
 | [step](#step)         | Step output template operations             |
 | [spec](#spec)         | spec.md frontmatter operations              |
 
-Running the CLI with no command starts it in interactive mode.
+Running the full CLI with no command starts the interactive Ink application
+instead of printing Commander help. Subcommands and option-only invocations such
+as `spec-n-roll init --help` and `spec-n-roll version` remain non-interactive.
+
+### interactive mode
+
+Interactive mode opens a keyboard-first main menu with five sections:
+
+| Key | Section             | Purpose                                             |
+| --- | ------------------- | --------------------------------------------------- |
+| `1` | Task Specs          | Browse specs, inspect artifacts, and run spec tasks |
+| `2` | Workflows           | Inspect configured workflow variants and steps      |
+| `3` | Agents              | View, add, or remove configured coding agents       |
+| `4` | Project             | View or edit Spec-N-Roll project metadata           |
+| `5` | Setup / Maintenance | Initialize, view version details, or update toolkit |
+
+Global keyboard bindings are available throughout the app:
+
+| Key          | Action                   |
+| ------------ | ------------------------ |
+| `Arrow keys` | Move focus through lists |
+| `Enter`      | Select the focused item  |
+| `b` / `Esc`  | Go back one screen       |
+| `?`          | Toggle key hints         |
+| `q`          | Quit cleanly             |
+
+Interactive mutations route through the same core operations and command
+orchestrators as the CLI subcommands below. Destructive flows, including toolkit
+updates, agent removal, and workflow-state overwrites, require explicit
+confirmation before files are written.
 
 ## init
 
 Initialize Spec-N-Roll in a project
 
 Usage:
+
 ```shell
 spec-n-roll init [options] [path]
 ```
@@ -49,6 +80,7 @@ Available agents can be found using the `spec-n-roll list agents` command.
 Show installed Spec-N-Roll versions
 
 Usage:
+
 ```shell
 spec-n-roll version [options]
 ```
@@ -58,6 +90,7 @@ spec-n-roll version [options]
 List toolkit resources
 
 Usage:
+
 ```shell
 spec-n-roll list [command]
 ```
@@ -71,12 +104,13 @@ spec-n-roll list [command]
 List all available agents
 
 Usage:
+
 ```shell
 spec-n-roll list agents [options]
 ```
 
-| Flag       | Description                                                       |
-| ---------- | ----------------------------------------------------------------- |
+| Flag        | Description                                                     |
+| ----------- | --------------------------------------------------------------- |
 | `--enabled` | List only agents installed and enabled in this project's config |
 
 Prints each agent id and display name. Use these ids with `init --agents` and `config agent add`.
@@ -86,14 +120,15 @@ Prints each agent id and display name. Use these ids with `init --agents` and `c
 Update the toolkit to the latest version
 
 Usage:
+
 ```shell
 spec-n-roll update [options]
 ```
 
-| Flag                  | Description                                  |
-| --------------------- | -------------------------------------------- |
-| `--dry-run`           | Preview update changes without applying them |
-| `--force`             | Apply breaking config migrations             |
+| Flag        | Description                                  |
+| ----------- | -------------------------------------------- |
+| `--dry-run` | Preview update changes without applying them |
+| `--force`   | Apply breaking config migrations             |
 
 **Behavior:**
 
@@ -114,39 +149,42 @@ spec-n-roll update [options]
 Configure Spec-N-Roll settings
 
 Usage:
+
 ```shell
 spec-n-roll config [command]
 ```
 
-| Command                    | Description                               |
-| -------------------------- | ----------------------------------------- |
-| [agent](#config-agent)     | Manage configured AI coding agents        |
+| Command                | Description                        |
+| ---------------------- | ---------------------------------- |
+| [agent](#config-agent) | Manage configured AI coding agents |
 
 ### config agent
 
 Manage configured AI coding agents
 
 Usage:
+
 ```shell
 spec-n-roll config agent [command]
 ```
 
-| Command                              | Description                               |
-| ------------------------------------ | ----------------------------------------- |
-| [add](#config-agent-add)             | Add agents to the project configuration   |
-| [remove](#config-agent-remove)       | Remove agents from the project configuration |
+| Command                        | Description                                  |
+| ------------------------------ | -------------------------------------------- |
+| [add](#config-agent-add)       | Add agents to the project configuration      |
+| [remove](#config-agent-remove) | Remove agents from the project configuration |
 
 ### config agent add
 
 Add agents to the project configuration
 
 Usage:
+
 ```shell
 spec-n-roll config agent add <agents>
 ```
 
-| Argument  | Description                                              |
-| --------- | -------------------------------------------------------- |
+| Argument   | Description                                                   |
+| ---------- | ------------------------------------------------------------- |
 | `<agents>` | Comma-separated agent ids to add (e.g. `copilot,claude-code`) |
 
 Adds rules, skills pointers, extension manifests, and MCP config for the specified agents. Existing agents remain unchanged.
@@ -157,12 +195,13 @@ Available agents can be found using the `spec-n-roll list agents` command.
 Remove agents from the project configuration
 
 Usage:
+
 ```shell
 spec-n-roll config agent remove <agents>
 ```
 
-| Argument  | Description                                                 |
-| --------- | ----------------------------------------------------------- |
+| Argument   | Description                                                      |
+| ---------- | ---------------------------------------------------------------- |
 | `<agents>` | Comma-separated agent ids to remove (e.g. `copilot,claude-code`) |
 
 Removes the agents from `workflow.config.json`, deletes agent-specific rules and extension manifests, and removes the Spec-N-Roll MCP server entry from each agent's MCP config. Other configured agents and unrelated MCP servers remain unchanged.
@@ -172,12 +211,13 @@ Removes the agents from `workflow.config.json`, deletes agent-specific rules and
 Workflow state operations
 
 Usage:
+
 ```shell
 spec-n-roll workflow [command]
 ```
 
-| Command                  | Description                    |
-| ------------------------ | ------------------------------ |
+| Command                  | Description                        |
+| ------------------------ | ---------------------------------- |
 | [state](#workflow-state) | read and write workflow-state.json |
 
 ### workflow state
@@ -185,6 +225,7 @@ spec-n-roll workflow [command]
 Read and write workflow-state.json
 
 Usage:
+
 ```shell
 spec-n-roll workflow state [command]
 ```
@@ -199,6 +240,7 @@ spec-n-roll workflow state [command]
 Read workflow state for a task spec
 
 Usage:
+
 ```shell
 spec-n-roll workflow state read [options]
 ```
@@ -214,6 +256,7 @@ The slug is resolved automatically from the matching `specs/{id}-{slug}/` direct
 Write workflow state for a task spec
 
 Usage:
+
 ```shell
 spec-n-roll workflow state write [options]
 ```
@@ -231,20 +274,22 @@ spec-n-roll workflow state write [options]
 Task spec lifecycle and checkbox operations
 
 Usage:
+
 ```shell
 spec-n-roll task [command]
 ```
 
-| Command                    | Description                 |
-| -------------------------- | --------------------------- |
-| [status](#task-status)     | Task spec lifecycle status  |
-| [checkbox](#task-checkbox) | tasks.md checkbox toggles   |
+| Command                    | Description                |
+| -------------------------- | -------------------------- |
+| [status](#task-status)     | Task spec lifecycle status |
+| [checkbox](#task-checkbox) | tasks.md checkbox toggles  |
 
 ### task status
 
 Task spec lifecycle status
 
 Usage:
+
 ```shell
 spec-n-roll task status [command]
 ```
@@ -258,6 +303,7 @@ spec-n-roll task status [command]
 Set task spec lifecycle status in spec.md frontmatter
 
 Usage:
+
 ```shell
 spec-n-roll task status set [options] <status>
 ```
@@ -275,6 +321,7 @@ spec-n-roll task status set [options] <status>
 tasks.md checkbox toggles
 
 Usage:
+
 ```shell
 spec-n-roll task checkbox [command]
 ```
@@ -288,6 +335,7 @@ spec-n-roll task checkbox [command]
 Toggle one or more tasks.md checkboxes by task id
 
 Usage:
+
 ```shell
 spec-n-roll task checkbox set <completed> [options]
 ```
@@ -306,19 +354,21 @@ spec-n-roll task checkbox set <completed> [options]
 Project metadata operations
 
 Usage:
+
 ```shell
 spec-n-roll project [command]
 ```
 
-| Command                         | Description                      |
-| ------------------------------- | -------------------------------- |
-| [metadata](#project-metadata)   | project-metadata.json read/write |
+| Command                       | Description                      |
+| ----------------------------- | -------------------------------- |
+| [metadata](#project-metadata) | project-metadata.json read/write |
 
 ### project metadata
 
 project-metadata.json read/write
 
 Usage:
+
 ```shell
 spec-n-roll project metadata [command]
 ```
@@ -333,6 +383,7 @@ spec-n-roll project metadata [command]
 Read project-metadata.json
 
 Usage:
+
 ```shell
 spec-n-roll project metadata read [options]
 ```
@@ -342,6 +393,7 @@ spec-n-roll project metadata read [options]
 Update project-metadata.json fields
 
 Usage:
+
 ```shell
 spec-n-roll project metadata write [options]
 ```
@@ -359,6 +411,7 @@ When `--current-task-spec-id` is provided, the slug is resolved from the matchin
 Step output template operations
 
 Usage:
+
 ```shell
 spec-n-roll step [command]
 ```
@@ -372,6 +425,7 @@ spec-n-roll step [command]
 Instantiate a step output template into a task spec directory
 
 Usage:
+
 ```shell
 spec-n-roll step instantiate [options]
 ```
@@ -387,6 +441,7 @@ spec-n-roll step instantiate [options]
 spec.md frontmatter operations
 
 Usage:
+
 ```shell
 spec-n-roll spec [command]
 ```
@@ -400,6 +455,7 @@ spec-n-roll spec [command]
 Non-status frontmatter updates
 
 Usage:
+
 ```shell
 spec-n-roll spec frontmatter [command]
 ```
@@ -413,11 +469,12 @@ spec-n-roll spec frontmatter [command]
 Merge non-status fields into spec.md frontmatter
 
 Usage:
+
 ```shell
 spec-n-roll spec frontmatter update [options]
 ```
 
-| Flag                  | Description                   |
-| --------------------- | ----------------------------- |
-| `--task-spec-id <id>` | Numeric task spec id          |
-| `--field <pair...>`   | Frontmatter key=value pairs   |
+| Flag                  | Description                 |
+| --------------------- | --------------------------- |
+| `--task-spec-id <id>` | Numeric task spec id        |
+| `--field <pair...>`   | Frontmatter key=value pairs |

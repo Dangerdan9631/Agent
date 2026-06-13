@@ -25,9 +25,9 @@ The globally installed npm artifact is a **lightweight dispatcher** only. It con
 - Dispatcher forwards flag unchanged to resolved full CLI.
 - Full CLI prints combined report: dispatcher version, executed binary version, `local`/`global` target, absolute local binary path when local.
 
-**Direct full CLI invocation** (not via dispatcher):
+**Full CLI binary invocation**:
 
-- `-v`/`--version` reports binary version and indicates direct invocation (no dispatcher context).
+- `-v`/`--version` reports binary version and indicates whether the running full CLI binary is local or global.
 
 **Errors**:
 

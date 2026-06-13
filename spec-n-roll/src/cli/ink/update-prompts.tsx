@@ -60,7 +60,7 @@ export function promptForUpdateConfirmation(input: UpdateConfirmationInput): Pro
 /**
  * Props for the update confirmation Ink component.
  */
-interface UpdateConfirmPromptProps {
+export interface UpdateConfirmPromptProps {
   /**
    * Update summary to display.
    */
@@ -76,9 +76,12 @@ interface UpdateConfirmPromptProps {
 }
 
 /**
- * Ink UI that summarizes an update and requires explicit confirmation.
+ * Renders the update summary and requires explicit confirmation before applying changes.
+ *
+ * @param props - Update summary plus confirmation and cancellation callbacks.
+ * @returns React element for the update confirmation prompt.
  */
-function UpdateConfirmPrompt({
+export function UpdateConfirmPrompt({
   input,
   onConfirm,
   onCancel,
