@@ -109,7 +109,7 @@ describe('interactive global home', () => {
     );
 
     const frame = await waitForFrameContaining(() => app.lastFrame(), 'Install Source:');
-    expect(frame).toContain('Global Home');
+    expect(frame).toContain('Main Menu');
     expect(frame).toContain('Install Source:');
     expect(frame).toContain('Global Version:');
     expect(frame).toContain('Local Version:');

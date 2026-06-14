@@ -10,6 +10,7 @@ import {
   runTriageWithExtensions,
 } from '../../src/extensions/hooks.js';
 import { assessTriage } from '../../src/specs/triage.js';
+import { createDefaultSetListsFile } from '../../src/setlists/index.js';
 import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
 import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
 
@@ -50,12 +51,13 @@ function writeProjectWithTriageExtension(projectRoot: string, extensionEnabled: 
     `export async function handler(context) {
   return {
     mode: 'heuristic',
-    proposedWorkflowVariantId: 'papercut',
+    proposedSetListId: 'papercut',
+    proposedWorkflowId: 'papercut',
     rationale: 'Custom extension triage selected papercut.',
-    availableWorkflowVariantIds: context.availableWorkflowIds.filter((id) =>
-      ['papercut', 'quick', 'full'].includes(id),
-    ),
-    defaultWorkflowVariantId: context.defaultWorkflowId,
+    eligibleSetLists: context.enabledSetLists ?? [],
+    defaultSetListId: 'quick',
+    defaultWorkflowId: context.defaultWorkflowId,
+    ambiguous: false,
   };
 }
 `,
@@ -102,6 +104,9 @@ function writeProjectWithTriageExtension(projectRoot: string, extensionEnabled: 
   const configPath = path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH);
   mkdirSync(path.dirname(configPath), { recursive: true });
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+
+  const setListsPath = path.join(projectRoot, '.spec-n-roll', 'config', 'set-lists.json');
+  writeFileSync(setListsPath, `${JSON.stringify(createDefaultSetListsFile(), null, 2)}\n`, 'utf8');
 }
 
 afterEach(() => {
@@ -136,7 +141,7 @@ describe('extension step invocation', () => {
       availableWorkflowIds: ['papercut', 'quick', 'full'],
     });
 
-    expect(assessment.proposedWorkflowVariantId).toBe('papercut');
+    expect(assessment.proposedSetListId).toBe('papercut');
     expect(assessment.rationale).toContain('Custom extension triage');
   });
 
@@ -161,6 +166,7 @@ describe('extension step invocation', () => {
       description: 'Cross-cutting platform-wide authentication redesign',
       defaultWorkflowId: 'quick',
       availableWorkflowIds: ['papercut', 'quick', 'full'],
+      enabledSetLists: createDefaultSetListsFile().setLists,
     });
 
     expect(assessment).toEqual(builtIn);

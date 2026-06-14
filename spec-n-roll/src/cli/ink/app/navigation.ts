@@ -26,7 +26,11 @@ export type RouteId =
   | 'setup-version'
   | 'setup-update'
   | 'setup-step-instantiate'
-  | 'setup-frontmatter-update';
+  | 'setup-frontmatter-update'
+  | 'manifesto-view'
+  | 'set-lists-list'
+  | 'set-list-detail'
+  | 'set-list-edit';
 
 /**
  * One entry in the in-memory navigation stack used for routing and breadcrumbs.
@@ -94,6 +98,10 @@ export const ROUTE_TITLES: Readonly<Record<RouteId, string>> = {
   'setup-update': 'Update Toolkit',
   'setup-step-instantiate': 'Instantiate Step',
   'setup-frontmatter-update': 'Update Frontmatter',
+  'manifesto-view': 'Spec Manifestos',
+  'set-lists-list': 'Set Lists',
+  'set-list-detail': 'Set List Detail',
+  'set-list-edit': 'Edit Set List',
 };
 
 /**

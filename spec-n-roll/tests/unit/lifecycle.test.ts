@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
 import { CoreMutationError } from '../../src/core/errors.js';
 import { updateSpecFrontmatter } from '../../src/core/frontmatter.js';
 import { writeProjectMetadata } from '../../src/core/project-metadata.js';
@@ -17,6 +18,7 @@ import { runClarify } from '../../src/specs/clarify.js';
 import type { InterviewQuestion } from '../../src/specs/interview.js';
 import { runRoll } from '../../src/workflow/engine.js';
 import { assertUserOwnedPathWritable } from '../../src/updates/ownership.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
 
 const tempDirs: string[] = [];
 
@@ -30,6 +32,22 @@ function createProjectRoot(suffix: string): string {
   const projectRoot = path.join(os.tmpdir(), `spec-n-roll-lifecycle-${suffix}-${Date.now()}`);
   tempDirs.push(projectRoot);
   return projectRoot;
+}
+
+/**
+ * Writes default workflow.config.json into a temporary project root.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ */
+function seedWorkflowConfig(projectRoot: string): void {
+  const config = createDefaultWorkflowConfig({
+    toolkitVersion: '0.1.2',
+    selectedAgentIds: [],
+  });
+  config.extensions = [];
+  const configPath = path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH);
+  mkdirSync(path.dirname(configPath), { recursive: true });
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
 }
 
 /**
@@ -128,6 +146,7 @@ describe('task lifecycle', () => {
 
   it('locks Complete specs when a non-specify step begins on another task spec', async () => {
     const projectRoot = createProjectRoot('lock-on-advance');
+    seedWorkflowConfig(projectRoot);
     seedTaskSpec(projectRoot, '001', 'done-feature', 'Complete', {
       workflowVariantId: 'quick',
       lastCompletedStepId: 'implement',
@@ -227,6 +246,7 @@ describe('task lifecycle', () => {
 
   it('rejects a second Active spec entering implement while another is in progress', async () => {
     const projectRoot = createProjectRoot('implement-guard');
+    seedWorkflowConfig(projectRoot);
     mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
     await writeProjectMetadata(projectRoot, {
       currentTaskSpecId: '001',

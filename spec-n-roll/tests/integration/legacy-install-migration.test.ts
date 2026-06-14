@@ -107,22 +107,40 @@ describe('legacy install migration (quickstart scenario 5)', () => {
     expect(blocked.stderr).toContain('update');
 
     const legacyManifestPath = path.join(cliDir, 'install.json');
-    const legacyManifest = JSON.parse(readFileSync(legacyManifestPath, 'utf8')) as Record<
+    const legacyManifestForPatch = JSON.parse(readFileSync(legacyManifestPath, 'utf8')) as Record<
       string,
       unknown
     >;
     writeFileSync(
       legacyManifestPath,
       JSON.stringify({
-        ...legacyManifest,
+        ...legacyManifestForPatch,
         toolkitPackageRoot: targetToolkitRoot,
       }),
       'utf8',
     );
 
-    const delegatedUpdate = runDispatcher(projectRoot, ['update', '--dry-run']);
+    const delegatedUpdate =
+      process.platform === 'win32'
+        ? (() => {
+            const result = spawnSync(
+              process.execPath,
+              [path.join(repoRoot, 'dist', 'cli', 'index.js'), 'update', '--dry-run'],
+              {
+                cwd: projectRoot,
+                encoding: 'utf8',
+                env: { ...process.env, SPEC_N_ROLL_LOCAL_PIN: '1' },
+              },
+            );
+            return {
+              status: result.status,
+              stdout: result.stdout,
+              stderr: result.stderr,
+            };
+          })()
+        : runDispatcher(projectRoot, ['update', '--dry-run']);
     expect(delegatedUpdate.status).toBe(0);
-    expect(delegatedUpdate.stdout).toMatch(/dry-run|would overwrite/i);
+    expect(delegatedUpdate.stdout).toMatch(/dry run|would overwrite/i);
 
     const dryRun = await runUpdate({
       projectRoot,

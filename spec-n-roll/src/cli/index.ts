@@ -5,6 +5,8 @@ import { Command } from 'commander';
 import { registerConfigCommand } from './commands/config.js';
 import { registerInitCommand } from './commands/init.js';
 import { registerListCommand } from './commands/list.js';
+import { registerManifestoCommand } from './commands/manifesto-show.js';
+import { registerSetListCommand } from './commands/set-list.js';
 import { registerProjectCommand } from './commands/project.js';
 import { registerSpecCommand } from './commands/spec.js';
 import { registerStepCommand } from './commands/step.js';
@@ -39,6 +41,8 @@ function createProgram(): Command {
   registerInitCommand(program);
   registerVersionCommand(program);
   registerListCommand(program);
+  registerManifestoCommand(program);
+  registerSetListCommand(program);
   registerUpdateCommand(program);
   registerRemoveCommand(program);
   registerConfigCommand(program);

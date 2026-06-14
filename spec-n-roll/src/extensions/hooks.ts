@@ -1,8 +1,10 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parse } from 'yaml';
 import fse from 'fs-extra';
 
 import { readWorkflowConfig } from '../workflow/artifacts.js';
+import { listSetLists } from '../setlists/index.js';
 import { assessTriage, type TriageAssessment, type TriageInput } from '../specs/triage.js';
 import {
   parseExtensionManifest,
@@ -381,6 +383,335 @@ export async function dispatchStepHooks(
 }
 
 /**
+ * Normalized agent-facing hook call payload returned during step lifecycle.
+ */
+export interface StepHookInstruction {
+  /**
+   * Lifecycle phase when the hook should be invoked.
+   */
+  phase: 'before' | 'after';
+  /**
+   * Slash command or extension command name for the agent to call.
+   */
+  command: string;
+  /**
+   * Human-readable purpose of the hook for agent prompts.
+   */
+  description: string;
+  /**
+   * Whether the agent may skip the hook after prompting.
+   */
+  optional: boolean;
+  /**
+   * Derived flag indicating the agent must call the hook before proceeding.
+   */
+  mandatory: boolean;
+  /**
+   * Whether the referenced command or handler entrypoint is available in the project.
+   */
+  available: boolean;
+  /**
+   * Optional prompt text shown for optional hooks.
+   */
+  prompt?: string;
+  /**
+   * Source registry that produced this hook instruction.
+   */
+  source: 'specify-extensions-yml' | 'workflow-extension-manifest';
+  /**
+   * Extension id when the hook originates from a registered extension.
+   */
+  extension?: string;
+}
+
+/**
+ * Input for collecting hook instructions for one workflow step phase.
+ */
+export interface CollectHookInstructionsInput {
+  /**
+   * Absolute path to the project root.
+   */
+  projectRoot: string;
+  /**
+   * Workflow step id whose hooks should be collected.
+   */
+  stepId: string;
+  /**
+   * Lifecycle phase determining before or after hook events.
+   */
+  phase: 'before' | 'after';
+}
+
+/**
+ * Result of collecting hook instructions from all configured hook sources.
+ */
+export interface CollectHookInstructionsResult {
+  /**
+   * Normalized hook instructions for the requested step phase.
+   */
+  instructions: StepHookInstruction[];
+  /**
+   * Non-blocking diagnostics for invalid or skipped hook configuration.
+   */
+  diagnostics: string[];
+}
+
+/**
+ * Project-relative path to the Spec Kit extensions registry file.
+ */
+export const SPECIFY_EXTENSIONS_RELATIVE_PATH = '.specify/extensions.yml';
+
+/**
+ * One hook entry declared in `.specify/extensions.yml`.
+ */
+interface SpecifyExtensionsHookEntry {
+  extension?: string;
+  command?: string;
+  enabled?: boolean;
+  optional?: boolean;
+  prompt?: string;
+  description?: string;
+  condition?: string | null;
+}
+
+/**
+ * Top-level shape of `.specify/extensions.yml` relevant to hook collection.
+ */
+interface SpecifyExtensionsDocument {
+  hooks?: Record<string, SpecifyExtensionsHookEntry[] | undefined>;
+}
+
+/**
+ * Converts a dotted Spec Kit command name to a slash-command token.
+ *
+ * @param command - Command such as `speckit.agent-context.update`.
+ * @returns Slash command token such as `speckit-agent-context-update`.
+ */
+function normalizeHookCommand(command: string): string {
+  return command.replace(/\./g, '-');
+}
+
+/**
+ * Result of reading `.specify/extensions.yml` for hook collection.
+ */
+interface ReadSpecifyExtensionsResult {
+  /**
+   * Parsed extensions document when the file is present and valid YAML.
+   */
+  document: SpecifyExtensionsDocument | null;
+  /**
+   * Non-blocking diagnostics for unreadable or invalid hook configuration.
+   */
+  diagnostics: string[];
+}
+
+/**
+ * Checks whether a Spec Kit slash command skill is installed in the project.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param normalizedCommand - Slash command token such as `speckit-agent-context-update`.
+ * @returns True when `.agents/skills/{command}/SKILL.md` exists.
+ */
+async function isSpecifyHookCommandAvailable(
+  projectRoot: string,
+  normalizedCommand: string,
+): Promise<boolean> {
+  const skillPath = path.join(projectRoot, '.agents', 'skills', normalizedCommand, 'SKILL.md');
+  return fse.pathExists(skillPath);
+}
+
+/**
+ * Checks whether a workflow extension hook entrypoint exists on disk.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param entrypoint - Project-relative path to the hook handler module.
+ * @returns True when the entrypoint file is present.
+ */
+async function isWorkflowHookEntrypointAvailable(
+  projectRoot: string,
+  entrypoint: string,
+): Promise<boolean> {
+  return fse.pathExists(path.join(projectRoot, entrypoint));
+}
+
+/**
+ * Reads and parses `.specify/extensions.yml` when present.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @returns Parsed document and non-blocking diagnostics for invalid configuration.
+ */
+async function readSpecifyExtensionsDocument(
+  projectRoot: string,
+): Promise<ReadSpecifyExtensionsResult> {
+  const filePath = path.join(projectRoot, SPECIFY_EXTENSIONS_RELATIVE_PATH);
+  if (!(await fse.pathExists(filePath))) {
+    return { document: null, diagnostics: [] };
+  }
+
+  try {
+    const rawText = await fse.readFile(filePath, 'utf8');
+    const parsed = parse(rawText) as SpecifyExtensionsDocument;
+    return { document: parsed, diagnostics: [] };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      document: null,
+      diagnostics: [
+        `Could not read ${SPECIFY_EXTENSIONS_RELATIVE_PATH}: ${message}. Hook instructions from this source were skipped.`,
+      ],
+    };
+  }
+}
+
+/**
+ * Collects hook instructions from `.specify/extensions.yml` for one step phase.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param stepId - Workflow step id whose hooks should be collected.
+ * @param phase - Lifecycle phase determining before or after hook events.
+ * @returns Hook instructions and any non-blocking diagnostics.
+ */
+async function collectSpecifyExtensionHookInstructions(
+  projectRoot: string,
+  stepId: string,
+  phase: 'before' | 'after',
+): Promise<CollectHookInstructionsResult> {
+  const { document, diagnostics: readDiagnostics } = await readSpecifyExtensionsDocument(projectRoot);
+  if (document?.hooks == null) {
+    return { instructions: [], diagnostics: readDiagnostics };
+  }
+
+  const event = `${phase}_${stepId}`;
+  const entries = document.hooks[event] ?? [];
+  const instructions: StepHookInstruction[] = [];
+  const diagnostics = [...readDiagnostics];
+
+  for (const entry of entries) {
+    if (entry.enabled === false) {
+      continue;
+    }
+
+    if (entry.condition != null && entry.condition.trim().length > 0) {
+      diagnostics.push(`Skipped hook "${event}" because condition evaluation is deferred.`);
+      continue;
+    }
+
+    if (entry.command == null || entry.command.trim().length === 0) {
+      diagnostics.push(`Skipped hook "${event}" because command is missing.`);
+      continue;
+    }
+
+    const normalizedCommand = normalizeHookCommand(entry.command);
+    const optional = entry.optional ?? true;
+    const available = await isSpecifyHookCommandAvailable(projectRoot, normalizedCommand);
+    if (!available) {
+      diagnostics.push(
+        `Hook command "${normalizedCommand}" is not available; install the skill or fix the command reference.`,
+      );
+    }
+
+    instructions.push({
+      phase,
+      command: normalizedCommand,
+      description: entry.description ?? entry.command,
+      optional,
+      mandatory: !optional,
+      available,
+      prompt: entry.prompt,
+      source: 'specify-extensions-yml',
+      extension: entry.extension,
+    });
+  }
+
+  return { instructions, diagnostics };
+}
+
+/**
+ * Collects hook instructions from workflow extension manifests for one step phase.
+ *
+ * @param registry - Loaded extension registry for the project.
+ * @param stepId - Workflow step id whose hooks should be collected.
+ * @param phase - Lifecycle phase determining before or after hook events.
+ * @returns Hook instructions and any non-blocking diagnostics.
+ */
+async function collectWorkflowExtensionHookInstructions(
+  registry: ExtensionRegistry,
+  projectRoot: string,
+  stepId: string,
+  phase: 'before' | 'after',
+): Promise<CollectHookInstructionsResult> {
+  const event = `${phase}_${stepId}`;
+  const instructions: StepHookInstruction[] = [];
+  const diagnostics: string[] = [];
+
+  for (const extension of registry.extensions) {
+    if (!extension.enabled) {
+      continue;
+    }
+
+    for (const hook of extension.manifest.hooks ?? []) {
+      if (hook.event !== event) {
+        continue;
+      }
+
+      if (registry.skippedHooks.includes(hook.event)) {
+        diagnostics.push(`Skipped extension hook "${hook.event}" because the step id is unknown.`);
+        continue;
+      }
+
+      const optional = hook.optional ?? true;
+      const available = await isWorkflowHookEntrypointAvailable(projectRoot, hook.entrypoint);
+      if (!available) {
+        diagnostics.push(
+          `Extension hook "${hook.id}" entrypoint "${hook.entrypoint}" is not available.`,
+        );
+      }
+
+      instructions.push({
+        phase,
+        command: hook.id,
+        description: hook.description ?? `Extension hook ${hook.event}`,
+        optional,
+        mandatory: !optional,
+        available,
+        source: 'workflow-extension-manifest',
+        extension: extension.id,
+      });
+    }
+  }
+
+  return { instructions, diagnostics };
+}
+
+/**
+ * Merges hook instructions from `.specify/extensions.yml` and workflow extension manifests.
+ *
+ * @param input - Project root, step id, and lifecycle phase for hook collection.
+ * @returns Combined hook instructions and non-blocking diagnostics.
+ */
+export async function collectHookInstructions(
+  input: CollectHookInstructionsInput,
+): Promise<CollectHookInstructionsResult> {
+  const registry = await loadExtensionRegistry(input.projectRoot);
+  const specifyHooks = await collectSpecifyExtensionHookInstructions(
+    input.projectRoot,
+    input.stepId,
+    input.phase,
+  );
+  const manifestHooks = await collectWorkflowExtensionHookInstructions(
+    registry,
+    input.projectRoot,
+    input.stepId,
+    input.phase,
+  );
+
+  return {
+    instructions: [...specifyHooks.instructions, ...manifestHooks.instructions],
+    diagnostics: [...specifyHooks.diagnostics, ...manifestHooks.diagnostics],
+  };
+}
+
+/**
  * Runs triage for the specify step, preferring an enabled extension handler when present.
  *
  * @param options - Triage input plus the project root used for extension resolution.
@@ -391,13 +722,19 @@ export async function runTriageWithExtensions(
 ): Promise<TriageAssessment> {
   const registry = await loadExtensionRegistry(options.projectRoot);
   const resolved = resolveActiveStepHandler(registry, 'triage');
+  const enabledSetLists =
+    options.enabledSetLists != null && options.enabledSetLists.length > 0
+      ? options.enabledSetLists
+      : await listSetLists(options.projectRoot, false);
+  const triageInput: TriageInput = {
+    description: options.description,
+    defaultWorkflowId: options.defaultWorkflowId,
+    availableWorkflowIds: options.availableWorkflowIds,
+    enabledSetLists,
+  };
 
   if (resolved.kind === 'built-in') {
-    return assessTriage({
-      description: options.description,
-      defaultWorkflowId: options.defaultWorkflowId,
-      availableWorkflowIds: options.availableWorkflowIds,
-    });
+    return assessTriage(triageInput);
   }
 
   const result = (await invokeExtensionHandler(options.projectRoot, resolved.entrypoint!, {
@@ -407,6 +744,7 @@ export async function runTriageWithExtensions(
     description: options.description,
     defaultWorkflowId: options.defaultWorkflowId,
     availableWorkflowIds: options.availableWorkflowIds,
+    enabledSetLists,
   })) as TriageAssessment;
 
   return result;

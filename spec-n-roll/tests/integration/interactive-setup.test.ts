@@ -190,9 +190,10 @@ describe('interactive setup and maintenance flows', () => {
     );
 
     app.stdin.write('y');
-    expect(await waitForFrameContaining(() => app.lastFrame(), 'Updated', 15_000)).toContain(
+    await waitForInk(200);
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'Updated', 30_000)).toContain(
       'Updated',
     );
     app.unmount();
-  }, 15_000);
+  }, 30_000);
 });

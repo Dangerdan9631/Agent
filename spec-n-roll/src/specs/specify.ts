@@ -21,7 +21,8 @@ import {
 } from './interview.js';
 import { checkSpecQuality } from './quality.js';
 import { runTriageWithExtensions } from '../extensions/hooks.js';
-import { type TriageAssessment, type WorkflowTierId } from './triage.js';
+import { listSetLists } from '../setlists/index.js';
+import { type TriageAssessment } from './triage.js';
 
 const SLUG_MAX_LENGTH = 48;
 
@@ -42,13 +43,13 @@ export interface SpecifyOptions {
    */
   slug?: string;
   /**
-   * Optional explicit workflow tier override skipping triage confirmation.
+   * Optional explicit set list id override skipping triage confirmation.
    */
-  workflowVariantOverride?: WorkflowTierId;
+  setListOverride?: string;
   /**
-   * Confirms or overrides triage; returns the selected workflow variant id.
+   * Confirms or overrides triage; returns the selected set list id.
    */
-  confirmTriage?: (assessment: TriageAssessment) => Promise<WorkflowTierId>;
+  confirmTriage?: (assessment: TriageAssessment) => Promise<string>;
   /**
    * Supplies an answer for each interview question (one at a time).
    */
@@ -72,9 +73,13 @@ export interface SpecifyResult {
    */
   slug: string;
   /**
-   * Confirmed workflow tier variant id for subsequent steps.
+   * Confirmed workflow id from the selected set list for subsequent steps.
    */
-  workflowVariantId: WorkflowTierId;
+  workflowVariantId: string;
+  /**
+   * Selected set list id from triage.
+   */
+  setListId: string;
   /**
    * Triage assessment presented before confirmation.
    */
@@ -199,22 +204,40 @@ export async function runSpecify(options: SpecifyOptions): Promise<SpecifyResult
   const { taskSpecId } = await allocateNextTaskSpecId(projectRoot);
   const slug = options.slug?.trim() || deriveSlugFromDescription(options.description);
 
+  const enabledSetLists = await listSetLists(projectRoot, false);
   const triageAssessment = await runTriageWithExtensions({
     projectRoot,
     description: options.description,
     defaultWorkflowId: workflowConfig.defaultWorkflowId,
     availableWorkflowIds: workflowConfig.workflows.map((workflow) => workflow.id),
+    enabledSetLists,
   });
 
-  let workflowVariantId: WorkflowTierId;
-  if (options.workflowVariantOverride != null) {
-    workflowVariantId = options.workflowVariantOverride;
-  } else if (options.confirmTriage != null) {
-    workflowVariantId = await options.confirmTriage(triageAssessment);
-  } else {
-    workflowVariantId =
-      triageAssessment.proposedWorkflowVariantId ?? triageAssessment.defaultWorkflowVariantId;
+  if (triageAssessment.blocking === true) {
+    throw new Error(
+      triageAssessment.message ??
+        'Specify cannot proceed because no enabled set lists remain for triage.',
+    );
   }
+
+  const resolveWorkflowId = (setListId: string): string => {
+    const selected = enabledSetLists.find((setList) => setList.id === setListId);
+    if (selected == null) {
+      throw new Error(`Set list "${setListId}" was not found or is disabled.`);
+    }
+    return selected.workflowId;
+  };
+
+  let setListId: string;
+  if (options.setListOverride != null) {
+    setListId = options.setListOverride;
+  } else if (options.confirmTriage != null) {
+    setListId = await options.confirmTriage(triageAssessment);
+  } else {
+    setListId = triageAssessment.proposedSetListId ?? triageAssessment.defaultSetListId;
+  }
+
+  const workflowVariantId = resolveWorkflowId(setListId);
 
   await writeWorkflowState(projectRoot, {
     taskSpecId,
@@ -278,6 +301,7 @@ export async function runSpecify(options: SpecifyOptions): Promise<SpecifyResult
     taskSpecId,
     slug,
     workflowVariantId,
+    setListId,
     triageAssessment,
     interviewSession,
     qualityPassed: qualityReport.passed,

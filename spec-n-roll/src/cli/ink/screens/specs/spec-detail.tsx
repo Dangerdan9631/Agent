@@ -103,7 +103,7 @@ export function SpecDetailScreen(props: RoutedScreenProps): React.ReactElement {
       <Text>lifecycle: {summary.lifecycleStatus}</Text>
       <Text>Workflow state</Text>
       <Text>status: {summary.operationalStatus}</Text>
-      <Text>variant: {summary.workflowVariantId ?? 'none'}</Text>
+      <Text>set list: {summary.workflowVariantId ?? 'none'}</Text>
       <Text>current step: {summary.currentStepId ?? 'none'}</Text>
       <Text>last completed step: {summary.lastCompletedStepId ?? 'none'}</Text>
       <Text>artifacts: {formatArtifacts(summary)}</Text>

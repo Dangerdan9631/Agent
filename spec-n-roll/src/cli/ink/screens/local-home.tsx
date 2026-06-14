@@ -63,7 +63,7 @@ function buildMenuItems(): readonly LocalHomeMenuItem[] {
       actionId: 'workflows',
       routeId: 'workflows-list',
       label: '3 Workflows',
-      description: 'Inspect workflow variants',
+      description: 'Inspect configured workflows',
       disabled: false,
     },
     {

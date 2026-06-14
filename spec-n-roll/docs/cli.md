@@ -24,7 +24,9 @@ spec-n-roll [options] [command]
 | [workflow](#workflow) | Workflow state operations                   |
 | [task](#task)         | Task spec lifecycle and checkbox operations |
 | [project](#project)   | Project metadata operations                 |
-| [step](#step)         | Step output template operations             |
+| [step](#step)         | Step lifecycle and template operations      |
+| [set-list](#set-list) | Set list configuration and triage           |
+| [manifesto](#manifesto) | Read Spec Manifesto content               |
 | [spec](#spec)         | spec.md frontmatter operations              |
 
 Running the full CLI with no command starts the interactive Ink application
@@ -33,15 +35,18 @@ as `spec-n-roll init --help` and `spec-n-roll version` remain non-interactive.
 
 ### interactive mode
 
-Interactive mode opens a keyboard-first main menu with five sections:
+Interactive mode opens a keyboard-first main menu:
 
-| Key | Section             | Purpose                                             |
-| --- | ------------------- | --------------------------------------------------- |
-| `1` | Task Specs          | Browse specs, inspect artifacts, and run spec tasks |
-| `2` | Workflows           | Inspect configured workflow variants and steps      |
-| `3` | Agents              | View, add, or remove configured coding agents       |
-| `4` | Project             | View or edit Spec-N-Roll project metadata           |
-| `5` | Setup / Maintenance | Initialize, view version details, or update toolkit |
+| Key | Section             | Purpose                                                        |
+| --- | ------------------- | -------------------------------------------------------------- |
+| `1` | Project             | Project metadata, Spec Manifestos (read-only), and set lists   |
+| `2` | Agents              | View, add, or remove configured coding agents                  |
+| `3` | Workflows           | Inspect configured workflow definitions and steps              |
+| `4` | Extensions          | Placeholder for future extension management                    |
+| `5` | Manage Spec N' Roll   | Initialize, view version details, or update toolkit            |
+| `6` | Quit                | Exit the interactive application                               |
+
+From **Project**, numeric shortcuts include **Spec Manifestos** (view) and **Set Lists** (list, detail, edit). Task spec browsing is available from the specs flow within the app navigation stack.
 
 Global keyboard bindings are available throughout the app:
 
@@ -74,6 +79,12 @@ spec-n-roll init [options] [path]
 | `--agents <agents>` | Comma-separated agent ids (e.g. cursor,claude-code) |
 
 Available agents can be found using the `spec-n-roll list agents` command.
+
+**Also creates** (under the target project):
+
+- `.spec-n-roll/config/set-lists.json` with default set lists (`papercut`, `quick`, `full`)
+- `.spec-n-roll/config/manifesto/` layout and `global.md` from the toolkit template when absent
+- Workflow skills under `.agents/skills/spec-n-*` including `spec-n-manifesto`
 
 ## version
 
@@ -137,7 +148,7 @@ spec-n-roll update [options]
   - `specs/` (migrates config file schemas)
   - `living-specs/`
 - Overwrites binaries, scripts, skills, and extensions in toolkit-owned paths
-  - `.agents/skills/spec-n-*`
+  - `.agents/skills/spec-n-*` (managed workflow skills; user-owned skills outside the managed manifest are preserved)
   - `.spec-n-roll/` (except `config/`)
 - Writes `.bak` backups for locally modified toolkit-owned files before overwrite.
 - Refreshes Spec-N-Roll MCP server paths for all configured agents.
@@ -264,7 +275,7 @@ spec-n-roll workflow state write [options]
 | Flag                            | Description                                  |
 | ------------------------------- | -------------------------------------------- |
 | `--task-spec-id <id>`           | Numeric task spec id                         |
-| `--workflow-variant-id <id>`    | Workflow variant id                          |
+| `--workflow-variant-id <id>`    | Selected set list’s linked workflow id (persisted field name) |
 | `--last-completed-step-id <id>` | Last completed step id                       |
 | `--current-step-id <id>`        | Current in-progress step id                  |
 | `--status <status>`             | Operational status: active\|paused\|complete |
@@ -408,7 +419,7 @@ When `--current-task-spec-id` is provided, the slug is resolved from the matchin
 
 ## step
 
-Step output template operations
+Step lifecycle and template operations
 
 Usage:
 
@@ -418,7 +429,46 @@ spec-n-roll step [command]
 
 | Command                          | Description                                                   |
 | -------------------------------- | ------------------------------------------------------------- |
+| [init](#step-init)               | Initialize a workflow step (manifestos, before hooks)         |
+| [finalize](#step-finalize)       | Finalize a step after validation (after hooks, completion)    |
 | [instantiate](#step-instantiate) | Instantiate a step output template into a task spec directory |
+
+### step init
+
+Initialize a workflow step before agent work begins. Returns manifesto context, before-hook instructions, and lifecycle metadata as JSON.
+
+Usage:
+
+```shell
+spec-n-roll step init [options]
+```
+
+| Flag                  | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| `--task-spec-id <id>` | Numeric task spec id                             |
+| `--slug <slug>`       | Task spec slug (resolved from id when omitted)   |
+| `--step-id <id>`      | Workflow step id (e.g. `plan`, `tasks`, `implement`) |
+
+MCP equivalent: `step_init`.
+
+### step finalize
+
+Finalize a workflow step after the agent validates step output. Returns after-hook instructions and records completion when eligible. Direct `workflow state write` attempts that advance `lastCompletedStepId` without a prior successful finalize are rejected when lifecycle metadata is active.
+
+Usage:
+
+```shell
+spec-n-roll step finalize [options]
+```
+
+| Flag                         | Description                                    |
+| ---------------------------- | ---------------------------------------------- |
+| `--task-spec-id <id>`        | Numeric task spec id                           |
+| `--slug <slug>`              | Task spec slug (resolved from id when omitted) |
+| `--step-id <id>`             | Workflow step id being finalized               |
+| `--validation-passed <bool>` | `true` or `false` — agent attests validation   |
+
+MCP equivalent: `step_finalize`.
 
 ### step instantiate
 
@@ -478,3 +528,109 @@ spec-n-roll spec frontmatter update [options]
 | --------------------- | --------------------------- |
 | `--task-spec-id <id>` | Numeric task spec id        |
 | `--field <pair...>`   | Frontmatter key=value pairs |
+
+## set-list
+
+Configure set lists that drive workflow triage during specify. Set lists are ordinary project data in `.spec-n-roll/config/set-lists.json` — disable, rename, or add entries without toolkit code changes.
+
+Usage:
+
+```shell
+spec-n-roll set-list [command]
+```
+
+| Command                    | Description                                      |
+| -------------------------- | ------------------------------------------------ |
+| [list](#set-list-list)     | List configured set lists as JSON                |
+| [show](#set-list-show)     | Show one set list entry                          |
+| [create](#set-list-create) | Add a new set list                               |
+| [update](#set-list-update) | Update name, description, workflow, or priority  |
+| [enable](#set-list-enable) | Include a set list in triage                     |
+| [disable](#set-list-disable) | Exclude a set list from triage               |
+| [remove](#set-list-remove) | Delete a set list entry                        |
+| [validate](#set-list-validate) | Validate references and enabled-count rules |
+| [triage](#set-list-triage) | Evaluate user intent against enabled set lists |
+
+### set-list list
+
+```shell
+spec-n-roll set-list list [--include-disabled]
+```
+
+### set-list show
+
+```shell
+spec-n-roll set-list show <id>
+```
+
+### set-list create
+
+```shell
+spec-n-roll set-list create --id <id> --name <name> --description <text> --workflow-id <id> --priority <n> [--enabled]
+```
+
+### set-list update
+
+```shell
+spec-n-roll set-list update <id> [--name <name>] [--description <text>] [--workflow-id <id>] [--priority <n>]
+```
+
+### set-list enable / disable / remove / validate
+
+```shell
+spec-n-roll set-list enable <id>
+spec-n-roll set-list disable <id>
+spec-n-roll set-list remove <id>
+spec-n-roll set-list validate
+```
+
+### set-list triage
+
+```shell
+spec-n-roll set-list triage --intent "<natural language description>"
+```
+
+MCP equivalents: `set_list_read`, `set_list_triage`.
+
+## manifesto
+
+Read Spec Manifesto content stored under `.spec-n-roll/config/manifesto/`. Authoring uses the `/spec-n-manifesto` agent skill (interview-driven, like Spec Kit constitution editing).
+
+Usage:
+
+```shell
+spec-n-roll manifesto [command]
+```
+
+| Command                  | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| [show](#manifesto-show)  | Print global and/or step manifesto bodies as JSON |
+
+### manifesto show
+
+```shell
+spec-n-roll manifesto show [--global] [--step <stepId>]
+```
+
+When neither flag is provided, returns all manifesto entries the toolkit can read (global plus any step files present).
+
+## MCP server tools
+
+The project-local MCP server (`.spec-n-roll/cli/bin/spec-n-roll-mcp`) exposes deterministic mutations mirroring CLI subcommands. Agents should prefer MCP tools over direct file edits for machine-readable artifacts.
+
+| Tool                    | CLI equivalent (when present)     | Purpose                                      |
+| ----------------------- | --------------------------------- | -------------------------------------------- |
+| `workflow_state_read`   | `workflow state read`             | Read `workflow-state.json`                   |
+| `workflow_state_write`  | `workflow state write`            | Write workflow state (finalize gate applies) |
+| `task_spec_status_set`  | `task status set`                 | Set `spec.md` lifecycle status               |
+| `project_metadata_read` | `project metadata read`           | Read project metadata                        |
+| `project_metadata_write`| `project metadata write`          | Update project metadata                      |
+| `task_checkbox_set`     | `task checkbox set`               | Toggle `tasks.md` checkboxes                 |
+| `step_init`             | `step init`                       | Step boundary before work                    |
+| `step_finalize`         | `step finalize`                   | Step boundary after validation               |
+| `step_output_instantiate` | `step instantiate`              | Copy step output templates                   |
+| `spec_frontmatter_update` | `spec frontmatter update`       | Merge non-status spec frontmatter            |
+| `set_list_read`         | `set-list list` / `show`          | Read set list configuration                  |
+| `set_list_triage`       | `set-list triage`                 | Evaluate intent against enabled set lists    |
+
+All tools use `process.cwd()` as the project root and return JSON text content on success.

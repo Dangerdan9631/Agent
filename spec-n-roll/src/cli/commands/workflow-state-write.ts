@@ -14,7 +14,10 @@ export function registerWorkflowStateWriteCommand(state: Command): void {
     .command('write')
     .description('Write workflow state for a task spec')
     .requiredOption('--task-spec-id <id>', 'Numeric task spec id')
-    .requiredOption('--workflow-variant-id <id>', 'Workflow variant id')
+    .requiredOption(
+      '--workflow-variant-id <id>',
+      'Set list id (stored as workflowVariantId in workflow-state.json)',
+    )
     .option('--last-completed-step-id <id>', 'Last completed step id')
     .option('--current-step-id <id>', 'Current in-progress step id')
     .requiredOption('--status <status>', 'Operational status: active|paused|complete')

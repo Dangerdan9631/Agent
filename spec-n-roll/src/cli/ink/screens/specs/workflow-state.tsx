@@ -196,7 +196,7 @@ export function WorkflowStateScreen(props: RoutedScreenProps): React.ReactElemen
       ) : (
         <>
           <Text color="gray">target: {selected.label}</Text>
-          <Text>variant: {existing?.workflowVariantId ?? 'quick'}</Text>
+          <Text>set list: {existing?.workflowVariantId ?? 'quick'}</Text>
           <Text>last completed: {existing?.lastCompletedStepId ?? 'none'}</Text>
           <Text>current step: {existing?.currentStepId ?? 'none'}</Text>
           <Text>status: {status} (s cycle, Enter apply)</Text>

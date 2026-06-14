@@ -23,6 +23,8 @@ Repository root `docs/` (toolkit-authored documentation) is never copied into us
 | ------------------------------------------- | --------------------- |
 | `.spec-n-roll/cli/bin/spec-n-roll`          | toolkit               |
 | `.spec-n-roll/config/workflow.config.json`  | user                  |
+| `.spec-n-roll/config/set-lists.json`        | user                  |
+| `.spec-n-roll/config/manifesto/`            | user                  |
 | `.spec-n-roll/config/project-metadata.json` | user                  |
 | `specs/001-my-feature/spec.md`              | user                  |
 | `specs/001-my-feature/workflow-state.json`  | user (under `specs/`) |
@@ -78,6 +80,35 @@ Migrated files:
 | ------------------------------------------- | ------------------------------------------------------- |
 | `.spec-n-roll/config/workflow.config.json`  | v1 → v2 field normalization; breaking when legacy flags |
 | `.spec-n-roll/config/project-metadata.json` | v1 → current schema field normalization (non-breaking)  |
+| `.spec-n-roll/config/set-lists.json`          | Generated on first update when missing (non-breaking)   |
+
+## Set lists and lifecycle terminology (feature 007)
+
+Implementation: `src/setlists/`, `src/core/step-lifecycle.ts`, `src/updates/migration.ts`.
+
+User-facing copy now says **set list** instead of **complexity** or **workflow variant** when describing workflow selection during specify and triage. Persisted JSON may still use `workflowVariantId` in `workflow-state.json` until a future schema bump; that field stores the selected set list’s linked workflow id.
+
+### New projects
+
+`spec-n-roll init` writes `.spec-n-roll/config/set-lists.json` with papercut, quick, and full entries and seeds manifesto template paths. Set lists are ordinary configuration data—disable, rename, or add entries without toolkit code changes.
+
+### Existing projects without set-lists.json
+
+On the first `spec-n-roll update` after upgrading to a toolkit that includes set lists, `migrateSetListsIfMissing` generates `set-lists.json` from `workflow.config.json` workflows when the file is absent. Review generated descriptions and enablement after update; the migration diagnostic mentions set lists explicitly.
+
+### Step lifecycle (init / finalize)
+
+Agents must call `step_init` before step work and `step_finalize` after validation succeeds. Skills and MCP tools surface manifesto context and hook call instructions at those boundaries. Do not mark a step complete via `workflow_state_write` alone when lifecycle metadata requires finalize.
+
+### Terminology map for maintainers
+
+| Legacy user-facing term | Current term        | Persisted field (unchanged)   |
+| ----------------------- | ------------------- | ----------------------------- |
+| Complexity triage       | Set list triage     | —                             |
+| Workflow variant pick   | Set list selection  | `workflowVariantId` in state  |
+| Tier (papercut/quick/full) | Named set list | Same ids as data in set-lists.json |
+
+Migration docs and release notes may still mention legacy terms when explaining upgrades; product UI, CLI help, Ink labels, and agent-facing triage text should use **set list**.
 
 ## Extension compatibility warnings (implemented)
 

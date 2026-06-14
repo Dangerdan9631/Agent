@@ -223,6 +223,54 @@ export const workflowConfigSchema = z
 export type WorkflowConfig = z.infer<typeof workflowConfigSchema>;
 
 /**
+ * Zod schema for step lifecycle status within a workflow state document.
+ */
+export const stepLifecycleStatusSchema = z.enum([
+  'pending-init',
+  'in-progress',
+  'validated',
+  'completed',
+]);
+
+/**
+ * Step lifecycle status discriminator for an active step attempt.
+ */
+export type StepLifecycleStatus = z.infer<typeof stepLifecycleStatusSchema>;
+
+/**
+ * Zod schema for per-step-attempt lifecycle metadata stored in workflow state.
+ */
+export const stepLifecycleSchema = z
+  .object({
+    /**
+     * Workflow step id for the current lifecycle attempt.
+     */
+    activeStepId: kebabCaseIdSchema,
+    /**
+     * ISO-8601 timestamp when step init succeeded for `activeStepId`.
+     */
+    initAt: z.string().datetime().optional(),
+    /**
+     * ISO-8601 timestamp when the agent reported validation success before finalize.
+     */
+    validatedAt: z.string().datetime().optional(),
+    /**
+     * ISO-8601 timestamp when step finalize recorded completion.
+     */
+    finalizedAt: z.string().datetime().optional(),
+    /**
+     * Current lifecycle phase for the active step attempt.
+     */
+    status: stepLifecycleStatusSchema,
+  })
+  .strict();
+
+/**
+ * Per-step-attempt lifecycle metadata stored in workflow state.
+ */
+export type StepLifecycle = z.infer<typeof stepLifecycleSchema>;
+
+/**
  * Zod schema for project metadata tracking task spec IDs and active task.
  */
 export const projectMetadataSchema = z
@@ -278,3 +326,8 @@ export const projectMetadataSchema = z
  * Project metadata type tracking task spec IDs and active implementation task.
  */
 export type ProjectMetadata = z.infer<typeof projectMetadataSchema>;
+
+/**
+ * Re-exported set list types for CLI and MCP adapters.
+ */
+export type { SetList, SetListsFile } from '../setlists/schema.js';

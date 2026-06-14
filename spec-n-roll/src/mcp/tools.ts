@@ -6,9 +6,11 @@ import { updateSpecFrontmatter } from '../core/frontmatter.js';
 import { readProjectMetadata, writeProjectMetadata } from '../core/project-metadata.js';
 import { setTaskCheckboxes } from '../core/task-checkboxes.js';
 import { setTaskSpecStatus } from '../core/task-lifecycle.js';
+import { runStepFinalize, runStepInit } from '../core/step-lifecycle.js';
 import { instantiateStepOutput } from '../core/templates.js';
 import { readWorkflowState, writeWorkflowState } from '../core/workflow-state.js';
 import { kebabCaseIdSchema, taskSpecIdSchema } from '../config/schema.js';
+import { executeSetListRead, executeSetListTriage } from './set-list-tool-handlers.js';
 
 /**
  * Serializes a core mutation error into MCP tool error text.
@@ -162,6 +164,56 @@ export function registerCoreMcpTools(server: McpServer): void {
   );
 
   server.registerTool(
+    'step_init',
+    {
+      description: 'Initialize a workflow step with manifestos and before-hook instructions',
+      inputSchema: {
+        ...taskIdentitySchema,
+        stepId: kebabCaseIdSchema,
+      },
+    },
+    async ({ taskSpecId, slug, stepId }) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await runStepInit(projectRoot, { taskSpecId, slug, stepId });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'step_finalize',
+    {
+      description: 'Finalize a workflow step after validation and return after-hook instructions',
+      inputSchema: {
+        ...taskIdentitySchema,
+        stepId: kebabCaseIdSchema,
+        validationPassed: z.boolean(),
+      },
+    },
+    async ({ taskSpecId, slug, stepId, validationPassed }) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await runStepFinalize(projectRoot, {
+          taskSpecId,
+          slug,
+          stepId,
+          validationPassed,
+        });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
     'step_output_instantiate',
     {
       description: 'Copy a toolkit step output template into the task spec directory',
@@ -201,6 +253,50 @@ export function registerCoreMcpTools(server: McpServer): void {
         const frontmatter = await updateSpecFrontmatter(projectRoot, taskSpecId, slug, fields);
         return {
           content: [{ type: 'text', text: JSON.stringify(frontmatter, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'set_list_read',
+    {
+      description: 'Read set list configuration or one entry by id',
+      inputSchema: {
+        id: kebabCaseIdSchema.optional(),
+      },
+    },
+    async ({ id }) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await executeSetListRead(projectRoot, { id });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'set_list_triage',
+    {
+      description: 'Evaluate user intent against enabled set lists and select by priority',
+      inputSchema: {
+        userIntent: z.string().min(1),
+        taskSpecId: taskSpecIdSchema.optional(),
+        slug: kebabCaseIdSchema.optional(),
+      },
+    },
+    async (input) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await executeSetListTriage(projectRoot, input);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };

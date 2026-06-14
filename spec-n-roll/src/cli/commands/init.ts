@@ -16,6 +16,14 @@ import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
 import type { AgentConfig, WorkflowConfig } from '../../config/schema.js';
 import { atomicWriteJson } from '../../core/atomic-write.js';
 import { findToolkitPackageRoot } from '../../core/paths.js';
+import {
+  globalManifestoPath,
+  MANIFESTO_TEMPLATE_FILES,
+  manifestoConfigDir,
+  resolveManifestoTemplatePath,
+  stepManifestoDir,
+} from '../../manifesto/paths.js';
+import { createDefaultSetListsFile, SET_LISTS_RELATIVE_PATH } from '../../setlists/index.js';
 import { WORKFLOW_CONFIG_SCHEMA_VERSION } from '../../updates/migration.js';
 import { writeProjectMetadata } from '../../core/project-metadata.js';
 import { installProjectBinaries, readStagedLocalBundleVersion } from '../local-binaries.js';
@@ -194,6 +202,29 @@ async function writeInitialConfigFiles(
 }
 
 /**
+ * Seeds default set lists and manifesto layout without overwriting existing user files.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ */
+async function seedSetListsAndManifestoLayout(projectRoot: string): Promise<void> {
+  const setListsPath = path.join(projectRoot, SET_LISTS_RELATIVE_PATH);
+  if (!(await fse.pathExists(setListsPath))) {
+    await atomicWriteJson(setListsPath, createDefaultSetListsFile());
+  }
+
+  await fse.ensureDir(stepManifestoDir(projectRoot));
+
+  const globalPath = globalManifestoPath(projectRoot);
+  if (!(await fse.pathExists(globalPath))) {
+    const templatePath = resolveManifestoTemplatePath(MANIFESTO_TEMPLATE_FILES.global);
+    if (await fse.pathExists(templatePath)) {
+      await fse.ensureDir(manifestoConfigDir(projectRoot));
+      await fse.copy(templatePath, globalPath);
+    }
+  }
+}
+
+/**
  * Writes an empty compatibility matrix placeholder for extension warnings on update.
  *
  * @param projectRoot - Absolute path to the project root.
@@ -260,6 +291,7 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
     selectedAgentIds: selectedAgents,
   });
   await writeInitialConfigFiles(projectRoot, workflowConfig);
+  await seedSetListsAndManifestoLayout(projectRoot);
   await writeCompatibilityJson(projectRoot);
 
   return {

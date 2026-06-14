@@ -57,7 +57,7 @@ describe('/spec-n-specify integration', () => {
       description: 'Add something useful to the application',
       confirmTriage: async (assessment) => {
         triageSeen = assessment;
-        return assessment.proposedWorkflowVariantId ?? assessment.defaultWorkflowVariantId;
+        return assessment.proposedSetListId ?? assessment.defaultSetListId;
       },
       answerInterview: async (question) => {
         questionsAsked.push(question);
@@ -66,7 +66,7 @@ describe('/spec-n-specify integration', () => {
     });
 
     expect(triageSeen).toBeDefined();
-    expect(triageSeen!.proposedWorkflowVariantId).toBe('quick');
+    expect(triageSeen!.proposedSetListId).toBe('quick');
     expect(questionsAsked.length).toBeGreaterThanOrEqual(1);
     expect(questionsAsked[0]!.recommendedAnswer.length).toBeGreaterThan(0);
 

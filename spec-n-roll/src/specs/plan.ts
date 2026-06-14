@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 
 import { instantiateStepOutput } from '../core/templates.js';
 import { taskSpecFilePath } from '../core/paths.js';
-import { readWorkflowState, writeWorkflowState } from '../core/workflow-state.js';
+import { readWorkflowState } from '../core/workflow-state.js';
 
 /**
  * Options controlling the /spec-n-plan step orchestration flow.
@@ -76,15 +76,6 @@ export async function runPlan(options: RunPlanOptions): Promise<PlanResult> {
 
   await instantiateStepOutput(projectRoot, taskSpecId, slug, 'plan');
   const hasLivingSpecTargets = await planHasLivingSpecTargets(projectRoot, taskSpecId, slug);
-
-  await writeWorkflowState(projectRoot, {
-    taskSpecId,
-    slug,
-    workflowVariantId: existingState.workflowVariantId,
-    lastCompletedStepId: 'plan',
-    currentStepId: null,
-    status: 'active',
-  });
 
   return {
     taskSpecId,

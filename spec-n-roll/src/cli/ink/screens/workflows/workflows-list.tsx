@@ -57,10 +57,10 @@ function workflowContext(summary: WorkflowVariantSummary): SelectableListItem['c
   return {
     id: `workflow:${summary.variantId}`,
     title: `Workflow ${summary.variantId}`,
-    summary: summary.description ?? `${summary.displayName} workflow variant.`,
+    summary: summary.description ?? `${summary.displayName} workflow.`,
     status: summary.isDefault
       ? 'Default workflow for this project.'
-      : 'Additional workflow variant.',
+      : 'Additional workflow.',
     details: [workflowStepDetail(summary), `Step count: ${summary.stepSequence.length}.`],
     nextStep: 'Open the workflow detail view.',
   };

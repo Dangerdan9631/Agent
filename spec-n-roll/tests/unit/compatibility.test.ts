@@ -4,6 +4,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { runUpdate } from '../../src/cli/commands/update.js';
+import { readStagedLocalBundleVersion } from '../../src/cli/local-binaries.js';
+import { resolveToolkitRoot } from '../../src/cli/commands/init.js';
 import { checkExtensionCompatibility } from '../../src/extensions/compatibility.js';
 import { extensionManifestSchema } from '../../src/extensions/manifest.js';
 
@@ -164,6 +166,7 @@ describe('runUpdate extension compatibility', () => {
 
     const compatibilityPath = path.join(projectRoot, '.spec-n-roll', 'compatibility.json');
     mkdirSync(path.dirname(compatibilityPath), { recursive: true });
+    const targetToolkitVersion = readStagedLocalBundleVersion(resolveToolkitRoot());
     writeFileSync(
       compatibilityPath,
       `${JSON.stringify(
@@ -171,7 +174,7 @@ describe('runUpdate extension compatibility', () => {
           incompatibleCombinations: [
             {
               extensionId: 'cursor',
-              toolkitVersion: '0.1.0',
+              toolkitVersion: targetToolkitVersion,
               reason: 'Known bad pairing for test fixture',
             },
           ],

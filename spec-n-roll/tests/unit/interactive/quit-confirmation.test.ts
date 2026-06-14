@@ -240,7 +240,7 @@ describe('App quit confirmation integration', () => {
     const pendingFrame = app.lastFrame() ?? '';
     expect(pendingFrame).toContain(QUIT_CONFIRMATION_Q_MESSAGE);
     expect(pendingFrame).toContain('Any other key to continue.');
-    expect(pendingFrame).toContain('Local Home');
+    expect(pendingFrame).toContain('Main Menu');
 
     app.stdin.write('q');
     await waitForFrame();
@@ -301,7 +301,7 @@ describe('App quit confirmation integration', () => {
     app.stdin.write(ESCAPE);
     await waitForFrame();
     expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_ESCAPE_MESSAGE);
-    expect(app.lastFrame()).toContain('Local Home');
+    expect(app.lastFrame()).toContain('Main Menu');
 
     app.unmount();
   });

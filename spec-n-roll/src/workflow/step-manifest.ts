@@ -1,3 +1,6 @@
+import { loadExtensionRegistry } from '../extensions/hooks.js';
+import { readWorkflowConfig } from './artifacts.js';
+
 /**
  * Defines the standard output files for each built-in workflow step
  * to enable artifact detection and validation.
@@ -9,27 +12,17 @@ export const BUILT_IN_STEP_OUTPUTS: Record<string, readonly string[]> = {
 };
 
 /**
- * Defines the default step sequences for each workflow variant
- * to provide standard workflow configurations.
- */
-export const DEFAULT_VARIANT_STEPS: Record<string, readonly string[]> = {
-  papercut: ['specify', 'implement'],
-  quick: ['specify', 'tasks', 'implement'],
-  full: ['specify', 'plan', 'tasks', 'implement'],
-};
-
-/**
- * Returns the step IDs for a workflow variant from configuration or defaults.
+ * Returns the step IDs for a workflow variant from configuration.
  *
- * @param variantId - The workflow variant ID to get steps for.
- * @param variantSteps - Optional configured steps for the variant.
- * @returns Array of step IDs for the variant.
+ * @param _variantId - The workflow variant ID to get steps for.
+ * @param variantSteps - Configured steps for the variant from workflow.config.json.
+ * @returns Array of step IDs for the variant, or empty when not configured.
  */
-export function getVariantStepIds(variantId: string, variantSteps?: readonly string[]): string[] {
+export function getVariantStepIds(_variantId: string, variantSteps?: readonly string[]): string[] {
   if (variantSteps != null && variantSteps.length > 0) {
     return [...variantSteps];
   }
-  return [...(DEFAULT_VARIANT_STEPS[variantId] ?? [])];
+  return [];
 }
 
 /**
@@ -84,4 +77,34 @@ export function getExpectedOutputsForVariant(
   }
 
   return outputs;
+}
+
+/**
+ * Loads registered workflow step ids from workflow config and enabled extensions.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @returns Set of kebab-case step ids available for lifecycle operations.
+ */
+export async function resolveRegisteredWorkflowStepIds(
+  projectRoot: string,
+): Promise<Set<string>> {
+  const config = await readWorkflowConfig(projectRoot);
+  const configStepIds = config?.steps.map((step) => step.id) ?? [];
+  const registry = await loadExtensionRegistry(projectRoot);
+  const merged = new Set<string>([...configStepIds, ...registry.mergedStepIds]);
+  return merged;
+}
+
+/**
+ * Returns whether a step id is registered in workflow configuration or extensions.
+ *
+ * @param stepId - Workflow step id to validate.
+ * @param registeredStepIds - Set returned from `resolveRegisteredWorkflowStepIds`.
+ * @returns True when the step id is known to the project workflow registry.
+ */
+export function isRegisteredWorkflowStep(
+  stepId: string,
+  registeredStepIds: ReadonlySet<string>,
+): boolean {
+  return registeredStepIds.has(stepId);
 }

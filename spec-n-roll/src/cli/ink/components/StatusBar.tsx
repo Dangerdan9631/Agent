@@ -33,7 +33,7 @@ export function StatusBar(): React.ReactElement {
       return null;
     }
   }, [session.projectRoot]);
-  const binaryContext = versionReport?.invocation ?? session.binaryContext;
+  const binaryContext = session.binaryContext;
   const localBinaryPath = versionReport?.localCliPath ?? session.localBinaryPath;
   const localPath = localBinaryPath == null ? '' : ` (${abbreviateProjectRoot(localBinaryPath)})`;
 

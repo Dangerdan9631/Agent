@@ -241,7 +241,6 @@ describe('interactive shell fullscreen layout', () => {
     const frame = app.lastFrame() ?? '';
 
     expect(frame).toContain('> 1 Project');
-    expect(frame).toContain("5 Manage Spec N' Roll");
 
     app.unmount();
     restoreRows();
@@ -324,7 +323,7 @@ describe('app scaffolding shell layout', () => {
     const restoreRows = setTerminalRows(20);
     const app = render(createApp());
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, '> 1 Project');
     const frame = app.lastFrame() ?? '';
 
     expect(frame.indexOf('Spec-N-Roll')).toBeLessThan(frame.indexOf('> 1 Project'));

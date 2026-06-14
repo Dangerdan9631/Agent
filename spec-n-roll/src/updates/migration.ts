@@ -1,11 +1,17 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
+import { atomicWriteJson } from '../core/atomic-write.js';
 import {
   PROJECT_METADATA_RELATIVE_PATH,
   PROJECT_METADATA_SCHEMA_VERSION,
 } from '../core/project-metadata.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../workflow/artifacts.js';
+import { readWorkflowConfig, WORKFLOW_CONFIG_RELATIVE_PATH } from '../workflow/artifacts.js';
+import {
+  parseSetListsFile,
+  SET_LISTS_SCHEMA_VERSION,
+  type SetListsFile,
+} from '../setlists/schema.js';
 import { readProjectMetadataTolerant, readWorkflowConfigTolerant } from '../config/reader.js';
 import {
   projectMetadataSchema,
@@ -13,7 +19,6 @@ import {
   type ProjectMetadata,
   type WorkflowConfig,
 } from '../config/schema.js';
-import { atomicWriteJson } from '../core/atomic-write.js';
 
 /**
  * Current workflow configuration schema version written by migrations.
@@ -21,6 +26,66 @@ import { atomicWriteJson } from '../core/atomic-write.js';
 export const WORKFLOW_CONFIG_SCHEMA_VERSION = '2';
 
 export { PROJECT_METADATA_SCHEMA_VERSION } from '../core/project-metadata.js';
+
+/**
+ * Project-relative path to the set lists configuration file.
+ */
+export const SET_LISTS_RELATIVE_PATH = '.spec-n-roll/config/set-lists.json';
+
+/**
+ * Result of migrating missing set lists configuration from workflow variants.
+ */
+export interface SetListsMigrationResult {
+  /**
+   * Generated set lists file written to disk.
+   */
+  file: SetListsFile;
+  /**
+   * One-time diagnostic message suggesting review of generated descriptions.
+   */
+  diagnostic: string;
+}
+
+/**
+ * Generates and persists set lists from workflow.config.json when set-lists.json is absent.
+ *
+ * @param projectRoot - Absolute path to the initialized project root.
+ * @returns Migration result when a file was generated, or null when migration cannot run.
+ */
+export async function migrateSetListsIfMissing(
+  projectRoot: string,
+): Promise<SetListsMigrationResult | null> {
+  const setListsPath = path.join(projectRoot, SET_LISTS_RELATIVE_PATH);
+  if (await fse.pathExists(setListsPath)) {
+    return null;
+  }
+
+  const workflowConfig = await readWorkflowConfig(projectRoot);
+  if (workflowConfig == null || workflowConfig.workflows.length === 0) {
+    return null;
+  }
+
+  const file = parseSetListsFile({
+    schemaVersion: SET_LISTS_SCHEMA_VERSION,
+    setLists: workflowConfig.workflows.map((workflow, index) => ({
+      id: workflow.id,
+      name: workflow.name,
+      description: workflow.description ?? `${workflow.name} workflow set list`,
+      workflowId: workflow.id,
+      priority: index + 1,
+      enabled: true,
+    })),
+  });
+
+  await atomicWriteJson(setListsPath, file);
+
+  return {
+    file,
+    diagnostic:
+      'Generated set lists from workflow.config.json because set-lists.json was missing. ' +
+      'Review set list descriptions and enablement.',
+  };
+}
 
 /**
  * Error thrown when a breaking migration is blocked pending explicit confirmation.

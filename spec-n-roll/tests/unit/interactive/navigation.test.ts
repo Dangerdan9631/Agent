@@ -18,12 +18,12 @@ describe('interactive navigation stack', () => {
 
     expect(currentRoute(detailStack)).toBe('spec-detail');
     expect(detailStack.map((entry) => entry.title)).toEqual([
-      'Local Home',
+      'Main Menu',
       'Task Specs',
       'Spec Detail',
     ]);
     expect(formatBreadcrumb(detailStack)).toBe(
-      'Local Home > Task Specs > Spec Detail: 001-active-checkout',
+      'Main Menu > Task Specs > Spec Detail: 001-active-checkout',
     );
   });
 
@@ -37,8 +37,8 @@ describe('interactive navigation stack', () => {
   it('returns stable titles for every foundational route target', () => {
     expect(homeRouteIdFor('global')).toBe('global-home');
     expect(homeRouteIdFor('local')).toBe('local-home');
-    expect(titleForRoute('global-home')).toBe('Global Home');
-    expect(titleForRoute('local-home')).toBe('Local Home');
+    expect(titleForRoute('global-home')).toBe('Main Menu');
+    expect(titleForRoute('local-home')).toBe('Main Menu');
     expect(titleForRoute('workflows-list')).toBe('Workflows');
     expect(titleForRoute('agents-list')).toBe('Agents');
     expect(titleForRoute('project-metadata-view')).toBe('Project Metadata');

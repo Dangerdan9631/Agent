@@ -19,6 +19,10 @@ import { AgentRemoveScreen } from '../screens/agents/agent-remove.js';
 import { GlobalHomeScreen } from '../screens/global-home.js';
 import { LocalHomeScreen } from '../screens/local-home.js';
 import { ManageLocalScreen } from '../screens/manage/manage-local.js';
+import { ManifestoViewScreen } from '../screens/manifesto/manifesto-view.js';
+import { SetListDetailScreen } from '../screens/set-lists/set-list-detail.js';
+import { SetListEditScreen } from '../screens/set-lists/set-list-edit.js';
+import { SetListsListScreen } from '../screens/set-lists/set-lists-list.js';
 import { ProjectHubScreen } from '../screens/project/project-hub.js';
 import { ProjectMetadataEditScreen } from '../screens/project/project-metadata-edit.js';
 import { ProjectMetadataViewScreen } from '../screens/project/project-metadata-view.js';
@@ -164,6 +168,14 @@ function RouteRenderer(props: RouteRendererProps): React.ReactElement {
       return <ProjectHubScreen {...routeProps} />;
     case 'manage-local':
       return <ManageLocalScreen {...routeProps} />;
+    case 'manifesto-view':
+      return <ManifestoViewScreen {...routeProps} />;
+    case 'set-lists-list':
+      return <SetListsListScreen {...routeProps} />;
+    case 'set-list-detail':
+      return <SetListDetailScreen {...routeProps} />;
+    case 'set-list-edit':
+      return <SetListEditScreen {...routeProps} />;
     default:
       return <PlaceholderScreen routeId={session.routeId} {...routeProps} />;
   }

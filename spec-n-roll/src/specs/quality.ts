@@ -5,7 +5,7 @@ import { parseFrontmatterDocument } from '../core/frontmatter.js';
 import { taskSpecDir, taskSpecFilePath } from '../core/paths.js';
 import { readWorkflowState } from '../core/workflow-state.js';
 import { getVariantStepIds } from '../workflow/step-manifest.js';
-import { stepOutputsExist } from '../workflow/artifacts.js';
+import { readWorkflowConfig, stepOutputsExist } from '../workflow/artifacts.js';
 import type { InterviewSession } from './interview.js';
 import { isInterviewComplete } from './interview.js';
 import { tasksTemplateSatisfiesFr009 } from './tasks.js';
@@ -202,8 +202,12 @@ export async function runCrossArtifactAnalysis(
   const issues: AnalyzeIssue[] = [];
   const taskDirectory = taskSpecDir(projectRoot, taskSpecId, slug);
   const state = await readWorkflowState(projectRoot, taskSpecId, slug);
-  const variantId = state?.workflowVariantId ?? 'quick';
-  const tierSteps = getVariantStepIds(variantId);
+  const workflowConfig = await readWorkflowConfig(projectRoot);
+  const variantId = state?.workflowVariantId ?? workflowConfig?.defaultWorkflowId ?? 'quick';
+  const configuredVariantSteps = workflowConfig?.workflows.find(
+    (workflow) => workflow.id === variantId,
+  )?.steps;
+  const tierSteps = getVariantStepIds(variantId, configuredVariantSteps);
 
   const specPath = taskSpecFilePath(projectRoot, taskSpecId, slug, 'spec.md');
   if (!(await fse.pathExists(specPath))) {
@@ -229,7 +233,7 @@ export async function runCrossArtifactAnalysis(
     if (!(await fse.pathExists(planPath))) {
       issues.push({
         code: 'MISSING_ARTIFACT',
-        message: 'plan.md is expected for the full tier but is missing.',
+        message: 'plan.md is expected for the full set list workflow but is missing.',
         artifactPath: path.posix.join('specs', `${taskSpecId}-${slug}`, 'plan.md'),
       });
     } else {
@@ -256,7 +260,7 @@ export async function runCrossArtifactAnalysis(
     if (!(await fse.pathExists(tasksPath))) {
       issues.push({
         code: 'MISSING_ARTIFACT',
-        message: 'tasks.md is expected for this tier but is missing.',
+        message: 'tasks.md is expected for this set list workflow but is missing.',
         artifactPath: path.posix.join('specs', `${taskSpecId}-${slug}`, 'tasks.md'),
       });
     } else {

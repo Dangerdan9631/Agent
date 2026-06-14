@@ -53,17 +53,27 @@ Extensions let a project replace or augment built-in workflow steps and register
 
 ```javascript
 export async function handler(context) {
+  const enabledSetLists = context.enabledSetLists ?? [];
+  const proposed = enabledSetLists.find((entry) => entry.id === 'quick') ?? enabledSetLists[0];
   return {
     mode: 'heuristic',
-    proposedWorkflowVariantId: 'quick',
+    proposedSetListId: proposed?.id ?? null,
+    proposedWorkflowId: proposed?.workflowId ?? null,
     rationale: 'Custom triage logic.',
-    availableWorkflowVariantIds: context.availableWorkflowIds,
-    defaultWorkflowVariantId: context.defaultWorkflowId,
+    eligibleSetLists: enabledSetLists.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      description: entry.description,
+      priority: entry.priority,
+      workflowId: entry.workflowId,
+    })),
+    defaultSetListId: proposed?.id ?? '',
+    blocking: false,
   };
 }
 ```
 
-Running `/spec-n-specify` uses the custom triage handler while the extension is enabled. Set `"enabled": false` on the registration to restore built-in triage.
+Running `/spec-n-specify` uses the custom triage handler while the extension is enabled. Set `"enabled": false` on the registration to restore built-in set list triage.
 
 ## Add hooks
 
@@ -79,7 +89,9 @@ Running `/spec-n-specify` uses the custom triage handler while the extension is 
 }
 ```
 
-Hooks whose `{stepId}` is not in the merged step registry warn at load time and are skipped during workflow execution.
+Hooks whose `{stepId}` is not in the merged step registry warn at load time and are skipped during collection and dispatch.
+
+On the **agent path**, before/after hooks for a step are returned as call instructions from `step_init` and `step_finalize` (from both `.specify/extensions.yml` and extension manifest hooks). The CLI engine path may still auto-dispatch extension manifest handlers in-process for built-in automatic steps.
 
 ## TODO
 

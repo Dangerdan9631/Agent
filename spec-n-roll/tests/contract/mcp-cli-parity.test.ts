@@ -221,4 +221,200 @@ describe('MCP/CLI parity', () => {
     expect(specContent).toContain('title: Updated Title');
     expect(specContent).toContain('owner: team-a');
   });
+
+  it('step init via CLI matches core runStepInit', async () => {
+    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
+    const { createDefaultSetListsFile } = await import('../../src/setlists/index.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
+    const { runStepInit } = await import('../../src/core/step-lifecycle.js');
+
+    async function seedLifecycleProject(suffix: string): Promise<string> {
+      const projectRoot = createTempProject(`step-init-${suffix}`);
+      const specDir = path.join(projectRoot, 'specs', '007-step-manifesto-setlists');
+      mkdirSync(specDir, { recursive: true });
+      writeFileSync(path.join(specDir, 'spec.md'), '# Step manifesto setlists\n', 'utf8');
+      mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
+
+      const workflowConfig = createDefaultWorkflowConfig({
+        toolkitVersion: '0.1.2',
+        selectedAgentIds: ['cursor'],
+      });
+      writeFileSync(
+        path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH),
+        JSON.stringify(workflowConfig),
+        'utf8',
+      );
+      writeFileSync(
+        path.join(projectRoot, '.spec-n-roll/config/set-lists.json'),
+        JSON.stringify(createDefaultSetListsFile()),
+        'utf8',
+      );
+
+      await writeWorkflowState(projectRoot, {
+        taskSpecId: '007',
+        slug: 'step-manifesto-setlists',
+        workflowVariantId: 'quick',
+        lastCompletedStepId: 'specify',
+        status: 'active',
+      });
+
+      return projectRoot;
+    }
+
+    const cliProject = await seedLifecycleProject('cli');
+    const coreProject = await seedLifecycleProject('core');
+
+    const fromCli = runCliJson(cliProject, [
+      'step',
+      'init',
+      '--task-spec-id',
+      '007',
+      '--slug',
+      'step-manifesto-setlists',
+      '--step-id',
+      'plan',
+    ]) as {
+      blocking: boolean;
+      taskSpecId?: string;
+      stepId?: string;
+      setListId?: string;
+      workflowState?: { lifecycle?: { activeStepId?: string; status?: string } };
+    };
+
+    const fromCore = await runStepInit(coreProject, {
+      taskSpecId: '007',
+      slug: 'step-manifesto-setlists',
+      stepId: 'plan',
+    });
+
+    expect(fromCli).toMatchObject({
+      blocking: fromCore.blocking,
+      taskSpecId: fromCore.taskSpecId,
+      stepId: fromCore.stepId,
+      setListId: fromCore.setListId,
+      workflowState: {
+        lifecycle: {
+          activeStepId: 'plan',
+          status: 'in-progress',
+        },
+      },
+    });
+    expect(fromCore.blocking).toBe(false);
+  }, 15_000);
+
+  it('step finalize via CLI matches core runStepFinalize after init', async () => {
+    const projectRoot = createTempProject('step-finalize');
+    mkdirSync(path.join(projectRoot, 'specs', '007-step-manifesto-setlists'), { recursive: true });
+    mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
+
+    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
+    const { createDefaultSetListsFile } = await import('../../src/setlists/index.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
+    const { runStepInit } = await import('../../src/core/step-lifecycle.js');
+
+    const workflowConfig = createDefaultWorkflowConfig({
+      toolkitVersion: '0.1.2',
+      selectedAgentIds: ['cursor'],
+    });
+    writeFileSync(
+      path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH),
+      JSON.stringify(workflowConfig),
+      'utf8',
+    );
+    writeFileSync(
+      path.join(projectRoot, '.spec-n-roll/config/set-lists.json'),
+      JSON.stringify(createDefaultSetListsFile()),
+      'utf8',
+    );
+
+    await writeWorkflowState(projectRoot, {
+      taskSpecId: '007',
+      slug: 'step-manifesto-setlists',
+      workflowVariantId: 'quick',
+      lastCompletedStepId: 'specify',
+      status: 'active',
+    });
+
+    await runStepInit(projectRoot, {
+      taskSpecId: '007',
+      slug: 'step-manifesto-setlists',
+      stepId: 'tasks',
+    });
+
+    const fromCli = runCliJson(projectRoot, [
+      'step',
+      'finalize',
+      '--task-spec-id',
+      '007',
+      '--slug',
+      'step-manifesto-setlists',
+      '--step-id',
+      'tasks',
+      '--validation-passed',
+      'true',
+    ]) as { workflowState: { lastCompletedStepId: string | null } };
+
+    const fromCore = await readWorkflowState(projectRoot, '007', 'step-manifesto-setlists');
+    expect(fromCli.workflowState.lastCompletedStepId).toBe('tasks');
+    expect(fromCore?.lastCompletedStepId).toBe('tasks');
+    expect(fromCore?.lifecycle?.status).toBe('completed');
+  });
+
+  it('set-list list via CLI matches core read', async () => {
+    const projectRoot = createTempProject('set-list-list');
+    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
+    const { loadSetListReadResult } = await import('../../src/cli/commands/set-list.js');
+
+    mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
+    writeFileSync(
+      path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH),
+      JSON.stringify(
+        createDefaultWorkflowConfig({
+          toolkitVersion: '0.1.2',
+          selectedAgentIds: ['cursor'],
+        }),
+      ),
+      'utf8',
+    );
+    writeFileSync(
+      path.join(projectRoot, '.spec-n-roll/config/set-lists.json'),
+      JSON.stringify((await import('../../src/setlists/index.js')).createDefaultSetListsFile()),
+      'utf8',
+    );
+
+    const fromCli = runCliJson(projectRoot, ['set-list', 'list']);
+    const fromCore = await loadSetListReadResult(projectRoot, {});
+    expect(fromCli).toEqual(fromCore);
+  });
+
+  it('set-list triage via CLI matches core triage', async () => {
+    const projectRoot = createTempProject('set-list-triage');
+    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
+    const { runSetListTriage } = await import('../../src/setlists/index.js');
+
+    mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
+    writeFileSync(
+      path.join(projectRoot, WORKFLOW_CONFIG_RELATIVE_PATH),
+      JSON.stringify(
+        createDefaultWorkflowConfig({
+          toolkitVersion: '0.1.2',
+          selectedAgentIds: ['cursor'],
+        }),
+      ),
+      'utf8',
+    );
+    writeFileSync(
+      path.join(projectRoot, '.spec-n-roll/config/set-lists.json'),
+      JSON.stringify((await import('../../src/setlists/index.js')).createDefaultSetListsFile()),
+      'utf8',
+    );
+
+    const intent = 'fix typo in readme';
+    const fromCli = runCliJson(projectRoot, ['set-list', 'triage', '--intent', intent]);
+    const fromCore = await runSetListTriage(projectRoot, intent);
+    expect(fromCli).toEqual(fromCore);
+    expect((fromCore as { selectedId: string }).selectedId).toBe('papercut');
+  });
 });

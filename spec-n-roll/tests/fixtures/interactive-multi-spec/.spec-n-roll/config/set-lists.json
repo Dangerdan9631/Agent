@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "setLists": [
+    {
+      "id": "quick",
+      "name": "Quick",
+      "description": "Focused implementation path for small changes.",
+      "workflowId": "quick",
+      "priority": 1,
+      "enabled": true
+    },
+    {
+      "id": "full",
+      "name": "Full",
+      "description": "Complete planning path for larger changes.",
+      "workflowId": "full",
+      "priority": 2,
+      "enabled": true
+    }
+  ]
+}

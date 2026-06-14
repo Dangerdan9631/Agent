@@ -68,11 +68,15 @@ describe('/spec-n-roll intent detection', () => {
   });
 
   it('resolves the next tier step from workflow state', () => {
-    expect(resolveNextStepId('quick', 'specify')).toBe('tasks');
-    expect(resolveNextStepId('quick', 'tasks')).toBe('implement');
-    expect(resolveNextStepId('quick', 'implement')).toBeNull();
-    expect(resolveNextStepId('papercut', 'specify')).toBe('implement');
-    expect(resolveNextStepId('full', 'plan')).toBe('tasks');
+    const quickSteps = ['specify', 'tasks', 'implement'] as const;
+    const papercutSteps = ['specify', 'implement'] as const;
+    const fullSteps = ['specify', 'plan', 'tasks', 'implement'] as const;
+
+    expect(resolveNextStepId('quick', 'specify', quickSteps)).toBe('tasks');
+    expect(resolveNextStepId('quick', 'tasks', quickSteps)).toBe('implement');
+    expect(resolveNextStepId('quick', 'implement', quickSteps)).toBeNull();
+    expect(resolveNextStepId('papercut', 'specify', papercutSteps)).toBe('implement');
+    expect(resolveNextStepId('full', 'plan', fullSteps)).toBe('tasks');
   });
 
   it('advances a single Active spec without a selection prompt', () => {

@@ -128,14 +128,14 @@ describe('interactive browse flow', () => {
     await openSpecsFromLocalHome(app);
     expect(app.lastFrame()).toContain('001 active-checkout');
     expect(app.lastFrame()).toContain('Lifecycle: Active; workflow: active.');
-    expect(app.lastFrame()).toContain('Step: implement; workflow variant: quick.');
+    expect(app.lastFrame()).toContain('Step: implement; set list: quick.');
     expect(app.lastFrame()).toContain('Unrecognized');
 
     app.stdin.write('\u001b[B');
     await waitForText(app, '002 completed-migration');
     expect(app.lastFrame()).toContain('002 completed-migration');
     expect(app.lastFrame()).toContain('Lifecycle: Complete; workflow: complete.');
-    expect(app.lastFrame()).toContain('Step: implement; workflow variant: full.');
+    expect(app.lastFrame()).toContain('Step: implement; set list: full.');
 
     app.stdin.write('\u001b[A');
     await waitForText(app, '001 active-checkout');
@@ -149,7 +149,10 @@ describe('interactive browse flow', () => {
     app.stdin.write('\u001b');
     app.stdin.write('\u001b');
     await waitForFrame();
-    await waitForText(app, '6 Quit');
+    await waitForText(app, '1 Specs');
+    app.stdin.write('5');
+    await waitForFrame();
+    await waitForText(app, '> 1 Project');
 
     app.stdin.write('3');
     await waitForText(app, '> Quick');
@@ -163,9 +166,11 @@ describe('interactive browse flow', () => {
     expect(app.lastFrame()).toContain('Workflow quick');
 
     app.stdin.write('\u001b');
-    app.stdin.write('\u001b');
     await waitForFrame();
-    await waitForText(app, '6 Quit');
+    await waitForText(app, '3 Back');
+    app.stdin.write('3');
+    await waitForFrame();
+    await waitForText(app, '> 1 Project');
 
     app.stdin.write('2');
     await waitForText(app, 'claude-code');
@@ -214,14 +219,14 @@ describe('interactive browse flow', () => {
     const specsFrame = app.lastFrame() ?? '';
     expect(specsFrame).toContain('001 active-checkout');
     expect(specsFrame).toContain('Lifecycle: Active; workflow: active.');
-    expect(specsFrame).toContain('Step: implement; workflow variant: quick.');
+    expect(specsFrame).toContain('Step: implement; set list: quick.');
     expect(specsFrame).not.toContain("> 5 Manage Spec N' Roll");
     expect(specsFrame).not.toContain('Choose a section to open.');
 
     app.stdin.write('\u001b[B');
     await waitForText(app, '002 completed-migration');
     expect(app.lastFrame()).toContain('Lifecycle: Complete; workflow: complete.');
-    expect(app.lastFrame()).toContain('Step: implement; workflow variant: full.');
+    expect(app.lastFrame()).toContain('Step: implement; set list: full.');
 
     app.unmount();
   });
@@ -254,6 +259,7 @@ describe('interactive browse flow', () => {
     app.stdin.write('3');
     await waitForText(app, '1 Specs');
     expect(app.lastFrame()).toContain('2 Project Metadata');
+    expect(app.lastFrame()).toContain('3 Spec Manifestos');
     expect(app.lastFrame()).not.toContain('001 active-checkout');
 
     app.unmount();

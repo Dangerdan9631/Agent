@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 
 import { taskSpecFilePath } from '../core/paths.js';
 import { instantiateStepOutput } from '../core/templates.js';
-import { readWorkflowState, writeWorkflowState } from '../core/workflow-state.js';
+import { readWorkflowState } from '../core/workflow-state.js';
 
 /**
  * Options controlling the /spec-n-tasks step orchestration flow.
@@ -83,15 +83,6 @@ export async function runTasks(options: RunTasksOptions): Promise<TasksResult> {
       'tasks.md template violates FR-009: living-spec updates must be the first implementation phase.',
     );
   }
-
-  await writeWorkflowState(projectRoot, {
-    taskSpecId,
-    slug,
-    workflowVariantId: existingState.workflowVariantId,
-    lastCompletedStepId: 'tasks',
-    currentStepId: null,
-    status: 'active',
-  });
 
   return {
     taskSpecId,

@@ -17,7 +17,7 @@ Four out-of-the-box agent extensions ship with the toolkit:
 
 Implementation: `src/agents/generators/` and `src/agents/extension-loader.ts`.
 
-Each pointer file is a thin reference to the canonical rules at `.spec-n-roll/AGENTS.md`. Workflow skill files (for example `spec-n-specify`, `/spec-n-roll`, `/spec-n-implement`) are generated under `.agents/skills/` during `init` and refreshed on `update`.
+Each pointer file is a thin reference to the canonical rules at `.spec-n-roll/AGENTS.md`. Workflow skill files (for example `spec-n-specify`, `spec-n-roll`, `spec-n-implement`, `spec-n-manifesto`) are generated under `.agents/skills/` during `init` and refreshed on `update`. Managed skills include `metadata.author: spec-n-roll` and `metadata.version` matching the installed toolkit; user-owned skills outside the managed manifest are not overwritten.
 
 ## Canonical rules
 
@@ -43,11 +43,15 @@ Selected agent manifests are written to `.spec-n-roll/bundled-extensions/{id}/ma
 
 `init` writes `.spec-n-roll/config/workflow.config.json` with:
 
-- Three tier variants: `papercut`, `quick`, `full` — each lists shared `specify` as step 1
+- Workflow definitions (`papercut`, `quick`, `full` by default) — each lists shared `specify` as step 1 and its own step sequence
 - Enabled entries only for agents selected during init
 - Extension references pointing at installed manifests
 
-`init` also writes `.spec-n-roll/config/project-metadata.json` with `nextTaskSpecId: 1`.
+`init` also writes:
+
+- `.spec-n-roll/config/set-lists.json` — default set lists (`papercut`, `quick`, `full`) with triage descriptions, priorities, and `workflowId` references (ordinary config data, not hard-coded runtime branches)
+- `.spec-n-roll/config/manifesto/` — layout for global and step manifestos; copies `global.md` from the toolkit template when absent
+- `.spec-n-roll/config/project-metadata.json` with `nextTaskSpecId: 1`
 
 ## Project-local binaries
 

@@ -1,12 +1,34 @@
+import type { SetList } from '../setlists/schema.js';
+import { evaluateSetListTriage } from '../setlists/triage.js';
+
 /**
- * Default workflow tier variant identifiers used by built-in triage.
+ * Summary of one set list returned during triage for agent selection.
  */
-export type WorkflowTierId = 'papercut' | 'quick' | 'full';
-
-const WORKFLOW_TIER_IDS: readonly WorkflowTierId[] = ['papercut', 'quick', 'full'];
+export interface TriageSetListSummary {
+  /**
+   * Stable kebab-case set list id.
+   */
+  id: string;
+  /**
+   * Human-readable set list label.
+   */
+  name: string;
+  /**
+   * Triage description shown to agents during selection.
+   */
+  description: string;
+  /**
+   * Priority used for deterministic tie-breaking.
+   */
+  priority: number;
+  /**
+   * Referenced workflow id stored in workflow state when selected.
+   */
+  workflowId: string;
+}
 
 /**
- * Input for evaluating workflow tier triage from a feature description.
+ * Input for evaluating set list triage from a feature description.
  */
 export interface TriageInput {
   /**
@@ -14,13 +36,17 @@ export interface TriageInput {
    */
   description: string;
   /**
-   * Tier id pre-selected for manual picker when automatic triage is skipped.
+   * Workflow id pre-selected when automatic triage is skipped.
    */
   defaultWorkflowId: string;
   /**
-   * Workflow tier ids available in the project configuration.
+   * Workflow ids available in the project configuration.
    */
   availableWorkflowIds: readonly string[];
+  /**
+   * Enabled set lists used for config-driven triage evaluation.
+   */
+  enabledSetLists: readonly SetList[];
 }
 
 /**
@@ -28,28 +54,109 @@ export interface TriageInput {
  */
 export interface TriageAssessment {
   /**
-   * Whether triage used heuristics or requires manual tier selection.
+   * Whether triage used heuristics, requires manual selection, or is blocked.
    */
-  mode: 'heuristic' | 'manual';
+  mode: 'heuristic' | 'manual' | 'blocking';
   /**
-   * Heuristic match when mode is `heuristic`; null when manual selection is required.
+   * Heuristic set list match when mode is `heuristic`; null when manual selection is required.
    */
-  proposedWorkflowVariantId: WorkflowTierId | null;
+  proposedSetListId: string | null;
+  /**
+   * Workflow id derived from the proposed set list for workflow state persistence.
+   */
+  proposedWorkflowId: string | null;
   /**
    * Plain-language explanation of the triage decision for developer confirmation.
    */
   rationale: string;
   /**
-   * Tier ids presented when the developer must pick manually.
+   * Enabled set lists presented during triage.
    */
-  availableWorkflowVariantIds: WorkflowTierId[];
+  eligibleSetLists: readonly TriageSetListSummary[];
   /**
-   * Pre-selected tier id in the manual picker (from `defaultWorkflowId`).
+   * Pre-selected set list id in the manual picker.
    */
-  defaultWorkflowVariantId: WorkflowTierId;
+  defaultSetListId: string;
+  /**
+   * Workflow id associated with the default set list.
+   */
+  defaultWorkflowId: string;
+  /**
+   * Whether multiple set lists tied and priority was used to break the tie.
+   */
+  ambiguous: boolean;
+  /**
+   * When true, triage cannot proceed because no enabled set lists remain.
+   */
+  blocking?: boolean;
+  /**
+   * Actionable message when `blocking` is true.
+   */
+  message?: string;
 }
 
-const PAPERCUT_PATTERNS = [
+/**
+ * Maps set list entries to triage summaries for agent-facing output.
+ *
+ * @param setLists - Enabled set list entries under consideration.
+ * @returns Summaries with ids, descriptions, and workflow references.
+ */
+function toTriageSummaries(setLists: readonly SetList[]): TriageSetListSummary[] {
+  return setLists.map((setList) => ({
+    id: setList.id,
+    name: setList.name,
+    description: setList.description,
+    priority: setList.priority,
+    workflowId: setList.workflowId,
+  }));
+}
+
+/**
+ * Resolves the default set list from enabled entries and configured workflow defaults.
+ *
+ * @param enabledSetLists - Enabled set lists eligible for triage.
+ * @param defaultWorkflowId - Workflow id from project configuration.
+ * @returns Default set list used when manual selection is required.
+ */
+function resolveDefaultSetList(
+  enabledSetLists: readonly SetList[],
+  defaultWorkflowId: string,
+): SetList {
+  const workflowMatch = enabledSetLists.find((setList) => setList.workflowId === defaultWorkflowId);
+  if (workflowMatch != null) {
+    return workflowMatch;
+  }
+
+  return enabledSetLists.reduce((lowest, current) =>
+    current.priority < lowest.priority ? current : lowest,
+  );
+}
+
+/**
+ * Returns true when the description is too short or vague for heuristic triage.
+ *
+ * @param description - Trimmed feature description text.
+ * @returns True when manual set list selection should be required.
+ */
+function isAmbiguousDescription(description: string): boolean {
+  if (description.length === 0) {
+    return true;
+  }
+
+  const words = description.split(/\s+/).filter((word) => word.length > 0);
+  if (words.length <= 1 && description.length < 12) {
+    return true;
+  }
+
+  const hasSignal =
+    TRIVIAL_INTENT_PATTERNS.some((pattern) => pattern.test(description)) ||
+    FEATURE_INTENT_PATTERNS.some((pattern) => pattern.test(description)) ||
+    ARCHITECTURAL_INTENT_PATTERNS.some((pattern) => pattern.test(description));
+
+  return !hasSignal && description.length < 24;
+}
+
+const TRIVIAL_INTENT_PATTERNS = [
   /\btypo\b/i,
   /\bcopy\b/i,
   /\blabel\b/i,
@@ -61,10 +168,9 @@ const PAPERCUT_PATTERNS = [
   /\bpatch\b/i,
   /\brename\b/i,
   /\bspelling\b/i,
-  /\bui copy\b/i,
 ];
 
-const FULL_PATTERNS = [
+const ARCHITECTURAL_INTENT_PATTERNS = [
   /\bcross[\s-]?cutting\b/i,
   /\bsubsystem\b/i,
   /\barchitect/i,
@@ -77,7 +183,7 @@ const FULL_PATTERNS = [
   /\benterprise\b/i,
 ];
 
-const QUICK_PATTERNS = [
+const FEATURE_INTENT_PATTERNS = [
   /\badd\b/i,
   /\bnew\b/i,
   /\bimplement\b/i,
@@ -91,131 +197,87 @@ const QUICK_PATTERNS = [
 ];
 
 /**
- * Normalizes configured workflow ids to known built-in tier ids.
+ * Builds a rationale string from the selected set list and triage outcome.
  *
- * @param availableWorkflowIds - Workflow ids from project configuration.
- * @returns Ordered list of recognized tier ids for triage output.
+ * @param selected - Set list chosen by triage evaluation.
+ * @param selectionReason - Machine-readable selection reason from set-list triage.
+ * @param ambiguous - Whether multiple candidates tied before priority tie-break.
+ * @returns Plain-language rationale for developer confirmation.
  */
-function normalizeAvailableTiers(availableWorkflowIds: readonly string[]): WorkflowTierId[] {
-  const recognized = availableWorkflowIds.filter((id): id is WorkflowTierId =>
-    WORKFLOW_TIER_IDS.includes(id as WorkflowTierId),
-  );
-  return recognized.length > 0 ? recognized : [...WORKFLOW_TIER_IDS];
+function buildSelectionRationale(
+  selected: SetList,
+  selectionReason: string,
+  ambiguous: boolean,
+): string {
+  if (selectionReason === 'description-match') {
+    return `User intent matches the "${selected.name}" set list description: ${selected.description}`;
+  }
+
+  if (ambiguous) {
+    return `Multiple set lists could apply. Selected "${selected.name}" by lowest priority (${selected.priority}).`;
+  }
+
+  return `Selected "${selected.name}" set list (${selected.description}).`;
 }
 
 /**
- * Coerces a workflow id string to a built-in tier id with quick as fallback.
+ * Evaluates config-driven set list triage for a feature description.
  *
- * @param workflowId - Workflow id from configuration or developer override.
- * @returns A valid built-in tier id.
- */
-function coerceWorkflowTierId(workflowId: string): WorkflowTierId {
-  if (WORKFLOW_TIER_IDS.includes(workflowId as WorkflowTierId)) {
-    return workflowId as WorkflowTierId;
-  }
-  return 'quick';
-}
-
-/**
- * Returns true when the description is too short or vague for heuristic triage.
- *
- * @param description - Trimmed feature description text.
- * @returns True when manual tier selection should be required.
- */
-function isAmbiguousDescription(description: string): boolean {
-  if (description.length === 0) {
-    return true;
-  }
-
-  const words = description.split(/\s+/).filter((word) => word.length > 0);
-  if (words.length <= 1 && description.length < 12) {
-    return true;
-  }
-
-  const hasSignal =
-    PAPERCUT_PATTERNS.some((pattern) => pattern.test(description)) ||
-    QUICK_PATTERNS.some((pattern) => pattern.test(description)) ||
-    FULL_PATTERNS.some((pattern) => pattern.test(description));
-
-  return !hasSignal && description.length < 24;
-}
-
-/**
- * Scores a description against papercut, quick, and full heuristic patterns.
- *
- * @param description - Trimmed feature description text.
- * @returns Matched tier id and supporting rationale fragment.
- */
-function scoreHeuristicTier(description: string): {
-  tier: WorkflowTierId;
-  rationale: string;
-} {
-  const papercutHits = PAPERCUT_PATTERNS.filter((pattern) => pattern.test(description)).length;
-  const fullHits = FULL_PATTERNS.filter((pattern) => pattern.test(description)).length;
-  const quickHits = QUICK_PATTERNS.filter((pattern) => pattern.test(description)).length;
-
-  if (fullHits > 0 && fullHits >= papercutHits) {
-    return {
-      tier: 'full',
-      rationale:
-        'Cross-cutting or architectural signals (subsystem, multi-actor, or platform-wide scope) match the full tier.',
-    };
-  }
-
-  if (papercutHits > 0 && papercutHits >= quickHits) {
-    return {
-      tier: 'papercut',
-      rationale:
-        'Single-file fix, copy, or trivial change signals match the papercut tier (specify → implement).',
-    };
-  }
-
-  if (quickHits > 0) {
-    return {
-      tier: 'quick',
-      rationale:
-        'New behavior without architectural overhaul matches the quick tier (specify → tasks → implement).',
-    };
-  }
-
-  return {
-    tier: 'quick',
-    rationale:
-      'Defaulting to quick tier for a scoped feature addition without strong papercut or full signals.',
-  };
-}
-
-/**
- * Evaluates built-in triage heuristics for a feature description.
- *
- * @param input - Feature description and workflow configuration context.
- * @returns Triage assessment with proposed tier or manual picker requirements.
+ * @param input - Feature description, enabled set lists, and workflow configuration context.
+ * @returns Triage assessment with proposed set list or manual picker requirements.
  */
 export function assessTriage(input: TriageInput): TriageAssessment {
   const description = input.description.trim();
-  const availableWorkflowVariantIds = normalizeAvailableTiers(input.availableWorkflowIds);
-  const defaultWorkflowVariantId = coerceWorkflowTierId(input.defaultWorkflowId);
+  const enabledSetLists = input.enabledSetLists.filter((setList) => setList.enabled);
+
+  const triageResult = evaluateSetListTriage({
+    userIntent: description,
+    eligibleSetLists: enabledSetLists,
+  });
+
+  if (triageResult.blocking) {
+    return {
+      mode: 'blocking',
+      proposedSetListId: null,
+      proposedWorkflowId: null,
+      rationale: triageResult.message ?? 'Triage is blocked because no enabled set lists remain.',
+      eligibleSetLists: [],
+      defaultSetListId: '',
+      defaultWorkflowId: input.defaultWorkflowId,
+      ambiguous: false,
+      blocking: true,
+      message: triageResult.message,
+    };
+  }
+
+  const defaultSetList = resolveDefaultSetList(enabledSetLists, input.defaultWorkflowId);
+  const summaries = toTriageSummaries(enabledSetLists);
 
   if (isAmbiguousDescription(description)) {
     return {
       mode: 'manual',
-      proposedWorkflowVariantId: null,
+      proposedSetListId: null,
+      proposedWorkflowId: null,
       rationale:
-        'The feature description is empty or too ambiguous for automatic triage. Pick a workflow tier manually.',
-      availableWorkflowVariantIds,
-      defaultWorkflowVariantId,
+        'The feature description is empty or too ambiguous for automatic set list triage. Pick a set list manually.',
+      eligibleSetLists: summaries,
+      defaultSetListId: defaultSetList.id,
+      defaultWorkflowId: defaultSetList.workflowId,
+      ambiguous: true,
     };
   }
 
-  const { tier, rationale } = scoreHeuristicTier(description);
+  const selected =
+    enabledSetLists.find((setList) => setList.id === triageResult.selectedId) ?? defaultSetList;
 
   return {
     mode: 'heuristic',
-    proposedWorkflowVariantId: availableWorkflowVariantIds.includes(tier)
-      ? tier
-      : defaultWorkflowVariantId,
-    rationale,
-    availableWorkflowVariantIds,
-    defaultWorkflowVariantId,
+    proposedSetListId: selected.id,
+    proposedWorkflowId: selected.workflowId,
+    rationale: buildSelectionRationale(selected, triageResult.selectionReason, triageResult.ambiguous),
+    eligibleSetLists: summaries,
+    defaultSetListId: defaultSetList.id,
+    defaultWorkflowId: defaultSetList.workflowId,
+    ambiguous: triageResult.ambiguous,
   };
 }

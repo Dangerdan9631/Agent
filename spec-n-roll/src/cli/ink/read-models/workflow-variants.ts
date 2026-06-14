@@ -1,11 +1,11 @@
 import { readWorkflowConfig } from '../../../workflow/artifacts.js';
 
 /**
- * Read-only summary of one configured workflow variant.
+ * Read-only summary of one configured workflow from workflow configuration.
  */
 export interface WorkflowVariantSummary {
   /**
-   * Kebab-case workflow variant id from `workflow.config.json`.
+   * Kebab-case workflow id from `workflow.config.json`.
    */
   variantId: string;
   /**
@@ -31,10 +31,10 @@ export interface WorkflowVariantSummary {
 }
 
 /**
- * Lists configured workflow variant summaries for an initialized project.
+ * Lists configured workflow summaries for an initialized project.
  *
  * @param projectRoot - Absolute path to the project root.
- * @returns Workflow variants in configuration order, or an empty array when uninitialized.
+ * @returns Workflows in configuration order, or an empty array when uninitialized.
  */
 export async function listWorkflowVariantSummaries(
   projectRoot: string,

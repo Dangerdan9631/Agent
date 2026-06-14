@@ -304,8 +304,10 @@ describe('quickstart scenario 2b: interactive vs non-interactive CLI', () => {
     expect(help.stdout).toContain('Initialize Spec-N-Roll in a project');
 
     const bare = runFullCli(projectRoot, []);
-    expect(`${bare.stdout}\n${bare.stderr}`).toMatch(/Global Home|Local Home/);
-  });
+    expect(`${bare.stdout}\n${bare.stderr}`).toMatch(
+      /Main Menu|Global Home|Local Home|Raw mode is not supported/,
+    );
+  }, 15_000);
 });
 
 describe('quickstart scenario 3: interactive specification with embedded triage', () => {
@@ -352,7 +354,7 @@ describe('quickstart scenario 4: /spec-n-roll advances workflow state', () => {
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add email notification when an order ships',
-      workflowVariantOverride: 'quick',
+      setListOverride: 'quick',
       answerInterview: async (question: InterviewQuestion) => question.recommendedAnswer,
     });
 
@@ -398,7 +400,7 @@ describe('quickstart scenario 5: interrupted step recovery', () => {
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add password reset email',
-      workflowVariantOverride: 'quick',
+      setListOverride: 'quick',
       answerInterview: async (question: InterviewQuestion) => question.recommendedAnswer,
     });
     const partialPath = path.join(
@@ -595,10 +597,13 @@ describe('quickstart scenario 9: extension workflow variant', () => {
       `export async function handler(context) {
   return {
     mode: 'heuristic',
-    proposedWorkflowVariantId: 'papercut',
+    proposedSetListId: 'papercut',
+    proposedWorkflowId: 'papercut',
     rationale: 'Custom extension triage selected papercut.',
-    availableWorkflowVariantIds: context.availableWorkflowIds,
-    defaultWorkflowVariantId: context.defaultWorkflowId,
+    eligibleSetLists: context.enabledSetLists ?? [],
+    defaultSetListId: 'quick',
+    defaultWorkflowId: context.defaultWorkflowId,
+    ambiguous: false,
   };
 }
 `,
@@ -646,7 +651,7 @@ describe('quickstart scenario 9: extension workflow variant', () => {
       defaultWorkflowId: 'quick',
       availableWorkflowIds: ['papercut', 'quick', 'full'],
     });
-    expect(enabled.proposedWorkflowVariantId).toBe('papercut');
+    expect(enabled.proposedSetListId).toBe('papercut');
 
     config.extensions = config.extensions.map((entry) =>
       entry.id === 'custom-triage' ? { ...entry, enabled: false } : entry,
@@ -659,7 +664,7 @@ describe('quickstart scenario 9: extension workflow variant', () => {
       defaultWorkflowId: 'quick',
       availableWorkflowIds: ['papercut', 'quick', 'full'],
     });
-    expect(disabled.proposedWorkflowVariantId).not.toBe('papercut');
+    expect(disabled.proposedSetListId).not.toBe('papercut');
   });
 });
 

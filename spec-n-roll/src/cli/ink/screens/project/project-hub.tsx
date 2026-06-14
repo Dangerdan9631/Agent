@@ -21,7 +21,7 @@ interface ProjectHubMenuItem extends SelectableListItem {
   /**
    * Stable action identifier for selection handling.
    */
-  actionId: 'specs' | 'project-metadata' | 'back';
+  actionId: 'specs' | 'project-metadata' | 'manifesto' | 'set-lists' | 'back';
   /**
    * Child route entered when the option is selected, if any.
    */
@@ -39,7 +39,7 @@ export type ProjectHubScreenProps = RoutedScreenProps;
  * @returns Menu items for specs, project metadata, and back navigation.
  */
 function buildMenuItems(): readonly ProjectHubMenuItem[] {
-  const back = buildBackMenuItem({ key: '3', routeId: 'local-home' });
+  const back = buildBackMenuItem({ key: '5', routeId: 'local-home' });
 
   return [
     {
@@ -58,6 +58,24 @@ function buildMenuItems(): readonly ProjectHubMenuItem[] {
       routeId: 'project-metadata-view',
       label: '2 Project Metadata',
       description: 'Inspect project metadata',
+      disabled: false,
+    },
+    {
+      id: 'manifesto',
+      key: '3',
+      actionId: 'manifesto',
+      routeId: 'manifesto-view',
+      label: '3 Spec Manifestos',
+      description: 'View global and step manifestos',
+      disabled: false,
+    },
+    {
+      id: 'set-lists',
+      key: '4',
+      actionId: 'set-lists',
+      routeId: 'set-lists-list',
+      label: '4 Set Lists',
+      description: 'Browse and edit set list triage configuration',
       disabled: false,
     },
     {
@@ -101,6 +119,8 @@ export function ProjectHubScreen(props: ProjectHubScreenProps): React.ReactEleme
       switch (item.actionId) {
         case 'specs':
         case 'project-metadata':
+        case 'manifesto':
+        case 'set-lists':
           if (item.routeId != null) {
             session.pushRoute(item.routeId);
           }

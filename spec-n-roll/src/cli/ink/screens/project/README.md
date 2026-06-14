@@ -1,3 +1,5 @@
 # Project Screens
 
-Project screens present and edit project-level metadata such as current task selection and task id allocation. Browse views should remain read-only, and edit flows should delegate persistence to the core project metadata API.
+Project hub screens present and edit project-level configuration: metadata, Spec Manifestos (read-only view), and set lists (list, detail, edit).
+
+Browse views should remain read-only unless a flow explicitly delegates persistence to a core API or CLI-equivalent writer. Set list edits use the same validation rules as `spec-n-roll set-list` commands.

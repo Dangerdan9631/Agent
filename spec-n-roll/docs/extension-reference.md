@@ -64,7 +64,9 @@ Hooks targeting unknown step ids:
 - are recorded in `skippedHooks`
 - are not dispatched
 
-Optional hooks (`optional: true`, default) log and continue when the handler fails. Required hooks (`optional: false`) fail the step with remediation guidance.
+Optional hooks (`optional: true`, default) log and continue when the handler fails. Required hooks (`optional: false`) fail the step with remediation guidance when auto-dispatched on the CLI engine path.
+
+`collectHookInstructions()` in `src/extensions/hooks.ts` assembles agent-facing hook payloads for `step_init` and `step_finalize`, merging `.specify/extensions.yml` and extension manifest hooks. Instructions include `mandatory`, `available`, and source metadata.
 
 ## Handler contract
 
@@ -80,17 +82,24 @@ The toolkit resolves project-relative paths with `import()`. Handler failures th
 
 Custom `triage` handlers should return a `TriageAssessment` object compatible with `src/specs/triage.ts`:
 
-- `mode`: `heuristic` or `manual`
-- `proposedWorkflowVariantId`
+- `mode`: `heuristic`, `manual`, or `blocking`
+- `proposedSetListId` / `proposedWorkflowId`
 - `rationale`
-- `availableWorkflowVariantIds`
-- `defaultWorkflowVariantId`
+- `eligibleSetLists` (summaries with `id`, `name`, `description`, `priority`, `workflowId`)
+- `defaultSetListId`
+- `blocking` / `blockingMessage` when no enabled set lists apply
 
-## Workflow variants
+## Set lists
 
-`workflowVariants[]` entries add named compositions on top of `workflow.config.json` variants. Variant `steps[]` arrays reference shared step ids from the config `steps[]` registry rather than duplicating step definitions.
+Set lists (`.spec-n-roll/config/set-lists.json`) drive workflow selection during specify. They replace the former hard-coded complexity tiers. Each entry references a `workflowId` in `workflow.config.json`. Manage with `spec-n-roll set-list` or Ink **Set Lists** under Project.
 
-Default tier variants (`papercut`, `quick`, `full`) are written during `spec-n-roll init` and always list `specify` as step 1.
+Default ids (`papercut`, `quick`, `full`) are init seed data only — extensions and runtime code must not assume those names exist.
+
+## Workflow definitions
+
+`workflow.config.json` `workflows[]` entries define step sequences. Set lists select which workflow runs for a task spec. Variant `steps[]` arrays reference shared step ids from the config `steps[]` registry rather than duplicating step definitions.
+
+Default workflows (`papercut`, `quick`, `full`) are written during `spec-n-roll init` and always list `specify` as step 1.
 
 ## Registration in workflow.config.json
 

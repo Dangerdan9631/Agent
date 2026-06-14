@@ -12,6 +12,21 @@ import {
 } from '../workflow/state.js';
 
 /**
+ * Error thrown when workflow state completion is attempted without successful step finalize.
+ */
+export class WorkflowStateFinalizeGateError extends Error {
+  /**
+   * Creates a finalize gate error with a remediation message.
+   *
+   * @param message - Human-readable explanation of the blocked write.
+   */
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkflowStateFinalizeGateError';
+  }
+}
+
+/**
  * Returns the absolute path to the workflow state file for a task spec directory.
  *
  * @param taskSpecDirectory - Absolute path to the task spec directory.
@@ -80,6 +95,28 @@ export async function writeWorkflowState(
 ): Promise<WorkflowState> {
   await assertTaskSpecWritable(projectRoot, input.taskSpecId, input.slug);
 
+  const existing = await readWorkflowState(projectRoot, input.taskSpecId, input.slug);
+  const lifecycleTrackingActive = existing?.lifecycle != null || input.lifecycle != null;
+
+  if (input.lastCompletedStepId != null && lifecycleTrackingActive) {
+    const previousCompleted = existing?.lastCompletedStepId ?? null;
+    if (input.lastCompletedStepId !== previousCompleted) {
+      const lifecycle = input.lifecycle ?? existing?.lifecycle;
+      const finalized =
+        lifecycle != null &&
+        lifecycle.status === 'completed' &&
+        lifecycle.finalizedAt != null &&
+        lifecycle.activeStepId === input.lastCompletedStepId;
+
+      if (!finalized) {
+        throw new WorkflowStateFinalizeGateError(
+          `Cannot update lastCompletedStepId to "${input.lastCompletedStepId}" without successful step finalize. ` +
+            'Call step finalize before marking the step complete.',
+        );
+      }
+    }
+  }
+
   const directory = taskSpecDir(projectRoot, input.taskSpecId, input.slug);
   await fse.ensureDir(directory);
 
@@ -92,6 +129,7 @@ export async function writeWorkflowState(
     currentStepId: input.currentStepId ?? null,
     status: input.status,
     interruptedArtifacts: input.interruptedArtifacts,
+    lifecycle: input.lifecycle,
     updatedAt: input.updatedAt ?? new Date().toISOString(),
   });
 

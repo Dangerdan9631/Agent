@@ -1,8 +1,66 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
+import { readToolkitPackageVersion } from '../../cli/commands/version.js';
 import { atomicWriteText } from '../../core/atomic-write.js';
 import { ensureAgentSkillsDirectory } from './shared.js';
+
+/**
+ * Author metadata value stamped on every Spec-n-Roll-managed agent skill.
+ */
+export const MANAGED_SKILL_AUTHOR = 'spec-n-roll';
+
+/**
+ * Frontmatter identity fields shared by managed workflow skills.
+ */
+interface ManagedSkillIdentity {
+  /**
+   * Slash-command skill name such as `spec-n-specify`.
+   */
+  name: string;
+  /**
+   * One-line skill description shown in agent skill pickers.
+   */
+  description: string;
+}
+
+/**
+ * Builds the YAML frontmatter block for a managed workflow skill.
+ *
+ * @param identity - Skill name and description for the frontmatter header.
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
+ * @returns Opening frontmatter block including trailing `---` and newline.
+ */
+function buildManagedSkillFrontmatter(
+  identity: ManagedSkillIdentity,
+  toolkitVersion: string,
+): string {
+  return `---
+name: "${identity.name}"
+description: "${identity.description}"
+metadata:
+  author: "${MANAGED_SKILL_AUTHOR}"
+  version: "${toolkitVersion}"
+---
+`;
+}
+
+/**
+ * Wraps managed skill body markdown with consistent provenance frontmatter.
+ *
+ * @param identity - Skill name and description for the frontmatter header.
+ * @param body - Markdown body following the frontmatter block.
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
+ * @returns Full UTF-8 skill document with frontmatter and body.
+ */
+function buildManagedSkillMarkdown(
+  identity: ManagedSkillIdentity,
+  body: string,
+  toolkitVersion: string,
+): string {
+  return `${buildManagedSkillFrontmatter(identity, toolkitVersion)}
+${body}`;
+}
 
 /**
  * Relative path to the /spec-n-specify agent skill file from the project root.
@@ -40,17 +98,24 @@ export const ANALYZE_SKILL_RELATIVE_PATH = '.agents/skills/spec-n-analyze/SKILL.
 export const IMPLEMENT_SKILL_RELATIVE_PATH = '.agents/skills/spec-n-implement/SKILL.md';
 
 /**
+ * Relative path to the /spec-n-manifesto agent skill file from the project root.
+ */
+export const MANIFESTO_SKILL_RELATIVE_PATH = '.agents/skills/spec-n-manifesto/SKILL.md';
+
+/**
  * Returns markdown content for the /spec-n-specify agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting specify workflow and MCP boundaries.
  */
-export function buildSpecifySkillContent(): string {
-  return `---
-name: "spec-n-specify"
-description: "Create a new task specification with embedded triage and a one-question-at-a-time interview."
----
-
-# /spec-n-specify
+export function buildSpecifySkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-specify',
+      description:
+        'Create a new task specification with embedded triage and a one-question-at-a-time interview.',
+    },
+    `# /spec-n-specify
 
 Create a new task spec under \`specs/{numeric-id}-{slug}/\` from a feature description.
 
@@ -80,21 +145,24 @@ $ARGUMENTS
 \`\`\`
 
 The text after \`/spec-n-specify\` is the feature description. Run embedded triage, then the interview, until the spec passes quality checks (no placeholders; critical questions resolved).
-`;
+`,
+    toolkitVersion,
+  );
 }
 
 /**
  * Returns markdown content for the /spec-n-clarify agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting clarify workflow and MCP boundaries.
  */
-export function buildClarifySkillContent(): string {
-  return `---
-name: "spec-n-clarify"
-description: "Follow-up clarification interview for an existing task specification."
----
-
-# /spec-n-clarify
+export function buildClarifySkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-clarify',
+      description: 'Follow-up clarification interview for an existing task specification.',
+    },
+    `# /spec-n-clarify
 
 Run a **separate** one-question-at-a-time interview on an **existing** task spec.
 
@@ -120,21 +188,24 @@ $ARGUMENTS
 \`\`\`
 
 Optional clarification topic after the command. Use the clarify interview to resolve follow-up ambiguities without creating a new task spec directory.
-`;
+`,
+    toolkitVersion,
+  );
 }
 
 /**
  * Returns markdown content for the /spec-n-roll agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting roll advancement and intent detection.
  */
-export function buildRollSkillContent(): string {
-  return `---
-name: "spec-n-roll"
-description: "Advance the workflow to the next tier step with zero-knowledge intent detection."
----
-
-# /spec-n-roll
+export function buildRollSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-roll',
+      description: 'Advance the workflow to the next tier step with zero-knowledge intent detection.',
+    },
+    `# /spec-n-roll
 
 Meta-command that reads workflow state and advances to the next incomplete **tier** step automatically.
 
@@ -165,35 +236,40 @@ $ARGUMENTS
 \`\`\`
 
 Optional feature description for a new spec. Omit to continue the current workflow.
-`;
+`,
+    toolkitVersion,
+  );
 }
 
 /**
  * Returns markdown content for the /spec-n-plan agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting plan step workflow and MCP boundaries.
  */
-export function buildPlanSkillContent(): string {
-  return `---
-name: "spec-n-plan"
-description: "Create plan.md with living-spec targets for full-tier task specs."
----
-
-# /spec-n-plan
+export function buildPlanSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-plan',
+      description: 'Create plan.md with living-spec targets for full-tier task specs.',
+    },
+    `# /spec-n-plan
 
 Full-tier step that produces \`plan.md\` documenting approach and **Living Spec Targets**.
 
 ## Flow
 
-1. **Instantiate plan.md** — Call MCP \`step_output_instantiate\` with \`stepId: plan\` **before** editing prose.
-2. **Edit prose** — Fill Technical Context, Living Spec Targets table, and structure sections. Remove \`<!-- FILL:\` placeholders.
-3. **Complete plan** — Write \`workflow-state.json\` with \`lastCompletedStepId: plan\` via MCP \`workflow_state_write\`.
+1. **Step init** — Call MCP \`step_init\` (or CLI \`spec-n-roll step init\`) with \`stepId: plan\` **before any work**. Execute mandatory \`beforeHooks\` from the response before continuing.
+2. **Instantiate plan.md** — Call MCP \`step_output_instantiate\` with \`stepId: plan\` **before** editing prose.
+3. **Edit prose** — Fill Technical Context, Living Spec Targets table, and structure sections. Remove \`<!-- FILL:\` placeholders.
+4. **Validate** — Confirm plan.md is complete and placeholders are resolved.
+5. **Step finalize** — Call MCP \`step_finalize\` with \`validationPassed: true\` **before claiming the step complete**. Execute mandatory \`afterHooks\` from the response.
 
 Living specs under \`living-specs/\` remain agent-managed; plan.md only documents intended targets.
 
 ## Machine-readable mutations (MCP / CLI only)
 
-- \`workflow-state.json\`
+- \`workflow-state.json\` lifecycle via \`step_init\` / \`step_finalize\`
 - Template instantiation for \`plan.md\`
 
 ## User input
@@ -203,34 +279,40 @@ $ARGUMENTS
 \`\`\`
 
 Optional planning notes. Tier-skipped when the workflow variant omits the plan step.
-`;
+`,
+    toolkitVersion,
+  );
 }
 
 /**
  * Returns markdown content for the /spec-n-tasks agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting tasks step workflow and FR-009 ordering.
  */
-export function buildTasksSkillContent(): string {
-  return `---
-name: "spec-n-tasks"
-description: "Create tasks.md with living-spec updates as the first implementation tasks (FR-009)."
----
-
-# /spec-n-tasks
+export function buildTasksSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-tasks',
+      description:
+        'Create tasks.md with living-spec updates as the first implementation tasks (FR-009).',
+    },
+    `# /spec-n-tasks
 
 Produces \`tasks.md\` for quick and full tiers. **FR-009**: the first implementation phase MUST list living-spec updates before any test or production code tasks.
 
 ## Flow
 
-1. **Instantiate tasks.md** — Call MCP \`step_output_instantiate\` with \`stepId: tasks\` **before** editing prose.
-2. **Preserve FR-009 ordering** — Keep "Living Specification Updates" as Phase 1; only add test/code tasks in later phases.
-3. **Edit prose** — Fill task checkboxes and remove \`<!-- FILL:\` placeholders.
-4. **Complete tasks** — Write \`workflow-state.json\` with \`lastCompletedStepId: tasks\` via MCP \`workflow_state_write\`.
+1. **Step init** — Call MCP \`step_init\` (or CLI \`spec-n-roll step init\`) with \`stepId: tasks\` **before any work**. Execute mandatory \`beforeHooks\` from the response before continuing.
+2. **Instantiate tasks.md** — Call MCP \`step_output_instantiate\` with \`stepId: tasks\` **before** editing prose.
+3. **Preserve FR-009 ordering** — Keep "Living Specification Updates" as Phase 1; only add test/code tasks in later phases.
+4. **Edit prose** — Fill task checkboxes and remove \`<!-- FILL:\` placeholders.
+5. **Validate** — Confirm tasks.md ordering and placeholders are resolved.
+6. **Step finalize** — Call MCP \`step_finalize\` with \`validationPassed: true\` **before claiming the step complete**. Execute mandatory \`afterHooks\` from the response.
 
 ## Machine-readable mutations (MCP / CLI only)
 
-- \`workflow-state.json\`
+- \`workflow-state.json\` lifecycle via \`step_init\` / \`step_finalize\`
 - Template instantiation for \`tasks.md\`
 
 ## User input
@@ -240,21 +322,24 @@ $ARGUMENTS
 \`\`\`
 
 Optional task-generation hints. Omitted on papercut tier variants.
-`;
+`,
+    toolkitVersion,
+  );
 }
 
 /**
  * Returns markdown content for the /spec-n-analyze agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting non-destructive cross-artifact analysis.
  */
-export function buildAnalyzeSkillContent(): string {
-  return `---
-name: "spec-n-analyze"
-description: "Non-destructive cross-artifact consistency report for the current task spec."
----
-
-# /spec-n-analyze
+export function buildAnalyzeSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-analyze',
+      description: 'Non-destructive cross-artifact consistency report for the current task spec.',
+    },
+    `# /spec-n-analyze
 
 On-demand quality step (not part of default tier advancement). Produces a **non-destructive** report across \`spec.md\`, \`plan.md\`, \`tasks.md\`, and optionally \`living-specs/\`.
 
@@ -275,30 +360,35 @@ $ARGUMENTS
 \`\`\`
 
 Optional focus area for the analysis report.
-`;
+`,
+    toolkitVersion,
+  );
 }
 
 /**
  * Returns markdown content for the /spec-n-implement agent skill.
  *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
  * @returns UTF-8 markdown documenting implementation entry expectations.
  */
-export function buildImplementSkillContent(): string {
-  return `---
-name: "spec-n-implement"
-description: "Begin implementation: living-spec updates first, then TDD from living specs."
----
-
-# /spec-n-implement
+export function buildImplementSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-implement',
+      description: 'Begin implementation: living-spec updates first, then TDD from living specs.',
+    },
+    `# /spec-n-implement
 
 Tier exit step. Begins after plan/tasks (or specify-only on papercut).
 
 ## Flow (orchestration expands in later toolkit phases)
 
-1. **Living specs first (FR-009)** — Update \`living-specs/{domain}.feature\` files documented in \`plan.md\` and listed as the first tasks in \`tasks.md\` **before** any test or production code.
-2. **Tag scenarios** — Add \`@spec-n-roll-{taskSpecId}\` to new or modified scenarios (additive; never remove prior tags).
-3. **TDD cycle** — Run Cucumber against living specs; write failing tests, then code, then refactor.
-4. **Complete implement** — Write \`workflow-state.json\` with workflow \`status: complete\` and lifecycle \`Complete\` via MCP tools when the tier finishes.
+1. **Step init** — Call MCP \`step_init\` (or CLI \`spec-n-roll step init\`) with \`stepId: implement\` **before any work**. Execute mandatory \`beforeHooks\` from the response before continuing.
+2. **Living specs first (FR-009)** — Update \`living-specs/{domain}.feature\` files documented in \`plan.md\` and listed as the first tasks in \`tasks.md\` **before** any test or production code.
+3. **Tag scenarios** — Add \`@spec-n-roll-{taskSpecId}\` to new or modified scenarios (additive; never remove prior tags).
+4. **TDD cycle** — Run Cucumber against living specs; write failing tests, then code, then refactor.
+5. **Validate** — Confirm living-spec updates and implementation tasks are complete.
+6. **Step finalize** — Call MCP \`step_finalize\` with \`validationPassed: true\`, then write workflow \`status: complete\` and lifecycle \`Complete\` via MCP tools when the tier finishes. Execute mandatory \`afterHooks\` from the finalize response.
 
 Living specs are agent-managed (outside MCP/CLI). Machine-readable workflow and lifecycle writes use MCP/CLI only.
 
@@ -309,7 +399,63 @@ $ARGUMENTS
 \`\`\`
 
 Optional implementation focus or vertical slice to start with.
-`;
+`,
+    toolkitVersion,
+  );
+}
+
+/**
+ * Returns markdown content for the /spec-n-manifesto agent skill.
+ *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
+ * @returns UTF-8 markdown documenting manifesto authoring and validation workflow.
+ */
+export function buildManifestoSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'spec-n-manifesto',
+      description:
+        'Author or update a global or step-scoped Spec Manifesto through a single-target interview.',
+    },
+    `# /spec-n-manifesto
+
+Standalone command for **Spec Manifesto** authoring. This is **not** a workflow step — do **not** call \`step_init\` or \`step_finalize\`.
+
+## Invocation targets (exactly one per run)
+
+- **Global**: \`/spec-n-manifesto global\` or equivalent user intent for project-wide rules
+- **Step**: \`/spec-n-manifesto <stepId>\` for one workflow step such as \`plan\` or \`implement\`
+
+When the user does not specify a single target, present a numbered choice between global and registered workflow steps. Do not edit multiple manifestos in one invocation.
+
+## Flow
+
+1. **Extension hooks** — Check \`.specify/extensions.yml\` for \`before_manifesto\` and \`after_manifesto\` hooks when registered.
+2. **Load existing content** — Read \`.spec-n-roll/config/manifesto/global.md\` or \`steps/{stepId}.md\`, or start from the bundled init template with \`[PLACEHOLDER]\` tokens.
+3. **Interview** — Ask the maintainer targeted questions about:
+   - Spec-n-roll processes and iterative user feedback during steps
+   - MCP-based deterministic step execution (\`step_init\` / \`step_finalize\`)
+   - Set list triage and lifecycle boundaries where relevant
+4. **Iterative feedback** — Refine draft prose until the maintainer confirms.
+5. **Validate** — Reject empty bodies, unresolved \`[PLACEHOLDER]\` tokens, ambiguous step scope, and conflicts with \`.specify/memory/constitution.md\`. Surface conflicts for user resolution; do not silently merge contradictory governance.
+6. **Save** — Persist atomically only after confirmation. Preserve prior content until the user approves the draft.
+7. **Sync impact** — Optional HTML comment header describing governance changes (constitution pattern).
+
+## Storage
+
+- Global: \`.spec-n-roll/config/manifesto/global.md\` (loaded on every \`step_init\`)
+- Step: \`.spec-n-roll/config/manifesto/steps/{stepId}.md\` (loaded only when \`stepId\` matches the active step)
+
+## User input
+
+\`\`\`text
+$ARGUMENTS
+\`\`\`
+
+Target scope after the command: \`global\` or a registered workflow \`stepId\`.
+`,
+    toolkitVersion,
+  );
 }
 
 /**
@@ -318,14 +464,23 @@ Optional implementation focus or vertical slice to start with.
  * @returns Skill file paths paired with UTF-8 markdown bodies.
  */
 export function listWorkflowSkillUpdates(): Array<{ relativePath: string; content: string }> {
+  const toolkitVersion = readToolkitPackageVersion();
+
   return [
-    { relativePath: SPECIFY_SKILL_RELATIVE_PATH, content: buildSpecifySkillContent() },
-    { relativePath: CLARIFY_SKILL_RELATIVE_PATH, content: buildClarifySkillContent() },
-    { relativePath: ROLL_SKILL_RELATIVE_PATH, content: buildRollSkillContent() },
-    { relativePath: PLAN_SKILL_RELATIVE_PATH, content: buildPlanSkillContent() },
-    { relativePath: TASKS_SKILL_RELATIVE_PATH, content: buildTasksSkillContent() },
-    { relativePath: ANALYZE_SKILL_RELATIVE_PATH, content: buildAnalyzeSkillContent() },
-    { relativePath: IMPLEMENT_SKILL_RELATIVE_PATH, content: buildImplementSkillContent() },
+    { relativePath: SPECIFY_SKILL_RELATIVE_PATH, content: buildSpecifySkillContent(toolkitVersion) },
+    { relativePath: CLARIFY_SKILL_RELATIVE_PATH, content: buildClarifySkillContent(toolkitVersion) },
+    { relativePath: ROLL_SKILL_RELATIVE_PATH, content: buildRollSkillContent(toolkitVersion) },
+    { relativePath: PLAN_SKILL_RELATIVE_PATH, content: buildPlanSkillContent(toolkitVersion) },
+    { relativePath: TASKS_SKILL_RELATIVE_PATH, content: buildTasksSkillContent(toolkitVersion) },
+    { relativePath: ANALYZE_SKILL_RELATIVE_PATH, content: buildAnalyzeSkillContent(toolkitVersion) },
+    {
+      relativePath: IMPLEMENT_SKILL_RELATIVE_PATH,
+      content: buildImplementSkillContent(toolkitVersion),
+    },
+    {
+      relativePath: MANIFESTO_SKILL_RELATIVE_PATH,
+      content: buildManifestoSkillContent(toolkitVersion),
+    },
   ];
 }
 

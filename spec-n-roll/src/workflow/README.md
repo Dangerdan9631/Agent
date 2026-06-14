@@ -1,5 +1,7 @@
 # Workflow
 
-File-backed workflow state and artifact expectations for specification-driven development. This layer tracks where a task spec is in its tier, what outputs each step should produce, and how project-level metadata ties task specs together.
+File-backed workflow state, step sequencing, and engine advancement for specification-driven development. This layer tracks where a task spec is in its selected workflow, what outputs each step should produce, and how project-level metadata ties task specs together.
 
-Workflow state records per-spec progress (variant, last completed step, interruption). Project metadata and workflow config are read and written through validated paths with atomic JSON persistence. Built-in step output manifests and default tier step sequences support partial-completion detection and variant resolution without embedding agent or CLI concerns.
+Workflow state records per-spec progress (linked workflow id, last completed step, optional step lifecycle metadata, interruption). Step sequences resolve from `workflow.config.json` workflows referenced by set lists — not from hard-coded tier names. The engine integrates `step_init` and `step_finalize` for built-in automatic steps while agents use the same boundaries via MCP.
+
+Project metadata and workflow config are read and written through validated paths with atomic JSON persistence. Built-in step output manifests support partial-completion detection without embedding agent or CLI concerns.

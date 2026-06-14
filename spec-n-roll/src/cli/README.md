@@ -29,6 +29,8 @@ Launchers resolve `../dist/cli/index.js` or `../dist/mcp/server.js` relative to 
 
 `local-install-integrity.ts` validates the on-disk layout before delegation: required paths, `layoutVersion === 1`, `package.json` name, and absence of legacy markers. Integrity failures return actionable messages suggesting `spec-n-roll update` or `spec-n-roll init`.
 
+Commander subcommands include workflow mutations, step init/finalize, set-list management, and manifesto read helpers. Bare `spec-n-roll` launches the Ink app documented in `docs/cli.md`.
+
 ## Dispatcher integrity behavior
 
 `dispatcher.ts` walks parent directories from `cwd` for `.spec-n-roll/cli/bin/spec-n-roll`. When a local binary is found, it runs `validateLocalInstall` on `.spec-n-roll/cli` before spawning unless the command is a repair flow (`update`, `init`, `remove`, or bare interactive invocation). Invalid installs exit non-zero with the validation message; the dispatcher does not silently fall back to the global full CLI unless `--global` was passed.

@@ -82,7 +82,7 @@ function taskSpecContext(summary: TaskSpecSummary): SelectableListItem['context'
     id: `task-spec:${summary.directoryName}`,
     title: `${summary.taskSpecId ?? '???'} ${summary.slug ?? summary.directoryName}`,
     summary: `Lifecycle: ${summary.lifecycleStatus}; workflow: ${summary.operationalStatus}.`,
-    status: `Step: ${step}; workflow variant: ${workflow}.`,
+    status: `Step: ${step}; set list: ${workflow}.`,
     details: [taskSpecArtifactDetail(summary), `Directory: ${summary.directoryName}.`],
     warnings: summary.warnings,
     nextStep:

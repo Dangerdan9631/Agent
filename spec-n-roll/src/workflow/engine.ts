@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 
 import type { WorkflowConfig, WorkflowStep, WorkflowVariant } from '../config/schema.js';
 import { claimImplementSlot, clearImplementSlot } from '../core/project-metadata.js';
+import { runStepFinalize, runStepInit } from '../core/step-lifecycle.js';
 import {
   dispatchStepHooks,
   invokeExtensionHandler,
@@ -384,6 +385,7 @@ export async function listActiveTaskSpecs(projectRoot: string): Promise<TaskSpec
  */
 export async function listResumableTaskSpecs(projectRoot: string): Promise<TaskSpecIdentity[]> {
   const identities = await listTaskSpecIdentities(projectRoot);
+  const workflowConfig = await readWorkflowConfig(projectRoot);
   const resumable: TaskSpecIdentity[] = [];
 
   for (const identity of identities) {
@@ -397,7 +399,14 @@ export async function listResumableTaskSpecs(projectRoot: string): Promise<TaskS
       continue;
     }
 
-    const nextStep = resolveNextStepId(state.workflowVariantId, state.lastCompletedStepId);
+    const configuredSteps = workflowConfig?.workflows.find(
+      (workflow) => workflow.id === state.workflowVariantId,
+    )?.steps;
+    const nextStep = resolveNextStepId(
+      state.workflowVariantId,
+      state.lastCompletedStepId,
+      configuredSteps,
+    );
     if (state.status === 'paused' || nextStep != null) {
       resumable.push(identity);
     }
@@ -586,6 +595,11 @@ async function executeTierStep(
   stepId: string,
   extensionRegistry: ExtensionRegistry,
 ): Promise<string> {
+  const initResult = await runStepInit(projectRoot, { taskSpecId, slug, stepId });
+  if (initResult.blocking) {
+    throw new Error(initResult.message ?? `Cannot initialize step: ${stepId}`);
+  }
+
   const resolved = resolveActiveStepHandler(extensionRegistry, stepId);
   const hookContext = { projectRoot, taskSpecId, slug, stepId };
 
@@ -598,30 +612,38 @@ async function executeTierStep(
       extensionId: resolved.extensionId,
     });
     await dispatchStepHooks(projectRoot, extensionRegistry, 'after', stepId, hookContext);
+    await runStepFinalize(projectRoot, {
+      taskSpecId,
+      slug,
+      stepId,
+      validationPassed: true,
+    });
     return stepId;
   }
 
   console.info(resolved.activeHandlerNotice);
 
-  let completedStepId: string;
   switch (stepId) {
     case 'plan':
       await runPlan({ projectRoot, taskSpecId, slug });
-      completedStepId = 'plan';
       break;
     case 'tasks':
       await runTasks({ projectRoot, taskSpecId, slug });
-      completedStepId = 'tasks';
       break;
     case 'implement':
-      completedStepId = 'implement';
       break;
     default:
       throw new Error(`Unsupported automatic tier step: ${stepId}`);
   }
 
   await dispatchStepHooks(projectRoot, extensionRegistry, 'after', stepId, hookContext);
-  return completedStepId;
+  await runStepFinalize(projectRoot, {
+    taskSpecId,
+    slug,
+    stepId,
+    validationPassed: true,
+  });
+  return stepId;
 }
 
 /**
@@ -647,7 +669,10 @@ async function resolveWorkflowProgress(
   const workflowConfig = await readWorkflowConfig(projectRoot);
   const taskDirectory = taskSpecDir(projectRoot, taskSpecId, slug);
   const state = await readWorkflowState(projectRoot, taskSpecId, slug);
-  const variantId = state?.workflowVariantId ?? workflowConfig?.defaultWorkflowId ?? 'quick';
+  const variantId = state?.workflowVariantId ?? workflowConfig?.defaultWorkflowId;
+  if (variantId == null || variantId.length === 0) {
+    throw new Error('Workflow variant is not configured in workflow.config.json.');
+  }
   const configuredSteps = await resolveVariantSteps(projectRoot, workflowConfig, variantId);
   const variantSteps = getVariantStepIds(variantId, configuredSteps);
 

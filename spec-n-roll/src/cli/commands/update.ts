@@ -169,6 +169,21 @@ async function resolveConfiguredAgentIds(projectRoot: string): Promise<string[]>
 }
 
 /**
+ * Collects managed workflow skill updates from the explicit toolkit manifest.
+ *
+ * Only skills returned by `listWorkflowSkillUpdates()` are refreshed so user-owned
+ * skills under `.agents/skills/` outside the manifest are never overwritten (FR-035).
+ *
+ * @returns Relative paths and expected UTF-8 skill bodies from the running toolkit.
+ */
+function collectManagedWorkflowSkillUpdates(): ToolkitFileUpdate[] {
+  return listWorkflowSkillUpdates().map((skill) => ({
+    relativePath: skill.relativePath,
+    expectedContent: skill.content,
+  }));
+}
+
+/**
  * Collects toolkit-owned text and JSON file updates for the configured agents.
  *
  * @param agentIds - Enabled agent ids in the project.
@@ -180,10 +195,7 @@ function collectTextToolkitUpdates(agentIds: readonly string[]): ToolkitFileUpda
       relativePath: CANONICAL_AGENTS_MD_RELATIVE_PATH,
       expectedContent: buildCanonicalAgentsMdContent(),
     },
-    ...listWorkflowSkillUpdates().map((skill) => ({
-      relativePath: skill.relativePath,
-      expectedContent: skill.content,
-    })),
+    ...collectManagedWorkflowSkillUpdates(),
   ];
 
   for (const agentId of agentIds) {

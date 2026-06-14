@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import { createDefaultSetListsFile } from '../../src/setlists/index.js';
 import { assessTriage } from '../../src/specs/triage.js';
+
+const enabledSetLists = createDefaultSetListsFile().setLists;
 
 const defaultInput = {
   defaultWorkflowId: 'quick',
   availableWorkflowIds: ['papercut', 'quick', 'full'] as const,
+  enabledSetLists,
 };
 
 describe('triage heuristic', () => {
@@ -15,9 +19,10 @@ describe('triage heuristic', () => {
     });
 
     expect(result.mode).toBe('heuristic');
-    expect(result.proposedWorkflowVariantId).toBe('papercut');
+    expect(result.proposedSetListId).toBe('papercut');
+    expect(result.proposedWorkflowId).toBe('papercut');
     expect(result.rationale.length).toBeGreaterThan(0);
-    expect(result.rationale.toLowerCase()).toMatch(/single|file|fix|copy|papercut|trivial/);
+    expect(result.rationale.toLowerCase()).toMatch(/papercut|single|trivial|minimal/);
   });
 
   it('routes new behavior without architecture change to quick', () => {
@@ -27,8 +32,9 @@ describe('triage heuristic', () => {
     });
 
     expect(result.mode).toBe('heuristic');
-    expect(result.proposedWorkflowVariantId).toBe('quick');
-    expect(result.rationale.toLowerCase()).toMatch(/behavior|feature|quick/);
+    expect(result.proposedSetListId).toBe('quick');
+    expect(result.proposedWorkflowId).toBe('quick');
+    expect(result.rationale.toLowerCase()).toMatch(/quick|feature|small/);
   });
 
   it('routes cross-cutting subsystem work to full', () => {
@@ -39,20 +45,22 @@ describe('triage heuristic', () => {
     });
 
     expect(result.mode).toBe('heuristic');
-    expect(result.proposedWorkflowVariantId).toBe('full');
-    expect(result.rationale.toLowerCase()).toMatch(/cross|subsystem|architect|full/);
+    expect(result.proposedSetListId).toBe('full');
+    expect(result.proposedWorkflowId).toBe('full');
+    expect(result.rationale.toLowerCase()).toMatch(/full|cross|subsystem|architect/);
   });
 
-  it('requires manual picker for ambiguous descriptions with defaultWorkflowId pre-select', () => {
+  it('requires manual picker for ambiguous descriptions with default set list pre-select', () => {
     const result = assessTriage({
       ...defaultInput,
       description: 'improve',
     });
 
     expect(result.mode).toBe('manual');
-    expect(result.proposedWorkflowVariantId).toBeNull();
-    expect(result.defaultWorkflowVariantId).toBe('quick');
-    expect(result.availableWorkflowVariantIds).toEqual(['papercut', 'quick', 'full']);
+    expect(result.proposedSetListId).toBeNull();
+    expect(result.defaultSetListId).toBe('quick');
+    expect(result.defaultWorkflowId).toBe('quick');
+    expect(result.eligibleSetLists.map((entry) => entry.id)).toEqual(['papercut', 'quick', 'full']);
     expect(result.rationale.toLowerCase()).toMatch(/ambiguous|manual|pick/);
   });
 });

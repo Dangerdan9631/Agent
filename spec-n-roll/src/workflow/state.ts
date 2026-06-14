@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { kebabCaseIdSchema, taskSpecIdSchema } from '../config/schema.js';
+import {
+  kebabCaseIdSchema,
+  stepLifecycleSchema,
+  taskSpecIdSchema,
+} from '../config/schema.js';
 
 /**
  * Schema version for workflow state to enable future migrations.
@@ -50,6 +54,10 @@ export const workflowStateSchema = z
      */
     interruptedArtifacts: z.array(z.string()).optional(),
     /**
+     * Optional lifecycle metadata for the current or most recent step attempt.
+     */
+    lifecycle: stepLifecycleSchema.optional(),
+    /**
      * ISO-8601 datetime marking when this state was last written.
      */
     updatedAt: z.string().datetime(),
@@ -60,6 +68,9 @@ export const workflowStateSchema = z
  * Workflow state type tracking task spec execution progress.
  */
 export type WorkflowState = z.infer<typeof workflowStateSchema>;
+
+export type { StepLifecycle, StepLifecycleStatus } from '../config/schema.js';
+export { stepLifecycleSchema, stepLifecycleStatusSchema } from '../config/schema.js';
 
 /**
  * Formats a numeric task spec ID as a zero-padded string for consistent file naming.

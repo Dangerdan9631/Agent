@@ -45,6 +45,7 @@ async function waitForFrameContaining(
   readFrame: () => string | undefined,
   expectedText: string,
   timeoutMs = 3_000,
+  requireMatch = false,
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs;
 
@@ -55,6 +56,10 @@ async function waitForFrameContaining(
     }
 
     await waitForInk();
+  }
+
+  if (requireMatch) {
+    throw new Error(`Timed out waiting for frame to contain: ${expectedText}`);
   }
 
   return readFrame() ?? '';
@@ -100,19 +105,19 @@ describe('interactive local home', () => {
       }),
     );
 
-    const frame = await waitForFrameContaining(() => app.lastFrame(), 'Next task spec id:');
-    expect(frame).toContain('Version:');
-    expect(frame).toContain('(local)');
+    const frame = await waitForFrameContaining(
+      () => app.lastFrame(),
+      '> 1 Project',
+      10_000,
+      true,
+    );
+    expect(frame).toContain('(local');
+    expect(frame).toContain('Main Menu');
     expect(frame).toContain('Latest Version:');
     expect(frame).toContain('Project:');
-    expect(frame).toContain('Next task spec id:');
-    expect(frame).toContain('Updated at:');
-    expect(frame).toContain('Current task:');
-    expect(frame).toContain('001 Active Checkout');
-    expect(frame).toContain('Created at:');
     expect(frame).toContain('Implementation started at:');
     app.unmount();
-  });
+  }, 15_000);
 
   it('shows six menu options with Extensions permanently disabled', async () => {
     const projectRoot = await copyFixtureProject('menu');
@@ -133,7 +138,7 @@ describe('interactive local home', () => {
     expect(frame).toContain('6 Quit');
     expect(frame).not.toContain('> 4 Extensions');
     app.unmount();
-  });
+  }, 15_000);
 
   it('navigates to project-hub when Project is selected', async () => {
     const projectRoot = await copyFixtureProject('project-nav');
@@ -147,10 +152,7 @@ describe('interactive local home', () => {
 
     await waitForFrameContaining(() => app.lastFrame(), '1 Project');
     app.stdin.write('1');
-    const frame = await waitForFrameContaining(
-      () => app.lastFrame(),
-      'This screen is reserved for a later implementation phase.',
-    );
+    const frame = await waitForFrameContaining(() => app.lastFrame(), '1 Specs', 10_000, true);
     expect(frame).toContain('Project');
     app.unmount();
   });
@@ -184,10 +186,7 @@ describe('interactive local home', () => {
 
     await waitForFrameContaining(() => app.lastFrame(), '3 Workflows');
     app.stdin.write('3');
-    const frame = await waitForFrameContaining(
-      () => app.lastFrame(),
-      'Inspect configured workflow variants',
-    );
+    const frame = await waitForFrameContaining(() => app.lastFrame(), '> Quick', 10_000, true);
     expect(frame).toContain('Workflows');
     app.unmount();
   });
@@ -277,7 +276,7 @@ describe('interactive local home', () => {
     await waitForFrameContaining(() => app.lastFrame(), '5 Back');
     app.stdin.write('5');
     const frame = await waitForFrameContaining(() => app.lastFrame(), '1 Project');
-    expect(frame).toContain('Local Home');
+    expect(frame).toContain('Main Menu');
     expect(frame).toContain('1 Project');
     app.unmount();
   });

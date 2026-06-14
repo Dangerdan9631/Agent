@@ -53,7 +53,7 @@ describe('complete interactive navigation', () => {
     await waitForFrame();
 
     expect(app.lastFrame()).toContain('Inspect configured agents');
-    expect(app.lastFrame()).toContain('Local Home');
+    expect(app.lastFrame()).toContain('Main Menu');
     app.unmount();
   });
 
@@ -70,7 +70,7 @@ describe('complete interactive navigation', () => {
 
     app.stdin.write('1');
     await waitForText(app.lastFrame, '1 Specs');
-    app.stdin.write('3');
+    app.stdin.write('5');
     await waitForText(app.lastFrame, '> 1 Project');
 
     app.stdin.write('3');

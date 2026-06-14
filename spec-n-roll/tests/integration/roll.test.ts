@@ -52,11 +52,11 @@ describe('/spec-n-roll integration', () => {
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add email notification when an order ships',
-      workflowVariantOverride: 'quick',
+      setListOverride: 'quick',
       answerInterview: async (question: InterviewQuestion) => question.recommendedAnswer,
     });
 
-    const nextAfterSpecify = resolveNextStepId('quick', 'specify');
+    const nextAfterSpecify = resolveNextStepId('quick', 'specify', ['specify', 'tasks', 'implement']);
     expect(nextAfterSpecify).toBe('tasks');
 
     const tasksRoll = await runRoll({
@@ -104,7 +104,7 @@ describe('/spec-n-roll integration', () => {
     const specifyResult = await runSpecify({
       projectRoot,
       description: 'Add email notification when an order ships',
-      workflowVariantOverride: 'quick',
+      setListOverride: 'quick',
       answerInterview: async (question: InterviewQuestion) => question.recommendedAnswer,
     });
 
@@ -137,7 +137,7 @@ describe('/spec-n-roll integration', () => {
       projectRoot,
       description:
         'Redesign authentication across web, mobile, and API subsystems with multi-actor flows',
-      workflowVariantOverride: 'full',
+      setListOverride: 'full',
       answerInterview: async (question: InterviewQuestion) => question.recommendedAnswer,
     });
 
