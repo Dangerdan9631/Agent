@@ -113,9 +113,7 @@ afterEach(async () => {
 });
 
 describe('interactive browse flow', () => {
-  it(
-    'navigates read-only top-level browse sections without mutating project files',
-    async () => {
+  it('navigates read-only top-level browse sections without mutating project files', async () => {
     const projectRoot = await copyFixtureProject();
     const before = await snapshotFiles(projectRoot);
     const app = render(
@@ -193,9 +191,7 @@ describe('interactive browse flow', () => {
 
     app.unmount();
     expect(await snapshotFiles(projectRoot)).toEqual(before);
-  },
-  15_000,
-  );
+  }, 15_000);
 
   it('shows distinct selection options and route-owned content per list route', async () => {
     const projectRoot = await copyFixtureProject();
@@ -207,7 +203,7 @@ describe('interactive browse flow', () => {
       }),
     );
 
-    await waitForFrame();
+    await waitForText(app, '> 1 Project');
     const localHomeFrame = app.lastFrame() ?? '';
     expect(localHomeFrame).toContain('> 1 Project');
     expect(localHomeFrame).toContain("5 Manage Spec N' Roll");

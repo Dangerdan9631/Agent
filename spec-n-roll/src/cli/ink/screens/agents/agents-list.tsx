@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
-import type { RouteId } from '../../app/navigation.js';
+import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -94,9 +94,7 @@ function parentRouteId(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): RouteId {
-  return (
-    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
-  );
+  return navigationStack.at(-2)?.routeId ?? homeRouteIdFor(binaryContext);
 }
 
 /**
@@ -132,19 +130,21 @@ export function AgentsListScreen(props: AgentsListScreenProps): React.ReactEleme
   const contextState = useMemo(
     (): ContextContentState => ({
       routeTitle: 'Agents',
-      fallbackSummary: 'Inspect bundled and configured agents for this project.',
       selectedContext,
     }),
     [selectedContext],
   );
-  const reportFocusedContext = useCallback((item: AgentListItem | BackMenuItem | undefined): void => {
-    if (item == null || isBackMenuItem(item)) {
-      setSelectedContext(undefined);
-      return;
-    }
+  const reportFocusedContext = useCallback(
+    (item: AgentListItem | BackMenuItem | undefined): void => {
+      if (item == null || isBackMenuItem(item)) {
+        setSelectedContext(undefined);
+        return;
+      }
 
-    setSelectedContext(item.context);
-  }, []);
+      setSelectedContext(item.context);
+    },
+    [],
+  );
   const ignoreAgentRowActivation = useCallback(
     (item: AgentListItem | BackMenuItem): void => {
       if (isBackMenuItem(item)) {

@@ -49,11 +49,7 @@ export type TaskMetadataWriteInput = Partial<TaskMetadata>;
  * @param slug - Kebab-case slug paired with the task spec id.
  * @returns Absolute path to `task-metadata.json` for the task spec.
  */
-export function taskMetadataPath(
-  projectRoot: string,
-  taskSpecId: string,
-  slug: string,
-): string {
+export function taskMetadataPath(projectRoot: string, taskSpecId: string, slug: string): string {
   return path.join(
     taskSpecDir(projectRoot, taskSpecId, slug),
     TASK_METADATA_RELATIVE_DIR,

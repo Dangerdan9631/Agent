@@ -74,10 +74,11 @@ export function RouteContentLayout(props: RouteContentLayoutProps): React.ReactE
         flexShrink={1}
         height={layout.contentRows > 0 ? layout.contentRows : undefined}
         width={columns}
+        paddingX={4}
+        paddingY={1}
       >
         {props.staticContent != null ? (
           <Box flexDirection="column">
-            <Text bold>{props.contextState.routeTitle}</Text>
             {props.staticContent}
           </Box>
         ) : (

@@ -16,6 +16,10 @@ export interface ReloadInteractiveAppOptions {
    * Absolute path to the CLI entry script executed by the child process.
    */
   executedBinaryPath?: string;
+  /**
+   * Command to execute instead of the current Node entry script.
+   */
+  command?: string;
 }
 
 /**
@@ -26,19 +30,48 @@ export interface ReloadInteractiveAppOptions {
  */
 export function reloadInteractiveApp(options: ReloadInteractiveAppOptions = {}): number {
   const cwd = options.cwd ?? process.cwd();
-  const entry = options.executedBinaryPath ?? process.argv[1];
   const args = options.argv ?? process.argv.slice(2);
 
+  const result =
+    options.command != null
+      ? spawnSync(options.command, [...args], {
+          cwd,
+          stdio: 'inherit',
+          env: process.env,
+          shell: process.platform === 'win32',
+        })
+      : spawnCurrentNodeEntrypoint(cwd, args, options.executedBinaryPath);
+
+  return result.status ?? 1;
+}
+
+/**
+ * Spawns the current Node entrypoint with inherited stdio.
+ *
+ * @param cwd - Working directory passed to the child process.
+ * @param args - Arguments passed after the entry script path.
+ * @param executedBinaryPath - Optional entrypoint override, otherwise `process.argv[1]`.
+ * @returns Child process result from the synchronous spawn.
+ */
+function spawnCurrentNodeEntrypoint(
+  cwd: string,
+  args: readonly string[],
+  executedBinaryPath?: string,
+): ReturnType<typeof spawnSync> {
+  const entry = executedBinaryPath ?? process.argv[1];
   if (entry == null) {
-    return 1;
+    return spawnSync(process.execPath, ['-e', 'process.exit(1)'], {
+      cwd,
+      stdio: 'inherit',
+      env: process.env,
+      shell: process.platform === 'win32',
+    });
   }
 
-  const result = spawnSync(process.execPath, [entry, ...args], {
+  return spawnSync(process.execPath, [entry, ...args], {
     cwd,
     stdio: 'inherit',
     env: process.env,
     shell: process.platform === 'win32',
   });
-
-  return result.status ?? 1;
 }

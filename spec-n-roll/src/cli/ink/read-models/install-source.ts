@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveGlobalCliPath } from '../../dispatcher.js';
 import { findToolkitPackageRoot } from '../../../core/paths.js';
 
 /**
@@ -133,4 +134,54 @@ export function readInstallSource(options: ReadInstallSourceOptions = {}): Insta
  */
 export function resolveRunningToolkitPackageRoot(): string {
   return findToolkitPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
+}
+
+/**
+ * Reads install source metadata passed from a delegating global dispatcher process.
+ *
+ * @param env - Environment variables for the current process.
+ * @returns Delegated global install source metadata, or null when execution was not delegated.
+ */
+function readDelegatedGlobalInstallSource(env: NodeJS.ProcessEnv): InstallSource | null {
+  if (env.SPEC_N_ROLL_DISPATCHED !== '1') {
+    return null;
+  }
+
+  const cliDirectory = env.SPEC_N_ROLL_DISPATCHER_CLI_DIRECTORY?.trim();
+  const markerPath =
+    cliDirectory != null && cliDirectory.length > 0
+      ? installSourceMarkerPath(cliDirectory)
+      : installSourceMarkerPath('[delegated]');
+
+  if (env.SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE === 'local') {
+    const sourcePath = env.SPEC_N_ROLL_DISPATCHER_LINKED_SOURCE_PATH?.trim();
+    return {
+      kind: 'local',
+      ...(sourcePath != null && sourcePath.length > 0
+        ? { sourcePath: path.resolve(sourcePath) }
+        : {}),
+      markerPath,
+    };
+  }
+
+  return {
+    kind: 'remote',
+    markerPath,
+  };
+}
+
+/**
+ * Reads install source metadata from the globally installed dispatcher CLI layout.
+ *
+ * @param env - Environment variables for the current process. Uses dispatcher metadata when delegated.
+ * @returns Install source kind and optional linked source path for the global dispatcher.
+ */
+export function readGlobalInstallSource(env: NodeJS.ProcessEnv = process.env): InstallSource {
+  const delegatedSource = readDelegatedGlobalInstallSource(env);
+  if (delegatedSource != null) {
+    return delegatedSource;
+  }
+
+  const globalCliPath = resolveGlobalCliPath();
+  return readInstallSource({ cliDirectory: path.dirname(globalCliPath) });
 }

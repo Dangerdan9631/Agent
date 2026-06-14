@@ -8,10 +8,7 @@ import { SelectableList, type SelectableListItem } from '../../components/Select
 import { buildBackMenuItem } from '../../components/menu/back-menu-item.js';
 import { StaticContentBlock } from '../../components/StaticContentBlock.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
-import {
-  loadProjectHubView,
-  type ProjectHubView,
-} from '../../read-models/project-hub.js';
+import { loadProjectHubView, type ProjectHubView } from '../../read-models/project-hub.js';
 
 /**
  * Project hub menu row with numeric shortcut activation.

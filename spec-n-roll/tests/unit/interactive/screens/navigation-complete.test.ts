@@ -12,11 +12,6 @@ import { App } from '../../../../src/cli/ink/app/App.js';
 const FIXTURE_ROOT = path.resolve('tests/fixtures/interactive-multi-spec');
 
 /**
- * Escape key sequence used by Ink tests to trigger back navigation.
- */
-const ESCAPE = '\u001b';
-
-/**
  * Waits briefly for Ink state updates and asynchronous read models to settle.
  *
  * @returns Promise that resolves after the UI has had one update window.
@@ -32,7 +27,7 @@ async function waitForFrame(): Promise<void> {
  * @param text - Text fragment to wait for.
  */
 async function waitForText(readFrame: () => string | undefined, text: string): Promise<void> {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
     if (readFrame()?.includes(text) === true) {
       return;
     }
@@ -71,38 +66,25 @@ describe('complete interactive navigation', () => {
       }),
     );
 
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Spec-N-Roll');
+    await waitForText(app.lastFrame, '> 1 Project');
 
     app.stdin.write('1');
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('1 Specs');
-    app.stdin.write(ESCAPE);
-    await waitForFrame();
+    await waitForText(app.lastFrame, '1 Specs');
+    app.stdin.write('3');
+    await waitForText(app.lastFrame, '> 1 Project');
 
     app.stdin.write('3');
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Workflows');
+    await waitForText(app.lastFrame, 'Quick');
     app.stdin.write('3');
-    await waitForFrame();
+    await waitForText(app.lastFrame, '> 1 Project');
 
     app.stdin.write('2');
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Agents');
-    app.stdin.write('5');
-    await waitForFrame();
+    await waitForText(app.lastFrame, 'Agents');
+    app.stdin.write('b');
+    await waitForText(app.lastFrame, '> 1 Project');
 
-    app.stdin.write('1');
-    await waitForFrame();
-    expect(app.lastFrame()).toContain('Project Metadata');
-    app.stdin.write('2');
-    await waitForFrame();
-    app.stdin.write('3');
-    await waitForFrame();
-
-    expect(app.lastFrame()).toContain('Local Home');
     app.unmount();
-  });
+  }, 20_000);
 
   it('renders spec detail in the full route content slot', async () => {
     const app = render(

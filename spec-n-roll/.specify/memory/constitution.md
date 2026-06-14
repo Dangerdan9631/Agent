@@ -1,15 +1,20 @@
 <!--
 Sync Impact Report
-Version: template (unratified) → 1.0.0
-Bump rationale: Initial ratification derived from AGENTS.md coding conventions.
-Modified principles: N/A (all placeholders replaced)
-Added sections: Documentation Conventions, Code Change Workflow
+Version: 1.0.0 → 1.1.0
+Bump rationale: Added a pre-1.0 API compatibility principle and matching gates.
+Modified principles:
+  - V. Test Discipline and Validation → VI. Test Discipline and Validation
+Added sections: Pre-1.0 API Design Freedom
 Removed sections: None
 Templates:
   - .specify/templates/plan-template.md ✅ updated
   - .specify/templates/spec-template.md ✅ no changes needed
   - .specify/templates/tasks-template.md ✅ updated
   - .specify/templates/checklist-template.md ✅ no changes needed
+  - .specify/templates/commands/*.md ✅ not present
+Runtime guidance:
+  - AGENTS.md ✅ updated
+  - docs/updates-and-migrations.md ✅ updated
 Deferred: None
 -->
 
@@ -76,7 +81,24 @@ shutdown defined, and timing-sensitive behavior tested.
 **Rationale**: Isolated boundaries keep domain logic testable and portable across
 infrastructure changes.
 
-### V. Test Discipline and Validation
+### V. Pre-1.0 API Design Freedom
+
+Application versions before `1.0.0` are pre-release. Contributors MUST optimize
+for the right application API, data model, command shape, and extension contract
+instead of preserving compatibility with pre-1.0 behavior.
+
+Breaking changes before `1.0.0` are allowed when they produce a smaller, clearer,
+harder-to-misuse interface. Contributors MUST NOT add compatibility layers,
+legacy aliases, tolerant fallback paths, or migration branches for pre-1.0
+contracts unless losing user-authored data would be likely. When a breaking
+pre-1.0 change affects persisted user data, the change MUST include an explicit
+migration or clear failure guidance rather than preserving the old API surface.
+
+**Rationale**: Compatibility scaffolding before the first stable release clutters
+the implementation and weakens the interface that the application will commit to
+after `1.0.0`.
+
+### VI. Test Discipline and Validation
 
 Tests MUST be treated as production code: readable, deterministic, and aligned
 with the behavior or contract they protect. When fixing a bug or changing
@@ -130,6 +152,7 @@ Every change MUST satisfy:
 - [ ] Mutation is explicit and the happy path is clear
 - [ ] Framework, persistence, vendor, and construction details stayed behind
       boundaries
+- [ ] Pre-1.0 changes choose the right API over compatibility scaffolding
 - [ ] At least one smell was removed from the touched area (when code was edited)
 - [ ] Tests protect the changed behavior or contract (when behavior changed)
 - [ ] Relevant tests or checks were actually run
@@ -148,10 +171,15 @@ Record version bumps using semantic versioning:
 - **MINOR**: New principles or materially expanded guidance
 - **PATCH**: Clarifications, wording fixes, non-semantic refinements
 
+**Pre-1.0 application policy**: Before the application reaches `1.0.0`, API
+compatibility with earlier application releases is not required. Plans and
+implementations MUST favor the intended stable interface over backward
+compatibility layers for pre-release versions.
+
 **Compliance review**: Implementation plans MUST pass Constitution Check gates
 before Phase 0 research and again after Phase 1 design. Pull requests and
 `/speckit-analyze` runs MUST treat constitution MUST violations as CRITICAL.
 Complexity that violates a principle MUST be documented in the plan's Complexity
 Tracking table with rejected simpler alternatives.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-13
+**Version**: 1.1.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-14

@@ -20,6 +20,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "tsup.config.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tsup.config.ts", "tsup.local-bundle.config.ts"],
   "exclude": ["node_modules", "dist", "tests"]
 }

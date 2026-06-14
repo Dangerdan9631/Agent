@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
-import type { RouteId } from '../../app/navigation.js';
+import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -105,9 +105,7 @@ function parentRouteId(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): RouteId {
-  return (
-    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
-  );
+  return navigationStack.at(-2)?.routeId ?? homeRouteIdFor(binaryContext);
 }
 
 /**
@@ -145,13 +143,11 @@ export function ProjectMetadataViewScreen(
     if (metadata == null) {
       return {
         routeTitle: 'Project Metadata',
-        fallbackSummary: 'Inspect current task ownership and id allocation.',
       };
     }
 
     return {
       routeTitle: 'Project Metadata',
-      fallbackSummary: 'Inspect current task ownership and id allocation.',
       selectedContext: selectedContext ?? projectOverviewContext(metadata),
     };
   }, [metadata, selectedContext]);

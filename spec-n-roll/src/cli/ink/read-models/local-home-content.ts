@@ -52,7 +52,9 @@ export interface LoadLocalHomeContentDeps {
   /**
    * Optional project metadata reader override.
    */
-  readProjectMetadata?: (projectRoot: string) => Promise<Awaited<ReturnType<typeof readProjectMetadata>>>;
+  readProjectMetadata?: (
+    projectRoot: string,
+  ) => Promise<Awaited<ReturnType<typeof readProjectMetadata>>>;
   /**
    * Optional task metadata reader override.
    */
@@ -121,9 +123,7 @@ function formatLatestVersionLabel(comparison: VersionComparison): string {
 function isImplementComplete(
   workflowState: Awaited<ReturnType<typeof readWorkflowState>>,
 ): boolean {
-  return (
-    workflowState?.lastCompletedStepId === 'implement' && workflowState.status === 'complete'
-  );
+  return workflowState?.lastCompletedStepId === 'implement' && workflowState.status === 'complete';
 }
 
 /**
@@ -172,9 +172,7 @@ async function buildCurrentTaskBlock(
   projectRoot: string,
   taskSpecId: string,
   slug: string,
-  deps: Required<
-    Pick<LoadLocalHomeContentDeps, 'readTaskMetadata' | 'readWorkflowState'>
-  >,
+  deps: Required<Pick<LoadLocalHomeContentDeps, 'readTaskMetadata' | 'readWorkflowState'>>,
 ): Promise<readonly StaticContentField[] | null> {
   const workflowState = await deps.readWorkflowState(projectRoot, taskSpecId, slug);
   if (isImplementComplete(workflowState)) {

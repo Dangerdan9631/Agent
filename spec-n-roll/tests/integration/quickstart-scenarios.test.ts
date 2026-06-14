@@ -1,9 +1,11 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/cli/local-install-integrity.js';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { installProjectBinaries } from '../../src/cli/local-binaries.js';
 import { runInit } from '../../src/cli/commands/init.js';
 import { runConfigAgentAdd } from '../../src/cli/commands/config-agent-add.js';
 import { CoreMutationError } from '../../src/core/errors.js';
@@ -28,6 +30,9 @@ const tempDirs: string[] = [];
 const repoRoot = path.resolve('.');
 const dispatcherPath = path.resolve('dist/cli/dispatcher.js');
 const fullCliPath = path.resolve('dist/cli/index.js');
+const dispatcherPackageVersion = JSON.parse(
+  readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
+) as { version: string };
 const docsDir = path.join(repoRoot, 'docs');
 
 /**
@@ -83,6 +88,41 @@ beforeAll(() => {
   if (!existsSync(fullCliPath) || !existsSync(dispatcherPath)) {
     throw new Error('Build output missing. Run `npm run build` before integration tests.');
   }
+});
+
+describe('quickstart scenario 1 self-contained: init produces bundled layout', () => {
+  it('installs layout v1 without toolkitPackageRoot and with dist/cli/index.js', async () => {
+    const projectRoot = createTempProject('self-contained');
+    await runInit({ projectRoot, agents: ['cursor'] });
+
+    const cliDir = path.join(projectRoot, '.spec-n-roll', 'cli');
+    expect(existsSync(path.join(cliDir, 'dist', 'cli', 'index.js'))).toBe(true);
+    expect(existsSync(path.join(cliDir, 'dist', 'mcp', 'server.js'))).toBe(true);
+
+    const installManifest = JSON.parse(readFileSync(path.join(cliDir, 'install.json'), 'utf8')) as {
+      toolkitVersion: string;
+      layoutVersion: number;
+      toolkitPackageRoot?: string;
+    };
+    expect(installManifest.layoutVersion).toBe(LOCAL_INSTALL_LAYOUT_VERSION);
+    expect(installManifest.toolkitPackageRoot).toBeUndefined();
+    expect(installManifest.toolkitVersion).toBeTruthy();
+
+    for (const launcherName of readdirSync(path.join(cliDir, 'bin'))) {
+      if (launcherName.endsWith('.cmd')) {
+        continue;
+      }
+      const launcher = readFileSync(path.join(cliDir, 'bin', launcherName), 'utf8');
+      expect(launcher).not.toContain('toolkitPackageRoot');
+    }
+
+    const versionResult = spawnSync(process.execPath, [dispatcherPath, 'version'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    expect(versionResult.status).toBe(0);
+    expect(versionResult.stdout).toContain('invocation: local');
+  }, 30_000);
 });
 
 describe('quickstart scenario 1: initialize project with multiple agents', () => {
@@ -161,17 +201,42 @@ describe('quickstart scenario 1b: add agent MCP configuration', () => {
   });
 });
 
-describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
-  it('delegates to local CLI and supports --global bypass with combined version report', async () => {
-    const projectRoot = createTempProject('scenario-2');
-    await runInit({ projectRoot, agents: ['cursor'] });
+describe('quickstart scenario 2c: dispatcher version-skew delegation', () => {
+  it('delegates to pinned local toolkit version regardless of dispatcher package version', async () => {
+    const projectRoot = createTempProject('scenario-2c');
+    const fixtureRoot = path.resolve('tests/fixtures/local-bundle-version-a');
+    await installProjectBinaries(projectRoot, fixtureRoot);
 
+    const localCliPath = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll');
     const delegated = spawnSync(process.execPath, [dispatcherPath, 'version'], {
       cwd: projectRoot,
       encoding: 'utf8',
     });
+
     expect(delegated.status).toBe(0);
-    expect(delegated.stdout).toContain('local');
+    expect(delegated.stdout).toContain('toolkit version: 0.9.0-a');
+    expect(delegated.stdout).toContain(`dispatcher version: ${dispatcherPackageVersion.version}`);
+    expect(delegated.stdout).toContain('invocation: local');
+    expect(delegated.stdout).not.toContain('invocation: global');
+    expect(delegated.stdout.replace(/\\/g, '/')).toContain(localCliPath.replace(/\\/g, '/'));
+  }, 30_000);
+});
+
+describe('quickstart scenario 6: corrupt install fails clearly', () => {
+  it('dispatcher errors on incomplete install without silent global fallback', async () => {
+    const projectRoot = createTempProject('scenario-6-corrupt');
+    await runInit({ projectRoot, agents: ['cursor'] });
+
+    rmSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'dist', 'cli', 'index.js'));
+
+    const corrupt = spawnSync(process.execPath, [dispatcherPath, 'version'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    expect(corrupt.status).not.toBe(0);
+    expect(corrupt.stderr).toMatch(/incomplete/i);
+    expect(corrupt.stderr).toMatch(/update/i);
+    expect(corrupt.stdout).not.toContain('invocation: global');
 
     const globalVersion = spawnSync(process.execPath, [dispatcherPath, '--global', 'version'], {
       cwd: projectRoot,
@@ -179,17 +244,53 @@ describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
     });
     expect(globalVersion.status).toBe(0);
     expect(globalVersion.stdout).toContain('toolkit version');
-    expect(globalVersion.stdout).not.toContain('.spec-n-roll/cli/bin/spec-n-roll');
+  }, 30_000);
+});
+
+describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
+  it('delegates to local CLI and supports --global bypass with combined version report', async () => {
+    const projectRoot = createTempProject('scenario-2');
+    await runInit({ projectRoot, agents: ['cursor'] });
 
     const localCliPath = path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll');
+    const localPackageVersion = JSON.parse(
+      readFileSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'package.json'), 'utf8'),
+    ) as { version: string };
+
+    const delegated = spawnSync(process.execPath, [dispatcherPath, 'version'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    expect(delegated.status).toBe(0);
+    expect(delegated.stdout).toContain(`toolkit version: ${localPackageVersion.version}`);
+    expect(delegated.stdout).toContain(`dispatcher version: ${dispatcherPackageVersion.version}`);
+    expect(delegated.stdout).toContain('invocation: local');
+    expect(delegated.stdout.replace(/\\/g, '/')).toContain(localCliPath.replace(/\\/g, '/'));
+
+    const globalVersion = spawnSync(process.execPath, [dispatcherPath, '--global', 'version'], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    expect(globalVersion.status).toBe(0);
+    expect(globalVersion.stdout).toContain(`toolkit version: ${dispatcherPackageVersion.version}`);
+    expect(globalVersion.stdout).toContain('invocation: global');
+    expect(globalVersion.stdout).not.toContain('dispatcher version:');
+    expect(globalVersion.stdout).not.toContain('.spec-n-roll/cli/bin/spec-n-roll');
+
     const localBinaryVersion = spawnSync(process.execPath, [localCliPath, 'version'], {
       cwd: projectRoot,
       encoding: 'utf8',
       env: buildDelegatedCliEnv(process.env),
     });
     expect(localBinaryVersion.status).toBe(0);
-    expect(localBinaryVersion.stdout).toContain('toolkit version');
-    expect(localBinaryVersion.stdout).toContain('local');
+    expect(localBinaryVersion.stdout).toContain(`toolkit version: ${localPackageVersion.version}`);
+    expect(localBinaryVersion.stdout).toContain('invocation: local');
+    expect(localBinaryVersion.stdout).toContain(
+      `dispatcher version: ${dispatcherPackageVersion.version}`,
+    );
+    expect(localBinaryVersion.stdout.replace(/\\/g, '/')).toContain(
+      localCliPath.replace(/\\/g, '/'),
+    );
   }, 30_000);
 });
 

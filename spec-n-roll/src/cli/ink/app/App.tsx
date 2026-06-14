@@ -9,6 +9,7 @@ import {
   STATUS_REGION_ROWS,
 } from '../components/ContextContent.js';
 import { KeyHintOverlay } from '../components/KeyHintOverlay.js';
+import { QuitConfirmationDialog } from '../components/QuitConfirmationDialog.js';
 import { StatusBar } from '../components/StatusBar.js';
 import { useQuitConfirmation, isHomeRoute } from '../hooks/use-quit-confirmation.js';
 import { useTerminalSize } from '../hooks/use-terminal-size.js';
@@ -192,11 +193,21 @@ function AppShell(): React.ReactElement {
 
   useInput((input, key) => {
     if (input === 'q') {
-      quit.onQuitKey();
+      if (quit.pending && quit.triggerKey !== 'q') {
+        quit.onOtherKey();
+        return;
+      }
+
+      quit.onQuitKey('q');
       return;
     }
 
     if (quit.pending) {
+      if (key.escape && quit.triggerKey === 'escape') {
+        quit.onQuitKey('escape');
+        return;
+      }
+
       quit.onOtherKey();
       return;
     }
@@ -208,7 +219,7 @@ function AppShell(): React.ReactElement {
 
     if (input === 'b' || key.escape) {
       if (onHomeScreen && key.escape) {
-        quit.onQuitKey();
+        quit.onQuitKey('escape');
         return;
       }
 
@@ -227,7 +238,7 @@ function AppShell(): React.ReactElement {
   return (
     <Box flexDirection="column" height={layout.terminalRows}>
       <Box flexShrink={0} height={layout.statusRows}>
-        <StatusBar quitConfirmationMessage={quit.message} />
+        <StatusBar />
       </Box>
       <Box
         flexGrow={1}
@@ -235,8 +246,14 @@ function AppShell(): React.ReactElement {
         flexDirection="column"
         height={layout.routeContentRows}
         width="100%"
+        backgroundColor="black"
       >
         <RouteRenderer routeContentRows={layout.routeContentRows} />
+        {quit.pending && quit.message != null ? (
+          <Box position="absolute" height={layout.routeContentRows} width="100%">
+            <QuitConfirmationDialog message={quit.message} />
+          </Box>
+        ) : null}
       </Box>
       {layout.keyHintRows > 0 ? (
         <Box flexShrink={0} height={layout.keyHintRows}>

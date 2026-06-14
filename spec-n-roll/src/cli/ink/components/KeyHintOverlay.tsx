@@ -46,13 +46,23 @@ function mergeKeyHints(
 }
 
 /**
- * Formats hint descriptors into a single plain-text line.
+ * Renders merged hint descriptors with blue keys and white labels and dividers.
  *
- * @param hints - Ordered hint descriptors to join.
- * @returns Space-delimited hint text without color codes.
+ * @param hints - Ordered hint descriptors to display.
+ * @returns React elements for the hint line content.
  */
-function formatHintLine(hints: readonly KeyHintDescriptor[]): string {
-  return hints.map((hint) => `${hint.key} ${hint.label}`).join(' | ');
+function renderHintLine(hints: readonly KeyHintDescriptor[]): React.ReactElement {
+  return (
+    <Text>
+      {hints.map((hint, index) => (
+        <React.Fragment key={`${hint.key}:${hint.label}`}>
+          {index > 0 ? <Text color="white">{' | '}</Text> : null}
+          <Text color="green">{hint.key}</Text>
+          <Text color="white">{` ${hint.label}`}</Text>
+        </React.Fragment>
+      ))}
+    </Text>
+  );
 }
 
 /**
@@ -70,11 +80,16 @@ export function KeyHintOverlay(props: KeyHintOverlayProps): React.ReactElement |
   }
 
   const hints = mergeKeyHints(props.supplementalHints);
-  const hintText = formatHintLine(hints);
 
   return (
-    <Box alignItems="center" flexDirection="row" justifyContent="center" width={columns}>
-      <Text color="cyan">{hintText}</Text>
+    <Box
+      alignItems="center"
+      flexDirection="row"
+      justifyContent="center"
+      width={columns}
+      backgroundColor="blackBright"
+    >
+      {renderHintLine(hints)}
     </Box>
   );
 }

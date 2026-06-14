@@ -74,6 +74,23 @@ async function waitForFrame(): Promise<void> {
 }
 
 /**
+ * Polls until the rendered frame contains expected text.
+ *
+ * @param readFrame - Returns the latest rendered frame.
+ * @param text - Text fragment to wait for.
+ */
+async function waitForText(readFrame: () => string | undefined, text: string): Promise<void> {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (readFrame()?.includes(text) === true) {
+      return;
+    }
+    await waitForFrame();
+  }
+
+  throw new Error(`Timed out waiting for frame to contain: ${text}`);
+}
+
+/**
  * Sets the process stdout row count for Ink test renders.
  *
  * @param rows - Positive terminal row count to expose during the test.
@@ -164,12 +181,11 @@ describe('interactive read-only navigation', () => {
       }),
     );
 
-    await waitForFrame();
+    await waitForText(() => app.lastFrame(), '> 1 Project');
     app.stdin.write(DOWN_ARROW);
     await waitForFrame();
     app.stdin.write(DOWN_ARROW);
-    await waitForFrame();
-
+    await waitForText(() => app.lastFrame(), '> 3 Workflows');
     const frame = app.lastFrame() ?? '';
     expect(frame).toContain('Workflows');
     expect(frame).toContain('> 3 Workflows');

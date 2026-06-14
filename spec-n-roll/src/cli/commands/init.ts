@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
@@ -19,7 +18,7 @@ import { atomicWriteJson } from '../../core/atomic-write.js';
 import { findToolkitPackageRoot } from '../../core/paths.js';
 import { WORKFLOW_CONFIG_SCHEMA_VERSION } from '../../updates/migration.js';
 import { writeProjectMetadata } from '../../core/project-metadata.js';
-import { installProjectBinaries } from '../local-binaries.js';
+import { installProjectBinaries, readStagedLocalBundleVersion } from '../local-binaries.js';
 import { installBundledPlatformScripts } from '../../workflow/platform-scripts.js';
 import { BUILT_IN_STEP_OUTPUTS } from '../../workflow/step-manifest.js';
 import { promptForAgentSelection } from '../ink/init-prompts.js';
@@ -178,18 +177,6 @@ export function createDefaultWorkflowConfig(input: DefaultWorkflowConfigInput): 
   };
 }
 
-/**
- * Reads the toolkit version from package.json at the toolkit root.
- *
- * @param toolkitRoot - Absolute path to the toolkit package root.
- * @returns Semver string for the toolkit package.
- */
-function readToolkitVersion(toolkitRoot: string): string {
-  const packageJsonPath = path.join(toolkitRoot, 'package.json');
-  const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string };
-  return pkg.version;
-}
-
 export { installProjectBinaries } from '../local-binaries.js';
 
 /**
@@ -269,7 +256,7 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
   }
 
   const workflowConfig = createDefaultWorkflowConfig({
-    toolkitVersion: readToolkitVersion(toolkitRoot),
+    toolkitVersion: readStagedLocalBundleVersion(toolkitRoot),
     selectedAgentIds: selectedAgents,
   });
   await writeInitialConfigFiles(projectRoot, workflowConfig);

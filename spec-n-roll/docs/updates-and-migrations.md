@@ -56,10 +56,21 @@ When `update` runs:
 Implementation: tolerant reader `src/config/reader.ts`, migration planner/applier `src/updates/migration.ts`.
 
 - Config files carry a `schemaVersion` field. New projects are initialized at workflow config schema version `2`.
-- The tolerant reader parses prior schema versions, ignores unknown fields, and maps legacy field names (for example `workflowVariants` → `workflows`, `installedToolkitVersion` → `toolkitVersion`).
+- The tolerant reader parses supported prior schema versions, ignores unknown fields, and maps legacy field names when doing so protects user-authored data.
 - Migrations run **only** during `spec-n-roll update`, not at runtime.
 - Non-breaking migrations apply automatically.
 - Breaking migrations (for example removal of deprecated `legacyTierRouting`) require `--force`.
+
+## Pre-1.0 compatibility policy
+
+Application versions before `1.0.0` are pre-release. Breaking changes to
+commands, config shapes, extension contracts, and internal APIs are acceptable
+when they create the right stable interface.
+
+Do not add compatibility layers solely to support pre-1.0 behavior. Preserve or
+migrate user-authored data when practical, but remove legacy aliases, fallback
+branches, and old contract shapes when they would clutter the implementation or
+weaken the application API.
 
 Migrated files:
 

@@ -91,6 +91,7 @@ export function SelectionRowProvider(props: SelectionRowProviderProps): React.Re
   return (
     <Box
       borderStyle="single"
+      borderBackgroundColor="black"
       flexDirection="column"
       flexGrow={0}
       flexShrink={0}

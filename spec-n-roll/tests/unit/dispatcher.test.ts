@@ -7,7 +7,9 @@ import {
   LOCAL_CLI_RELATIVE_PATH,
   findLocalCli,
   findLocalCliOrThrow,
+  buildDelegatedCliEnv,
   isExecutable,
+  readDispatcherInstallSourceKind,
   resolveDelegation,
   resolveLocalCliPath,
   shouldDelegateToLocal,
@@ -122,8 +124,22 @@ describe('shouldDelegateToLocal', () => {
   });
 });
 
+describe('buildDelegatedCliEnv', () => {
+  it('passes dispatcher install source metadata to delegated local CLIs', () => {
+    const env = buildDelegatedCliEnv({ PATH: 'fixture-path' });
+
+    expect(env.SPEC_N_ROLL_DISPATCHED).toBe('1');
+    expect(env.SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE).toBe(readDispatcherInstallSourceKind());
+    expect(env.SPEC_N_ROLL_DISPATCHER_CLI_DIRECTORY).toBeTruthy();
+    expect(env.SPEC_N_ROLL_DISPATCHER_PACKAGE_ROOT).toBeTruthy();
+    if (readDispatcherInstallSourceKind() === 'local') {
+      expect(env.SPEC_N_ROLL_DISPATCHER_LINKED_SOURCE_PATH).toBeTruthy();
+    }
+  });
+});
+
 describe('resolveDelegation', () => {
-  it('delegates to the local CLI and returns its exit code', () => {
+  it('returns integrity error when local CLI exists without a valid bundled install', () => {
     if (process.platform === 'win32') {
       return;
     }
@@ -132,7 +148,11 @@ describe('resolveDelegation', () => {
     writeLocalCli(root);
 
     const result = resolveDelegation(['version'], { cwd: root });
-    expect(result).toEqual({ action: 'delegated', exitCode: 42 });
+    expect(result.action).toBe('error');
+    if (result.action === 'error') {
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(/incomplete/i);
+    }
   });
 
   it('continues when --global is set', () => {

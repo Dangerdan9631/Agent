@@ -13,7 +13,7 @@ import {
   type BackMenuItem,
 } from '../../components/menu/back-menu-item.js';
 import { useSession } from '../../app/session-context.js';
-import type { RouteId } from '../../app/navigation.js';
+import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listWorkflowVariantSummaries,
@@ -95,9 +95,7 @@ function parentRouteId(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): RouteId {
-  return (
-    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
-  );
+  return navigationStack.at(-2)?.routeId ?? homeRouteIdFor(binaryContext);
 }
 
 /**
@@ -132,19 +130,21 @@ export function WorkflowsListScreen(props: WorkflowsListScreenProps): React.Reac
   const contextState = useMemo(
     (): ContextContentState => ({
       routeTitle: 'Workflows',
-      fallbackSummary: 'Inspect configured workflow variants and step order.',
       selectedContext,
     }),
     [selectedContext],
   );
-  const reportFocusedContext = useCallback((item: WorkflowListItem | BackMenuItem | undefined): void => {
-    if (item == null || isBackMenuItem(item)) {
-      setSelectedContext(undefined);
-      return;
-    }
+  const reportFocusedContext = useCallback(
+    (item: WorkflowListItem | BackMenuItem | undefined): void => {
+      if (item == null || isBackMenuItem(item)) {
+        setSelectedContext(undefined);
+        return;
+      }
 
-    setSelectedContext(item.context);
-  }, []);
+      setSelectedContext(item.context);
+    },
+    [],
+  );
 
   const handleSelect = useCallback(
     (item: WorkflowListItem | BackMenuItem): void => {

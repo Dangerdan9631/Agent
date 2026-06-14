@@ -48,9 +48,9 @@ describe('runProjectRemove', () => {
       }),
     ).rejects.toThrow(/cancel/i);
 
-    expect(existsSync(path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json'))).toBe(
-      true,
-    );
+    expect(
+      existsSync(path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json')),
+    ).toBe(true);
   });
 
   it('removes managed toolkit files while preserving user-owned specs content', async () => {

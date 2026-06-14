@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   currentRoute,
   formatBreadcrumb,
+  homeRouteIdFor,
   popRoute,
   pushRoute,
   ROOT_NAVIGATION_STACK_GLOBAL,
@@ -34,6 +35,8 @@ describe('interactive navigation stack', () => {
   });
 
   it('returns stable titles for every foundational route target', () => {
+    expect(homeRouteIdFor('global')).toBe('global-home');
+    expect(homeRouteIdFor('local')).toBe('local-home');
     expect(titleForRoute('global-home')).toBe('Global Home');
     expect(titleForRoute('local-home')).toBe('Local Home');
     expect(titleForRoute('workflows-list')).toBe('Workflows');

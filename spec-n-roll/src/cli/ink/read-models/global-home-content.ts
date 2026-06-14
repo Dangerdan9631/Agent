@@ -1,12 +1,22 @@
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import type { StaticContentField } from '../components/StaticContentBlock.js';
+import { findLocalCli } from '../../dispatcher.js';
+import { LOCAL_CLI_ROOT_RELATIVE_PATH } from '../../local-install-integrity.js';
 import { readToolkitPackageVersion } from '../../commands/version.js';
 import {
   compareGlobalLinkedVersion,
   compareGlobalRemoteVersion,
+  isVersionNewer,
   type VersionComparison,
   type VersionComparisonDeps,
 } from './version-comparison.js';
-import { readInstallSource, type InstallSource, type ReadInstallSourceOptions } from './install-source.js';
+import {
+  readInstallSource,
+  type InstallSource,
+  type ReadInstallSourceOptions,
+} from './install-source.js';
 
 /**
  * Loaded content and menu enablement for the global instance home screen.
@@ -21,13 +31,33 @@ export interface GlobalHomeContent {
    */
   installSource: InstallSource;
   /**
-   * Version comparison used to derive latest-version display and update enablement.
+   * Version comparison used to derive global update enablement for npm installs.
    */
   versionComparison: VersionComparison;
   /**
-   * Whether the Update Spec N' Roll menu option should be disabled.
+   * Semver of the running global CLI without display suffixes.
    */
-  updateDisabled: boolean;
+  globalVersion: string;
+  /**
+   * Semver of the project-local CLI when installed, otherwise null.
+   */
+  localVersion: string | null;
+  /**
+   * Whether the Update Global Spec N' Roll menu option should be disabled.
+   */
+  updateGlobalDisabled: boolean;
+  /**
+   * Whether the Refresh Project Spec N' Roll menu option should be disabled.
+   */
+  refreshProjectDisabled: boolean;
+  /**
+   * Whether the Update Project menu option should be disabled.
+   */
+  updateProjectDisabled: boolean;
+  /**
+   * Whether project refresh and update actions should be shown on the global home menu.
+   */
+  showProjectUpdateActions: boolean;
   /**
    * Whether the Remove Spec N' Roll menu option should be disabled.
    */
@@ -65,9 +95,55 @@ export interface LoadGlobalHomeContentDeps {
    */
   readCurrentVersion?: () => string;
   /**
+   * Optional project-local toolkit version reader override.
+   */
+  readLocalProjectVersion?: (projectRoot: string) => string | null;
+  /**
    * Optional version comparison dependency overrides.
    */
   versionComparisonDeps?: VersionComparisonDeps;
+}
+
+/**
+ * Reads the project-local Spec-N-Roll package version when the local bundle metadata exists.
+ *
+ * @param projectRoot - Absolute project root that may contain `.spec-n-roll/cli/package.json`.
+ * @returns Semver string from the local package descriptor, or null when it is absent or invalid.
+ */
+export function readLocalProjectPackageVersion(projectRoot: string): string | null {
+  const packageJsonPath = path.join(projectRoot, LOCAL_CLI_ROOT_RELATIVE_PATH, 'package.json');
+  if (!existsSync(packageJsonPath)) {
+    return null;
+  }
+
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      name?: unknown;
+      version?: unknown;
+    };
+
+    if (packageJson.name === 'spec-n-roll' && typeof packageJson.version === 'string') {
+      return packageJson.version;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Formats a semver string for version display fields.
+ *
+ * @param version - Semver string to display, or null when unavailable.
+ * @returns Display value prefixed with `v`, or `Unavailable` when the version is unknown.
+ */
+function formatVersionValue(version: string | null): string {
+  if (version == null) {
+    return 'Unavailable';
+  }
+
+  return `v${version}`;
 }
 
 /**
@@ -85,46 +161,48 @@ function formatInstallSourceValue(installSource: InstallSource): string {
 }
 
 /**
- * Formats the latest-version label for the global home content area.
- *
- * @param comparison - Resolved version comparison for the running global CLI.
- * @returns Human-readable latest-version label.
- */
-function formatLatestVersionLabel(comparison: VersionComparison): string {
-  if (
-    comparison.latestLabel === 'Up to date' ||
-    comparison.latestLabel === 'Checking…' ||
-    comparison.latestLabel === 'Unavailable'
-  ) {
-    return comparison.latestLabel;
-  }
-
-  return `v${comparison.latestLabel}`;
-}
-
-/**
  * Builds static content fields for the global home screen.
  *
  * @param input - Project context for the current session.
  * @param installSource - Resolved install source metadata.
- * @param comparison - Resolved version comparison for the running global CLI.
+ * @param globalVersion - Running global toolkit semver.
+ * @param localVersion - Project-local toolkit semver when installed.
  * @returns Ordered static content fields.
  */
 function buildGlobalHomeFields(
   input: LoadGlobalHomeContentInput,
   installSource: InstallSource,
-  comparison: VersionComparison,
+  globalVersion: string,
+  localVersion: string | null,
 ): readonly StaticContentField[] {
   return [
     { label: 'Install Source', value: formatInstallSourceValue(installSource) },
-    { label: 'Version', value: `v${comparison.currentVersion} (global)` },
-    { label: 'Latest Version', value: formatLatestVersionLabel(comparison) },
+    { label: 'Global Version', value: formatVersionValue(globalVersion) },
+    { label: 'Local Version', value: formatVersionValue(localVersion) },
     { label: 'Project', value: input.projectRoot },
     {
       label: 'Project Status',
       value: input.isInitialized ? 'Initialized' : 'Not initialized',
     },
   ];
+}
+
+/**
+ * Resolves whether project refresh and update actions should be enabled for npm-sourced globals.
+ *
+ * @param globalVersion - Running global toolkit semver.
+ * @param localVersion - Project-local toolkit semver when installed.
+ * @returns True when the global version is strictly newer than the local version.
+ */
+function isNpmSourcedProjectRefreshEnabled(
+  globalVersion: string,
+  localVersion: string | null,
+): boolean {
+  if (localVersion == null) {
+    return false;
+  }
+
+  return isVersionNewer(globalVersion, localVersion);
 }
 
 /**
@@ -140,27 +218,47 @@ export async function loadGlobalHomeContent(
 ): Promise<GlobalHomeContent> {
   const readSource = deps.readInstallSource ?? readInstallSource;
   const readVersion = deps.readCurrentVersion ?? readToolkitPackageVersion;
+  const readLocalVersion = deps.readLocalProjectVersion ?? readLocalProjectPackageVersion;
   const installSource = readSource();
-  const currentVersion = readVersion();
+  const globalVersion = readVersion();
+  const localVersion = readLocalVersion(input.projectRoot);
+  const hasLocalProjectInstall = findLocalCli(input.projectRoot) != null;
+  const showProjectUpdateActions = input.isInitialized && hasLocalProjectInstall;
 
   const versionComparison =
     installSource.kind === 'local' && installSource.sourcePath != null
       ? await compareGlobalLinkedVersion(
-          currentVersion,
+          globalVersion,
           installSource.sourcePath,
           deps.versionComparisonDeps,
         )
-      : await compareGlobalRemoteVersion(currentVersion, deps.versionComparisonDeps);
+      : await compareGlobalRemoteVersion(globalVersion, deps.versionComparisonDeps);
 
-  const updateDisabled = installSource.kind === 'remote' && versionComparison.isUpToDate;
+  const updateGlobalDisabled =
+    installSource.kind === 'remote' &&
+    (versionComparison.latestLabel === 'Unavailable' ||
+      versionComparison.latestLabel === 'Checking…' ||
+      !isVersionNewer(versionComparison.latestLabel, globalVersion));
+
+  const refreshProjectDisabled =
+    !showProjectUpdateActions ||
+    (installSource.kind === 'remote' &&
+      !isNpmSourcedProjectRefreshEnabled(globalVersion, localVersion));
+
+  const updateProjectDisabled = refreshProjectDisabled;
   const removeDisabled = !input.isInitialized;
   const reinstallDisabled = !input.isInitialized;
 
   return {
-    fields: buildGlobalHomeFields(input, installSource, versionComparison),
+    fields: buildGlobalHomeFields(input, installSource, globalVersion, localVersion),
     installSource,
     versionComparison,
-    updateDisabled,
+    globalVersion,
+    localVersion,
+    updateGlobalDisabled,
+    refreshProjectDisabled,
+    updateProjectDisabled,
+    showProjectUpdateActions,
     removeDisabled,
     reinstallDisabled,
   };

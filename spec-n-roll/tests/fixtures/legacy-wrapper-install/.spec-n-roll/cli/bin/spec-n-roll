@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const binDir = path.dirname(fileURLToPath(import.meta.url));
+const manifest = JSON.parse(
+  readFileSync(path.join(binDir, '..', 'install.json'), 'utf8'),
+) as { toolkitPackageRoot: string };
+const entry = path.join(manifest.toolkitPackageRoot, 'dist', 'cli', 'index.js');
+const result = spawnSync(process.execPath, [entry, ...process.argv.slice(2)], {
+  cwd: process.cwd(),
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    SPEC_N_ROLL_LOCAL_PIN: '1',
+  },
+});
+process.exit(result.status ?? 1);

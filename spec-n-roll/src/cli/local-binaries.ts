@@ -3,24 +3,80 @@ import path from 'node:path';
 import fse from 'fs-extra';
 
 import { atomicWriteJson } from '../core/atomic-write.js';
+import { findBuiltPackageVersion } from './build-version.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from './local-install-integrity.js';
 
 /**
- * Project-relative path to the CLI install manifest recording the toolkit package root.
+ * Project-relative path to the CLI install manifest recording pinned toolkit metadata.
  */
 export const CLI_INSTALL_MANIFEST_RELATIVE_PATH = '.spec-n-roll/cli/install.json';
 
 /**
- * Persisted metadata used by project-local CLI and MCP launcher scripts.
+ * Project-relative path to the staged local bundle directory inside the toolkit package.
+ */
+export const STAGED_LOCAL_BUNDLE_RELATIVE_PATH = 'dist/local-bundle';
+
+/**
+ * Project-relative path to the self-contained runtime bundle inside a project install.
+ */
+export const LOCAL_RUNTIME_BUNDLE_RELATIVE_PATH = '.spec-n-roll/cli/dist';
+
+/**
+ * Persisted metadata for layout v1 self-contained project-local CLI installs.
  */
 export interface CliInstallManifest {
   /**
-   * Absolute path to the toolkit package providing `dist/` build outputs.
-   */
-  toolkitPackageRoot: string;
-  /**
-   * Toolkit semver installed into the project.
+   * Toolkit semver pinned for this project's bundled runtime.
    */
   toolkitVersion: string;
+  /**
+   * Local install layout generation. Value `1` denotes the self-contained bundle model.
+   */
+  layoutVersion: number;
+  /**
+   * ISO 8601 timestamp of the last successful binary install or refresh.
+   */
+  installedAt: string;
+  /**
+   * Optional provenance hint for display; does not affect execution resolution.
+   */
+  installSource?: 'global' | 'registry' | 'linked-source';
+}
+
+/**
+ * Minimal npm-style descriptor written beside the project-local bundled runtime.
+ */
+export interface LocalPackageDescriptor {
+  /**
+   * Package name; must be `spec-n-roll` for version discovery.
+   */
+  name: 'spec-n-roll';
+  /**
+   * Toolkit semver matching `install.json.toolkitVersion`.
+   */
+  version: string;
+  /**
+   * Module format for bundled ESM entrypoints under `dist/`.
+   */
+  type: 'module';
+}
+
+/**
+ * One toolkit-owned launcher or bundle entry reported by update dry-run planning.
+ */
+export interface LauncherBinaryUpdate {
+  /**
+   * Project-relative destination path.
+   */
+  relativePath: string;
+  /**
+   * Expected UTF-8 launcher body when the entry is a file update.
+   */
+  expectedContent: string;
+  /**
+   * When true, the path denotes the opaque runtime bundle directory replaced by install.
+   */
+  bundleDirectory?: boolean;
 }
 
 /**
@@ -30,15 +86,18 @@ export interface CliInstallManifest {
  */
 export function buildCliLauncherSource(): string {
   return `#!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const binDir = path.dirname(fileURLToPath(import.meta.url));
-const manifest = JSON.parse(readFileSync(path.join(binDir, '..', 'install.json'), 'utf8'));
-const entry = path.join(manifest.toolkitPackageRoot, 'dist', 'cli', 'index.js');
-const result = spawnSync(process.execPath, [entry, ...process.argv.slice(2)], {
+const bundleEntry = path.join(binDir, '..', 'dist', 'cli', 'index.js');
+if (!existsSync(bundleEntry)) {
+  console.error(\`Local Spec-N-Roll CLI bundle is missing at \${bundleEntry}. Run \\\`spec-n-roll update\\\` to repair.\`);
+  process.exit(1);
+}
+const result = spawnSync(process.execPath, [bundleEntry, ...process.argv.slice(2)], {
   cwd: process.cwd(),
   stdio: 'inherit',
   env: {
@@ -57,15 +116,18 @@ process.exit(result.status ?? 1);
  */
 export function buildMcpLauncherSource(): string {
   return `#!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const binDir = path.dirname(fileURLToPath(import.meta.url));
-const manifest = JSON.parse(readFileSync(path.join(binDir, '..', 'install.json'), 'utf8'));
-const entry = path.join(manifest.toolkitPackageRoot, 'dist', 'mcp', 'server.js');
-const result = spawnSync(process.execPath, [entry, ...process.argv.slice(2)], {
+const bundleEntry = path.join(binDir, '..', 'dist', 'mcp', 'server.js');
+if (!existsSync(bundleEntry)) {
+  console.error(\`Local Spec-N-Roll MCP bundle is missing at \${bundleEntry}. Run \\\`spec-n-roll update\\\` to repair.\`);
+  process.exit(1);
+}
+const result = spawnSync(process.execPath, [bundleEntry, ...process.argv.slice(2)], {
   cwd: process.cwd(),
   stdio: 'inherit',
 });
@@ -86,17 +148,40 @@ export function readToolkitVersionFromRoot(toolkitRoot: string): string {
 }
 
 /**
- * Returns expected launcher file bodies for toolkit-owned binary updates.
+ * Resolves the absolute path to the staged local bundle inside a toolkit package.
  *
- * @returns Relative launcher paths and UTF-8 launcher sources.
+ * @param toolkitRoot - Absolute path to the toolkit package root.
+ * @returns Absolute path to `dist/local-bundle/` when present.
  */
-export function collectLauncherBinaryUpdates(): Array<{
-  relativePath: string;
-  expectedContent: string;
-}> {
+export function resolveStagedLocalBundlePath(toolkitRoot: string): string {
+  return path.join(toolkitRoot, STAGED_LOCAL_BUNDLE_RELATIVE_PATH);
+}
+
+/**
+ * Reads the version of the staged local bundle that will be copied into projects.
+ *
+ * @param toolkitRoot - Absolute path to the toolkit package root containing `dist/local-bundle/`.
+ * @returns Built bundle semver when recorded, otherwise the toolkit source package semver.
+ */
+export function readStagedLocalBundleVersion(toolkitRoot: string): string {
+  const stagedBundlePath = resolveStagedLocalBundlePath(toolkitRoot);
+  return findBuiltPackageVersion(stagedBundlePath) ?? readToolkitVersionFromRoot(toolkitRoot);
+}
+
+/**
+ * Returns expected launcher file bodies and bundle directory for toolkit-owned binary updates.
+ *
+ * @returns Relative launcher paths, UTF-8 launcher sources, and the runtime bundle directory.
+ */
+export function collectLauncherBinaryUpdates(): LauncherBinaryUpdate[] {
   const launcher = buildCliLauncherSource();
   const mcpLauncher = buildMcpLauncherSource();
-  const updates = [
+  const updates: LauncherBinaryUpdate[] = [
+    {
+      relativePath: path.posix.join('.spec-n-roll', 'cli', 'dist'),
+      expectedContent: '',
+      bundleDirectory: true,
+    },
     {
       relativePath: path.posix.join('.spec-n-roll', 'cli', 'bin', 'spec-n-roll'),
       expectedContent: launcher,
@@ -135,10 +220,11 @@ export function collectLauncherBinaryUpdates(): Array<{
 }
 
 /**
- * Installs version-matched full CLI and MCP launchers into the project.
+ * Copies the staged local bundle, writes layout v1 manifests, and refreshes launcher scripts.
  *
- * @param projectRoot - Absolute path to the project root.
- * @param toolkitRoot - Absolute path to the toolkit package root containing `dist/`.
+ * @param projectRoot - Absolute path to the project root receiving `.spec-n-roll/cli/`.
+ * @param toolkitRoot - Absolute path to the toolkit package root containing `dist/local-bundle/`.
+ * @returns Resolves when the self-contained install is on disk and passes integrity checks.
  */
 export async function installProjectBinaries(
   projectRoot: string,
@@ -146,20 +232,38 @@ export async function installProjectBinaries(
 ): Promise<void> {
   const cliDir = path.join(projectRoot, '.spec-n-roll', 'cli');
   const binDir = path.join(cliDir, 'bin');
-  await fse.ensureDir(binDir);
-
-  const cliSource = path.join(toolkitRoot, 'dist', 'cli', 'index.js');
-  const mcpSource = path.join(toolkitRoot, 'dist', 'mcp', 'server.js');
+  const stagedBundlePath = resolveStagedLocalBundlePath(toolkitRoot);
+  const cliSource = path.join(stagedBundlePath, 'cli', 'index.js');
+  const mcpSource = path.join(stagedBundlePath, 'mcp', 'server.js');
 
   if (!existsSync(cliSource) || !existsSync(mcpSource)) {
     throw new Error(
-      'Toolkit build outputs are missing. Run `npm run build` in the Spec-N-Roll package before init.',
+      'Toolkit local bundle staging output is missing. Run `npm run build` in the Spec-N-Roll package before init.',
     );
   }
 
+  await fse.ensureDir(binDir);
+
+  const distDir = path.join(cliDir, 'dist');
+  if (existsSync(distDir)) {
+    await fse.remove(distDir);
+  }
+  await fse.copy(stagedBundlePath, distDir);
+
+  const toolkitVersion = readStagedLocalBundleVersion(toolkitRoot);
+  const installedAt = new Date().toISOString();
+
+  const packageDescriptor: LocalPackageDescriptor = {
+    name: 'spec-n-roll',
+    version: toolkitVersion,
+    type: 'module',
+  };
+  await atomicWriteJson(path.join(cliDir, 'package.json'), packageDescriptor);
+
   const manifest: CliInstallManifest = {
-    toolkitPackageRoot: path.resolve(toolkitRoot),
-    toolkitVersion: readToolkitVersionFromRoot(toolkitRoot),
+    toolkitVersion,
+    layoutVersion: LOCAL_INSTALL_LAYOUT_VERSION,
+    installedAt,
   };
   await atomicWriteJson(path.join(cliDir, 'install.json'), manifest);
 

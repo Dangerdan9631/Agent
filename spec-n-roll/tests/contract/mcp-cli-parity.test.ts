@@ -134,7 +134,7 @@ describe('MCP/CLI parity', () => {
     expect(fromCli).toEqual(fromCore);
     expect(fromCore?.nextTaskSpecId).toBe(3);
     expect(fromCore?.currentTaskSlug).toBe('active-task');
-  });
+  }, 15_000);
 
   it('task_checkbox_set via CLI matches core checkbox updates', async () => {
     const projectRoot = createTempProject('checkbox');

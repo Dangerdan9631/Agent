@@ -2,17 +2,17 @@
 
 ## Manifest fields
 
-| Field                  | Required | Description                                                                  |
-| ---------------------- | -------- | ---------------------------------------------------------------------------- |
-| `manifestVersion`      | yes      | Manifest document version string.                                            |
-| `id`                   | yes      | Unique kebab-case extension id.                                              |
-| `name`                 | yes      | Human-readable title.                                                        |
-| `targetToolkitVersion` | yes      | Toolkit semver the extension was built against.                              |
-| `description`          | no       | Short summary.                                                               |
-| `entrypoint`           | no       | Optional package-level handler module path.                                  |
-| `steps`                | no       | Workflow step replacements keyed by open `stepId`.                           |
-| `hooks`                | no       | Dynamic `before_{stepId}` / `after_{stepId}` handlers.                       |
-| `workflowVariants`     | no       | Additional named variants referencing registered step ids.                   |
+| Field                  | Required | Description                                                          |
+| ---------------------- | -------- | -------------------------------------------------------------------- |
+| `manifestVersion`      | yes      | Manifest document version string.                                    |
+| `id`                   | yes      | Unique kebab-case extension id.                                      |
+| `name`                 | yes      | Human-readable title.                                                |
+| `targetToolkitVersion` | yes      | Toolkit semver the extension was built against.                      |
+| `description`          | no       | Short summary.                                                       |
+| `entrypoint`           | no       | Optional package-level handler module path.                          |
+| `steps`                | no       | Workflow step replacements keyed by open `stepId`.                   |
+| `hooks`                | no       | Dynamic `before_{stepId}` / `after_{stepId}` handlers.               |
+| `workflowVariants`     | no       | Additional named variants referencing registered step ids.           |
 | `agentSetup`           | no       | Required for agent extensions; omitted for workflow-only extensions. |
 
 Authoritative JSON Schema: `specs/001-spec-n-roll-toolkit/contracts/extension-manifest.schema.json`.

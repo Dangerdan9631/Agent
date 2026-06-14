@@ -44,13 +44,9 @@ export interface ContextContentState {
    */
   routeTitle: string;
   /**
-   * Optional item-specific context for the focused selectable option. When present, it takes priority over fallback summary text.
+   * Optional item-specific context for the focused selectable option. When present, it replaces route-level context lines.
    */
   selectedContext?: SelectedOptionContext;
-  /**
-   * Optional route-level summary used when no focused option context exists. Should describe the current section, not a specific row.
-   */
-  fallbackSummary?: string;
   /**
    * Number of rows allocated to context content. Must be zero or greater and is floored before rendering.
    */
@@ -60,7 +56,7 @@ export interface ContextContentState {
 /**
  * Fixed rows reserved for the bordered status bar region in app scaffolding.
  */
-export const STATUS_REGION_ROWS = 3;
+export const STATUS_REGION_ROWS = 4;
 
 /**
  * Fixed rows reserved for the key hint overlay region in app scaffolding when hints are visible.
@@ -376,7 +372,7 @@ export function isMinimumLayout(layout: { minimumSize: boolean }): boolean {
  */
 export function buildContextContentLines(state: ContextContentState): string[] {
   return state.selectedContext == null
-    ? [state.routeTitle, state.fallbackSummary].filter((line): line is string => line != null)
+    ? [state.routeTitle]
     : buildSelectedContextLines(state.selectedContext);
 }
 
@@ -471,13 +467,8 @@ export function ContextContent(props: ContextContentProps): React.ReactElement {
   const { visibleLines, hasOverflow } = scrollContextLines(allLines, viewportRows, scrollOffset);
   const scrollbar = buildScrollbarTrack(viewportRows, allLines.length, scrollOffset);
   const contextKey = useMemo(
-    () =>
-      [
-        props.state.routeTitle,
-        props.state.fallbackSummary ?? '',
-        props.state.selectedContext?.id ?? '',
-      ].join('\u0000'),
-    [props.state.fallbackSummary, props.state.routeTitle, props.state.selectedContext?.id],
+    () => [props.state.routeTitle, props.state.selectedContext?.id ?? ''].join('\u0000'),
+    [props.state.routeTitle, props.state.selectedContext?.id],
   );
 
   useEffect(() => {

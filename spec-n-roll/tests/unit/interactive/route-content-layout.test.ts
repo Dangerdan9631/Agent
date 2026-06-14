@@ -88,7 +88,6 @@ function FocusTrackingRouteLayout(props: {
   const contextState = useMemo(
     (): ContextContentState => ({
       routeTitle: 'Test Route',
-      fallbackSummary: 'Choose an option.',
       selectedContext,
     }),
     [selectedContext],
@@ -159,7 +158,6 @@ describe('route content layout allocation', () => {
 describe('RouteContentLayout component', () => {
   const contextState: ContextContentState = {
     routeTitle: 'Task Specs',
-    fallbackSummary: 'Browse known task specifications.',
     selectedContext: {
       id: 'spec-alpha',
       title: 'Spec Alpha',

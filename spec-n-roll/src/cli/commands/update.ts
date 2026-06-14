@@ -36,7 +36,11 @@ import {
   BreakingMigrationError,
   planUserConfigMigrations,
 } from '../../updates/migration.js';
-import { collectLauncherBinaryUpdates, installProjectBinaries } from '../local-binaries.js';
+import {
+  collectLauncherBinaryUpdates,
+  installProjectBinaries,
+  readStagedLocalBundleVersion,
+} from '../local-binaries.js';
 import { resolveToolkitRoot, WORKFLOW_CONFIG_RELATIVE_PATH } from './init.js';
 
 /**
@@ -115,18 +119,6 @@ interface ToolkitFileUpdate {
    * Expected file body after update.
    */
   expectedContent: string | Buffer;
-}
-
-/**
- * Reads the toolkit version from package.json at the toolkit root.
- *
- * @param toolkitRoot - Absolute path to the toolkit package root.
- * @returns Semver string for the toolkit package.
- */
-function readToolkitVersion(toolkitRoot: string): string {
-  const packageJsonPath = path.join(toolkitRoot, 'package.json');
-  const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string };
-  return pkg.version;
 }
 
 /**
@@ -261,6 +253,10 @@ async function detectModifiedToolkitFiles(
   const conflicts: BackupConflict[] = [];
 
   for (const update of updates) {
+    if ('bundleDirectory' in update && update.bundleDirectory === true) {
+      continue;
+    }
+
     const absolutePath = path.join(projectRoot, update.relativePath);
     if (!(await fse.pathExists(absolutePath))) {
       continue;
@@ -296,6 +292,10 @@ async function backupModifiedToolkitFiles(
   const conflicts: BackupConflict[] = [];
 
   for (const update of updates) {
+    if ('bundleDirectory' in update && update.bundleDirectory === true) {
+      continue;
+    }
+
     const absolutePath = path.join(projectRoot, update.relativePath);
     const conflict = await backupIfModified(absolutePath, update.expectedContent);
     if (conflict != null) {
@@ -317,6 +317,10 @@ async function writeToolkitFileUpdates(
   updates: readonly ToolkitFileUpdate[],
 ): Promise<void> {
   for (const update of updates) {
+    if ('bundleDirectory' in update && update.bundleDirectory === true) {
+      continue;
+    }
+
     const absolutePath = path.join(projectRoot, update.relativePath);
     await fse.ensureDir(path.dirname(absolutePath));
 
@@ -347,7 +351,7 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
   }
 
   const previousToolkitVersion = workflowConfig.toolkitVersion;
-  const targetToolkitVersion = readToolkitVersion(toolkitRoot);
+  const targetToolkitVersion = readStagedLocalBundleVersion(toolkitRoot);
   const migrationPlan = await planUserConfigMigrations(projectRoot, targetToolkitVersion);
 
   const textUpdates = collectTextToolkitUpdates(agentIds);

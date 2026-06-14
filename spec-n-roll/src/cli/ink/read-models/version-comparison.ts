@@ -1,10 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 import { resolveGlobalCliPath } from '../../dispatcher.js';
-import { findToolkitPackageRoot } from '../../../core/paths.js';
 import { readToolkitVersionFromRoot } from '../../local-binaries.js';
+import { readRuntimePackageVersion } from '../../build-version.js';
 
 /**
  * Identifies which latest-version source applies to a version comparison.
@@ -59,6 +58,10 @@ export interface ReadGlobalInstallVersionOptions {
    * Directory containing the global CLI entrypoint. Defaults to the resolved global CLI directory.
    */
   globalCliDirectory?: string;
+  /**
+   * Environment variables used to inspect dispatcher delegation metadata.
+   */
+  env?: NodeJS.ProcessEnv;
 }
 
 /**
@@ -70,6 +73,44 @@ export interface ReadGlobalInstallVersionOptions {
 function normalizeSemverCore(version: string): string | null {
   const match = version.match(/^(\d+\.\d+\.\d+)/);
   return match?.[1] ?? null;
+}
+
+/**
+ * Returns true when the candidate semver is strictly newer than the baseline semver.
+ *
+ * @param candidate - Semver that may be newer than the baseline.
+ * @param baseline - Semver to compare against.
+ * @returns True when both inputs are semver-like and candidate is greater than baseline.
+ */
+export function isVersionNewer(candidate: string, baseline: string): boolean {
+  const candidateCore = normalizeSemverCore(candidate);
+  const baselineCore = normalizeSemverCore(baseline);
+
+  if (candidateCore == null || baselineCore == null) {
+    return false;
+  }
+
+  const candidateParts = candidateCore.split('.').map(Number);
+  const baselineParts = baselineCore.split('.').map(Number);
+
+  for (let index = 0; index < 3; index += 1) {
+    const candidatePart = candidateParts[index];
+    const baselinePart = baselineParts[index];
+
+    if (candidatePart == null || baselinePart == null) {
+      return false;
+    }
+
+    if (candidatePart > baselinePart) {
+      return true;
+    }
+
+    if (candidatePart < baselinePart) {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -156,23 +197,51 @@ export function readLinkedSourceVersion(sourcePath: string): string | null {
  * @param options - Optional global CLI directory override for tests.
  * @returns Global toolkit semver or null when unreadable.
  */
-export function readGlobalInstallVersion(options: ReadGlobalInstallVersionOptions = {}): string | null {
+export function readGlobalInstallVersion(
+  options: ReadGlobalInstallVersionOptions = {},
+): string | null {
   try {
     if (options.globalCliDirectory != null) {
-      const markerPath = path.join(options.globalCliDirectory, '.source-package-root');
-      const rawSourcePath = readFileSync(markerPath, 'utf8').trim();
-      if (rawSourcePath.length === 0) {
-        return null;
-      }
-      return readToolkitVersionFromRoot(path.resolve(rawSourcePath));
+      return readRuntimePackageVersion(path.resolve(options.globalCliDirectory));
+    }
+
+    const delegatedVersion = readDelegatedDispatcherVersion(options.env ?? process.env);
+    if (delegatedVersion != null) {
+      return delegatedVersion;
     }
 
     const globalCliPath = resolveGlobalCliPath();
-    const packageRoot = findToolkitPackageRoot(path.dirname(globalCliPath));
-    return readToolkitVersionFromRoot(packageRoot);
+    return readRuntimePackageVersion(path.dirname(globalCliPath));
   } catch {
     return null;
   }
+}
+
+/**
+ * Reads the global dispatcher version passed to project-local CLI processes.
+ *
+ * @param env - Environment variables for the current process. Uses dispatcher metadata keys.
+ * @returns Dispatcher semver when execution was delegated from the global dispatcher, otherwise null.
+ */
+export function readDelegatedDispatcherVersion(env: NodeJS.ProcessEnv): string | null {
+  if (env.SPEC_N_ROLL_DISPATCHED !== '1') {
+    return null;
+  }
+
+  const version = env.SPEC_N_ROLL_DISPATCHER_VERSION?.trim();
+  return version != null && version.length > 0 ? version : null;
+}
+
+/**
+ * Reads whether the delegating global dispatcher came from a linked source install.
+ *
+ * @param env - Environment variables for the current process. Uses dispatcher metadata keys.
+ * @returns True when execution was delegated from a linked global dispatcher.
+ */
+export function readDelegatedDispatcherIsLinked(env: NodeJS.ProcessEnv): boolean {
+  return (
+    env.SPEC_N_ROLL_DISPATCHED === '1' && env.SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE === 'local'
+  );
 }
 
 /**

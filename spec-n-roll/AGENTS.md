@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/005-ink-instance-screens/plan.md
+at specs/006-versioned-local-cli/plan.md
 <!-- SPECKIT END -->
 
 ## Coding Conventions
@@ -57,6 +57,7 @@ Working code is not automatically clean code.
 #### Decision rules
 
 - Treat cleanliness as part of delivery. Preserve behavior, leave touched code cleaner within scope, and do not add mess because the schedule is tight or a rewrite is promised.
+- Treat versions before `1.0.0` as pre-release. Breaking changes are acceptable when they produce the right application API; do not add backwards compatibility scaffolding for pre-1.0 behavior unless needed to protect user-authored data.
 - Write for local reasoning. A reader should understand the path without reconstructing hidden state, wide jumps, or naming trivia.
 - Use precise names and one term per concept. Rename code when vocabulary hides intent, overloads meaning, or forces comments to compensate.
 - Keep functions small, focused, and at one level of abstraction. Tell the story top-down so intent appears before detail.

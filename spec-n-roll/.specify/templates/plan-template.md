@@ -48,7 +48,8 @@ Verify the feature design against `.specify/memory/constitution.md`:
 | II. Clean Code Is Part of Delivery | Scope preserves behavior; touched code is left cleaner without unrelated refactors |
 | III. Local Reasoning and Expressive Design | New modules favor small functions, clear names, command/query separation, and readable happy paths |
 | IV. Boundary Discipline | Framework, vendor, and persistence concerns stay behind adapters; public APIs are explicit |
-| V. Test Discipline and Validation | Behavior changes include contract tests; relevant `npm test` / lint checks are planned |
+| V. Pre-1.0 API Design Freedom | Pre-1.0 changes choose the intended stable API over compatibility scaffolding |
+| VI. Test Discipline and Validation | Behavior changes include contract tests; relevant `npm test` / lint checks are planned |
 
 Document any justified violations in **Complexity Tracking** below.
 

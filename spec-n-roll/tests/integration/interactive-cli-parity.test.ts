@@ -370,6 +370,7 @@ describe('interactive CLI parity for User Story 3', () => {
         });
       },
       ['update', '--force'],
+      true,
     );
   });
 

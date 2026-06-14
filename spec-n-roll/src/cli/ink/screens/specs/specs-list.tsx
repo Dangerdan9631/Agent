@@ -10,7 +10,7 @@ import {
   type BackMenuItem,
 } from '../../components/menu/back-menu-item.js';
 import { useSession } from '../../app/session-context.js';
-import type { RouteId } from '../../app/navigation.js';
+import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
   listTaskSpecSummaries,
@@ -119,9 +119,7 @@ function parentRouteId(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): RouteId {
-  return (
-    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
-  );
+  return navigationStack.at(-2)?.routeId ?? homeRouteIdFor(binaryContext);
 }
 
 /**
@@ -176,7 +174,6 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
     if (selectedContext == null || summaries == null) {
       return {
         routeTitle: 'Task Specs',
-        fallbackSummary: 'Browse recognized task specs and review warnings.',
         selectedContext,
       };
     }
@@ -185,14 +182,12 @@ export function SpecsListScreen(props: SpecsListScreenProps): React.ReactElement
     if (unrecognizedDetails.length === 0) {
       return {
         routeTitle: 'Task Specs',
-        fallbackSummary: 'Browse recognized task specs and review warnings.',
         selectedContext,
       };
     }
 
     return {
       routeTitle: 'Task Specs',
-      fallbackSummary: 'Browse recognized task specs and review warnings.',
       selectedContext: {
         ...selectedContext,
         details: [...(selectedContext.details ?? []), ...unrecognizedDetails],

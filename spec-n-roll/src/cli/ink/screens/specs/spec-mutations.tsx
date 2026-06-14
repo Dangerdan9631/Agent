@@ -4,7 +4,7 @@ import { Box, Text, useInput } from 'ink';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import type { RouteId } from '../../app/navigation.js';
+import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import {
   appendBackMenuItem,
   isBackMenuItem,
@@ -68,9 +68,7 @@ function parentRouteId(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): RouteId {
-  return (
-    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
-  );
+  return navigationStack.at(-2)?.routeId ?? homeRouteIdFor(binaryContext);
 }
 
 /**

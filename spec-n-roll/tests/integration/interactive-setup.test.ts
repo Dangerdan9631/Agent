@@ -3,9 +3,10 @@ import path from 'node:path';
 import fse from 'fs-extra';
 import { render } from 'ink-testing-library';
 import React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../src/cli/ink/app/App.js';
+import * as manageLocalContentModule from '../../src/cli/ink/read-models/manage-local-content.js';
 
 /**
  * Source fixture copied for setup maintenance flow tests.
@@ -90,6 +91,7 @@ async function createEmptyProject(): Promise<string> {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   for (const tempRoot of tempRoots.splice(0)) {
     await fse.remove(tempRoot);
   }
@@ -112,9 +114,9 @@ describe('interactive setup and maintenance flows', () => {
     app.stdin.write(' ');
     await waitForInk();
     app.stdin.write('\r');
-    await waitForInk(1500);
-
-    expect(app.lastFrame()).toContain('initialized for agents');
+    expect(
+      await waitForFrameContaining(() => app.lastFrame(), 'initialized for agents', 15_000),
+    ).toContain('initialized for agents');
     expect(
       await fse.pathExists(
         path.join(projectRoot, '.spec-n-roll', 'config', 'workflow.config.json'),
@@ -133,16 +135,42 @@ describe('interactive setup and maintenance flows', () => {
       }),
     );
 
-    const frame = await waitForFrameContaining(() => app.lastFrame(), 'Version:');
+    const frame = await waitForFrameContaining(() => app.lastFrame(), 'Global Version:');
 
-    expect(frame).toContain('Version:');
-    expect(frame).toContain('(global)');
+    expect(frame).toContain('Global Version:');
+    expect(frame).toContain('Local Version:');
     expect(frame).toContain('Install Source:');
+    expect(frame).toContain('Project:');
+    expect(frame).not.toContain('Latest Version:');
     app.unmount();
   });
 
-  it('runs update dry-run and apply through the manage screen upgrade flow', async () => {
+  it('runs update dry-run and apply through the manage screen update flow', async () => {
     const projectRoot = await copyFixtureProject('update');
+    vi.spyOn(manageLocalContentModule, 'loadManageLocalContent').mockResolvedValue({
+      fields: [
+        { label: 'Global Version', value: 'v0.1.2' },
+        { label: 'Local Version', value: 'v0.1.0' },
+        { label: 'Project', value: projectRoot },
+      ],
+      globalInstallSource: {
+        kind: 'remote',
+        markerPath: path.join(projectRoot, '.source-package-root'),
+      },
+      versionComparison: {
+        currentVersion: '0.1.0',
+        latestLabel: '0.1.2',
+        isUpToDate: false,
+        comparisonTarget: 'global-install',
+      },
+      localVersion: '0.1.0',
+      globalVersion: '0.1.2',
+      refreshProjectDisabled: false,
+      updateProjectDisabled: false,
+      removeDisabled: false,
+      reinstallDisabled: false,
+    });
+
     const app = render(
       React.createElement(App, {
         projectRoot,
@@ -162,7 +190,9 @@ describe('interactive setup and maintenance flows', () => {
     );
 
     app.stdin.write('y');
-    expect(await waitForFrameContaining(() => app.lastFrame(), 'Upgraded')).toContain('Upgraded');
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'Updated', 15_000)).toContain(
+      'Updated',
+    );
     app.unmount();
   }, 15_000);
 });

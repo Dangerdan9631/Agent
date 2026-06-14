@@ -39,6 +39,23 @@ async function waitForFrame(): Promise<void> {
 }
 
 /**
+ * Polls until the rendered frame contains expected text.
+ *
+ * @param readFrame - Returns the latest rendered frame.
+ * @param text - Text fragment to wait for.
+ */
+async function waitForText(readFrame: () => string | undefined, text: string): Promise<void> {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (readFrame()?.includes(text) === true) {
+      return;
+    }
+    await waitForFrame();
+  }
+
+  throw new Error(`Timed out waiting for frame to contain: ${text}`);
+}
+
+/**
  * Sets the process stdout row count for Ink test renders.
  *
  * @param rows - Positive terminal row count to expose during the test.
@@ -201,11 +218,9 @@ describe('interactive shell fullscreen layout', () => {
     const restoreRows = setTerminalRows(18);
     const app = render(createApp());
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, '> 1 Project');
     app.stdin.write(DOWN_ARROW);
-    await waitForFrame();
-
-    expect(app.lastFrame()).toContain('> 2 Agents');
+    await waitForText(app.lastFrame, '> 2 Agents');
 
     setTerminalRows(12);
     resizeTestStdout(app.stdout, 12);
@@ -213,7 +228,6 @@ describe('interactive shell fullscreen layout', () => {
 
     const resizedFrame = app.lastFrame() ?? '';
     expect(resizedFrame).toContain('> 2 Agents');
-    expect(resizedFrame).toContain('Local Home');
 
     app.unmount();
     restoreRows();
@@ -223,7 +237,7 @@ describe('interactive shell fullscreen layout', () => {
     const restoreRows = setTerminalRows(12);
     const app = render(createApp());
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, '> 1 Project');
     const frame = app.lastFrame() ?? '';
 
     expect(frame).toContain('> 1 Project');
@@ -324,7 +338,7 @@ describe('app scaffolding shell layout', () => {
     const restoreRows = setTerminalRows(11);
     const app = render(createApp());
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, '> 1 Project');
     const frame = app.lastFrame() ?? '';
 
     expect(frame).not.toContain('Terminal is too small');
@@ -376,11 +390,9 @@ describe('app scaffolding shell layout', () => {
     const restoreRows = setTerminalRows(20);
     const app = render(createApp());
 
-    await waitForFrame();
+    await waitForText(app.lastFrame, '> 1 Project');
     const homeLines = (app.lastFrame() ?? '').split('\n');
-    const homeMiddle = homeLines
-      .slice(STATUS_REGION_ROWS, -KEY_HINT_REGION_ROWS)
-      .join('\n');
+    const homeMiddle = homeLines.slice(STATUS_REGION_ROWS, -KEY_HINT_REGION_ROWS).join('\n');
 
     expect(homeMiddle).toContain('> 1 Project');
     expect(homeMiddle).toContain("5 Manage Spec N' Roll");
@@ -388,7 +400,7 @@ describe('app scaffolding shell layout', () => {
     app.stdin.write('1');
     await waitForFrame();
     app.stdin.write('1');
-    await waitForFrame();
+    await waitForText(app.lastFrame, '001-active-checkout');
     await waitForFrame();
 
     const specsFrame = app.lastFrame() ?? '';

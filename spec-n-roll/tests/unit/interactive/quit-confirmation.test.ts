@@ -3,12 +3,13 @@ import path from 'node:path';
 import { render } from 'ink-testing-library';
 import React from 'react';
 import { Text, useInput } from 'ink';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../../src/cli/ink/app/App.js';
 import {
   isHomeRoute,
-  QUIT_CONFIRMATION_MESSAGE,
+  QUIT_CONFIRMATION_ESCAPE_MESSAGE,
+  QUIT_CONFIRMATION_Q_MESSAGE,
   QUIT_CONFIRMATION_TIMEOUT_MS,
   reduceQuitKeyPress,
   useQuitConfirmation,
@@ -49,17 +50,27 @@ function QuitHarness(props: QuitHarnessProps): React.ReactElement {
 
   useInput((input, key) => {
     if (input === 'q') {
-      quit.onQuitKey();
+      if (quit.pending && quit.triggerKey !== 'q') {
+        quit.onOtherKey();
+        return;
+      }
+
+      quit.onQuitKey('q');
       return;
     }
 
     if (quit.pending) {
+      if (key.escape && quit.triggerKey === 'escape') {
+        quit.onQuitKey('escape');
+        return;
+      }
+
       quit.onOtherKey();
       return;
     }
 
     if (props.homeEscStartsQuit && key.escape) {
-      quit.onQuitKey();
+      quit.onQuitKey('escape');
     }
   });
 
@@ -93,8 +104,24 @@ describe('quit confirmation helpers', () => {
   });
 
   it('starts pending on first quit key and confirms exit on second', () => {
-    expect(reduceQuitKeyPress(false)).toEqual({ pending: true, action: 'start-pending' });
-    expect(reduceQuitKeyPress(true)).toEqual({ pending: false, action: 'confirm-exit' });
+    expect(reduceQuitKeyPress(false)).toEqual({
+      pending: true,
+      triggerKey: 'q',
+      action: 'start-pending',
+    });
+    expect(reduceQuitKeyPress(true, 'q', 'q')).toEqual({
+      pending: false,
+      triggerKey: null,
+      action: 'confirm-exit',
+    });
+  });
+
+  it('replaces pending key when a different quit trigger is reduced', () => {
+    expect(reduceQuitKeyPress(true, 'q', 'escape')).toEqual({
+      pending: true,
+      triggerKey: 'escape',
+      action: 'start-pending',
+    });
   });
 });
 
@@ -107,7 +134,7 @@ describe('useQuitConfirmation', () => {
     app.stdin.write('q');
     await waitForFrame();
 
-    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_Q_MESSAGE);
     expect(onExit).not.toHaveBeenCalled();
 
     app.unmount();
@@ -153,7 +180,7 @@ describe('useQuitConfirmation', () => {
     await flushFakeTimers();
     app.stdin.write('q');
     await flushFakeTimers();
-    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_Q_MESSAGE);
 
     await vi.advanceTimersByTimeAsync(QUIT_CONFIRMATION_TIMEOUT_MS);
     await flushFakeTimers();
@@ -173,8 +200,24 @@ describe('useQuitConfirmation', () => {
     app.stdin.write(ESCAPE);
     await waitForFrame();
 
-    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_ESCAPE_MESSAGE);
     expect(onExit).not.toHaveBeenCalled();
+
+    app.unmount();
+  });
+
+  it('exits on second home Esc within the timeout window', async () => {
+    const onExit = vi.fn();
+    const app = render(React.createElement(QuitHarness, { onExit, homeEscStartsQuit: true }));
+
+    await waitForFrame();
+    app.stdin.write(ESCAPE);
+    await waitForFrame();
+    app.stdin.write(ESCAPE);
+    await waitForFrame();
+
+    expect(onExit).toHaveBeenCalledTimes(1);
+    expect(app.lastFrame()).toBe('idle');
 
     app.unmount();
   });
@@ -186,7 +229,7 @@ describe('App quit confirmation integration', () => {
       React.createElement(App, {
         projectRoot: FIXTURE_ROOT,
         isInitialized: true,
-        binaryContext: 'global',
+        binaryContext: 'local',
       }),
     );
 
@@ -195,8 +238,9 @@ describe('App quit confirmation integration', () => {
     await waitForFrame();
 
     const pendingFrame = app.lastFrame() ?? '';
-    expect(pendingFrame).toContain(QUIT_CONFIRMATION_MESSAGE);
-    expect(pendingFrame).toContain('Global Home');
+    expect(pendingFrame).toContain(QUIT_CONFIRMATION_Q_MESSAGE);
+    expect(pendingFrame).toContain('Any other key to continue.');
+    expect(pendingFrame).toContain('Local Home');
 
     app.stdin.write('q');
     await waitForFrame();
@@ -205,7 +249,7 @@ describe('App quit confirmation integration', () => {
     });
     await waitForFrame();
 
-    expect(app.lastFrame() ?? '').not.toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame() ?? '').not.toContain(QUIT_CONFIRMATION_Q_MESSAGE);
     app.unmount();
   });
 
@@ -221,12 +265,12 @@ describe('App quit confirmation integration', () => {
     await waitForFrame();
     app.stdin.write('q');
     await waitForFrame();
-    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_Q_MESSAGE);
 
     app.stdin.write(ESCAPE);
     await waitForFrame();
 
-    expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_Q_MESSAGE);
     app.unmount();
   });
 
@@ -243,11 +287,11 @@ describe('App quit confirmation integration', () => {
     await waitForFrame();
     app.stdin.write(ESCAPE);
     await waitForFrame();
-    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).toContain(QUIT_CONFIRMATION_ESCAPE_MESSAGE);
 
     app.stdin.write('x');
     await waitForFrame();
-    expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_ESCAPE_MESSAGE);
 
     app.stdin.write('2');
     await waitForFrame();
@@ -256,7 +300,7 @@ describe('App quit confirmation integration', () => {
 
     app.stdin.write(ESCAPE);
     await waitForFrame();
-    expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_MESSAGE);
+    expect(app.lastFrame()).not.toContain(QUIT_CONFIRMATION_ESCAPE_MESSAGE);
     expect(app.lastFrame()).toContain('Local Home');
 
     app.unmount();

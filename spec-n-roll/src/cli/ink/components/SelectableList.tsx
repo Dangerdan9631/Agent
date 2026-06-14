@@ -197,10 +197,13 @@ export function SelectableList<TItem extends SelectableListItem>(
         const color = item.disabled === true ? 'gray' : focused ? 'cyan' : undefined;
 
         return (
-          <Text key={item.id} color={color}>
-            {indicator} {item.label}
-            {item.description != null ? ` - ${item.description}` : ''}
-          </Text>
+          <Box key={item.id}>
+            <Text color={color}>{indicator}</Text>
+            <Text color={color ?? "blue"}>{` ${item.label}`}</Text>
+            <Text color="gray">
+              {item.description != null ? ` - ${item.description}` : ''}
+            </Text>
+          </Box>
         );
       })}
     </Box>

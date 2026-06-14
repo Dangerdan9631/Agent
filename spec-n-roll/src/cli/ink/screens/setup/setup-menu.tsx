@@ -7,7 +7,7 @@ import {
   type BackMenuItem,
 } from '../../components/menu/back-menu-item.js';
 import { useSession } from '../../app/session-context.js';
-import type { RouteId } from '../../app/navigation.js';
+import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -94,9 +94,7 @@ function parentRouteId(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): RouteId {
-  return (
-    navigationStack.at(-2)?.routeId ?? (binaryContext === 'local' ? 'local-home' : 'global-home')
-  );
+  return navigationStack.at(-2)?.routeId ?? homeRouteIdFor(binaryContext);
 }
 
 /**
@@ -106,10 +104,7 @@ function buildSetupMenuItems(
   navigationStack: readonly { routeId: RouteId }[],
   binaryContext: 'local' | 'global',
 ): readonly (SetupMenuItem | BackMenuItem)[] {
-  return appendBackMenuItem(
-    SETUP_MENU_ITEMS,
-    parentRouteId(navigationStack, binaryContext),
-  );
+  return appendBackMenuItem(SETUP_MENU_ITEMS, parentRouteId(navigationStack, binaryContext));
 }
 
 /**
@@ -132,7 +127,6 @@ export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement
   const contextState = useMemo(
     (): ContextContentState => ({
       routeTitle: 'Setup / Maintenance',
-      fallbackSummary: 'Initialize or maintain the toolkit project.',
       selectedContext,
     }),
     [selectedContext],
@@ -148,14 +142,17 @@ export function SetupMenuScreen(props: SetupMenuScreenProps): React.ReactElement
     },
     [session],
   );
-  const reportFocusedContext = useCallback((item: SetupMenuItem | BackMenuItem | undefined): void => {
-    if (item == null || isBackMenuItem(item)) {
-      setSelectedContext(undefined);
-      return;
-    }
+  const reportFocusedContext = useCallback(
+    (item: SetupMenuItem | BackMenuItem | undefined): void => {
+      if (item == null || isBackMenuItem(item)) {
+        setSelectedContext(undefined);
+        return;
+      }
 
-    setSelectedContext((item as SetupMenuItem).context);
-  }, []);
+      setSelectedContext((item as SetupMenuItem).context);
+    },
+    [],
+  );
 
   useInput((input) => {
     if (backItem != null && input === backItem.key) {

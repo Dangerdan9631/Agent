@@ -110,19 +110,19 @@ describe('interactive global home', () => {
 
     const frame = await waitForFrameContaining(() => app.lastFrame(), 'Install Source:');
     expect(frame).toContain('Global Home');
-    expect(frame).toContain('Version:');
-    expect(frame).toContain('(global)');
-    expect(frame).toContain('Latest Version:');
+    expect(frame).toContain('Install Source:');
+    expect(frame).toContain('Global Version:');
+    expect(frame).toContain('Local Version:');
+    expect(frame).not.toContain('Latest Version:');
     expect(frame).toContain('Project:');
     expect(frame).toMatch(/interactive-global-h\s*ome-initialized/);
     expect(frame).toContain('Project Status: Initialized');
-    expect(frame).toContain("1 Update Spec N' Roll");
+    expect(frame).toContain("1 Update Global Spec N' Roll");
     expect(frame).toContain('2 Init Project');
-    expect(frame).toContain("5 Quit");
     app.unmount();
   });
 
-  it('shows uninitialized project status and disables remove actions', async () => {
+  it('hides project refresh and update actions when the project is not initialized', async () => {
     const projectRoot = await createEmptyProject();
     const app = render(
       React.createElement(App, {
@@ -132,21 +132,26 @@ describe('interactive global home', () => {
       }),
     );
 
-    const frame = await waitForFrameContaining(() => app.lastFrame(), 'Not initialized');
+    const frame = await waitForFrameContaining(
+      () => app.lastFrame(),
+      "1 Update Global Spec N' Roll",
+    );
+    expect(frame).not.toContain("2 Refresh Project Spec N' Roll");
+    expect(frame).not.toContain('3 Update Project');
+    expect(frame).toContain('2 Init Project');
     expect(frame).toContain('Project Status: Not initialized');
-    expect(frame).toContain('> 1 Update Spec N\' Roll');
     expect(frame).toContain("3 Remove Spec N' Roll");
     expect(frame).toContain("4 Re-install Spec N' Roll");
     app.unmount();
   });
 
-  it('disables update when remote install is up to date', async () => {
+  it('disables global update when remote install is up to date with npm', async () => {
     const projectRoot = await copyFixtureProject('up-to-date');
     vi.spyOn(globalHomeContentModule, 'loadGlobalHomeContent').mockResolvedValue({
       fields: [
         { label: 'Install Source', value: 'Remote' },
-        { label: 'Version', value: 'v1.0.0 (global)' },
-        { label: 'Latest Version', value: 'Up to date' },
+        { label: 'Global Version', value: 'v1.0.0' },
+        { label: 'Local Version', value: 'v1.0.0' },
         { label: 'Project', value: projectRoot },
         { label: 'Project Status', value: 'Initialized' },
       ],
@@ -160,7 +165,12 @@ describe('interactive global home', () => {
         isUpToDate: true,
         comparisonTarget: 'npm-registry',
       },
-      updateDisabled: true,
+      globalVersion: '1.0.0',
+      localVersion: '1.0.0',
+      updateGlobalDisabled: true,
+      refreshProjectDisabled: true,
+      updateProjectDisabled: true,
+      showProjectUpdateActions: true,
       removeDisabled: false,
       reinstallDisabled: false,
     });
@@ -175,11 +185,104 @@ describe('interactive global home', () => {
 
     const frame = await waitForFrameContaining(
       () => app.lastFrame(),
-      "2 Init Project - Initialize this project",
+      '4 Init Project - Initialize this project',
     );
-    expect(frame).toContain('Install Source: Remote');
-    expect(frame).toContain('> 2 Init Project');
-    expect(frame).not.toContain("> 1 Update Spec N' Roll");
+    expect(frame).toContain('Global Version: v1.0.0');
+    expect(frame).not.toContain("> 1 Update Global Spec N' Roll");
+    app.unmount();
+  });
+
+  it('hides project refresh and update when no local CLI install is detected', async () => {
+    const projectRoot = await copyFixtureProject('no-local-install');
+    vi.spyOn(globalHomeContentModule, 'loadGlobalHomeContent').mockResolvedValue({
+      fields: [
+        { label: 'Install Source', value: 'Remote' },
+        { label: 'Global Version', value: 'v1.0.0' },
+        { label: 'Local Version', value: 'Unavailable' },
+        { label: 'Project', value: projectRoot },
+        { label: 'Project Status', value: 'Initialized' },
+      ],
+      installSource: {
+        kind: 'remote',
+        markerPath: path.join(projectRoot, '.source-package-root'),
+      },
+      versionComparison: {
+        currentVersion: '1.0.0',
+        latestLabel: '1.0.0',
+        isUpToDate: true,
+        comparisonTarget: 'npm-registry',
+      },
+      globalVersion: '1.0.0',
+      localVersion: null,
+      updateGlobalDisabled: true,
+      refreshProjectDisabled: true,
+      updateProjectDisabled: true,
+      showProjectUpdateActions: false,
+      removeDisabled: false,
+      reinstallDisabled: false,
+    });
+
+    const app = render(
+      React.createElement(App, {
+        projectRoot,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    const frame = await waitForFrameContaining(
+      () => app.lastFrame(),
+      '2 Init Project - Initialize this project',
+    );
+    expect(frame).not.toContain("Refresh Project Spec N' Roll");
+    expect(frame).not.toContain('Update Project');
+    app.unmount();
+  });
+
+  it('shows project refresh and update when an initialized local install is detected', async () => {
+    const projectRoot = await copyFixtureProject('local-install');
+    vi.spyOn(globalHomeContentModule, 'loadGlobalHomeContent').mockResolvedValue({
+      fields: [
+        { label: 'Install Source', value: 'Remote' },
+        { label: 'Global Version', value: 'v1.0.0' },
+        { label: 'Local Version', value: 'v0.9.0' },
+        { label: 'Project', value: projectRoot },
+        { label: 'Project Status', value: 'Initialized' },
+      ],
+      installSource: {
+        kind: 'remote',
+        markerPath: path.join(projectRoot, '.source-package-root'),
+      },
+      versionComparison: {
+        currentVersion: '1.0.0',
+        latestLabel: '1.0.0',
+        isUpToDate: true,
+        comparisonTarget: 'npm-registry',
+      },
+      globalVersion: '1.0.0',
+      localVersion: '0.9.0',
+      updateGlobalDisabled: true,
+      refreshProjectDisabled: false,
+      updateProjectDisabled: false,
+      showProjectUpdateActions: true,
+      removeDisabled: false,
+      reinstallDisabled: false,
+    });
+
+    const app = render(
+      React.createElement(App, {
+        projectRoot,
+        isInitialized: true,
+        binaryContext: 'global',
+      }),
+    );
+
+    const frame = await waitForFrameContaining(
+      () => app.lastFrame(),
+      "2 Refresh Project Spec N' Roll - Copy the global CLI runtime into this project",
+    );
+    expect(frame).toContain("2 Refresh Project Spec N' Roll");
+    expect(frame).toContain('3 Update Project');
     app.unmount();
   });
 });

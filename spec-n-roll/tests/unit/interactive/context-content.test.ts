@@ -17,7 +17,6 @@ import {
 describe('context content', () => {
   const context: ContextContentState = {
     routeTitle: 'Task Specs',
-    fallbackSummary: 'Browse known task specifications.',
     selectedContext: {
       id: 'spec-alpha',
       title: 'Spec Alpha',
@@ -47,14 +46,13 @@ describe('context content', () => {
     );
   });
 
-  it('uses fallback route context when no selected option context exists', () => {
+  it('uses route title when no selected option context exists', () => {
     expect(
       buildContextContentLines({
         routeTitle: 'Workflows',
-        fallbackSummary: 'Review workflow variants.',
         availableRows: 2,
       }),
-    ).toEqual(['Workflows', 'Review workflow variants.']);
+    ).toEqual(['Workflows']);
   });
 
   it('scrolls the context viewport one line at a time', () => {

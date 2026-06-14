@@ -4,7 +4,15 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '.agents/', '.specify/', 'specs/'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'coverage/',
+      '.agents/',
+      '.specify/',
+      'specs/',
+      'tests/fixtures/',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

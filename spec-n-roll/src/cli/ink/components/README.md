@@ -1,6 +1,6 @@
 # Ink Components
 
-Shared Ink components provide reusable terminal UI primitives for selectable lists, numbered choices, recoverable errors, confirmations, key hints, persistent status display, read-only context content, selection-region row reporting, and route-owned layout composition.
+Shared Ink components provide reusable terminal UI primitives for selectable lists, numbered choices, recoverable errors, confirmations, quit confirmation, key hints, persistent status display, read-only context content, selection-region row reporting, and route-owned layout composition.
 
 These components own rendering, focus, row allocation, and local keyboard concerns only. They should remain free of project reads and writes so screens can compose them with read models and command orchestrators without hiding side effects inside UI primitives.
 

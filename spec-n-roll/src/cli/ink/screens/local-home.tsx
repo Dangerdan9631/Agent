@@ -7,10 +7,7 @@ import { RouteContentLayout } from '../components/RouteContentLayout.js';
 import { SelectableList, type SelectableListItem } from '../components/SelectableList.js';
 import { StaticContentBlock } from '../components/StaticContentBlock.js';
 import type { RoutedScreenProps } from '../app/routed-screen-props.js';
-import {
-  loadLocalHomeContent,
-  type LocalHomeContent,
-} from '../read-models/local-home-content.js';
+import { loadLocalHomeContent, type LocalHomeContent } from '../read-models/local-home-content.js';
 
 /**
  * Local home menu row with numeric shortcut activation.

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import fse from 'fs-extra';
@@ -6,8 +7,11 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../src/cli/ink/app/App.js';
+import { installProjectBinaries } from '../../src/cli/local-binaries.js';
 import * as manageLocalContentModule from '../../src/cli/ink/read-models/manage-local-content.js';
+import * as reloadModule from '../../src/cli/ink/reload.js';
 import { writeTaskMetadata } from '../../src/core/task-metadata.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/cli/local-install-integrity.js';
 
 /**
  * Source fixture copied for local home integration tests.
@@ -200,37 +204,41 @@ describe('interactive local home', () => {
 
     await waitForFrameContaining(() => app.lastFrame(), "5 Manage Spec N' Roll");
     app.stdin.write('5');
-    const frame = await waitForFrameContaining(
-      () => app.lastFrame(),
-      "1 Update Spec N' Roll",
-    );
+    const frame = await waitForFrameContaining(() => app.lastFrame(), "1 Refresh Project Spec N' Roll");
     expect(frame).toContain("Manage Spec N' Roll");
-    expect(frame).toContain('Version:');
-    expect(frame).toContain('(local)');
-    expect(frame).toContain('Latest Version:');
+    expect(frame).toContain('Global Version:');
+    expect(frame).toContain('Local Version:');
     expect(frame).toContain('Project:');
-    expect(frame).toContain('2 Upgrade Project');
+    expect(frame).not.toContain('Latest Version:');
+    expect(frame).toContain('2 Update Project');
     expect(frame).toContain("3 Remove Spec N' Roll");
     expect(frame).toContain("4 Re-install Spec N' Roll");
     expect(frame).toContain('5 Back');
     app.unmount();
   });
 
-  it('disables update on manage screen when local version matches global', async () => {
+  it('disables refresh and upgrade when local version matches unlinked global', async () => {
     const projectRoot = await copyFixtureProject('manage-up-to-date');
     vi.spyOn(manageLocalContentModule, 'loadManageLocalContent').mockResolvedValue({
       fields: [
-        { label: 'Version', value: 'v1.0.0 (local)' },
-        { label: 'Latest Version', value: 'Up to date' },
+        { label: 'Global Version', value: 'v1.0.0' },
+        { label: 'Local Version', value: 'v1.0.0' },
         { label: 'Project', value: projectRoot },
       ],
+      globalInstallSource: {
+        kind: 'remote',
+        markerPath: path.join(projectRoot, '.source-package-root'),
+      },
       versionComparison: {
         currentVersion: '1.0.0',
         latestLabel: 'Up to date',
         isUpToDate: true,
         comparisonTarget: 'global-install',
       },
-      updateDisabled: true,
+      localVersion: '1.0.0',
+      globalVersion: '1.0.0',
+      refreshProjectDisabled: true,
+      updateProjectDisabled: true,
       removeDisabled: false,
       reinstallDisabled: false,
     });
@@ -245,13 +253,12 @@ describe('interactive local home', () => {
 
     await waitForFrameContaining(() => app.lastFrame(), "5 Manage Spec N' Roll");
     app.stdin.write('5');
-    const frame = await waitForFrameContaining(
-      () => app.lastFrame(),
-      '2 Upgrade Project - Run the full project upgrade workflow',
-    );
-    expect(frame).toContain('Latest Version: Up to date');
-    expect(frame).toContain('> 2 Upgrade Project');
-    expect(frame).not.toContain("> 1 Update Spec N' Roll");
+    const frame = await waitForFrameContaining(() => app.lastFrame(), "3 Remove Spec N' Roll");
+    expect(frame).toContain('Global Version: v1.0.0');
+    expect(frame).toContain("1 Refresh Project Spec N' Roll");
+    expect(frame).not.toContain("> 1 Refresh Project Spec N' Roll");
+    expect(frame).toContain('2 Update Project');
+    expect(frame).not.toContain('> 2 Update Project');
     app.unmount();
   });
 
@@ -275,6 +282,90 @@ describe('interactive local home', () => {
     app.unmount();
   });
 
+  it('refreshes bundled layout from manage screen without changing workflow config', async () => {
+    const projectRoot = await copyFixtureProject('manage-binary-update');
+    const workflowConfigPath = path.join(
+      projectRoot,
+      '.spec-n-roll',
+      'config',
+      'workflow.config.json',
+    );
+    const workflowBefore = readFileSync(workflowConfigPath, 'utf8');
+    const fixtureVersionA = path.resolve('tests/fixtures/local-bundle-version-a');
+    const repoToolkitRoot = path.resolve('.');
+
+    await installProjectBinaries(projectRoot, fixtureVersionA);
+
+    const manifestBefore = JSON.parse(
+      readFileSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'install.json'), 'utf8'),
+    ) as { toolkitVersion: string };
+    expect(manifestBefore.toolkitVersion).toBe('0.9.0-a');
+
+    vi.spyOn(manageLocalContentModule, 'loadManageLocalContent').mockResolvedValue({
+      fields: [
+        { label: 'Global Version', value: 'v0.1.0' },
+        { label: 'Local Version', value: 'v0.9.0-a' },
+        { label: 'Project', value: projectRoot },
+      ],
+      globalInstallSource: {
+        kind: 'remote',
+        markerPath: path.join(projectRoot, '.source-package-root'),
+      },
+      versionComparison: {
+        currentVersion: '0.9.0-a',
+        latestLabel: '0.1.0',
+        isUpToDate: false,
+        comparisonTarget: 'global-install',
+      },
+      localVersion: '0.9.0-a',
+      globalVersion: '0.1.0',
+      refreshProjectDisabled: false,
+      updateProjectDisabled: false,
+      removeDisabled: false,
+      reinstallDisabled: false,
+    });
+    vi.spyOn(reloadModule, 'reloadInteractiveApp').mockReturnValue(0);
+
+    const app = render(
+      React.createElement(App, {
+        projectRoot,
+        isInitialized: true,
+        binaryContext: 'local',
+      }),
+    );
+
+    await waitForFrameContaining(() => app.lastFrame(), "5 Manage Spec N' Roll");
+    app.stdin.write('5');
+    await waitForFrameContaining(() => app.lastFrame(), "1 Refresh Project Spec N' Roll");
+    app.stdin.write('1');
+
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      if (vi.mocked(reloadModule.reloadInteractiveApp).mock.calls.length > 0) {
+        break;
+      }
+      await waitForInk();
+    }
+
+    expect(reloadModule.reloadInteractiveApp).toHaveBeenCalled();
+
+    const cliDir = path.join(projectRoot, '.spec-n-roll', 'cli');
+    const manifestAfter = JSON.parse(readFileSync(path.join(cliDir, 'install.json'), 'utf8')) as {
+      toolkitVersion: string;
+      layoutVersion: number;
+      toolkitPackageRoot?: string;
+    };
+    const repoVersion = JSON.parse(
+      readFileSync(path.join(repoToolkitRoot, 'package.json'), 'utf8'),
+    ) as { version: string };
+
+    expect(manifestAfter.toolkitVersion).toBe(repoVersion.version);
+    expect(manifestAfter.layoutVersion).toBe(LOCAL_INSTALL_LAYOUT_VERSION);
+    expect(manifestAfter.toolkitPackageRoot).toBeUndefined();
+    expect(readFileSync(workflowConfigPath, 'utf8')).toBe(workflowBefore);
+    app.unmount();
+  });
+
   it('shows remove confirmation on manage screen', async () => {
     const projectRoot = await copyFixtureProject('manage-remove-confirm');
     const app = render(
@@ -289,10 +380,7 @@ describe('interactive local home', () => {
     app.stdin.write('5');
     await waitForFrameContaining(() => app.lastFrame(), "3 Remove Spec N' Roll");
     app.stdin.write('3');
-    const frame = await waitForFrameContaining(
-      () => app.lastFrame(),
-      'Remove managed Spec N',
-    );
+    const frame = await waitForFrameContaining(() => app.lastFrame(), 'Remove managed Spec N');
     expect(frame).toContain("Remove Spec N' Roll");
     app.unmount();
   });

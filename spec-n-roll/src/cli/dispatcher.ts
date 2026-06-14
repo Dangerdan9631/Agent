@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { accessSync, constants } from 'node:fs';
+import { accessSync, constants, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isCurrentModuleEntrypoint } from '../core/paths.js';
+import {
+  LOCAL_CLI_ROOT_RELATIVE_PATH,
+  shouldBypassLocalInstallIntegrity,
+  validateLocalInstall,
+} from './local-install-integrity.js';
+import { findToolkitPackageRoot, isCurrentModuleEntrypoint } from '../core/paths.js';
 
 /**
  * Defines the standard installation location for project-local CLI versions
@@ -243,6 +248,20 @@ export function resolveDelegation(argv: string[], options: DispatchOptions = {})
           return { action: 'error', exitCode: 1, message: error.message };
         }
 
+        const cliRoot = path.join(current, LOCAL_CLI_ROOT_RELATIVE_PATH);
+        const validation = shouldBypassLocalInstallIntegrity(args)
+          ? { status: 'valid' as const, missingPaths: [] }
+          : validateLocalInstall(cliRoot);
+        if (validation.status === 'invalid') {
+          return {
+            action: 'error',
+            exitCode: 1,
+            message:
+              validation.message ??
+              'Local Spec-N-Roll install is invalid. Run `spec-n-roll update` to refresh the local runtime.',
+          };
+        }
+
         const result = spawnSync(resolved, args, {
           cwd,
           env: buildDelegatedCliEnv(env),
@@ -307,20 +326,92 @@ export function resolveToolkitNodeModulesPath(): string {
 }
 
 /**
+ * Reads the semver of the globally installed dispatcher package.
+ *
+ * @returns Dispatcher package version from the adjacent toolkit package.json.
+ */
+export function readDispatcherPackageVersion(): string {
+  const dispatcherDir = path.dirname(fileURLToPath(import.meta.url));
+  const packageRoot = findToolkitPackageRoot(dispatcherDir);
+  const pkg = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8')) as {
+    version: string;
+  };
+  return pkg.version;
+}
+
+/**
+ * Describes how the running global dispatcher was installed.
+ */
+export type DispatcherInstallSourceKind = 'local' | 'remote';
+
+/**
+ * Reads the linked toolkit source package root recorded by the dispatcher marker file.
+ *
+ * @param dispatcherDir - Directory containing the global dispatcher build artifacts.
+ * @returns Absolute linked source package root, or null when the marker is absent or invalid.
+ */
+export function readDispatcherLinkedSourcePath(dispatcherDir: string): string | null {
+  const markerPath = path.join(dispatcherDir, '.source-package-root');
+  if (!pathExists(markerPath)) {
+    return null;
+  }
+
+  const sourcePath = readFileSync(markerPath, 'utf8').trim();
+  if (sourcePath.length === 0) {
+    return null;
+  }
+
+  const packageJsonPath = path.join(sourcePath, 'package.json');
+  if (!pathExists(packageJsonPath)) {
+    return null;
+  }
+
+  try {
+    const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: unknown };
+    return pkg.name === 'spec-n-roll' ? path.resolve(sourcePath) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reads whether the global dispatcher build records a linked source package root.
+ *
+ * @returns `local` when the dispatcher has a readable linked-source marker, otherwise `remote`.
+ */
+export function readDispatcherInstallSourceKind(): DispatcherInstallSourceKind {
+  const dispatcherDir = path.dirname(fileURLToPath(import.meta.url));
+  return readDispatcherLinkedSourcePath(dispatcherDir) != null ? 'local' : 'remote';
+}
+
+/**
  * Builds environment variables for delegated local CLI execution.
  *
  * @param baseEnv - Parent process environment to extend.
  * @returns Environment including delegation marker and NODE_PATH for local CLI imports.
  */
 export function buildDelegatedCliEnv(baseEnv: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const dispatcherDir = path.dirname(fileURLToPath(import.meta.url));
   const nodeModulesPath = resolveToolkitNodeModulesPath();
   const mergedNodePath = [nodeModulesPath, baseEnv.NODE_PATH].filter(Boolean).join(path.delimiter);
+  const installSourceKind = readDispatcherInstallSourceKind();
+  const linkedSourcePath = readDispatcherLinkedSourcePath(dispatcherDir);
 
-  return {
+  const env: NodeJS.ProcessEnv = {
     ...baseEnv,
     SPEC_N_ROLL_DISPATCHED: '1',
+    SPEC_N_ROLL_DISPATCHER_VERSION: readDispatcherPackageVersion(),
+    SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE: installSourceKind,
+    SPEC_N_ROLL_DISPATCHER_CLI_DIRECTORY: dispatcherDir,
+    SPEC_N_ROLL_DISPATCHER_PACKAGE_ROOT: findToolkitPackageRoot(dispatcherDir),
     NODE_PATH: mergedNodePath,
   };
+
+  if (linkedSourcePath != null) {
+    env.SPEC_N_ROLL_DISPATCHER_LINKED_SOURCE_PATH = linkedSourcePath;
+  }
+
+  return env;
 }
 
 /**
@@ -340,6 +431,26 @@ export function resolveGlobalCliPath(): string {
   }
 
   return path.join(dispatcherDir, 'index.js');
+}
+
+/**
+ * Resolves the globally installed toolkit package root for project maintenance actions.
+ *
+ * @param env - Environment variables for the current process. Uses dispatcher metadata when delegated.
+ * @returns Absolute path to the global toolkit package root.
+ */
+export function resolveGlobalToolkitRoot(env: NodeJS.ProcessEnv = process.env): string {
+  const delegatedPackageRoot = env.SPEC_N_ROLL_DISPATCHER_PACKAGE_ROOT?.trim();
+  if (
+    env.SPEC_N_ROLL_DISPATCHED === '1' &&
+    delegatedPackageRoot != null &&
+    delegatedPackageRoot.length > 0
+  ) {
+    return path.resolve(delegatedPackageRoot);
+  }
+
+  const globalCliPath = resolveGlobalCliPath();
+  return findToolkitPackageRoot(path.dirname(globalCliPath));
 }
 
 /**

@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
-import { findToolkitPackageRoot } from '../../core/paths.js';
+import { readRuntimePackageVersion } from '../build-version.js';
 import { findLocalCli } from '../dispatcher.js';
 
 /**
@@ -52,15 +51,24 @@ export interface VersionReportOptions {
 }
 
 /**
- * Reads the toolkit package version from package.json adjacent to the CLI build.
- *
- * @returns Semver string for the running toolkit package.
+ * Options controlling where toolkit package version discovery begins.
  */
-export function readToolkitPackageVersion(): string {
-  const packageRoot = findToolkitPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
-  const packageJsonPath = path.join(packageRoot, 'package.json');
-  const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string };
-  return pkg.version;
+export interface ToolkitVersionOptions {
+  /**
+   * Directory to begin walking upward for `package.json`. Defaults to the running module directory.
+   */
+  startDir?: string;
+}
+
+/**
+ * Reads the toolkit package version from the nearest `spec-n-roll` package.json.
+ *
+ * @param options - Optional start directory override for bundled or delegated entrypoints.
+ * @returns Semver string for the resolved toolkit package.
+ */
+export function readToolkitPackageVersion(options: ToolkitVersionOptions = {}): string {
+  const startDir = options.startDir ?? path.dirname(fileURLToPath(import.meta.url));
+  return readRuntimePackageVersion(startDir);
 }
 
 /**
@@ -101,7 +109,9 @@ function detectLocalInvocation(
 export function buildVersionReport(options: VersionReportOptions = {}): VersionReport {
   const cwd = options.cwd ?? process.cwd();
   const executedBinaryPath = options.executedBinaryPath ?? process.argv[1];
-  const toolkitVersion = readToolkitPackageVersion();
+  const versionStartDir =
+    executedBinaryPath != null ? path.dirname(path.resolve(executedBinaryPath)) : undefined;
+  const toolkitVersion = readToolkitPackageVersion({ startDir: versionStartDir });
   const { invocation, localCliPath } = detectLocalInvocation(cwd, executedBinaryPath);
 
   const report: VersionReport = {
@@ -110,8 +120,9 @@ export function buildVersionReport(options: VersionReportOptions = {}): VersionR
     localCliPath,
   };
 
-  if (process.env.SPEC_N_ROLL_DISPATCHED === '1') {
-    report.dispatcherVersion = toolkitVersion;
+  const dispatcherVersion = process.env.SPEC_N_ROLL_DISPATCHER_VERSION;
+  if (process.env.SPEC_N_ROLL_DISPATCHED === '1' && dispatcherVersion != null) {
+    report.dispatcherVersion = dispatcherVersion;
   }
 
   return report;

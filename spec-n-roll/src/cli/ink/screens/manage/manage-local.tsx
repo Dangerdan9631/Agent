@@ -1,14 +1,11 @@
-import path from 'node:path';
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 import { listBundledAgentIds } from '../../../../agents/extension-loader.js';
-import { findToolkitPackageRoot } from '../../../../core/paths.js';
 import { runProjectRemove } from '../../../commands/remove.js';
 import { runUpdate, type UpdateResult } from '../../../commands/update.js';
-import { resolveGlobalCliPath } from '../../../dispatcher.js';
-import { installProjectBinaries } from '../../../local-binaries.js';
+import { resolveGlobalToolkitRoot } from '../../../dispatcher.js';
+import { runRefreshProjectInstall } from '../../../refresh-project-install.js';
 import { useSession } from '../../app/session-context.js';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
@@ -39,23 +36,13 @@ interface ManageLocalMenuItem extends SelectableListItem {
   /**
    * Stable action identifier for selection handling.
    */
-  actionId: 'update' | 'upgrade' | 'remove' | 'reinstall' | 'back';
+  actionId: 'refresh-project' | 'update-project' | 'remove' | 'reinstall' | 'back';
 }
 
 /**
  * Props for the local installation manage screen.
  */
 export type ManageLocalScreenProps = RoutedScreenProps;
-
-/**
- * Resolves the globally installed toolkit package root for binary copy actions.
- *
- * @returns Absolute path to the global toolkit package root.
- */
-function resolveGlobalToolkitRoot(): string {
-  const globalCliPath = resolveGlobalCliPath();
-  return findToolkitPackageRoot(path.dirname(globalCliPath));
-}
 
 /**
  * Builds manage-local menu rows with enablement derived from loaded content.
@@ -66,20 +53,20 @@ function resolveGlobalToolkitRoot(): string {
 function buildMenuItems(content: ManageLocalContent | null): readonly ManageLocalMenuItem[] {
   return [
     {
-      id: 'update',
+      id: 'refresh-project',
       key: '1',
-      actionId: 'update',
-      label: "1 Update Spec N' Roll",
-      description: 'Copy the global CLI binary into this project',
-      disabled: content?.updateDisabled === true,
+      actionId: 'refresh-project',
+      label: "1 Refresh Project Spec N' Roll",
+      description: 'Copy the global CLI runtime into this project',
+      disabled: content?.refreshProjectDisabled === true,
     },
     {
-      id: 'upgrade',
+      id: 'update-project',
       key: '2',
-      actionId: 'upgrade',
-      label: '2 Upgrade Project',
-      description: 'Run the full project upgrade workflow',
-      disabled: false,
+      actionId: 'update-project',
+      label: '2 Update Project',
+      description: 'Run the full project update workflow',
+      disabled: content?.updateProjectDisabled === true,
     },
     {
       id: 'remove',
@@ -118,7 +105,7 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
   const session = useSession();
   const [content, setContent] = useState<ManageLocalContent | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirmAction | null>(null);
-  const [upgradePlan, setUpgradePlan] = useState<UpdateResult | null>(null);
+  const [updatePlan, setUpdatePlan] = useState<UpdateResult | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -141,16 +128,19 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
     };
   }, [session.isInitialized, session.projectRoot]);
 
-  const runBinaryUpdate = useCallback((): void => {
-    if (content == null || content.updateDisabled) {
+  const runRefreshProject = useCallback((): void => {
+    if (content == null || content.refreshProjectDisabled) {
       return;
     }
 
     setRunning(true);
     setErrorMessage(null);
-    setStatusMessage('Updating local Spec N\' Roll binary...');
+    setStatusMessage("Refreshing project Spec N' Roll...");
 
-    void installProjectBinaries(session.projectRoot, resolveGlobalToolkitRoot())
+    void runRefreshProjectInstall({
+      projectRoot: session.projectRoot,
+      globalInstallSource: content.globalInstallSource,
+    })
       .then(() => {
         reloadInteractiveApp();
       })
@@ -164,15 +154,23 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
       });
   }, [content, session.projectRoot]);
 
-  const startUpgrade = useCallback((): void => {
+  const startUpdateProject = useCallback((): void => {
+    if (content == null || content.updateProjectDisabled) {
+      return;
+    }
+
     setRunning(true);
     setErrorMessage(null);
-    setStatusMessage('Planning project upgrade...');
+    setStatusMessage('Planning project update...');
 
-    void runUpdate({ projectRoot: session.projectRoot, dryRun: true })
+    void runUpdate({
+      projectRoot: session.projectRoot,
+      toolkitRoot: resolveGlobalToolkitRoot(),
+      dryRun: true,
+    })
       .then((plan) => {
         setStatusMessage(null);
-        setUpgradePlan(plan);
+        setUpdatePlan(plan);
       })
       .catch((unknownError: unknown) => {
         const text = unknownError instanceof Error ? unknownError.message : String(unknownError);
@@ -182,17 +180,21 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
       .finally(() => {
         setRunning(false);
       });
-  }, [session.projectRoot]);
+  }, [content, session.projectRoot]);
 
-  const applyUpgrade = useCallback((): void => {
+  const applyUpdateProject = useCallback((): void => {
     setRunning(true);
     setErrorMessage(null);
-    setStatusMessage('Upgrading project...');
+    setStatusMessage('Updating project...');
 
-    void runUpdate({ projectRoot: session.projectRoot, force: true })
+    void runUpdate({
+      projectRoot: session.projectRoot,
+      toolkitRoot: resolveGlobalToolkitRoot(),
+      force: true,
+    })
       .then((result) => {
         setStatusMessage(
-          `Upgraded ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}.`,
+          `Updated ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}.`,
         );
       })
       .catch((unknownError: unknown) => {
@@ -202,14 +204,14 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
       })
       .finally(() => {
         setRunning(false);
-        setUpgradePlan(null);
+        setUpdatePlan(null);
       });
   }, [session.projectRoot]);
 
   const runRemove = useCallback((): void => {
     setRunning(true);
     setErrorMessage(null);
-    setStatusMessage('Removing Spec N\' Roll...');
+    setStatusMessage("Removing Spec N' Roll...");
 
     void runProjectRemove({
       projectRoot: session.projectRoot,
@@ -232,7 +234,7 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
   const runReinstall = useCallback((): void => {
     setRunning(true);
     setErrorMessage(null);
-    setStatusMessage('Re-installing Spec N\' Roll...');
+    setStatusMessage("Re-installing Spec N' Roll...");
 
     void runProjectRemove({
       projectRoot: session.projectRoot,
@@ -265,11 +267,11 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
       }
 
       switch (item.actionId) {
-        case 'update':
-          runBinaryUpdate();
+        case 'refresh-project':
+          runRefreshProject();
           return;
-        case 'upgrade':
-          startUpgrade();
+        case 'update-project':
+          startUpdateProject();
           return;
         case 'remove':
           setPendingConfirm('remove');
@@ -281,11 +283,11 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
           session.popRoute();
       }
     },
-    [runBinaryUpdate, running, session, startUpgrade],
+    [runRefreshProject, running, session, startUpdateProject],
   );
 
   useInput((input) => {
-    if (pendingConfirm != null || upgradePlan != null || running) {
+    if (pendingConfirm != null || updatePlan != null || running) {
       return;
     }
 
@@ -295,20 +297,20 @@ export function ManageLocalScreen(props: ManageLocalScreenProps): React.ReactEle
     }
   });
 
-  if (upgradePlan != null) {
+  if (updatePlan != null) {
     return (
       <UpdateConfirmPrompt
         input={{
-          previousToolkitVersion: upgradePlan.previousToolkitVersion,
-          targetToolkitVersion: upgradePlan.targetToolkitVersion,
-          filesToOverwrite: upgradePlan.overwrittenFiles,
-          backupConflicts: upgradePlan.backupConflicts,
-          migrationCount: upgradePlan.configMigrations.length,
-          extensionWarnings: upgradePlan.extensionWarnings,
+          previousToolkitVersion: updatePlan.previousToolkitVersion,
+          targetToolkitVersion: updatePlan.targetToolkitVersion,
+          filesToOverwrite: updatePlan.overwrittenFiles,
+          backupConflicts: updatePlan.backupConflicts,
+          migrationCount: updatePlan.configMigrations.length,
+          extensionWarnings: updatePlan.extensionWarnings,
         }}
-        onConfirm={applyUpgrade}
+        onConfirm={applyUpdateProject}
         onCancel={() => {
-          setUpgradePlan(null);
+          setUpdatePlan(null);
         }}
       />
     );

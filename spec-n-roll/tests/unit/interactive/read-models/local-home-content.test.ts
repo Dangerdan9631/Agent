@@ -27,10 +27,7 @@ function createTempDir(suffix: string): string {
  * @param projectRoot - Absolute project root directory.
  * @param metadata - Project metadata fields to persist.
  */
-function writeProjectMetadataFixture(
-  projectRoot: string,
-  metadata: Record<string, unknown>,
-): void {
+function writeProjectMetadataFixture(projectRoot: string, metadata: Record<string, unknown>): void {
   const configDir = path.join(projectRoot, '.spec-n-roll', 'config');
   mkdirSync(configDir, { recursive: true });
   writeFileSync(
