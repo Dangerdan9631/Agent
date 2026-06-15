@@ -4,11 +4,11 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { runUpdate } from '../../src/cli/commands/update.js';
+import { runUpdate } from '../../src/sdk/update.js';
 import {
   LOCAL_INSTALL_LAYOUT_VERSION,
   validateLocalInstall,
-} from '../../src/cli/local-install-integrity.js';
+} from '../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 const repoRoot = path.resolve('.');

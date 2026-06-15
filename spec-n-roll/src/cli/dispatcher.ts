@@ -9,8 +9,8 @@ import {
   LOCAL_CLI_ROOT_RELATIVE_PATH,
   shouldBypassLocalInstallIntegrity,
   validateLocalInstall,
-} from './local-install-integrity.js';
-import { findToolkitPackageRoot, isCurrentModuleEntrypoint } from '../core/paths.js';
+} from '../sdk/install/local-install-integrity.js';
+import { findToolkitPackageRoot, isCurrentModuleEntrypoint } from '../sdk/core/paths.js';
 
 /**
  * Defines the standard installation location for project-local CLI versions

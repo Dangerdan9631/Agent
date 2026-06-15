@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
-import { listBundledAgentIds } from '../../../../agents/extension-loader.js';
-import { runProjectRemove } from '../../../commands/remove.js';
-import { runUpdate, type UpdateResult } from '../../../commands/update.js';
+import { listBundledAgentIds } from '../../../../sdk/agents/extension-loader.js';
+import { runProjectRemove } from '../../../../sdk/remove.js';
+import { runUpdate, type UpdateResult } from '../../../../sdk/update.js';
 import { resolveGlobalToolkitRoot } from '../../../dispatcher.js';
-import { runRefreshProjectInstall } from '../../../refresh-project-install.js';
+import { runRefreshProjectInstall } from '../../../../sdk/install/refresh-project-install.js';
 import { useSession } from '../../app/session-context.js';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';

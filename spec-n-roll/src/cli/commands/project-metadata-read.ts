@@ -1,18 +1,21 @@
 import { Command } from 'commander';
+import { injectable } from 'tsyringe';
 
-import { readProjectMetadata } from '../../core/project-metadata.js';
+import { readProjectMetadata } from '../../sdk/core/project-metadata.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
- * Registers the `project metadata read` subcommand on the project metadata command group.
- *
- * @param metadata - Commander `project metadata` command to attach the subcommand to.
+ * Registers and handles the `project metadata read` CLI subcommand.
  */
-export function registerProjectMetadataReadCommand(metadata: Command): void {
-  metadata
-    .command('read')
-    .description('Read project-metadata.json')
-    .action(async () => {
-      const result = await readProjectMetadata(process.cwd());
-      console.log(JSON.stringify(result, null, 2));
-    });
+@injectable()
+export class ProjectMetadataReadCommand implements CliCommand {
+  register(command: Command): void {
+    command
+      .command('read')
+      .description('Read project-metadata.json')
+      .action(async () => {
+        const result = await readProjectMetadata(process.cwd());
+        console.log(JSON.stringify(result, null, 2));
+      });
+  }
 }

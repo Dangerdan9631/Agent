@@ -199,10 +199,8 @@ export function SelectableList<TItem extends SelectableListItem>(
         return (
           <Box key={item.id}>
             <Text color={color}>{indicator}</Text>
-            <Text color={color ?? "blue"}>{` ${item.label}`}</Text>
-            <Text color="gray">
-              {item.description != null ? ` - ${item.description}` : ''}
-            </Text>
+            <Text color={color ?? 'blue'}>{` ${item.label}`}</Text>
+            <Text color="gray">{item.description != null ? ` - ${item.description}` : ''}</Text>
           </Box>
         );
       })}

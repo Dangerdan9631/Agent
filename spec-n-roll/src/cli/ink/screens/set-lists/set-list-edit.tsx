@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
-import { updateSetList } from '../../../../setlists/index.js';
+import { updateSetList } from '../../../../sdk/setlists/index.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import {
@@ -198,18 +198,11 @@ export function SetListEditScreen(props: SetListEditScreenProps): React.ReactEle
       <Text bold>Edit Set List: {setListId}</Text>
       {EDIT_FIELDS.map((field, index) => (
         <Text key={field} color={index === fieldIndex ? 'cyan' : undefined}>
-          {index === fieldIndex ? '>' : ' '}{' '}
-          {field}:{' '}
-          {field === 'enabled'
-            ? fields.enabled
-              ? 'true'
-              : 'false'
-            : fields[field] || '_'}
+          {index === fieldIndex ? '>' : ' '} {field}:{' '}
+          {field === 'enabled' ? (fields.enabled ? 'true' : 'false') : fields[field] || '_'}
         </Text>
       ))}
-      <Text color="gray">
-        Up/Down move, Space toggles enabled, +/- cycles workflow, Enter save
-      </Text>
+      <Text color="gray">Up/Down move, Space toggles enabled, +/- cycles workflow, Enter save</Text>
       {message != null ? <Text color="green">{message}</Text> : null}
       {error != null ? <Text color="red">{error}</Text> : null}
     </Box>

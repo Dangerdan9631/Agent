@@ -15,7 +15,7 @@ for (const wrapperName of ['spec-n-roll.cmd', 'spec-n-roll-mcp.cmd']) {
   copyFileSync(path.join(sourceDir, wrapperName), path.join(targetDir, wrapperName));
 }
 
-cpSync(path.join(rootDir, 'src', 'templates'), path.join(rootDir, 'dist', 'templates'), {
+cpSync(path.join(rootDir, 'src', 'sdk', 'templates'), path.join(rootDir, 'dist', 'templates'), {
   recursive: true,
 });
 

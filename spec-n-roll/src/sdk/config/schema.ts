@@ -331,3 +331,550 @@ export type ProjectMetadata = z.infer<typeof projectMetadataSchema>;
  * Re-exported set list types for CLI and MCP adapters.
  */
 export type { SetList, SetListsFile } from '../setlists/schema.js';
+
+/**
+ * Zod schema for supported repository workflow type identifiers.
+ */
+export const repositoryWorkflowTypeIdSchema = z.enum(['repository-onboarding', 'repository-drift']);
+
+/**
+ * Stable identifier for a repository onboarding or drift workflow type.
+ */
+export type RepositoryWorkflowTypeId = z.infer<typeof repositoryWorkflowTypeIdSchema>;
+
+/**
+ * Zod schema for living-spec coverage requirements before a repository workflow can run.
+ */
+export const livingSpecCoverageRequirementSchema = z.enum(['absent-or-partial', 'present']);
+
+/**
+ * Living-spec coverage requirement for a repository workflow type.
+ */
+export type LivingSpecCoverageRequirement = z.infer<typeof livingSpecCoverageRequirementSchema>;
+
+/**
+ * Zod schema for specify-stage injection instructions bundled with a workflow type.
+ */
+export const repositorySpecifyInjectionTemplateSchema = z
+  .object({
+    /**
+     * Constraints the specify stage must follow for this workflow type.
+     */
+    instructions: z.array(z.string().min(1)).min(1),
+    /**
+     * Additional repository sections expected in specify-stage output.
+     */
+    sections: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+/**
+ * Specify-stage injection template attached to a repository workflow type.
+ */
+export type RepositorySpecifyInjectionTemplate = z.infer<
+  typeof repositorySpecifyInjectionTemplateSchema
+>;
+
+/**
+ * Zod schema for repository workflow type metadata exposed to CLI, MCP, and Ink.
+ */
+export const repositoryWorkflowTypeSchema = z
+  .object({
+    /**
+     * Stable kebab-case workflow type id.
+     */
+    id: repositoryWorkflowTypeIdSchema,
+    /**
+     * Maintainer-facing workflow label.
+     */
+    name: z.string().min(1),
+    /**
+     * Concise purpose shown in workflow listings and generated skills.
+     */
+    description: z.string().min(1),
+    /**
+     * Whether living specs must be absent, partial, or present for the workflow type.
+     */
+    requiresLivingSpecs: livingSpecCoverageRequirementSchema,
+    /**
+     * Instructions and sections injected into the normal specify stage.
+     */
+    specifyInjectionTemplate: repositorySpecifyInjectionTemplateSchema,
+  })
+  .strict();
+
+/**
+ * Metadata describing a repository workflow type.
+ */
+export type RepositoryWorkflowType = z.infer<typeof repositoryWorkflowTypeSchema>;
+
+/**
+ * Zod schema for bounded discovery limits on a repository workflow pass.
+ */
+export const discoveryPlanBoundsSchema = z
+  .object({
+    /**
+     * Maximum project-relative directories to inspect in one pass.
+     */
+    maxDirectories: z.number().int().positive().optional(),
+    /**
+     * Maximum project-relative files to inspect in one pass.
+     */
+    maxFiles: z.number().int().positive().optional(),
+    /**
+     * Maximum distinct product areas to include in one pass.
+     */
+    maxProductAreas: z.number().int().positive().optional(),
+  })
+  .strict();
+
+/**
+ * Bounded limits applied to a repository discovery pass.
+ */
+export type DiscoveryPlanBounds = z.infer<typeof discoveryPlanBoundsSchema>;
+
+/**
+ * Zod schema for repository workflow discovery plan mode.
+ */
+export const discoveryPlanModeSchema = repositoryWorkflowTypeIdSchema;
+
+/**
+ * Repository workflow mode used when recommending or approving discovery scope.
+ */
+export type DiscoveryPlanMode = z.infer<typeof discoveryPlanModeSchema>;
+
+/**
+ * Zod schema for maintainer-approved repository discovery scope.
+ */
+export const discoveryPlanSchema = z
+  .object({
+    /**
+     * Workflow mode that produced or consumes this plan.
+     */
+    mode: discoveryPlanModeSchema,
+    /**
+     * Project-relative directories and files included in discovery scope.
+     */
+    includedPaths: z.array(z.string().min(1)),
+    /**
+     * Project-relative directories and files explicitly deferred from this pass.
+     */
+    omittedPaths: z.array(z.string()),
+    /**
+     * Existing or proposed living-spec targets included in scope.
+     */
+    livingSpecTargets: z.array(z.string()),
+    /**
+     * How tests are discovered and related to behaviors during this pass.
+     */
+    testMappingStrategy: z.string().min(1),
+    /**
+     * Project-relative documentation sources considered as evidence.
+     */
+    documentationSources: z.array(z.string()),
+    /**
+     * Maintainer decision points recorded before specify output finalizes.
+     */
+    reviewCheckpoints: z.array(z.string().min(1)).min(1),
+    /**
+     * Bounded limits for large or ambiguous repositories.
+     */
+    bounds: discoveryPlanBoundsSchema,
+  })
+  .strict();
+
+/**
+ * Recommended and maintainer-approved analysis scope for a repository workflow run.
+ */
+export type DiscoveryPlan = z.infer<typeof discoveryPlanSchema>;
+
+/**
+ * Zod schema for optional repository workflow scope input from maintainers.
+ */
+export const repositoryWorkflowScopeSchema = z
+  .object({
+    /**
+     * Project-relative paths to include in discovery scope.
+     */
+    includedPaths: z.array(z.string().min(1)).optional(),
+    /**
+     * Project-relative paths to defer from this pass.
+     */
+    omittedPaths: z.array(z.string()).optional(),
+    /**
+     * Living-spec files or scenario groups to include in scope.
+     */
+    livingSpecTargets: z.array(z.string().min(1)).optional(),
+    /**
+     * Named product areas to prioritize during discovery.
+     */
+    productAreas: z.array(z.string().min(1)).optional(),
+    /**
+     * Maintainer-provided command hints for behavior discovery.
+     */
+    commandHints: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
+
+/**
+ * Optional maintainer-provided scope for starting a repository workflow.
+ */
+export type RepositoryWorkflowScope = z.infer<typeof repositoryWorkflowScopeSchema>;
+
+/**
+ * Zod schema for repository evidence source categories.
+ */
+export const repositoryEvidenceSourceTypeSchema = z.enum([
+  'code',
+  'test',
+  'documentation',
+  'living-spec',
+  'configuration',
+]);
+
+/**
+ * Source category for a repository evidence record.
+ */
+export type RepositoryEvidenceSourceType = z.infer<typeof repositoryEvidenceSourceTypeSchema>;
+
+/**
+ * Zod schema for repository evidence classification kinds.
+ */
+export const repositoryEvidenceKindSchema = z.enum([
+  'confirmed-behavior',
+  'inferred-intent',
+  'assumption',
+  'conflict',
+  'limitation',
+]);
+
+/**
+ * Classification of how strongly a source supports a behavior summary.
+ */
+export type RepositoryEvidenceKind = z.infer<typeof repositoryEvidenceKindSchema>;
+
+/**
+ * Zod schema for informational evidence confidence levels.
+ */
+export const repositoryEvidenceConfidenceSchema = z.enum(['high', 'medium', 'low']);
+
+/**
+ * Maintainer-facing confidence level for an evidence record.
+ */
+export type RepositoryEvidenceConfidence = z.infer<typeof repositoryEvidenceConfidenceSchema>;
+
+/**
+ * Zod schema for one repository evidence observation.
+ */
+export const repositoryEvidenceSchema = z
+  .object({
+    /**
+     * Stable identifier within a repository workflow run.
+     */
+    id: z.string().min(1),
+    /**
+     * Category of the evidence source.
+     */
+    sourceType: repositoryEvidenceSourceTypeSchema,
+    /**
+     * Project-relative path plus optional symbol, line, scenario, or command reference.
+     */
+    sourceRef: z.string().min(1),
+    /**
+     * User-observable behavior supported or challenged by the source.
+     */
+    behaviorSummary: z.string().min(1),
+    /**
+     * How the source relates to confirmed versus inferred behavior.
+     */
+    evidenceKind: repositoryEvidenceKindSchema,
+    /**
+     * Informational confidence level for the evidence record.
+     */
+    confidence: repositoryEvidenceConfidenceSchema,
+    /**
+     * Optional short rationale or limitation for the record.
+     */
+    notes: z.string().optional(),
+  })
+  .strict();
+
+/**
+ * Observation from code, tests, documentation, configuration, or living specs.
+ */
+export type RepositoryEvidence = z.infer<typeof repositoryEvidenceSchema>;
+
+/**
+ * Zod schema for test coverage relationship types.
+ */
+export const testCoverageTypeSchema = z.enum(['direct', 'indirect', 'missing', 'unknown']);
+
+/**
+ * Coverage relationship between discovered behavior and existing tests.
+ */
+export type TestCoverageType = z.infer<typeof testCoverageTypeSchema>;
+
+/**
+ * Zod schema for behavior-to-test coverage mapping within a repository workflow run.
+ */
+export const testCoverageMappingSchema = z
+  .object({
+    /**
+     * Stable identifier for the mapped behavior within the run.
+     */
+    behaviorId: z.string().min(1),
+    /**
+     * Project-relative test references that support the behavior, when known.
+     */
+    testRefs: z.array(z.string()),
+    /**
+     * Coverage relationship between behavior and discovered tests.
+     */
+    coverageType: testCoverageTypeSchema,
+    /**
+     * Recommended validation target when coverage is missing or unknown.
+     */
+    recommendedValidationTarget: z.string().optional(),
+    /**
+     * Optional rationale for direct, indirect, or missing classification.
+     */
+    notes: z.string().optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (
+      (value.coverageType === 'missing' || value.coverageType === 'unknown') &&
+      (value.recommendedValidationTarget == null || value.recommendedValidationTarget.length < 1)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'recommendedValidationTarget is required when coverageType is missing or unknown',
+        path: ['recommendedValidationTarget'],
+      });
+    }
+  });
+
+/**
+ * Mapping between discovered behavior and supporting or missing tests.
+ */
+export type TestCoverageMapping = z.infer<typeof testCoverageMappingSchema>;
+
+/**
+ * Zod schema for drift finding categories.
+ */
+export const driftCategorySchema = z.enum(['behavior', 'documentation', 'test', 'organization']);
+
+/**
+ * Drift category for a living-spec mismatch against current repository evidence.
+ */
+export type DriftCategory = z.infer<typeof driftCategorySchema>;
+
+/**
+ * Zod schema for maintainer authority choices when evidence sources conflict.
+ */
+export const driftAuthorityChoiceSchema = z.enum(['code', 'test', 'documentation', 'living-spec']);
+
+/**
+ * Maintainer authority choice recorded during specify for a drift finding.
+ */
+export type DriftAuthorityChoice = z.infer<typeof driftAuthorityChoiceSchema>;
+
+/**
+ * Zod schema for proposed downstream resolution intents for drift findings.
+ */
+export const driftRecommendedChangeSchema = z.enum([
+  'update',
+  'delete',
+  'merge',
+  'refresh-wording',
+  'add-test',
+  'none',
+]);
+
+/**
+ * Resolution intent for a drift finding without mutating living specs during specify.
+ */
+export type DriftRecommendedChange = z.infer<typeof driftRecommendedChangeSchema>;
+
+/**
+ * Zod schema for a categorized living-spec drift finding.
+ */
+export const driftFindingSchema = z
+  .object({
+    /**
+     * Stable identifier for the finding within a repository workflow run.
+     */
+    id: z.string().min(1),
+    /**
+     * Drift category describing the kind of mismatch observed.
+     */
+    category: driftCategorySchema,
+    /**
+     * Project-relative living-spec reference for the affected scenario or feature.
+     */
+    livingSpecRef: z.string().min(1),
+    /**
+     * Repository evidence record ids supporting the finding.
+     */
+    evidenceRefs: z.array(z.string().min(1)).min(1),
+    /**
+     * Short summary of the observed mismatch.
+     */
+    summary: z.string().min(1),
+    /**
+     * Optional authority choice when sources conflict and no default applies.
+     */
+    authorityChoice: driftAuthorityChoiceSchema.optional(),
+    /**
+     * Proposed downstream change intent for plan and implementation work.
+     */
+    recommendedChange: driftRecommendedChangeSchema,
+  })
+  .strict();
+
+/**
+ * Categorized mismatch between existing living specs and current repository evidence.
+ */
+export type DriftFinding = z.infer<typeof driftFindingSchema>;
+
+/**
+ * Zod schema for proposed living-spec change types in specify-stage injection.
+ */
+export const proposedLivingSpecChangeTypeSchema = z.enum(['add', 'update', 'delete', 'merge']);
+
+/**
+ * Proposed living-spec change type for specify-stage injection.
+ */
+export type ProposedLivingSpecChangeType = z.infer<typeof proposedLivingSpecChangeTypeSchema>;
+
+/**
+ * Zod schema for one proposed living-spec change recommendation.
+ */
+export const proposedLivingSpecChangeSchema = z
+  .object({
+    /**
+     * Kind of living-spec change proposed for downstream implementation.
+     */
+    changeType: proposedLivingSpecChangeTypeSchema,
+    /**
+     * Project-relative living-spec reference for the proposed change target.
+     */
+    targetRef: z.string().min(1),
+    /**
+     * Short rationale for the proposed change.
+     */
+    reason: z.string().min(1),
+  })
+  .strict();
+
+/**
+ * Proposed living-spec change recommendation for specify-stage injection.
+ */
+export type ProposedLivingSpecChange = z.infer<typeof proposedLivingSpecChangeSchema>;
+
+/**
+ * Zod schema for a test gap recommendation in specify-stage injection.
+ */
+export const testGapRecommendationSchema = z
+  .object({
+    /**
+     * Behavior identifier tied to the uncovered validation target.
+     */
+    behaviorId: z.string().min(1),
+    /**
+     * User-observable outcome that downstream tests should protect.
+     */
+    recommendedValidationTarget: z.string().min(1),
+  })
+  .strict();
+
+/**
+ * Test gap recommendation for specify-stage injection.
+ */
+export type TestGapRecommendation = z.infer<typeof testGapRecommendationSchema>;
+
+/**
+ * Zod schema for an ambiguity or authority question surfaced during specify.
+ */
+export const repositoryInjectionQuestionSchema = z
+  .object({
+    /**
+     * Stable question identifier within the injection payload.
+     */
+    id: z.string().min(1),
+    /**
+     * Maintainer-facing prompt for clarify or specify follow-up.
+     */
+    prompt: z.string().min(1),
+  })
+  .strict();
+
+/**
+ * Ambiguity or authority question included in repository specify-stage injection.
+ */
+export type RepositoryInjectionQuestion = z.infer<typeof repositoryInjectionQuestionSchema>;
+
+/**
+ * Zod schema for repository workflow specify-stage injection payload.
+ */
+export const specifyStageInjectionSchema = z
+  .object({
+    /**
+     * Repository workflow type that produced the injection.
+     */
+    workflowTypeId: repositoryWorkflowTypeIdSchema,
+    /**
+     * Constraints the specify stage must follow.
+     */
+    instructions: z.array(z.string().min(1)).min(1),
+    /**
+     * Condensed repository evidence for the spec.
+     */
+    evidenceSummary: z.array(repositoryEvidenceSchema),
+    /**
+     * Add, update, delete, or merge recommendations for living specs.
+     */
+    proposedLivingSpecChanges: z.array(proposedLivingSpecChangeSchema),
+    /**
+     * Validation targets for uncovered behavior.
+     */
+    testGapRecommendations: z.array(testGapRecommendationSchema),
+    /**
+     * Direct, indirect, missing, or unknown mappings for discovered behavior.
+     */
+    testCoverageMappings: z.array(testCoverageMappingSchema),
+    /**
+     * Ambiguities or authority choices to surface during specify or clarify.
+     */
+    questions: z.array(repositoryInjectionQuestionSchema),
+    /**
+     * Assumptions separate from confirmed facts.
+     */
+    assumptions: z.array(z.string()),
+    /**
+     * Categorized drift findings for repository drift specify output.
+     */
+    driftFindings: z.array(driftFindingSchema).default([]),
+  })
+  .strict();
+
+/**
+ * Workflow-provided context that augments the normal specify stage.
+ */
+export type SpecifyStageInjection = z.infer<typeof specifyStageInjectionSchema>;
+
+/**
+ * Zod schema for repository workflow run lifecycle status.
+ */
+export const repositoryWorkflowRunStatusSchema = z.enum([
+  'planned',
+  'discovering',
+  'specifying',
+  'complete',
+  'blocked',
+]);
+
+/**
+ * Lifecycle status for a repository workflow run.
+ */
+export type RepositoryWorkflowRunStatus = z.infer<typeof repositoryWorkflowRunStatusSchema>;

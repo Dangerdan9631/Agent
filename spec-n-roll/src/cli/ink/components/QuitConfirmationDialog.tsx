@@ -50,9 +50,7 @@ export function QuitConfirmationDialog(props: QuitConfirmationDialogProps): Reac
         <Text bold color="yellow">
           {centerDialogLine(props.message)}
         </Text>
-        <Text color="gray">
-          {centerDialogLine(QUIT_CONFIRMATION_CANCEL_MESSAGE)}
-        </Text>
+        <Text color="gray">{centerDialogLine(QUIT_CONFIRMATION_CANCEL_MESSAGE)}</Text>
       </Box>
     </Box>
   );

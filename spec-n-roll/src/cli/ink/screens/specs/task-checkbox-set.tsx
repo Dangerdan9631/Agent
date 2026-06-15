@@ -4,8 +4,8 @@ import { Box, Text, useInput } from 'ink';
 import {
   setTaskCheckboxes,
   type TaskCheckboxUpdate,
-} from '../../../../core/task-checkboxes.js';
-import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
+} from '../../../../sdk/core/task-checkboxes.js';
+import type { TaskSpecIdentity } from '../../../../sdk/workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 

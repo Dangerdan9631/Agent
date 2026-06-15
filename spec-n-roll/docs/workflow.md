@@ -26,7 +26,7 @@ Task specs use a three-state lifecycle persisted in `spec.md` YAML frontmatter (
 | Status       | Meaning                                                                               |
 | ------------ | ------------------------------------------------------------------------------------- |
 | **Active**   | Open for workflow commands, clarify, and (when selected) implement                    |
-| **Complete** | Final workflow step finished; still eligible for on-demand commands until locked     |
+| **Complete** | Final workflow step finished; still eligible for on-demand commands until locked      |
 | **Locked**   | Immutable — core library and MCP/CLI reject machine-readable and guarded prose writes |
 
 **Transitions** (implementation: `src/core/task-lifecycle.ts`, orchestration: `src/workflow/engine.ts`):
@@ -46,14 +46,14 @@ Triage is **not** a separate workflow step. It runs at the start of `/spec-n-spe
 
 Set lists in `.spec-n-roll/config/set-lists.json` replace hard-coded complexity tiers. Each entry has:
 
-| Field           | Purpose                                                                 |
-| --------------- | ----------------------------------------------------------------------- |
-| `id`            | Stable kebab-case identifier                                            |
-| `name`          | Human-readable label                                                    |
-| `description`   | Natural-language text agents use to decide when the set list applies    |
-| `workflowId`    | References a workflow in `workflow.config.json`                         |
-| `priority`      | Lower number wins when multiple enabled set lists remain eligible       |
-| `enabled`       | Disabled entries are excluded from triage                               |
+| Field         | Purpose                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| `id`          | Stable kebab-case identifier                                         |
+| `name`        | Human-readable label                                                 |
+| `description` | Natural-language text agents use to decide when the set list applies |
+| `workflowId`  | References a workflow in `workflow.config.json`                      |
+| `priority`    | Lower number wins when multiple enabled set lists remain eligible    |
+| `enabled`     | Disabled entries are excluded from triage                            |
 
 Fresh projects receive `papercut`, `quick`, and `full` as **ordinary data rows** at init. Runtime code does not branch on those names.
 
@@ -99,10 +99,10 @@ CLI `runRoll` built-in step execution may still auto-dispatch extension handlers
 
 Spec Manifestos are project-scoped rules that guide agent behavior during step execution. They complement the Spec Kit **constitution** (`.specify/memory/constitution.md`), which remains project governance.
 
-| Scope   | Path                                              | Loaded when                          |
-| ------- | ------------------------------------------------- | ------------------------------------ |
-| Global  | `.spec-n-roll/config/manifesto/global.md`         | Every `step_init`                    |
-| Step    | `.spec-n-roll/config/manifesto/steps/{stepId}.md` | `step_init` when `stepId` matches    |
+| Scope  | Path                                              | Loaded when                       |
+| ------ | ------------------------------------------------- | --------------------------------- |
+| Global | `.spec-n-roll/config/manifesto/global.md`         | Every `step_init`                 |
+| Step   | `.spec-n-roll/config/manifesto/steps/{stepId}.md` | `step_init` when `stepId` matches |
 
 Manifesto bodies are returned with `scope` labels in init results. When global and step rules conflict, both are returned; agents treat conflicts as blocking unless the manifesto text defines precedence.
 
@@ -160,14 +160,14 @@ Agent skill: `.agents/skills/spec-n-clarify/SKILL.md` (generated at `init`).
 
 ## MCP / CLI mutation boundaries
 
-| Artifact                            | MCP / CLI required | Agent direct edit   |
-| ----------------------------------- | ------------------ | ------------------- |
-| `workflow-state.json`               | Yes                | No                  |
-| Step completion (`lastCompletedStepId`) | Via `step_finalize` when lifecycle active | No |
-| `spec.md` frontmatter (`status`)    | Yes                | No                  |
-| `spec.md` prose (after instantiate) | No                 | Yes                 |
-| `project-metadata.json`             | Yes                | No                  |
-| `living-specs/*.feature`            | N/A                | Yes (agent-managed) |
+| Artifact                                | MCP / CLI required                        | Agent direct edit   |
+| --------------------------------------- | ----------------------------------------- | ------------------- |
+| `workflow-state.json`                   | Yes                                       | No                  |
+| Step completion (`lastCompletedStepId`) | Via `step_finalize` when lifecycle active | No                  |
+| `spec.md` frontmatter (`status`)        | Yes                                       | No                  |
+| `spec.md` prose (after instantiate)     | No                                        | Yes                 |
+| `project-metadata.json`                 | Yes                                       | No                  |
+| `living-specs/*.feature`                | N/A                                       | Yes (agent-managed) |
 
 Step output templates (`spec.md`, `plan.md`, `tasks.md`) must be instantiated via MCP/CLI before prose edits.
 
@@ -297,12 +297,12 @@ Implement performs **living spec updates first** (FR-009), then drives the **TDD
 
 1. Call `step_init` for `implement` before work
 2. Route to `living-specs/{domain}.feature` from the feature description (create file when absent)
-2. Remove deprecated scenarios when `deprecatedScenarioNames` are supplied
-3. Add or update scenarios with additive `@spec-n-roll-{taskSpecId}` tags
-4. Generate stub step definitions for unmapped Gherkin steps in `tests/step-definitions/living-spec-stubs.mjs` (`src/living-specs/step-stubs.ts`; each stub marked with `// STUB: requires implementation` and throws until implemented)
-5. Run Cucumber against `living-specs/**/*.feature` filtered to `@spec-n-roll-{taskSpecId}` (`src/living-specs/cucumber-runner.ts`)
-6. **Red gate** — reject entry when all tagged scenarios pass before `productionCodeWritten: true` (`TddRedGateError`)
-7. Set `workflow-state.json` `currentStepId: implement` via core library
+3. Remove deprecated scenarios when `deprecatedScenarioNames` are supplied
+4. Add or update scenarios with additive `@spec-n-roll-{taskSpecId}` tags
+5. Generate stub step definitions for unmapped Gherkin steps in `tests/step-definitions/living-spec-stubs.mjs` (`src/living-specs/step-stubs.ts`; each stub marked with `// STUB: requires implementation` and throws until implemented)
+6. Run Cucumber against `living-specs/**/*.feature` filtered to `@spec-n-roll-{taskSpecId}` (`src/living-specs/cucumber-runner.ts`)
+7. **Red gate** — reject entry when all tagged scenarios pass before `productionCodeWritten: true` (`TddRedGateError`)
+8. Set `workflow-state.json` `currentStepId: implement` via core library
 
 Entry must leave at least one failing scenario (typically via throwing stubs) before production code.
 
@@ -310,10 +310,10 @@ Entry must leave at least one failing scenario (typically via throwing stubs) be
 
 Re-invoke `runImplement` with explicit `phase` after the agent writes code:
 
-| Phase      | Purpose                                 | Success criteria                                                                                                     |
-| ---------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `green`    | Verify implementation                   | All tagged scenarios pass                                                                                            |
-| `refactor` | Verify behavior preserved after cleanup | All tagged scenarios still pass                                                                                      |
+| Phase      | Purpose                                 | Success criteria                                                                                                         |
+| ---------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `green`    | Verify implementation                   | All tagged scenarios pass                                                                                                |
+| `refactor` | Verify behavior preserved after cleanup | All tagged scenarios still pass                                                                                          |
 | `complete` | Finish implement step                   | All tagged scenarios pass; call `step_finalize` with `validationPassed: true` (records `lastCompletedStepId: implement`) |
 
 Each invocation returns `testRun` with per-scenario pass/fail tracking and a `progressMessage` for developer reporting.
@@ -340,7 +340,7 @@ Managed Spec-n-Roll skills include frontmatter metadata (`author: spec-n-roll`, 
 
 ### TODO: Lifecycle nuances
 
-| Area                        | Notes                                                                                                                                                |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Clarify on Locked specs     | Rejected today; future policy for sealed-spec amendments TBD                                                                                         |
-| Implement completion signal | Lifecycle **Complete** is set when `/spec-n-roll` detects no remaining workflow steps (typically after implement finalize records completion)       |
+| Area                        | Notes                                                                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clarify on Locked specs     | Rejected today; future policy for sealed-spec amendments TBD                                                                                  |
+| Implement completion signal | Lifecycle **Complete** is set when `/spec-n-roll` detects no remaining workflow steps (typically after implement finalize records completion) |

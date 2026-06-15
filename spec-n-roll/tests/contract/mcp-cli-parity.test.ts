@@ -4,11 +4,11 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { readSpecFrontmatter } from '../../src/core/frontmatter.js';
-import { readProjectMetadata, writeProjectMetadata } from '../../src/core/project-metadata.js';
-import { setTaskCheckboxes } from '../../src/core/task-checkboxes.js';
-import { instantiateStepOutput } from '../../src/core/templates.js';
-import { readWorkflowState, writeWorkflowState } from '../../src/core/workflow-state.js';
+import { readSpecFrontmatter } from '../../src/sdk/core/frontmatter.js';
+import { readProjectMetadata, writeProjectMetadata } from '../../src/sdk/core/project-metadata.js';
+import { setTaskCheckboxes } from '../../src/sdk/core/task-checkboxes.js';
+import { instantiateStepOutput } from '../../src/sdk/core/templates.js';
+import { readWorkflowState, writeWorkflowState } from '../../src/sdk/core/workflow-state.js';
 
 const tempDirs: string[] = [];
 const cliPath = path.resolve('dist/cli/index.js');
@@ -223,10 +223,10 @@ describe('MCP/CLI parity', () => {
   });
 
   it('step init via CLI matches core runStepInit', async () => {
-    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
-    const { createDefaultSetListsFile } = await import('../../src/setlists/index.js');
-    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
-    const { runStepInit } = await import('../../src/core/step-lifecycle.js');
+    const { createDefaultWorkflowConfig } = await import('../../src/sdk/init.js');
+    const { createDefaultSetListsFile } = await import('../../src/sdk/setlists/index.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/sdk/workflow/artifacts.js');
+    const { runStepInit } = await import('../../src/sdk/core/step-lifecycle.js');
 
     async function seedLifecycleProject(suffix: string): Promise<string> {
       const projectRoot = createTempProject(`step-init-${suffix}`);
@@ -307,10 +307,10 @@ describe('MCP/CLI parity', () => {
     mkdirSync(path.join(projectRoot, 'specs', '007-step-manifesto-setlists'), { recursive: true });
     mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
 
-    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
-    const { createDefaultSetListsFile } = await import('../../src/setlists/index.js');
-    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
-    const { runStepInit } = await import('../../src/core/step-lifecycle.js');
+    const { createDefaultWorkflowConfig } = await import('../../src/sdk/init.js');
+    const { createDefaultSetListsFile } = await import('../../src/sdk/setlists/index.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/sdk/workflow/artifacts.js');
+    const { runStepInit } = await import('../../src/sdk/core/step-lifecycle.js');
 
     const workflowConfig = createDefaultWorkflowConfig({
       toolkitVersion: '0.1.2',
@@ -362,9 +362,9 @@ describe('MCP/CLI parity', () => {
 
   it('set-list list via CLI matches core read', async () => {
     const projectRoot = createTempProject('set-list-list');
-    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
-    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
-    const { loadSetListReadResult } = await import('../../src/cli/commands/set-list.js');
+    const { createDefaultWorkflowConfig } = await import('../../src/sdk/init.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/sdk/workflow/artifacts.js');
+    const { loadSetListReadResult } = await import('../../src/sdk/set-list.js');
 
     mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
     writeFileSync(
@@ -379,7 +379,7 @@ describe('MCP/CLI parity', () => {
     );
     writeFileSync(
       path.join(projectRoot, '.spec-n-roll/config/set-lists.json'),
-      JSON.stringify((await import('../../src/setlists/index.js')).createDefaultSetListsFile()),
+      JSON.stringify((await import('../../src/sdk/setlists/index.js')).createDefaultSetListsFile()),
       'utf8',
     );
 
@@ -388,11 +388,141 @@ describe('MCP/CLI parity', () => {
     expect(fromCli).toEqual(fromCore);
   });
 
+  it('repository workflow types list via CLI matches MCP handler', async () => {
+    const { executeRepositoryWorkflowTypesList } =
+      await import('../../src/mcp/repository-workflow-tool-handlers.js');
+
+    const fromCli = runCliJson(process.cwd(), ['repository-workflow', 'types', 'list']);
+    const fromMcp = executeRepositoryWorkflowTypesList();
+
+    expect(fromCli).toEqual(fromMcp);
+    expect(
+      (fromCli as { workflowTypes: Array<{ id: string }> }).workflowTypes.map((entry) => entry.id),
+    ).toEqual(['repository-onboarding', 'repository-drift']);
+  });
+
+  it('repository workflow plan via CLI matches MCP handler', async () => {
+    const { copyRepositoryWorkflowFixture } = await import('../helpers/repository-workflows.js');
+    const { executeRepositoryWorkflowPlan } =
+      await import('../../src/mcp/repository-workflow-tool-handlers.js');
+
+    const projectRoot = await copyRepositoryWorkflowFixture('large-repo', 'parity-plan');
+    tempDirs.push(projectRoot);
+
+    const fromCli = runCliJson(projectRoot, [
+      'repository-workflow',
+      'plan',
+      '--workflow-type-id',
+      'repository-onboarding',
+      '--max-product-areas',
+      '5',
+    ]);
+
+    const fromMcp = await executeRepositoryWorkflowPlan(projectRoot, {
+      workflowTypeId: 'repository-onboarding',
+      bounds: {
+        maxProductAreas: 5,
+      },
+    });
+
+    expect(fromCli).toEqual(fromMcp);
+    expect(
+      (fromCli as { recommendedPlan: { includedPaths: string[]; omittedPaths: string[] } })
+        .recommendedPlan,
+    ).toMatchObject({
+      bounds: { maxProductAreas: 5 },
+      includedPaths: expect.arrayContaining(['src/areas/area-01']),
+      omittedPaths: expect.arrayContaining(['src/areas/area-24']),
+    });
+    expect(
+      (fromCli as { nextSuggestedScopedRun?: { includedPaths: string[] } }).nextSuggestedScopedRun
+        ?.includedPaths.length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('repository_workflow_report_read via CLI matches core read', async () => {
+    const projectRoot = createTempProject('repository-report-read');
+    const specDir = path.join(projectRoot, 'specs', '001-report-parity');
+    mkdirSync(specDir, { recursive: true });
+
+    const specifyOutputRef = 'specs/001-report-parity/spec.md';
+    const reportPath = 'specs/001-report-parity/repository-workflow-report.md';
+    const reportMarkdown = [
+      '# Repository Workflow Report',
+      '',
+      '## Scope',
+      '',
+      '- Workflow type: Repository Onboarding',
+      '- Included paths: src/greeting',
+      '',
+      '## Specify Output',
+      '',
+      `- [spec.md](${specifyOutputRef})`,
+      '',
+      '## Evidence Summary',
+      '',
+      '### Confirmed Facts',
+      '',
+      '- ev-1: Returns greeting (src/greeting/greet.ts:greet)',
+      '',
+      '## Drift Findings',
+      '',
+      'No drift findings for onboarding runs.',
+      '',
+      '## Test Gaps',
+      '',
+      'No explicit test gaps identified.',
+      '',
+      '## Assumptions',
+      '',
+      '- Greeting is user-facing.',
+      '',
+      '## Limitations',
+      '',
+      'Living-spec and test files are not modified during specify.',
+      '',
+      '## Recommended Next Steps',
+      '',
+      '- clarify',
+      '',
+    ].join('\n');
+    writeFileSync(path.join(specDir, 'repository-workflow-report.md'), reportMarkdown, 'utf8');
+
+    const { loadRepositoryWorkflowReportReadResult } =
+      await import('../../src/sdk/repository-workflow.js');
+    const { readRepositoryWorkflowReport } = await import('../../src/sdk/repository/report.js');
+
+    const fromCli = runCliJson(projectRoot, [
+      'repository-workflow',
+      'report',
+      'read',
+      '--task-spec-id',
+      '001',
+    ]);
+    const fromCore = await readRepositoryWorkflowReport(projectRoot, '001', 'report-parity');
+    const fromLoader = await loadRepositoryWorkflowReportReadResult(
+      projectRoot,
+      '001',
+      'report-parity',
+    );
+
+    expect(fromCli).toEqual(fromCore);
+    expect(fromLoader).toEqual(fromCore);
+    expect(fromCore).toMatchObject({
+      taskSpecId: '001',
+      slug: 'report-parity',
+      reportPath,
+      specifyOutputRef,
+    });
+    expect(fromCore.markdown).toContain('## Scope');
+    expect(fromCore.markdown).toContain('[spec.md](specs/001-report-parity/spec.md)');
+  });
+
   it('set-list triage via CLI matches core triage', async () => {
     const projectRoot = createTempProject('set-list-triage');
-    const { createDefaultWorkflowConfig } = await import('../../src/cli/commands/init.js');
-    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/workflow/artifacts.js');
-    const { runSetListTriage } = await import('../../src/setlists/index.js');
+    const { createDefaultWorkflowConfig } = await import('../../src/sdk/init.js');
+    const { WORKFLOW_CONFIG_RELATIVE_PATH } = await import('../../src/sdk/workflow/artifacts.js');
+    const { runSetListTriage } = await import('../../src/sdk/setlists/index.js');
 
     mkdirSync(path.join(projectRoot, '.spec-n-roll', 'config'), { recursive: true });
     writeFileSync(
@@ -407,7 +537,7 @@ describe('MCP/CLI parity', () => {
     );
     writeFileSync(
       path.join(projectRoot, '.spec-n-roll/config/set-lists.json'),
-      JSON.stringify((await import('../../src/setlists/index.js')).createDefaultSetListsFile()),
+      JSON.stringify((await import('../../src/sdk/setlists/index.js')).createDefaultSetListsFile()),
       'utf8',
     );
 

@@ -1,16 +1,20 @@
 import { Command } from 'commander';
+import { injectable, injectAll } from 'tsyringe';
 
-import { registerProjectMetadataReadCommand } from './project-metadata-read.js';
-import { registerProjectMetadataWriteCommand } from './project-metadata-write.js';
+import { PROJECT_METADATA_SUBCOMMAND } from '../../di/tokens.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
  * Registers the `project metadata` command group and its subcommands.
- *
- * @param project - Commander `project` command to attach the group to.
  */
-export function registerProjectMetadataCommand(project: Command): void {
-  const metadata = project.command('metadata').description('project-metadata.json read/write');
+@injectable()
+export class ProjectMetadataCommand implements CliCommand {
+  constructor(@injectAll(PROJECT_METADATA_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
-  registerProjectMetadataReadCommand(metadata);
-  registerProjectMetadataWriteCommand(metadata);
+  register(command: Command): void {
+    const metadata = command.command('metadata').description('project-metadata.json read/write');
+    for (const subcommand of this.subcommands) {
+      subcommand.register(metadata);
+    }
+  }
 }

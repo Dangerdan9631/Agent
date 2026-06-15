@@ -36,7 +36,10 @@ export function StaticContentBlock(props: StaticContentBlockProps): React.ReactE
     <Box flexDirection="column">
       {props.fields.map((field) => (
         <Text key={field.label}>
-          <Text bold color="blue">{field.label}:</Text> {field.value}
+          <Text bold color="blue">
+            {field.label}:
+          </Text>{' '}
+          {field.value}
         </Text>
       ))}
     </Box>

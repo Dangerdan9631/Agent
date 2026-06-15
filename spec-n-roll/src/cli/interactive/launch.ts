@@ -2,8 +2,8 @@ import path from 'node:path';
 import React from 'react';
 import { render } from 'ink';
 
-import { readWorkflowConfig } from '../../workflow/artifacts.js';
-import { buildVersionReport } from '../commands/version.js';
+import { readWorkflowConfig } from '../../sdk/workflow/artifacts.js';
+import { buildCliVersionReport } from '../version-invocation.js';
 import { App } from '../ink/app/App.js';
 
 /**
@@ -44,7 +44,7 @@ export async function launchInteractiveApp(
 ): Promise<void> {
   const projectRoot = path.resolve(options.cwd ?? process.cwd());
   const isInitialized = await detectInitialized(projectRoot);
-  const versionReport = buildVersionReport({
+  const versionReport = buildCliVersionReport({
     cwd: projectRoot,
     executedBinaryPath: options.executedBinaryPath,
   });

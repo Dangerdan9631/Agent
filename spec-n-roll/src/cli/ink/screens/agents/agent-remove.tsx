@@ -4,7 +4,7 @@ import { Box, Text } from 'ink';
 import {
   runConfigAgentRemove,
   type ConfigAgentRemoveResult,
-} from '../../../commands/config-agent-remove.js';
+} from '../../../../sdk/config-agent.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';

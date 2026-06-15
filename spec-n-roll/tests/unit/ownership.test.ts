@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyPath } from '../../src/updates/ownership.js';
+import { classifyPath } from '../../src/sdk/updates/ownership.js';
 
 describe('classifyPath', () => {
   it('classifies toolkit-owned paths', () => {

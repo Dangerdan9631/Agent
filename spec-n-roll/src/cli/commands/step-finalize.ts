@@ -1,7 +1,9 @@
 import { Command } from 'commander';
+import { injectable } from 'tsyringe';
 
-import { runStepFinalize } from '../../core/step-lifecycle.js';
-import { resolveTaskSpecSlug } from '../../core/task-lifecycle.js';
+import { runStepFinalize } from '../../sdk/core/step-lifecycle.js';
+import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
+import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
 
 /**
@@ -22,38 +24,39 @@ function parseValidationPassed(value: string): boolean {
 }
 
 /**
- * Registers the `step finalize` subcommand on the step command group.
- *
- * @param step - Commander `step` command to attach the subcommand to.
+ * Registers and handles the `step finalize` CLI subcommand.
  */
-export function registerStepFinalizeCommand(step: Command): void {
-  step
-    .command('finalize')
-    .description('Finalize a workflow step after validation and return after-hook instructions')
-    .requiredOption('--task-spec-id <id>', 'Numeric task spec id')
-    .option('--slug <slug>', 'Task spec slug; resolved from id when omitted')
-    .requiredOption('--step-id <id>', 'Workflow step id being finalized')
-    .requiredOption('--validation-passed <value>', 'Whether step output validation succeeded')
-    .action(
-      async (options: {
-        taskSpecId: string;
-        slug?: string;
-        stepId: string;
-        validationPassed: string;
-      }) => {
-        try {
-          const slug =
-            options.slug ?? (await resolveTaskSpecSlug(process.cwd(), options.taskSpecId));
-          const result = await runStepFinalize(process.cwd(), {
-            taskSpecId: options.taskSpecId,
-            slug,
-            stepId: options.stepId,
-            validationPassed: parseValidationPassed(options.validationPassed),
-          });
-          console.log(JSON.stringify(result, null, 2));
-        } catch (error) {
-          exitOnCoreError(error);
-        }
-      },
-    );
+@injectable()
+export class StepFinalizeCommand implements CliCommand {
+  register(command: Command): void {
+    command
+      .command('finalize')
+      .description('Finalize a workflow step after validation and return after-hook instructions')
+      .requiredOption('--task-spec-id <id>', 'Numeric task spec id')
+      .option('--slug <slug>', 'Task spec slug; resolved from id when omitted')
+      .requiredOption('--step-id <id>', 'Workflow step id being finalized')
+      .requiredOption('--validation-passed <value>', 'Whether step output validation succeeded')
+      .action(
+        async (options: {
+          taskSpecId: string;
+          slug?: string;
+          stepId: string;
+          validationPassed: string;
+        }) => {
+          try {
+            const slug =
+              options.slug ?? (await resolveTaskSpecSlug(process.cwd(), options.taskSpecId));
+            const result = await runStepFinalize(process.cwd(), {
+              taskSpecId: options.taskSpecId,
+              slug,
+              stepId: options.stepId,
+              validationPassed: parseValidationPassed(options.validationPassed),
+            });
+            console.log(JSON.stringify(result, null, 2));
+          } catch (error) {
+            exitOnCoreError(error);
+          }
+        },
+      );
+  }
 }

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 
 import type { VersionInvocationTarget } from '../../commands/version.js';
-import type { TaskSpecIdentity } from '../../../workflow/engine.js';
+import type { TaskSpecIdentity } from '../../../sdk/workflow/engine.js';
 import {
   currentRoute,
   popRoute,

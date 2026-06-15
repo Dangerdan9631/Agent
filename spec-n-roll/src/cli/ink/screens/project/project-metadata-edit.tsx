@@ -5,9 +5,9 @@ import {
   readProjectMetadata,
   writeProjectMetadata,
   type ProjectMetadataWriteInput,
-} from '../../../../core/project-metadata.js';
-import { resolveTaskSpecSlug } from '../../../../core/task-lifecycle.js';
-import type { ProjectMetadata } from '../../../../config/schema.js';
+} from '../../../../sdk/core/project-metadata.js';
+import { resolveTaskSpecSlug } from '../../../../sdk/core/task-lifecycle.js';
+import type { ProjectMetadata } from '../../../../sdk/config/schema.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 

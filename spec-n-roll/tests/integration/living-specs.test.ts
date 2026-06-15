@@ -3,10 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { parseFeatureFile, readFeatureFile } from '../../src/living-specs/gherkin.js';
-import { formatSpecNRollTag } from '../../src/living-specs/tags.js';
-import { runImplement } from '../../src/specs/implement.js';
-import { writeWorkflowState } from '../../src/core/workflow-state.js';
+import { parseFeatureFile, readFeatureFile } from '../../src/sdk/living-specs/gherkin.js';
+import { formatSpecNRollTag } from '../../src/sdk/living-specs/tags.js';
+import { runImplement } from '../../src/sdk/specs/implement.js';
+import { writeWorkflowState } from '../../src/sdk/core/workflow-state.js';
 
 const tempDirs: string[] = [];
 

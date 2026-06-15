@@ -114,6 +114,10 @@ export interface CreateInterviewSessionInput {
    * Optional extra ambiguity topics for clarify sessions.
    */
   additionalTopics?: AmbiguityTopic[];
+  /**
+   * Optional repository workflow questions converted into interview topics.
+   */
+  injectedQuestions?: Array<{ id: string; prompt: string }>;
 }
 
 const SPECIFY_TOPICS: AmbiguityTopic[] = [
@@ -186,9 +190,11 @@ function buildTopics(sessionType: 'specify' | 'clarify', description: string): A
  * @returns Initialized interview session state.
  */
 export function createInterviewSession(input: CreateInterviewSessionInput): InterviewSession {
+  const injectedTopics = createAmbiguityTopicsFromInjectedQuestions(input.injectedQuestions ?? []);
   const catalog = [
     ...buildTopics(input.sessionType, input.description),
     ...(input.additionalTopics ?? []),
+    ...injectedTopics,
   ].sort((left, right) => left.rank - right.rank);
 
   const topics = Object.fromEntries(catalog.map((topic) => [topic.id, topic]));
@@ -276,4 +282,21 @@ export function recordInterviewAnswer(
  */
 export function isInterviewComplete(session: InterviewSession): boolean {
   return session.pendingAmbiguityIds.every((id) => session.resolvedQuestions[id] != null);
+}
+
+/**
+ * Converts repository workflow injection questions into ranked interview topics.
+ *
+ * @param questions - Repository workflow ambiguity or authority questions.
+ * @returns Ambiguity topics appended after standard specify topics.
+ */
+export function createAmbiguityTopicsFromInjectedQuestions(
+  questions: readonly { id: string; prompt: string }[],
+): AmbiguityTopic[] {
+  return questions.map((question, index) => ({
+    id: question.id,
+    prompt: question.prompt,
+    recommendedAnswer: 'Record the maintainer authority choice during clarify.',
+    rank: 100 + index,
+  }));
 }

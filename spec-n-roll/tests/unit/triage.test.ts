@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDefaultSetListsFile } from '../../src/setlists/index.js';
-import { assessTriage } from '../../src/specs/triage.js';
+import { createDefaultSetListsFile } from '../../src/sdk/setlists/index.js';
+import { assessTriage } from '../../src/sdk/specs/triage.js';
 
 const enabledSetLists = createDefaultSetListsFile().setLists;
 

@@ -1,5 +1,5 @@
-import type { TaskSpecIdentity } from '../../../workflow/engine.js';
-import { listActiveTaskSpecs } from '../../../workflow/engine.js';
+import type { TaskSpecIdentity } from '../../../sdk/workflow/engine.js';
+import { listActiveTaskSpecs } from '../../../sdk/workflow/engine.js';
 
 /**
  * In-memory state needed to resolve a task spec for a mutation flow.

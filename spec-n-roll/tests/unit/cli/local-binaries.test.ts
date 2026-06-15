@@ -10,8 +10,8 @@ import {
   installProjectBinaries,
   LOCAL_RUNTIME_BUNDLE_RELATIVE_PATH,
   STAGED_LOCAL_BUNDLE_RELATIVE_PATH,
-} from '../../../src/cli/local-binaries.js';
-import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../../src/cli/local-install-integrity.js';
+} from '../../../src/sdk/install/local-binaries.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 

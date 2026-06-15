@@ -85,9 +85,7 @@ export function getExpectedOutputsForVariant(
  * @param projectRoot - Absolute path to the project root.
  * @returns Set of kebab-case step ids available for lifecycle operations.
  */
-export async function resolveRegisteredWorkflowStepIds(
-  projectRoot: string,
-): Promise<Set<string>> {
+export async function resolveRegisteredWorkflowStepIds(projectRoot: string): Promise<Set<string>> {
   const config = await readWorkflowConfig(projectRoot);
   const configStepIds = config?.steps.map((step) => step.id) ?? [];
   const registry = await loadExtensionRegistry(projectRoot);

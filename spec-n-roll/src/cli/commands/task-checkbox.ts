@@ -1,14 +1,20 @@
 import { Command } from 'commander';
+import { injectable, injectAll } from 'tsyringe';
 
-import { registerTaskCheckboxSetCommand } from './task-checkbox-set.js';
+import { TASK_CHECKBOX_SUBCOMMAND } from '../../di/tokens.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
  * Registers the `task checkbox` command group and its subcommands.
- *
- * @param task - Commander `task` command to attach the group to.
  */
-export function registerTaskCheckboxCommand(task: Command): void {
-  const taskCheckbox = task.command('checkbox').description('tasks.md checkbox toggles');
+@injectable()
+export class TaskCheckboxCommand implements CliCommand {
+  constructor(@injectAll(TASK_CHECKBOX_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
-  registerTaskCheckboxSetCommand(taskCheckbox);
+  register(command: Command): void {
+    const taskCheckbox = command.command('checkbox').description('tasks.md checkbox toggles');
+    for (const subcommand of this.subcommands) {
+      subcommand.register(taskCheckbox);
+    }
+  }
 }

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
-import { readToolkitPackageVersion } from '../../cli/commands/version.js';
+import { readToolkitPackageVersion } from '../../version.js';
 import { atomicWriteText } from '../../core/atomic-write.js';
 import { ensureAgentSkillsDirectory } from './shared.js';
 
@@ -101,6 +101,17 @@ export const IMPLEMENT_SKILL_RELATIVE_PATH = '.agents/skills/spec-n-implement/SK
  * Relative path to the /spec-n-manifesto agent skill file from the project root.
  */
 export const MANIFESTO_SKILL_RELATIVE_PATH = '.agents/skills/spec-n-manifesto/SKILL.md';
+
+/**
+ * Relative path to the repository onboarding workflow skill file from the project root.
+ */
+export const REPOSITORY_ONBOARDING_SKILL_RELATIVE_PATH =
+  '.agents/skills/repository-onboarding/SKILL.md';
+
+/**
+ * Relative path to the repository drift workflow skill file from the project root.
+ */
+export const REPOSITORY_DRIFT_SKILL_RELATIVE_PATH = '.agents/skills/repository-drift/SKILL.md';
 
 /**
  * Returns markdown content for the /spec-n-specify agent skill.
@@ -203,7 +214,8 @@ export function buildRollSkillContent(toolkitVersion: string): string {
   return buildManagedSkillMarkdown(
     {
       name: 'spec-n-roll',
-      description: 'Advance the workflow to the next tier step with zero-knowledge intent detection.',
+      description:
+        'Advance the workflow to the next tier step with zero-knowledge intent detection.',
     },
     `# /spec-n-roll
 
@@ -459,6 +471,129 @@ Target scope after the command: \`global\` or a registered workflow \`stepId\`.
 }
 
 /**
+ * Returns markdown content for the repository onboarding workflow skill.
+ *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
+ * @returns UTF-8 markdown documenting repository onboarding workflow boundaries.
+ */
+export function buildRepositoryOnboardingSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'repository-onboarding',
+      description:
+        'Discover repository behavior evidence and produce one forward specify-stage output for living-spec work.',
+    },
+    `# Repository Onboarding Workflow
+
+Run the \`repository-onboarding\` workflow type in an **initialized** Spec-n-Roll project to convert discovered behavior into proposed living-spec and test work through the normal specify stage.
+
+## Flow
+
+1. **Verify initialization** — Confirm \`.spec-n-roll/config/workflow.config.json\` exists. If missing, stop and instruct the maintainer to run \`spec-n-roll init\`.
+2. **Start workflow** — Use MCP \`repository_workflow_start\` or CLI \`spec-n-roll repository-workflow start --workflow-type-id repository-onboarding\` to receive a recommended discovery plan.
+3. **Approve scope** — Let the maintainer accept, narrow, broaden, or omit discovery scope before analysis begins.
+4. **Discover evidence** — Inventory user-facing code behavior, documentation, and tests within the approved scope. Exclude internal-only utilities unless they connect to observable behavior.
+5. **Inject specify context** — Pass repository evidence, proposed living-spec changes, test mappings, assumptions, and unresolved ambiguity into the normal specify interview.
+6. **Complete specify only** — Produce exactly one \`specs/{id}-{slug}/spec.md\` with standard headings plus repository sections. Write \`workflow-state.json\` with \`lastCompletedStepId: specify\`.
+7. **Stop** — Do not run plan, tasks, or implement automatically. Do not write \`living-specs/\` files or mutate tests during specify.
+
+## Required specify output sections
+
+- Repository Discovery Evidence
+- Proposed Living Spec Changes
+- Test Coverage Mapping
+- Unresolved Ambiguity
+- Assumptions and Limitations
+
+## Machine-readable operations (MCP / CLI only)
+
+- \`repository_workflow_types_list\`
+- \`repository_workflow_start\`
+- Normal specify lifecycle tools (\`step_output_instantiate\`, \`workflow_state_write\`, \`task_spec_status_set\`)
+
+Living specs under \`living-specs/\` and test files remain downstream implementation work.
+
+## User input
+
+\`\`\`text
+$ARGUMENTS
+\`\`\`
+
+Optional scope notes or maintainer goal for the onboarding run.
+`,
+    toolkitVersion,
+  );
+}
+
+/**
+ * Returns markdown content for the repository drift workflow skill.
+ *
+ * @param toolkitVersion - Semver of the toolkit generating the skill content.
+ * @returns UTF-8 markdown documenting repository drift workflow boundaries.
+ */
+export function buildRepositoryDriftSkillContent(toolkitVersion: string): string {
+  return buildManagedSkillMarkdown(
+    {
+      name: 'repository-drift',
+      description:
+        'Compare existing living specs to current repository evidence and produce one forward specify-stage refresh output.',
+    },
+    `# Repository Drift Workflow
+
+Run the \`repository-drift\` workflow type in an **initialized** Spec-n-Roll project that already has \`living-specs/\` files. Compare current code, tests, and documentation to existing Gherkin scenarios, categorize drift, and produce refresh recommendations through the normal specify stage.
+
+## Flow
+
+1. **Verify initialization** — Confirm \`.spec-n-roll/config/workflow.config.json\` exists. If missing, stop and instruct the maintainer to run \`spec-n-roll init\`.
+2. **Start workflow** — Use MCP \`repository_workflow_start\` or CLI \`spec-n-roll repository-workflow start --workflow-type-id repository-drift\` to receive a recommended discovery plan scoped to existing living specs.
+3. **Approve scope** — Let the maintainer accept, narrow, or omit discovery scope before analysis begins.
+4. **Analyze drift** — Load existing Gherkin scenarios, compare them to current code, tests, and documentation, and categorize behavior, documentation, test, and organization drift.
+5. **Resolve conflicts** — When evidence sources disagree, surface authority questions with **no default** source of truth.
+6. **Inject specify context** — Pass drift findings, proposed update/delete/merge intent, test mappings, assumptions, and unresolved ambiguity into the normal specify interview.
+7. **Complete specify only** — Produce exactly one \`specs/{id}-{slug}/spec.md\` with standard headings plus repository sections. Write \`workflow-state.json\` with \`lastCompletedStepId: specify\`.
+8. **Stop** — Do not run plan, tasks, or implement automatically. Do not write \`living-specs/\` files or mutate tests during specify.
+
+## Required specify output sections
+
+- Repository Discovery Evidence
+- Drift Findings
+- Proposed Living Spec Changes
+- Test Coverage Mapping
+- Unresolved Ambiguity
+- Assumptions and Limitations
+
+## Drift categories
+
+- **behavior** — Living spec no longer matches observed product behavior.
+- **documentation** — Docs or wording are stale while executable behavior is stable.
+- **test** — Tests are missing, stale, or contradict behavior or specs.
+- **organization** — Scenarios should merge, delete, or regroup without behavior change.
+
+Unchanged scenarios are confirmed but must **not** be proposed again as duplicate living-spec work.
+
+## Machine-readable operations (MCP / CLI only)
+
+- \`repository_workflow_types_list\`
+- \`repository_workflow_start\`
+- \`repository_workflow_drift_run\`
+- CLI \`spec-n-roll repository-workflow drift run\`
+- Normal specify lifecycle tools (\`step_output_instantiate\`, \`workflow_state_write\`, \`task_spec_status_set\`)
+
+Living specs under \`living-specs/\` and test files remain downstream implementation work.
+
+## User input
+
+\`\`\`text
+$ARGUMENTS
+\`\`\`
+
+Optional scope notes or maintainer goal for the drift refresh run.
+`,
+    toolkitVersion,
+  );
+}
+
+/**
  * Returns project-relative workflow skill files and their expected toolkit content.
  *
  * @returns Skill file paths paired with UTF-8 markdown bodies.
@@ -467,12 +602,21 @@ export function listWorkflowSkillUpdates(): Array<{ relativePath: string; conten
   const toolkitVersion = readToolkitPackageVersion();
 
   return [
-    { relativePath: SPECIFY_SKILL_RELATIVE_PATH, content: buildSpecifySkillContent(toolkitVersion) },
-    { relativePath: CLARIFY_SKILL_RELATIVE_PATH, content: buildClarifySkillContent(toolkitVersion) },
+    {
+      relativePath: SPECIFY_SKILL_RELATIVE_PATH,
+      content: buildSpecifySkillContent(toolkitVersion),
+    },
+    {
+      relativePath: CLARIFY_SKILL_RELATIVE_PATH,
+      content: buildClarifySkillContent(toolkitVersion),
+    },
     { relativePath: ROLL_SKILL_RELATIVE_PATH, content: buildRollSkillContent(toolkitVersion) },
     { relativePath: PLAN_SKILL_RELATIVE_PATH, content: buildPlanSkillContent(toolkitVersion) },
     { relativePath: TASKS_SKILL_RELATIVE_PATH, content: buildTasksSkillContent(toolkitVersion) },
-    { relativePath: ANALYZE_SKILL_RELATIVE_PATH, content: buildAnalyzeSkillContent(toolkitVersion) },
+    {
+      relativePath: ANALYZE_SKILL_RELATIVE_PATH,
+      content: buildAnalyzeSkillContent(toolkitVersion),
+    },
     {
       relativePath: IMPLEMENT_SKILL_RELATIVE_PATH,
       content: buildImplementSkillContent(toolkitVersion),
@@ -480,6 +624,14 @@ export function listWorkflowSkillUpdates(): Array<{ relativePath: string; conten
     {
       relativePath: MANIFESTO_SKILL_RELATIVE_PATH,
       content: buildManifestoSkillContent(toolkitVersion),
+    },
+    {
+      relativePath: REPOSITORY_ONBOARDING_SKILL_RELATIVE_PATH,
+      content: buildRepositoryOnboardingSkillContent(toolkitVersion),
+    },
+    {
+      relativePath: REPOSITORY_DRIFT_SKILL_RELATIVE_PATH,
+      content: buildRepositoryDriftSkillContent(toolkitVersion),
     },
   ];
 }

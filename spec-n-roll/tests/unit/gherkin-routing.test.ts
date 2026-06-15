@@ -5,7 +5,7 @@ import {
   inferDomainFromDescription,
   resolveLivingSpecPath,
   routeLivingSpecFile,
-} from '../../src/living-specs/gherkin.js';
+} from '../../src/sdk/living-specs/gherkin.js';
 
 describe('living spec domain routing', () => {
   it('infers user-authentication domain from authentication-related descriptions', () => {

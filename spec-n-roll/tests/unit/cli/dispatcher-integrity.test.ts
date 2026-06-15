@@ -7,7 +7,7 @@ import { resolveDelegation } from '../../../src/cli/dispatcher.js';
 import {
   LOCAL_INSTALL_LAYOUT_VERSION,
   validateLocalInstall,
-} from '../../../src/cli/local-install-integrity.js';
+} from '../../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 

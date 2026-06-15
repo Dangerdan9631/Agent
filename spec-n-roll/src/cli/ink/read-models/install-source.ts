@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { resolveGlobalCliPath } from '../../dispatcher.js';
-import { findToolkitPackageRoot } from '../../../core/paths.js';
+import { findToolkitPackageRoot } from '../../../sdk/core/paths.js';
 
 /**
  * Describes whether the global CLI was installed from npm or a linked source tree.

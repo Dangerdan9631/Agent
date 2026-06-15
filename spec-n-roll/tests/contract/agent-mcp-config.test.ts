@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { mergeAgentMcpConfig } from '../../src/agents/mcp-config.js';
+import { mergeAgentMcpConfig } from '../../src/sdk/agents/mcp-config.js';
 
 const tempDirs: string[] = [];
 

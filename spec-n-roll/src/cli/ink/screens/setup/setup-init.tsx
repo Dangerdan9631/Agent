@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
 
-import { listBundledAgentIds } from '../../../../agents/extension-loader.js';
-import { runInit, type InitResult } from '../../../commands/init.js';
+import { listBundledAgentIds } from '../../../../sdk/agents/extension-loader.js';
+import { runInit, type InitResult } from '../../../../sdk/init.js';
 import { AgentMultiSelectPrompt, promptForAgentSelection } from '../../init-prompts.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';

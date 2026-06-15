@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
-import { runUpdate, type UpdateResult } from '../../../commands/update.js';
+import { runUpdate, type UpdateResult } from '../../../../sdk/update.js';
 import { UpdateConfirmPrompt } from '../../update-prompts.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';

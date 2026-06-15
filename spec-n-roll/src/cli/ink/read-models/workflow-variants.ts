@@ -1,4 +1,4 @@
-import { readWorkflowConfig } from '../../../workflow/artifacts.js';
+import { readWorkflowConfig } from '../../../sdk/workflow/artifacts.js';
 
 /**
  * Read-only summary of one configured workflow from workflow configuration.

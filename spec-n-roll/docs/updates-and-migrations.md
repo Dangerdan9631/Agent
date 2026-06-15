@@ -80,7 +80,7 @@ Migrated files:
 | ------------------------------------------- | ------------------------------------------------------- |
 | `.spec-n-roll/config/workflow.config.json`  | v1 → v2 field normalization; breaking when legacy flags |
 | `.spec-n-roll/config/project-metadata.json` | v1 → current schema field normalization (non-breaking)  |
-| `.spec-n-roll/config/set-lists.json`          | Generated on first update when missing (non-breaking)   |
+| `.spec-n-roll/config/set-lists.json`        | Generated on first update when missing (non-breaking)   |
 
 ## Set lists and lifecycle terminology (feature 007)
 
@@ -102,11 +102,11 @@ Agents must call `step_init` before step work and `step_finalize` after validati
 
 ### Terminology map for maintainers
 
-| Legacy user-facing term | Current term        | Persisted field (unchanged)   |
-| ----------------------- | ------------------- | ----------------------------- |
-| Complexity triage       | Set list triage     | —                             |
-| Workflow variant pick   | Set list selection  | `workflowVariantId` in state  |
-| Tier (papercut/quick/full) | Named set list | Same ids as data in set-lists.json |
+| Legacy user-facing term    | Current term       | Persisted field (unchanged)        |
+| -------------------------- | ------------------ | ---------------------------------- |
+| Complexity triage          | Set list triage    | —                                  |
+| Workflow variant pick      | Set list selection | `workflowVariantId` in state       |
+| Tier (papercut/quick/full) | Named set list     | Same ids as data in set-lists.json |
 
 Migration docs and release notes may still mention legacy terms when explaining upgrades; product UI, CLI help, Ink labels, and agent-facing triage text should use **set list**.
 

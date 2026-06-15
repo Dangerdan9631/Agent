@@ -2,11 +2,11 @@ import { spawnSync } from 'node:child_process';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 
-import { runProjectRemove } from '../../commands/remove.js';
-import { runUpdate, type UpdateResult } from '../../commands/update.js';
+import { runProjectRemove } from '../../../sdk/remove.js';
+import { runUpdate, type UpdateResult } from '../../../sdk/update.js';
 import { resolveGlobalToolkitRoot } from '../../dispatcher.js';
-import { runRefreshProjectInstall } from '../../refresh-project-install.js';
-import { listBundledAgentIds } from '../../../agents/extension-loader.js';
+import { runRefreshProjectInstall } from '../../../sdk/install/refresh-project-install.js';
+import { listBundledAgentIds } from '../../../sdk/agents/extension-loader.js';
 import { useSession } from '../app/session-context.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { RouteContentLayout } from '../components/RouteContentLayout.js';

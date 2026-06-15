@@ -195,7 +195,7 @@ async function ensureCucumberResolvable(projectRoot: string): Promise<void> {
     return;
   }
 
-  const toolkitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const toolkitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
   const toolkitNodeModules = path.join(toolkitRoot, 'node_modules');
   const toolkitCucumber = path.join(toolkitNodeModules, '@cucumber', 'cucumber', 'package.json');
   if (!(await fse.pathExists(toolkitCucumber))) {

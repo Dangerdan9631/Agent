@@ -8,7 +8,7 @@ The global dispatcher resolves whether to hand off to a project-local full CLI o
 
 ## Self-contained local install layout
 
-Project-local binaries live under `.spec-n-roll/cli/` as a complete, pinned toolkit runtime. `local-binaries.ts` stages the build output from `dist/local-bundle/` into each project during `init`, `update`, and manage-local binary refresh.
+Project-local binaries live under `.spec-n-roll/cli/` as a complete, pinned toolkit runtime. `local-install/local-binaries.ts` stages the build output from `dist/local-bundle/` into each project during `init`, `update`, and manage-local binary refresh.
 
 ```text
 .spec-n-roll/cli/
@@ -27,9 +27,9 @@ Project-local binaries live under `.spec-n-roll/cli/` as a complete, pinned tool
 
 Launchers resolve `../dist/cli/index.js` or `../dist/mcp/server.js` relative to `bin/` and spawn Node with `stdio: 'inherit'`. The CLI launcher sets `SPEC_N_ROLL_LOCAL_PIN=1` on the bundled full CLI child. Legacy installs that reference an external `toolkitPackageRoot` are rejected until `update` migrates the layout.
 
-`local-install-integrity.ts` validates the on-disk layout before delegation: required paths, `layoutVersion === 1`, `package.json` name, and absence of legacy markers. Integrity failures return actionable messages suggesting `spec-n-roll update` or `spec-n-roll init`.
+`local-install/local-install-integrity.ts` validates the on-disk layout before delegation: required paths, `layoutVersion === 1`, `package.json` name, and absence of legacy markers. Integrity failures return actionable messages suggesting `spec-n-roll update` or `spec-n-roll init`.
 
-Commander subcommands include workflow mutations, step init/finalize, set-list management, and manifesto read helpers. Bare `spec-n-roll` launches the Ink app documented in `docs/cli.md`.
+Commander subcommands include workflow mutations, step init/finalize, set-list management, manifesto read helpers, and `repository-workflow` onboarding/drift commands (`types list`, `plan`, `start`, `drift run`, `report read`). Bare `spec-n-roll` launches the Ink app documented in `docs/cli.md`, including read-only repository workflow report browsing from the project hub.
 
 ## Dispatcher integrity behavior
 

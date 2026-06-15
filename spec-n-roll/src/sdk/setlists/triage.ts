@@ -99,9 +99,7 @@ const FEATURE_DESCRIPTION_HINTS = /\b(small feature|specify|tasks|implement|scop
 function scoreSetListMatch(userIntent: string, setList: SetList): number {
   const intent = userIntent.toLowerCase();
   const description = setList.description.toLowerCase();
-  const descriptionWords = new Set(
-    description.split(/\W+/).filter((word) => word.length > 3),
-  );
+  const descriptionWords = new Set(description.split(/\W+/).filter((word) => word.length > 3));
   const intentWords = intent.split(/\W+/).filter((word) => word.length > 2);
 
   let score = 0;

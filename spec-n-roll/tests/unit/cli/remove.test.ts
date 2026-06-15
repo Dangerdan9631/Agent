@@ -3,8 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { runInit } from '../../../src/cli/commands/init.js';
-import { runProjectRemove } from '../../../src/cli/commands/remove.js';
+import { runInit } from '../../../src/sdk/init.js';
+import { runProjectRemove } from '../../../src/sdk/remove.js';
 
 const tempDirs: string[] = [];
 

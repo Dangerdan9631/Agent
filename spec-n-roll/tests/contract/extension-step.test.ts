@@ -8,11 +8,11 @@ import {
   loadExtensionRegistry,
   resolveActiveStepHandler,
   runTriageWithExtensions,
-} from '../../src/extensions/hooks.js';
-import { assessTriage } from '../../src/specs/triage.js';
-import { createDefaultSetListsFile } from '../../src/setlists/index.js';
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
+} from '../../src/sdk/extensions/hooks.js';
+import { assessTriage } from '../../src/sdk/specs/triage.js';
+import { createDefaultSetListsFile } from '../../src/sdk/setlists/index.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/sdk/workflow/artifacts.js';
 
 const tempDirs: string[] = [];
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { workflowConfigSchema } from '../../src/config/schema.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { workflowConfigSchema } from '../../src/sdk/config/schema.js';
 
 describe('createDefaultWorkflowConfig', () => {
   it('defines papercut, quick, and full tiers with specify as step 1', () => {

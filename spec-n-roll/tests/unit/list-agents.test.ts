@@ -3,12 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { listBundledAgents } from '../../src/agents/extension-loader.js';
-import { runInit } from '../../src/cli/commands/init.js';
+import { listBundledAgents } from '../../src/sdk/agents/extension-loader.js';
+import { runInit } from '../../src/sdk/init.js';
 import {
   formatBundledAgentsList,
   resolveListedAgents,
-} from '../../src/cli/commands/list-agents.js';
+} from '../../src/sdk/list-agents.js';
 describe('listBundledAgents', () => {
   it('returns all agents sorted by id with display names', () => {
     expect(listBundledAgents()).toEqual([

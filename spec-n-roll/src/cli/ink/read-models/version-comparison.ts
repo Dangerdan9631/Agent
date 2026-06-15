@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 import { resolveGlobalCliPath } from '../../dispatcher.js';
-import { readToolkitVersionFromRoot } from '../../local-binaries.js';
-import { readRuntimePackageVersion } from '../../build-version.js';
+import { readToolkitVersionFromRoot } from '../../../sdk/install/local-binaries.js';
+import { readRuntimePackageVersion } from '../../../sdk/install/build-version.js';
 
 /**
  * Identifies which latest-version source applies to a version comparison.

@@ -14,7 +14,7 @@ if (!existsSync(cliEntry) || !existsSync(mcpEntry)) {
   );
 }
 
-cpSync(path.join(rootDir, 'src', 'templates'), path.join(bundleDir, 'templates'), {
+cpSync(path.join(rootDir, 'src', 'sdk', 'templates'), path.join(bundleDir, 'templates'), {
   recursive: true,
 });
 

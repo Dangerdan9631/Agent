@@ -1,14 +1,20 @@
 import { Command } from 'commander';
+import { injectable, injectAll } from 'tsyringe';
 
-import { registerListAgentsCommand } from './list-agents.js';
+import { LIST_SUBCOMMAND } from '../../di/tokens.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
- * Registers the `list` command group and its subcommands on the root Commander program.
- *
- * @param program - Root Commander program to attach commands to.
+ * Registers the `list` command group and its subcommands.
  */
-export function registerListCommand(program: Command): void {
-  const list = program.command('list').description('List toolkit resources');
+@injectable()
+export class ListCommand implements CliCommand {
+  constructor(@injectAll(LIST_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
-  registerListAgentsCommand(list);
+  register(command: Command): void {
+    const list = command.command('list').description('List toolkit resources');
+    for (const subcommand of this.subcommands) {
+      subcommand.register(list);
+    }
+  }
 }

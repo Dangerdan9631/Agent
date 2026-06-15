@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildDelegatedCliEnv } from '../../src/cli/dispatcher.js';
-import { runInit } from '../../src/cli/commands/init.js';
+import { runInit } from '../../src/sdk/init.js';
 
 const tempDirs: string[] = [];
 

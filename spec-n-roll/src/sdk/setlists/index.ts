@@ -200,9 +200,7 @@ export async function listSetLists(
     return [];
   }
 
-  return includeDisabled
-    ? [...file.setLists]
-    : file.setLists.filter((setList) => setList.enabled);
+  return includeDisabled ? [...file.setLists] : file.setLists.filter((setList) => setList.enabled);
 }
 
 /**

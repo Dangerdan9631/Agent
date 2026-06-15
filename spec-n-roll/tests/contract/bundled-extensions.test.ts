@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import {
   listBundledAgentIds,
   getBundledAgentGenerator,
-} from '../../src/agents/extension-loader.js';
-import { extensionManifestSchema, parseExtensionManifest } from '../../src/extensions/manifest.js';
+} from '../../src/sdk/agents/extension-loader.js';
+import { extensionManifestSchema, parseExtensionManifest } from '../../src/sdk/extensions/manifest.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const extensionManifestSchemaPath = path.join(

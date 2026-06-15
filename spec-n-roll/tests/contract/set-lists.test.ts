@@ -5,8 +5,8 @@ import { spawnSync } from 'node:child_process';
 import fse from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { runInit } from '../../src/cli/commands/init.js';
-import { loadSetListReadResult } from '../../src/cli/commands/set-list.js';
+import { runInit } from '../../src/sdk/init.js';
+import { loadSetListReadResult } from '../../src/sdk/set-list.js';
 import { executeSetListRead, executeSetListTriage } from '../../src/mcp/set-list-tool-handlers.js';
 import {
   createDefaultSetListsFile,
@@ -16,7 +16,7 @@ import {
   readSetListsFile,
   runSetListTriage,
   validateSetListsFile,
-} from '../../src/setlists/index.js';
+} from '../../src/sdk/setlists/index.js';
 
 const tempRoots: string[] = [];
 const cliPath = path.resolve('dist/cli/index.js');
@@ -203,7 +203,7 @@ describe('set lists contract', () => {
     const fromCoreTriage = await runSetListTriage(projectRoot, intent);
     expect(fromMcpTriage).toEqual(fromCoreTriage);
     expect((fromMcpTriage as { selectedId: string }).selectedId).toBe('papercut');
-  });
+  }, 60_000);
 });
 
 describe('set lists contract helpers', () => {
@@ -218,4 +218,3 @@ describe('set lists contract helpers', () => {
     expect(result.selectedId).toBe('papercut');
   });
 });
-

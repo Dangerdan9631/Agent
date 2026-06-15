@@ -101,10 +101,7 @@ function escapeRegExp(value: string): string {
  * @param forbiddenPhrase - Normalized phrase extracted from a MUST NOT rule.
  * @returns True when the draft encourages the forbidden action without nearby negation.
  */
-function manifestoAffirmsForbiddenAction(
-  manifestoDraft: string,
-  forbiddenPhrase: string,
-): boolean {
+function manifestoAffirmsForbiddenAction(manifestoDraft: string, forbiddenPhrase: string): boolean {
   if (forbiddenPhrase.length < 8) {
     return false;
   }
@@ -136,10 +133,7 @@ function manifestoAffirmsForbiddenAction(
  * @param requiredPhrase - Normalized phrase extracted from a MUST rule.
  * @returns True when the draft instructs skipping or bypassing the requirement.
  */
-function manifestoNegatesRequiredAction(
-  manifestoDraft: string,
-  requiredPhrase: string,
-): boolean {
+function manifestoNegatesRequiredAction(manifestoDraft: string, requiredPhrase: string): boolean {
   const significantTerms = requiredPhrase
     .split(/\s+/)
     .map((term) => term.replace(/[^a-z0-9-]/g, ''))

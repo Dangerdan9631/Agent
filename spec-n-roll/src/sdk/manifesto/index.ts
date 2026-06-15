@@ -8,10 +8,7 @@ import {
   stepManifestoDir,
   stepManifestoPath,
 } from './paths.js';
-import {
-  CONSTITUTION_RELATIVE_PATH,
-  validateManifestoDraft,
-} from './validation.js';
+import { CONSTITUTION_RELATIVE_PATH, validateManifestoDraft } from './validation.js';
 
 /**
  * One manifesto entry loaded for a workflow step with explicit scope labeling.

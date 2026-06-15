@@ -4,9 +4,9 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { MCP_BINARY_RELATIVE_PATH } from '../../src/agents/mcp-config.js';
-import { runInit } from '../../src/cli/commands/init.js';
-import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/cli/local-install-integrity.js';
+import { MCP_BINARY_RELATIVE_PATH } from '../../src/sdk/agents/mcp-config.js';
+import { runInit } from '../../src/sdk/init.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 const repoRoot = path.resolve('.');

@@ -70,7 +70,7 @@ describe('complete interactive navigation', () => {
 
     app.stdin.write('1');
     await waitForText(app.lastFrame, '1 Specs');
-    app.stdin.write('5');
+    app.stdin.write('6');
     await waitForText(app.lastFrame, '> 1 Project');
 
     app.stdin.write('3');

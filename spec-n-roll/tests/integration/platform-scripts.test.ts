@@ -3,13 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { runInit } from '../../src/cli/commands/init.js';
-import { runAutomationScript } from '../../src/workflow/engine.js';
+import { runInit } from '../../src/sdk/init.js';
+import { runAutomationScript } from '../../src/sdk/workflow/engine.js';
 import {
   BUNDLED_SCRIPT_BASE_NAMES,
   PlatformScriptError,
   executePlatformScript,
-} from '../../src/workflow/platform-scripts.js';
+} from '../../src/sdk/workflow/platform-scripts.js';
 
 const tempDirs: string[] = [];
 

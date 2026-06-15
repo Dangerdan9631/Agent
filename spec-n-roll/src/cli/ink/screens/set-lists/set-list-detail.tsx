@@ -5,10 +5,7 @@ import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { StaticContentBlock } from '../../components/StaticContentBlock.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import {
-  loadSetListDetailView,
-  type SetListDetailView,
-} from '../../read-models/set-lists.js';
+import { loadSetListDetailView, type SetListDetailView } from '../../read-models/set-lists.js';
 
 /**
  * Menu row for set list detail actions.

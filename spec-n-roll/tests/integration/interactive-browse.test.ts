@@ -150,7 +150,7 @@ describe('interactive browse flow', () => {
     app.stdin.write('\u001b');
     await waitForFrame();
     await waitForText(app, '1 Specs');
-    app.stdin.write('5');
+    app.stdin.write('6');
     await waitForFrame();
     await waitForText(app, '> 1 Project');
 

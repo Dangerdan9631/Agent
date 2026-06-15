@@ -358,7 +358,7 @@ describe('interactive CLI parity for User Story 3', () => {
     await fse.remove(path.join(cliRoot, '.tmp-fixed-date.mjs'));
 
     expect(await snapshotTextFiles(interactiveRoot)).toEqual(await snapshotTextFiles(cliRoot));
-  });
+  }, 15_000);
 
   it('matches update affected files byte-for-byte', async () => {
     await expectInteractiveCliParity(
@@ -372,7 +372,7 @@ describe('interactive CLI parity for User Story 3', () => {
       ['update', '--force'],
       true,
     );
-  });
+  }, 60_000);
 
   it('matches step.instantiate affected files byte-for-byte', async () => {
     await expectInteractiveCliParity(

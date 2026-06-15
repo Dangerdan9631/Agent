@@ -1,5 +1,5 @@
-import { listBundledAgents } from '../../../agents/extension-loader.js';
-import { readWorkflowConfig } from '../../../workflow/artifacts.js';
+import { listBundledAgents } from '../../../sdk/agents/extension-loader.js';
+import { readWorkflowConfig } from '../../../sdk/workflow/artifacts.js';
 
 /**
  * Read-only summary of one agent for the agents screen.

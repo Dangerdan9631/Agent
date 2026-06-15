@@ -1,5 +1,7 @@
 # CLI Commands
 
-Commander subcommand implementations for non-interactive toolkit management. This layer wires user-facing CLI verbs such as init, update, config, step init/finalize, set-list CRUD, and manifesto show to orchestration logic without duplicating core mutations.
+Commander subcommand classes for non-interactive toolkit management. Each command is an `@injectable()` class implementing `CliCommand` with a single `register(command)` method that wires argv parsing and output to the SDK.
 
-Interactive Ink flows delegate to sibling modules under `cli/ink/` while deterministic writes route through the core library.
+Group commands compose subcommands via tsyringe `@injectAll` injection. Registration is centralized in `register-cli-commands.ts` and invoked from the DI composition root.
+
+Interactive Ink flows delegate to sibling modules under `cli/ink/` while deterministic writes route through the SDK.

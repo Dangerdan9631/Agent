@@ -3,13 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { readWorkflowConfigTolerant } from '../../src/config/reader.js';
+import { readWorkflowConfigTolerant } from '../../src/sdk/config/reader.js';
 import {
   applyUserConfigMigrations,
   BreakingMigrationError,
   planUserConfigMigrations,
   WORKFLOW_CONFIG_SCHEMA_VERSION,
-} from '../../src/updates/migration.js';
+} from '../../src/sdk/updates/migration.js';
 
 const tempDirs: string[] = [];
 

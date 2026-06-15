@@ -3,9 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { runInit } from '../../src/cli/commands/init.js';
-import { readProjectMetadata } from '../../src/core/project-metadata.js';
-import { workflowConfigSchema } from '../../src/config/schema.js';
+import { runInit } from '../../src/sdk/init.js';
+import { readProjectMetadata } from '../../src/sdk/core/project-metadata.js';
+import { workflowConfigSchema } from '../../src/sdk/config/schema.js';
 
 const tempDirs: string[] = [];
 

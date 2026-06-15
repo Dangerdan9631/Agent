@@ -4,7 +4,7 @@ import { Box, Text } from 'ink';
 import {
   runConfigAgentAdd,
   type ConfigAgentAddResult,
-} from '../../../commands/config-agent-add.js';
+} from '../../../../sdk/config-agent.js';
 import {
   AgentSingleSelectPrompt,
   type AgentSingleSelectPromptProps,

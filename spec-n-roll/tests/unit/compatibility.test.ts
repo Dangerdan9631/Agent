@@ -3,11 +3,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { runUpdate } from '../../src/cli/commands/update.js';
-import { readStagedLocalBundleVersion } from '../../src/cli/local-binaries.js';
-import { resolveToolkitRoot } from '../../src/cli/commands/init.js';
-import { checkExtensionCompatibility } from '../../src/extensions/compatibility.js';
-import { extensionManifestSchema } from '../../src/extensions/manifest.js';
+import { runUpdate } from '../../src/sdk/update.js';
+import { readStagedLocalBundleVersion } from '../../src/sdk/install/local-binaries.js';
+import { resolveToolkitRoot } from '../../src/sdk/init.js';
+import { checkExtensionCompatibility } from '../../src/sdk/extensions/compatibility.js';
+import { extensionManifestSchema } from '../../src/sdk/extensions/manifest.js';
 
 const tempDirs: string[] = [];
 

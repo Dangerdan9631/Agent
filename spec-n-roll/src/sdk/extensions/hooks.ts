@@ -576,7 +576,8 @@ async function collectSpecifyExtensionHookInstructions(
   stepId: string,
   phase: 'before' | 'after',
 ): Promise<CollectHookInstructionsResult> {
-  const { document, diagnostics: readDiagnostics } = await readSpecifyExtensionsDocument(projectRoot);
+  const { document, diagnostics: readDiagnostics } =
+    await readSpecifyExtensionsDocument(projectRoot);
   if (document?.hooks == null) {
     return { instructions: [], diagnostics: readDiagnostics };
   }

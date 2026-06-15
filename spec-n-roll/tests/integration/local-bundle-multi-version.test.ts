@@ -4,8 +4,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { installProjectBinaries } from '../../src/cli/local-binaries.js';
-import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/cli/local-install-integrity.js';
+import { installProjectBinaries } from '../../src/sdk/install/local-binaries.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 const repoRoot = path.resolve('.');

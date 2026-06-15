@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const templatesDir = path.resolve('src/templates');
+const templatesDir = path.resolve('src/sdk/templates');
 
 describe('FR-009 tasks and plan templates', () => {
   it('mandates living-spec updates as the first implementation phase in tasks.md', () => {

@@ -1,8 +1,8 @@
 import type { StaticContentField } from '../components/StaticContentBlock.js';
 import { readToolkitPackageVersion } from '../../commands/version.js';
-import { readProjectMetadata } from '../../../core/project-metadata.js';
-import { readTaskMetadata } from '../../../core/task-metadata.js';
-import { readWorkflowState } from '../../../core/workflow-state.js';
+import { readProjectMetadata } from '../../../sdk/core/project-metadata.js';
+import { readTaskMetadata } from '../../../sdk/core/task-metadata.js';
+import { readWorkflowState } from '../../../sdk/core/workflow-state.js';
 import {
   compareLocalToGlobalVersion,
   type VersionComparison,

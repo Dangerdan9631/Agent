@@ -40,6 +40,8 @@ import { TaskStatusSetScreen } from '../screens/specs/task-status-set.js';
 import { WorkflowStateScreen } from '../screens/specs/workflow-state.js';
 import { WorkflowDetailScreen } from '../screens/workflows/workflow-detail.js';
 import { WorkflowsListScreen } from '../screens/workflows/workflows-list.js';
+import { RepositoryWorkflowReportDetailScreen } from '../screens/repository-workflows/repository-workflow-report-detail.js';
+import { RepositoryWorkflowReportsListScreen } from '../screens/repository-workflows/repository-workflows-list.js';
 import { SessionProvider, useSession } from './session-context.js';
 import { supplementalHintsForRoute, titleForRoute, type RouteId } from './navigation.js';
 import type { RoutedScreenProps } from './routed-screen-props.js';
@@ -176,6 +178,10 @@ function RouteRenderer(props: RouteRendererProps): React.ReactElement {
       return <SetListDetailScreen {...routeProps} />;
     case 'set-list-edit':
       return <SetListEditScreen {...routeProps} />;
+    case 'repository-workflows-list':
+      return <RepositoryWorkflowReportsListScreen {...routeProps} />;
+    case 'repository-workflow-report-detail':
+      return <RepositoryWorkflowReportDetailScreen {...routeProps} />;
     default:
       return <PlaceholderScreen routeId={session.routeId} {...routeProps} />;
   }

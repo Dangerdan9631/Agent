@@ -7,7 +7,7 @@ import {
   readTaskMetadata,
   taskMetadataPath,
   writeTaskMetadata,
-} from '../../../src/core/task-metadata.js';
+} from '../../../src/sdk/core/task-metadata.js';
 
 const tempDirs: string[] = [];
 

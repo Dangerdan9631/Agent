@@ -2,6 +2,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fse from 'fs-extra';
 
+import { findToolkitPackageRoot } from '../core/paths.js';
+
 /**
  * Project-relative path to the global manifesto file under config.
  */
@@ -73,8 +75,8 @@ export function stepManifestoPath(projectRoot: string, stepId: string): string {
  * @returns Absolute path to the template in `dist/templates` or `src/templates`.
  */
 export function resolveManifestoTemplatePath(templateFile: string): string {
-  const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+  const packageRoot = findToolkitPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
   const distPath = path.join(packageRoot, 'dist', 'templates', templateFile);
-  const srcPath = path.join(packageRoot, 'src', 'templates', templateFile);
+  const srcPath = path.join(packageRoot, 'src', 'sdk', 'templates', templateFile);
   return fse.pathExistsSync(distPath) ? distPath : srcPath;
 }

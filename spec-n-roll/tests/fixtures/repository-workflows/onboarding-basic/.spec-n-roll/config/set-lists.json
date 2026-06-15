@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "setLists": [
+    {
+      "id": "quick",
+      "name": "Quick",
+      "description": "Small features with specify, tasks, and implement",
+      "workflowId": "quick",
+      "priority": 1,
+      "enabled": true
+    },
+    {
+      "id": "full",
+      "name": "Full",
+      "description": "Full spec-kit flow with plan, tasks, and implement",
+      "workflowId": "full",
+      "priority": 2,
+      "enabled": true
+    }
+  ]
+}

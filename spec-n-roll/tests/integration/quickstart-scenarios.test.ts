@@ -1,30 +1,30 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/cli/local-install-integrity.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/sdk/install/local-install-integrity.js';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { installProjectBinaries } from '../../src/cli/local-binaries.js';
-import { runInit } from '../../src/cli/commands/init.js';
-import { runConfigAgentAdd } from '../../src/cli/commands/config-agent-add.js';
-import { CoreMutationError } from '../../src/core/errors.js';
+import { installProjectBinaries } from '../../src/sdk/install/local-binaries.js';
+import { runInit } from '../../src/sdk/init.js';
+import { runConfigAgentAdd } from '../../src/sdk/config-agent.js';
+import { CoreMutationError } from '../../src/sdk/core/errors.js';
 import { buildDelegatedCliEnv } from '../../src/cli/dispatcher.js';
-import { readProjectMetadata } from '../../src/core/project-metadata.js';
+import { readProjectMetadata } from '../../src/sdk/core/project-metadata.js';
 import {
   lockCompleteTaskSpecs,
   readTaskSpecStatus,
   setTaskSpecStatus,
-} from '../../src/core/task-lifecycle.js';
-import { workflowConfigSchema } from '../../src/config/schema.js';
-import { runTriageWithExtensions, loadExtensionRegistry } from '../../src/extensions/hooks.js';
-import { STUB_MARKER } from '../../src/living-specs/step-stubs.js';
-import { runImplement } from '../../src/specs/implement.js';
-import type { InterviewQuestion } from '../../src/specs/interview.js';
-import { runSpecify } from '../../src/specs/specify.js';
-import type { PartialRecoveryChoice } from '../../src/workflow/engine.js';
-import { runRoll } from '../../src/workflow/engine.js';
-import { writeWorkflowState } from '../../src/core/workflow-state.js';
+} from '../../src/sdk/core/task-lifecycle.js';
+import { workflowConfigSchema } from '../../src/sdk/config/schema.js';
+import { runTriageWithExtensions, loadExtensionRegistry } from '../../src/sdk/extensions/hooks.js';
+import { STUB_MARKER } from '../../src/sdk/living-specs/step-stubs.js';
+import { runImplement } from '../../src/sdk/specs/implement.js';
+import type { InterviewQuestion } from '../../src/sdk/specs/interview.js';
+import { runSpecify } from '../../src/sdk/specs/specify.js';
+import type { PartialRecoveryChoice } from '../../src/sdk/workflow/engine.js';
+import { runRoll } from '../../src/sdk/workflow/engine.js';
+import { writeWorkflowState } from '../../src/sdk/core/workflow-state.js';
 
 const tempDirs: string[] = [];
 const repoRoot = path.resolve('.');

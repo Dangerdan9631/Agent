@@ -5,9 +5,9 @@ import {
   readWorkflowState,
   writeWorkflowState,
   type WorkflowStateWriteInput,
-} from '../../../../core/workflow-state.js';
-import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
-import type { WorkflowState } from '../../../../workflow/state.js';
+} from '../../../../sdk/core/workflow-state.js';
+import type { TaskSpecIdentity } from '../../../../sdk/workflow/engine.js';
+import type { WorkflowState } from '../../../../sdk/workflow/state.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { runInit } from '../../src/cli/commands/init.js';
+import { runInit } from '../../src/sdk/init.js';
 
 const tempDirs: string[] = [];
 

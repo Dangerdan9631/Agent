@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import type { StaticContentField } from '../components/StaticContentBlock.js';
 import { findLocalCli } from '../../dispatcher.js';
-import { LOCAL_CLI_ROOT_RELATIVE_PATH } from '../../local-install-integrity.js';
+import { LOCAL_CLI_ROOT_RELATIVE_PATH } from '../../../sdk/install/local-install-integrity.js';
 import { readToolkitPackageVersion } from '../../commands/version.js';
 import {
   compareGlobalLinkedVersion,

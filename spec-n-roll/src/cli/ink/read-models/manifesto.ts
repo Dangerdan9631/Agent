@@ -5,8 +5,8 @@ import {
   listStepManifestoIds,
   readGlobalManifesto,
   readStepManifesto,
-} from '../../../manifesto/index.js';
-import { resolveRegisteredWorkflowStepIds } from '../../../workflow/step-manifest.js';
+} from '../../../sdk/manifesto/index.js';
+import { resolveRegisteredWorkflowStepIds } from '../../../sdk/workflow/step-manifest.js';
 
 /**
  * Read-model view of one manifesto file on disk.

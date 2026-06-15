@@ -1,0 +1,3 @@
+A technical specification document is a detailed plan for developing a product or feature, outlining functional and non-functional requirements, design aspects, and the development process. It serves as a central reference for engineers, developers, and managers, linking to other resources like SOPs and training manuals
+
+A functional specification describes what a system or product must do, including its features, behaviors, and interactions. It often includes block diagrams and use cases to clarify how the system will operate

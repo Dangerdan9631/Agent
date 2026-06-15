@@ -4,22 +4,22 @@ import path from 'node:path';
 import fse from 'fs-extra';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { CoreMutationError } from '../../src/core/errors.js';
-import { runStepFinalize, runStepInit } from '../../src/core/step-lifecycle.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { CoreMutationError } from '../../src/sdk/core/errors.js';
+import { runStepFinalize, runStepInit } from '../../src/sdk/core/step-lifecycle.js';
 import {
   WorkflowStateFinalizeGateError,
   readWorkflowState,
   writeWorkflowState,
-} from '../../src/core/workflow-state.js';
-import { writeGlobalManifesto } from '../../src/manifesto/index.js';
+} from '../../src/sdk/core/workflow-state.js';
+import { writeGlobalManifesto } from '../../src/sdk/manifesto/index.js';
 import {
   detectManifestoConstitutionConflicts,
   validateManifestoDraft,
-} from '../../src/manifesto/validation.js';
-import { createDefaultSetListsFile } from '../../src/setlists/index.js';
-import { atomicWriteJson } from '../../src/core/atomic-write.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
+} from '../../src/sdk/manifesto/validation.js';
+import { createDefaultSetListsFile } from '../../src/sdk/setlists/index.js';
+import { atomicWriteJson } from '../../src/sdk/core/atomic-write.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/sdk/workflow/artifacts.js';
 
 const tempRoots: string[] = [];
 
@@ -80,10 +80,7 @@ describe('step lifecycle contract — init', () => {
     await seedWorkflowState(projectRoot);
     await writeGlobalManifesto(projectRoot, '## Global\nAlways initialize steps first.');
 
-    const planManifestoPath = path.join(
-      projectRoot,
-      '.spec-n-roll/config/manifesto/steps/plan.md',
-    );
+    const planManifestoPath = path.join(projectRoot, '.spec-n-roll/config/manifesto/steps/plan.md');
     await fse.ensureDir(path.dirname(planManifestoPath));
     await fse.writeFile(planManifestoPath, '## Plan\nPlan-specific guidance.', 'utf8');
 
@@ -443,10 +440,7 @@ describe('step lifecycle contract — manifesto scope', () => {
     await seedWorkflowState(projectRoot);
     await writeGlobalManifesto(projectRoot, '## Global\nProject-wide rule.');
 
-    const planManifestoPath = path.join(
-      projectRoot,
-      '.spec-n-roll/config/manifesto/steps/plan.md',
-    );
+    const planManifestoPath = path.join(projectRoot, '.spec-n-roll/config/manifesto/steps/plan.md');
     const orphanManifestoPath = path.join(
       projectRoot,
       '.spec-n-roll/config/manifesto/steps/orphan-step.md',
@@ -474,7 +468,9 @@ describe('step lifecycle contract — manifesto scope', () => {
     const conflicts = detectManifestoConstitutionConflicts(draft, constitution);
     expect(conflicts.length).toBeGreaterThan(0);
 
-    const validation = validateManifestoDraft(draft, 'global', { constitutionContent: constitution });
+    const validation = validateManifestoDraft(draft, 'global', {
+      constitutionContent: constitution,
+    });
     expect(validation.valid).toBe(false);
     expect(validation.conflicts?.length).toBeGreaterThan(0);
   });

@@ -30,7 +30,9 @@ export type RouteId =
   | 'manifesto-view'
   | 'set-lists-list'
   | 'set-list-detail'
-  | 'set-list-edit';
+  | 'set-list-edit'
+  | 'repository-workflows-list'
+  | 'repository-workflow-report-detail';
 
 /**
  * One entry in the in-memory navigation stack used for routing and breadcrumbs.
@@ -102,6 +104,8 @@ export const ROUTE_TITLES: Readonly<Record<RouteId, string>> = {
   'set-lists-list': 'Set Lists',
   'set-list-detail': 'Set List Detail',
   'set-list-edit': 'Edit Set List',
+  'repository-workflows-list': 'Repository Workflow Reports',
+  'repository-workflow-report-detail': 'Repository Workflow Report',
 };
 
 /**

@@ -3,9 +3,9 @@ import { fileURLToPath } from 'node:url';
 import fse from 'fs-extra';
 
 import { applyInitialSpecFrontmatter } from './frontmatter.js';
-import { taskSpecDir } from './paths.js';
 import { CoreMutationError } from './errors.js';
 import { assertTaskSpecWritable } from './task-lifecycle.js';
+import { findToolkitPackageRoot, taskSpecDir } from './paths.js';
 
 /**
  * Maps workflow step ids to toolkit template filenames under `src/templates/`.
@@ -32,9 +32,9 @@ export function resolveTemplatePath(stepId: string): string {
     );
   }
 
-  const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+  const packageRoot = findToolkitPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
   const distPath = path.join(packageRoot, 'dist', 'templates', templateFile);
-  const srcPath = path.join(packageRoot, 'src', 'templates', templateFile);
+  const srcPath = path.join(packageRoot, 'src', 'sdk', 'templates', templateFile);
   return fse.pathExistsSync(distPath) ? distPath : srcPath;
 }
 

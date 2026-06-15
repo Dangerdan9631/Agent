@@ -4,7 +4,7 @@ import {
   detectRollIntent,
   resolveNextStepId,
   type RollIntentContext,
-} from '../../src/workflow/engine.js';
+} from '../../src/sdk/workflow/engine.js';
 
 const baseContext: RollIntentContext = {
   description: undefined,

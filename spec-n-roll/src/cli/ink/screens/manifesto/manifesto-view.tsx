@@ -37,7 +37,9 @@ function truncateManifestoContent(content: string, maxLines: number): string {
  * @param manifesto - Manifesto file view to summarize.
  * @returns Static content fields for the summary block.
  */
-function buildManifestoSummaryFields(manifesto: ManifestoFileView): Array<{ label: string; value: string }> {
+function buildManifestoSummaryFields(
+  manifesto: ManifestoFileView,
+): Array<{ label: string; value: string }> {
   const fields = [
     { label: 'Scope', value: manifesto.scope },
     { label: 'Path', value: manifesto.path },
@@ -104,7 +106,8 @@ export function ManifestoViewScreen(props: ManifestoViewScreenProps): React.Reac
       })
       .catch((unknownError: unknown) => {
         if (active) {
-          const message = unknownError instanceof Error ? unknownError.message : String(unknownError);
+          const message =
+            unknownError instanceof Error ? unknownError.message : String(unknownError);
           setError(message);
         }
       });

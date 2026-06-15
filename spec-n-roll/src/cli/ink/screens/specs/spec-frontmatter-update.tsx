@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
-import { updateSpecFrontmatter } from '../../../../core/frontmatter.js';
-import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
+import { updateSpecFrontmatter } from '../../../../sdk/core/frontmatter.js';
+import type { TaskSpecIdentity } from '../../../../sdk/workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 

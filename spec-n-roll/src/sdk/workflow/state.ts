@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-import {
-  kebabCaseIdSchema,
-  stepLifecycleSchema,
-  taskSpecIdSchema,
-} from '../config/schema.js';
+import { kebabCaseIdSchema, stepLifecycleSchema, taskSpecIdSchema } from '../config/schema.js';
 
 /**
  * Schema version for workflow state to enable future migrations.

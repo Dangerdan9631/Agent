@@ -2,9 +2,9 @@ import path from 'node:path';
 
 import fse from 'fs-extra';
 
-import { parseFrontmatterDocument } from '../../../core/frontmatter.js';
-import { readWorkflowState } from '../../../core/workflow-state.js';
-import type { TaskSpecLifecycleStatus } from '../../../core/task-lifecycle.js';
+import { parseFrontmatterDocument } from '../../../sdk/core/frontmatter.js';
+import { readWorkflowState } from '../../../sdk/core/workflow-state.js';
+import type { TaskSpecLifecycleStatus } from '../../../sdk/core/task-lifecycle.js';
 
 /**
  * Lifecycle status displayed when a task spec has no readable lifecycle status.

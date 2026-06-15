@@ -5,8 +5,8 @@ import {
   setTaskSpecStatus,
   type TaskSpecLifecycleStatus,
   type TaskSpecStatusTransition,
-} from '../../../../core/task-lifecycle.js';
-import type { TaskSpecIdentity } from '../../../../workflow/engine.js';
+} from '../../../../sdk/core/task-lifecycle.js';
+import type { TaskSpecIdentity } from '../../../../sdk/workflow/engine.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';

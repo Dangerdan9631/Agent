@@ -8,6 +8,7 @@ import { getVariantStepIds } from '../workflow/step-manifest.js';
 import { readWorkflowConfig, stepOutputsExist } from '../workflow/artifacts.js';
 import type { InterviewSession } from './interview.js';
 import { isInterviewComplete } from './interview.js';
+import { REPOSITORY_INJECTION_SECTION_HEADINGS, STANDARD_SPEC_HEADINGS } from './specify.js';
 import { tasksTemplateSatisfiesFr009 } from './tasks.js';
 
 const PLACEHOLDER_PATTERN = /<!--\s*FILL:/i;
@@ -19,7 +20,12 @@ export interface SpecQualityIssue {
   /**
    * Machine-readable issue code for reporting.
    */
-  code: 'UNRESOLVED_PLACEHOLDER' | 'INTERVIEW_INCOMPLETE' | 'MISSING_SPEC_BODY';
+  code:
+    | 'UNRESOLVED_PLACEHOLDER'
+    | 'INTERVIEW_INCOMPLETE'
+    | 'MISSING_SPEC_BODY'
+    | 'MISSING_STANDARD_HEADING'
+    | 'MISSING_REPOSITORY_SECTION';
   /**
    * Human-readable description of the quality failure.
    */
@@ -38,6 +44,62 @@ export interface SpecQualityReport {
    * Ordered list of detected quality issues (empty when passed).
    */
   issues: SpecQualityIssue[];
+}
+
+const CLARIFY_SECTION_HEADING = '## Clarifications';
+
+/**
+ * Returns true when spec.md includes repository workflow injection sections.
+ *
+ * @param specBody - Markdown body of spec.md excluding frontmatter.
+ * @returns True when repository discovery evidence sections are present.
+ */
+function isRepositoryWorkflowSpec(specBody: string): boolean {
+  return specBody.includes('## Repository Discovery Evidence');
+}
+
+/**
+ * Validates that standard and repository workflow headings remain clarify-compatible.
+ *
+ * @param specBody - Markdown body of spec.md excluding frontmatter.
+ * @param issues - Quality issue list to append heading failures into.
+ */
+function checkRepositoryCompatibleHeadings(specBody: string, issues: SpecQualityIssue[]): void {
+  for (const heading of STANDARD_SPEC_HEADINGS) {
+    const markdownHeading = heading === 'Feature Specification' ? '# Feature Specification' : `## ${heading}`;
+    if (!specBody.includes(markdownHeading)) {
+      issues.push({
+        code: 'MISSING_STANDARD_HEADING',
+        message: `spec.md is missing the required standard heading: ${markdownHeading}.`,
+      });
+    }
+  }
+
+  if (!isRepositoryWorkflowSpec(specBody)) {
+    return;
+  }
+
+  for (const heading of REPOSITORY_INJECTION_SECTION_HEADINGS) {
+    const markdownHeading = `## ${heading}`;
+    if (!specBody.includes(markdownHeading)) {
+      issues.push({
+        code: 'MISSING_REPOSITORY_SECTION',
+        message: `Repository workflow spec.md is missing the required section: ${markdownHeading}.`,
+      });
+    }
+  }
+
+  if (specBody.includes(CLARIFY_SECTION_HEADING)) {
+    const clarifyIndex = specBody.indexOf(CLARIFY_SECTION_HEADING);
+    const repositoryEvidenceIndex = specBody.indexOf('## Repository Discovery Evidence');
+    if (repositoryEvidenceIndex >= 0 && clarifyIndex < repositoryEvidenceIndex) {
+      issues.push({
+        code: 'MISSING_STANDARD_HEADING',
+        message:
+          'Clarifications must be appended after repository workflow sections to preserve clarify compatibility.',
+      });
+    }
+  }
 }
 
 /**
@@ -73,6 +135,8 @@ export function checkSpecContentQuality(
       message: 'Critical interview questions remain unresolved.',
     });
   }
+
+  checkRepositoryCompatibleHeadings(specBody, issues);
 
   return {
     passed: issues.length === 0,

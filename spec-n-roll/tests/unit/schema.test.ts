@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { projectMetadataSchema, workflowConfigSchema } from '../../src/config/schema.js';
-import { extensionManifestSchema } from '../../src/extensions/manifest.js';
-import { workflowStateSchema } from '../../src/workflow/state.js';
+import { projectMetadataSchema, workflowConfigSchema } from '../../src/sdk/config/schema.js';
+import { extensionManifestSchema } from '../../src/sdk/extensions/manifest.js';
+import { workflowStateSchema } from '../../src/sdk/workflow/state.js';
 
 describe('workflowConfigSchema', () => {
   it('parses a minimal valid workflow config', () => {

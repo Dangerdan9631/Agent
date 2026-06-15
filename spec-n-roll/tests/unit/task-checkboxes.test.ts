@@ -3,8 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { CoreMutationError } from '../../src/core/errors.js';
-import { setTaskCheckboxes } from '../../src/core/task-checkboxes.js';
+import { CoreMutationError } from '../../src/sdk/core/errors.js';
+import { setTaskCheckboxes } from '../../src/sdk/core/task-checkboxes.js';
 
 const tempDirs: string[] = [];
 

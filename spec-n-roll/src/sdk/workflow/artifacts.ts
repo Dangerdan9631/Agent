@@ -1,7 +1,12 @@
 import path from 'node:path';
 import fse from 'fs-extra';
 
+import { taskSpecFilePath } from '../core/paths.js';
 import { workflowConfigSchema, type WorkflowConfig } from '../config/schema.js';
+import {
+  REPOSITORY_WORKFLOW_REPORT_FILENAME,
+  repositoryWorkflowReportRelativePath,
+} from '../repository/report.js';
 import type { WorkflowState } from './state.js';
 import {
   getExpectedOutputsForVariant,
@@ -218,4 +223,48 @@ export async function detectPartialArtifacts(
     variantSteps,
     partialArtifacts,
   };
+}
+
+/**
+ * Builds the project-relative path to a repository workflow report artifact.
+ *
+ * @param taskSpecId - Zero-padded numeric task spec id.
+ * @param slug - Kebab-case slug paired with the task spec id.
+ * @returns Project-relative report path under the task spec directory.
+ */
+export function repositoryWorkflowReportPath(taskSpecId: string, slug: string): string {
+  return repositoryWorkflowReportRelativePath(taskSpecId, slug);
+}
+
+/**
+ * Resolves the absolute path to a repository workflow report artifact.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecId - Zero-padded numeric task spec id.
+ * @param slug - Kebab-case slug paired with the task spec id.
+ * @returns Absolute path to the repository workflow report file.
+ */
+export function repositoryWorkflowReportAbsolutePath(
+  projectRoot: string,
+  taskSpecId: string,
+  slug: string,
+): string {
+  return taskSpecFilePath(projectRoot, taskSpecId, slug, REPOSITORY_WORKFLOW_REPORT_FILENAME);
+}
+
+/**
+ * Checks whether a repository workflow report artifact exists for a task spec.
+ *
+ * @param projectRoot - Absolute path to the project root.
+ * @param taskSpecId - Zero-padded numeric task spec id.
+ * @param slug - Kebab-case slug paired with the task spec id.
+ * @returns True when the report file exists on disk.
+ */
+export async function repositoryWorkflowReportExists(
+  projectRoot: string,
+  taskSpecId: string,
+  slug: string,
+): Promise<boolean> {
+  const absolutePath = repositoryWorkflowReportAbsolutePath(projectRoot, taskSpecId, slug);
+  return fse.pathExists(absolutePath);
 }

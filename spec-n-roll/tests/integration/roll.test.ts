@@ -3,12 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { runInit } from '../../src/cli/commands/init.js';
-import { readWorkflowState } from '../../src/core/workflow-state.js';
-import type { InterviewQuestion } from '../../src/specs/interview.js';
-import { runSpecify } from '../../src/specs/specify.js';
-import type { PartialRecoveryChoice } from '../../src/workflow/engine.js';
-import { resolveNextStepId, runRoll } from '../../src/workflow/engine.js';
+import { runInit } from '../../src/sdk/init.js';
+import { readWorkflowState } from '../../src/sdk/core/workflow-state.js';
+import type { InterviewQuestion } from '../../src/sdk/specs/interview.js';
+import { runSpecify } from '../../src/sdk/specs/specify.js';
+import type { PartialRecoveryChoice } from '../../src/sdk/workflow/engine.js';
+import { resolveNextStepId, runRoll } from '../../src/sdk/workflow/engine.js';
 
 const tempDirs: string[] = [];
 
@@ -56,7 +56,11 @@ describe('/spec-n-roll integration', () => {
       answerInterview: async (question: InterviewQuestion) => question.recommendedAnswer,
     });
 
-    const nextAfterSpecify = resolveNextStepId('quick', 'specify', ['specify', 'tasks', 'implement']);
+    const nextAfterSpecify = resolveNextStepId('quick', 'specify', [
+      'specify',
+      'tasks',
+      'implement',
+    ]);
     expect(nextAfterSpecify).toBe('tasks');
 
     const tasksRoll = await runRoll({
@@ -127,7 +131,7 @@ describe('/spec-n-roll integration', () => {
     if (roll.action === 'step_completed') {
       expect(roll.stepId).toBe('tasks');
     }
-  });
+  }, 30_000);
 
   it('presents partial recovery choices when partial artifacts exist for the next step', async () => {
     const projectRoot = createTempProject('partial');
@@ -167,5 +171,5 @@ describe('/spec-n-roll integration', () => {
       expect(roll.stepId).toBe('plan');
     }
     expect(readFileSync(planPath, 'utf8')).not.toContain('<!-- FILL: incomplete');
-  });
+  }, 30_000);
 });

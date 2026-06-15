@@ -10,7 +10,7 @@ import {
   executePlatformScript,
   resolveProjectScriptPath,
   selectScriptExtension,
-} from '../../src/workflow/platform-scripts.js';
+} from '../../src/sdk/workflow/platform-scripts.js';
 
 const tempDirs: string[] = [];
 

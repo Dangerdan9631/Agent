@@ -3,10 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { loadExtensionRegistry } from '../../src/extensions/hooks.js';
-import { loadWorkflowDefinition } from '../../src/workflow/engine.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { loadExtensionRegistry } from '../../src/sdk/extensions/hooks.js';
+import { loadWorkflowDefinition } from '../../src/sdk/workflow/engine.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/sdk/workflow/artifacts.js';
 
 const tempDirs: string[] = [];
 

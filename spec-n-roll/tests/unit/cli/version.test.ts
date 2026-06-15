@@ -3,11 +3,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { buildCliVersionReport } from '../../../src/cli/version-invocation.js';
 import {
-  buildVersionReport,
   formatVersionReport,
   readToolkitPackageVersion,
-} from '../../../src/cli/commands/version.js';
+} from '../../../src/sdk/version.js';
 
 const tempDirs: string[] = [];
 
@@ -118,7 +118,7 @@ describe('buildVersionReport', () => {
     vi.stubEnv('SPEC_N_ROLL_DISPATCHED', '1');
     vi.stubEnv('SPEC_N_ROLL_DISPATCHER_VERSION', '9.9.9-dispatcher');
 
-    const report = buildVersionReport({
+    const report = buildCliVersionReport({
       cwd: projectRoot,
       executedBinaryPath: bundledEntryPath,
     });
@@ -138,7 +138,7 @@ describe('buildVersionReport', () => {
     vi.stubEnv('SPEC_N_ROLL_DISPATCHER_VERSION', undefined);
 
     const globalCliPath = path.resolve('dist/cli/index.js');
-    const report = buildVersionReport({
+    const report = buildCliVersionReport({
       cwd: projectRoot,
       executedBinaryPath: globalCliPath,
     });

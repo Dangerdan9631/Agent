@@ -1,16 +1,20 @@
 import { Command } from 'commander';
+import { injectable, injectAll } from 'tsyringe';
 
-import { registerTaskCheckboxCommand } from './task-checkbox.js';
-import { registerTaskStatusCommand } from './task-status.js';
+import { TASK_SUBCOMMAND } from '../../di/tokens.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
- * Registers the `task` command group and its subcommands on the root Commander program.
- *
- * @param program - Root Commander program to attach commands to.
+ * Registers the `task` command group and its subcommands.
  */
-export function registerTaskCommand(program: Command): void {
-  const task = program.command('task').description('Task spec lifecycle and checkbox operations');
+@injectable()
+export class TaskCommand implements CliCommand {
+  constructor(@injectAll(TASK_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
-  registerTaskStatusCommand(task);
-  registerTaskCheckboxCommand(task);
+  register(command: Command): void {
+    const task = command.command('task').description('Task spec lifecycle and checkbox operations');
+    for (const subcommand of this.subcommands) {
+      subcommand.register(task);
+    }
+  }
 }

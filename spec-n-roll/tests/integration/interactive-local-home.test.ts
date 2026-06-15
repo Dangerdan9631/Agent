@@ -7,11 +7,11 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../src/cli/ink/app/App.js';
-import { installProjectBinaries } from '../../src/cli/local-binaries.js';
+import { installProjectBinaries } from '../../src/sdk/install/local-binaries.js';
 import * as manageLocalContentModule from '../../src/cli/ink/read-models/manage-local-content.js';
 import * as reloadModule from '../../src/cli/ink/reload.js';
-import { writeTaskMetadata } from '../../src/core/task-metadata.js';
-import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/cli/local-install-integrity.js';
+import { writeTaskMetadata } from '../../src/sdk/core/task-metadata.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/sdk/install/local-install-integrity.js';
 
 /**
  * Source fixture copied for local home integration tests.
@@ -105,12 +105,7 @@ describe('interactive local home', () => {
       }),
     );
 
-    const frame = await waitForFrameContaining(
-      () => app.lastFrame(),
-      '> 1 Project',
-      10_000,
-      true,
-    );
+    const frame = await waitForFrameContaining(() => app.lastFrame(), '> 1 Project', 10_000, true);
     expect(frame).toContain('(local');
     expect(frame).toContain('Main Menu');
     expect(frame).toContain('Latest Version:');
@@ -203,7 +198,10 @@ describe('interactive local home', () => {
 
     await waitForFrameContaining(() => app.lastFrame(), "5 Manage Spec N' Roll");
     app.stdin.write('5');
-    const frame = await waitForFrameContaining(() => app.lastFrame(), "1 Refresh Project Spec N' Roll");
+    const frame = await waitForFrameContaining(
+      () => app.lastFrame(),
+      "1 Refresh Project Spec N' Roll",
+    );
     expect(frame).toContain("Manage Spec N' Roll");
     expect(frame).toContain('Global Version:');
     expect(frame).toContain('Local Version:');

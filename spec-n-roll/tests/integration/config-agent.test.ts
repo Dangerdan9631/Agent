@@ -3,10 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { runConfigAgentAdd } from '../../src/cli/commands/config-agent-add.js';
-import { runConfigAgentRemove } from '../../src/cli/commands/config-agent-remove.js';
-import { runInit } from '../../src/cli/commands/init.js';
-import { workflowConfigSchema } from '../../src/config/schema.js';
+import { runConfigAgentAdd } from '../../src/sdk/config-agent.js';
+import { runConfigAgentRemove } from '../../src/sdk/config-agent.js';
+import { runInit } from '../../src/sdk/init.js';
+import { workflowConfigSchema } from '../../src/sdk/config/schema.js';
 
 const tempDirs: string[] = [];
 

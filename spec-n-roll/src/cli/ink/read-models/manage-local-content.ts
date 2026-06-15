@@ -8,10 +8,7 @@ import {
   type VersionComparison,
   type VersionComparisonDeps,
 } from './version-comparison.js';
-import {
-  readGlobalInstallSource,
-  type InstallSource,
-} from './install-source.js';
+import { readGlobalInstallSource, type InstallSource } from './install-source.js';
 
 /**
  * Loaded content and menu enablement for the local manage screen.
@@ -98,7 +95,10 @@ export interface LoadManageLocalContentDeps {
  * @param env - Environment variables for the current process.
  * @returns True when refresh and update actions should ignore version equality checks.
  */
-function isGlobalInstallLinked(globalInstallSource: InstallSource, env: NodeJS.ProcessEnv): boolean {
+function isGlobalInstallLinked(
+  globalInstallSource: InstallSource,
+  env: NodeJS.ProcessEnv,
+): boolean {
   return globalInstallSource.kind === 'local' || readDelegatedDispatcherIsLinked(env);
 }
 

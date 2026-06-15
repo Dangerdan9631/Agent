@@ -3,9 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { STUB_MARKER, defaultStubFileName } from '../../src/living-specs/step-stubs.js';
-import { runImplement } from '../../src/specs/implement.js';
-import { writeWorkflowState } from '../../src/core/workflow-state.js';
+import { STUB_MARKER, defaultStubFileName } from '../../src/sdk/living-specs/step-stubs.js';
+import { runImplement } from '../../src/sdk/specs/implement.js';
+import { writeWorkflowState } from '../../src/sdk/core/workflow-state.js';
 
 const tempDirs: string[] = [];
 

@@ -2,17 +2,17 @@ import path from 'node:path';
 import fse from 'fs-extra';
 
 import { CoreMutationError } from './errors.js';
-import {
-  collectHookInstructions,
-  type StepHookInstruction,
-} from '../extensions/hooks.js';
+import { collectHookInstructions, type StepHookInstruction } from '../extensions/hooks.js';
 
 export type { StepHookInstruction } from '../extensions/hooks.js';
 import { readManifestosForStep } from '../manifesto/index.js';
 import { readSetListsFile } from '../setlists/index.js';
 import { taskSpecDir } from './paths.js';
 import { readWorkflowState, writeWorkflowState } from './workflow-state.js';
-import { isRegisteredWorkflowStep, resolveRegisteredWorkflowStepIds } from '../workflow/step-manifest.js';
+import {
+  isRegisteredWorkflowStep,
+  resolveRegisteredWorkflowStepIds,
+} from '../workflow/step-manifest.js';
 import type { WorkflowState } from '../workflow/state.js';
 
 /**
@@ -172,10 +172,7 @@ export interface StepFinalizeResult {
  * @param workflowVariantId - Workflow variant id from workflow state.
  * @returns Matching set list id or the workflow variant id when no entry matches.
  */
-async function resolveSetListId(
-  projectRoot: string,
-  workflowVariantId: string,
-): Promise<string> {
+async function resolveSetListId(projectRoot: string, workflowVariantId: string): Promise<string> {
   const setListsFile = await readSetListsFile(projectRoot);
   const match = setListsFile?.setLists.find(
     (entry) => entry.enabled && entry.workflowId === workflowVariantId,
@@ -306,11 +303,7 @@ export async function runStepFinalize(
   }
 
   const lifecycle = existingState.lifecycle;
-  if (
-    lifecycle == null ||
-    lifecycle.initAt == null ||
-    lifecycle.activeStepId !== stepId
-  ) {
+  if (lifecycle == null || lifecycle.initAt == null || lifecycle.activeStepId !== stepId) {
     throw new CoreMutationError(
       'LIFECYCLE_INIT_REQUIRED',
       `step finalize requires step init for step '${stepId}'`,

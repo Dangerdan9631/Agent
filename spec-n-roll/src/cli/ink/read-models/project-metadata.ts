@@ -1,5 +1,5 @@
-import { readProjectMetadata } from '../../../core/project-metadata.js';
-import type { ProjectMetadata } from '../../../config/schema.js';
+import { readProjectMetadata } from '../../../sdk/core/project-metadata.js';
+import type { ProjectMetadata } from '../../../sdk/config/schema.js';
 
 /**
  * Read-only project metadata prepared for the project screen.

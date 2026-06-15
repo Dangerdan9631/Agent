@@ -3,22 +3,22 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { CoreMutationError } from '../../src/core/errors.js';
-import { updateSpecFrontmatter } from '../../src/core/frontmatter.js';
-import { writeProjectMetadata } from '../../src/core/project-metadata.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { CoreMutationError } from '../../src/sdk/core/errors.js';
+import { updateSpecFrontmatter } from '../../src/sdk/core/frontmatter.js';
+import { writeProjectMetadata } from '../../src/sdk/core/project-metadata.js';
 import {
   lockCompleteTaskSpecs,
   readTaskSpecStatus,
   resolveTaskSpecSlug,
   setTaskSpecStatus,
-} from '../../src/core/task-lifecycle.js';
-import { writeWorkflowState } from '../../src/core/workflow-state.js';
-import { runClarify } from '../../src/specs/clarify.js';
-import type { InterviewQuestion } from '../../src/specs/interview.js';
-import { runRoll } from '../../src/workflow/engine.js';
-import { assertUserOwnedPathWritable } from '../../src/updates/ownership.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
+} from '../../src/sdk/core/task-lifecycle.js';
+import { writeWorkflowState } from '../../src/sdk/core/workflow-state.js';
+import { runClarify } from '../../src/sdk/specs/clarify.js';
+import type { InterviewQuestion } from '../../src/sdk/specs/interview.js';
+import { runRoll } from '../../src/sdk/workflow/engine.js';
+import { assertUserOwnedPathWritable } from '../../src/sdk/updates/ownership.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/sdk/workflow/artifacts.js';
 
 const tempDirs: string[] = [];
 

@@ -1,9 +1,5 @@
-import {
-  readSetListsFile,
-  validateSetListsFile,
-  type SetList,
-} from '../../../setlists/index.js';
-import { readWorkflowConfig } from '../../../workflow/artifacts.js';
+import { readSetListsFile, validateSetListsFile, type SetList } from '../../../sdk/setlists/index.js';
+import { readWorkflowConfig } from '../../../sdk/workflow/artifacts.js';
 
 /**
  * Validation summary attached to set list read-model views.

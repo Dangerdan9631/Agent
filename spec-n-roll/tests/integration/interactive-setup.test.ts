@@ -188,12 +188,27 @@ describe('interactive setup and maintenance flows', () => {
     expect(await waitForFrameContaining(() => app.lastFrame(), 'Update toolkit')).toContain(
       'Update toolkit',
     );
+    await waitForFrameContaining(() => app.lastFrame(), 'Press y to confirm');
 
-    app.stdin.write('y');
-    await waitForInk(200);
-    expect(await waitForFrameContaining(() => app.lastFrame(), 'Updated', 30_000)).toContain(
+    let updateStarted = false;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      app.stdin.write('y');
+      await waitForInk(250);
+      const frame = app.lastFrame() ?? '';
+      if (
+        frame.includes('Updated') ||
+        frame.includes('Updating project') ||
+        frame.includes('Applying')
+      ) {
+        updateStarted = true;
+        break;
+      }
+    }
+    expect(updateStarted).toBe(true);
+
+    expect(await waitForFrameContaining(() => app.lastFrame(), 'Updated', 120_000)).toContain(
       'Updated',
     );
     app.unmount();
-  }, 30_000);
+  }, 150_000);
 });

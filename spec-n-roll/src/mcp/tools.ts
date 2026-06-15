@@ -1,16 +1,29 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { CoreMutationError } from '../core/errors.js';
-import { updateSpecFrontmatter } from '../core/frontmatter.js';
-import { readProjectMetadata, writeProjectMetadata } from '../core/project-metadata.js';
-import { setTaskCheckboxes } from '../core/task-checkboxes.js';
-import { setTaskSpecStatus } from '../core/task-lifecycle.js';
-import { runStepFinalize, runStepInit } from '../core/step-lifecycle.js';
-import { instantiateStepOutput } from '../core/templates.js';
-import { readWorkflowState, writeWorkflowState } from '../core/workflow-state.js';
-import { kebabCaseIdSchema, taskSpecIdSchema } from '../config/schema.js';
+import { CoreMutationError } from '../sdk/core/errors.js';
+import { updateSpecFrontmatter } from '../sdk/core/frontmatter.js';
+import { readProjectMetadata, writeProjectMetadata } from '../sdk/core/project-metadata.js';
+import { setTaskCheckboxes } from '../sdk/core/task-checkboxes.js';
+import { setTaskSpecStatus } from '../sdk/core/task-lifecycle.js';
+import { runStepFinalize, runStepInit } from '../sdk/core/step-lifecycle.js';
+import { instantiateStepOutput } from '../sdk/core/templates.js';
+import { readWorkflowState, writeWorkflowState } from '../sdk/core/workflow-state.js';
+import {
+  kebabCaseIdSchema,
+  discoveryPlanBoundsSchema,
+  repositoryWorkflowScopeSchema,
+  repositoryWorkflowTypeIdSchema,
+  taskSpecIdSchema,
+} from '../sdk/config/schema.js';
 import { executeSetListRead, executeSetListTriage } from './set-list-tool-handlers.js';
+import {
+  executeRepositoryWorkflowDriftRun,
+  executeRepositoryWorkflowPlan,
+  executeRepositoryWorkflowReportRead,
+  executeRepositoryWorkflowStart,
+  executeRepositoryWorkflowTypesList,
+} from './repository-workflow-tool-handlers.js';
 
 /**
  * Serializes a core mutation error into MCP tool error text.
@@ -295,6 +308,109 @@ export function registerCoreMcpTools(server: McpServer): void {
       try {
         const projectRoot = process.cwd();
         const result = await executeSetListTriage(projectRoot, input);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'repository_workflow_types_list',
+    {
+      description: 'List repository onboarding and drift workflow type metadata',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const result = executeRepositoryWorkflowTypesList();
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'repository_workflow_start',
+    {
+      description: 'Start a repository workflow and recommend a discovery plan',
+      inputSchema: {
+        workflowTypeId: repositoryWorkflowTypeIdSchema,
+        description: z.string().optional(),
+      },
+    },
+    async (input) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await executeRepositoryWorkflowStart(projectRoot, input);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'repository_workflow_plan',
+    {
+      description: 'Recommend a repository workflow discovery plan before analysis begins',
+      inputSchema: {
+        workflowTypeId: repositoryWorkflowTypeIdSchema,
+        scope: repositoryWorkflowScopeSchema.optional(),
+        bounds: discoveryPlanBoundsSchema.optional(),
+      },
+    },
+    async (input) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await executeRepositoryWorkflowPlan(projectRoot, input);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'repository_workflow_drift_run',
+    {
+      description: 'Run repository drift through specify and produce refresh recommendations',
+      inputSchema: {
+        description: z.string().optional(),
+      },
+    },
+    async (input) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await executeRepositoryWorkflowDriftRun(projectRoot, input);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: formatToolError(error) }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
+    'repository_workflow_report_read',
+    {
+      description: 'Read a repository workflow report artifact for a completed run',
+      inputSchema: taskIdentitySchema,
+    },
+    async (input) => {
+      try {
+        const projectRoot = process.cwd();
+        const result = await executeRepositoryWorkflowReportRead(projectRoot, input);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

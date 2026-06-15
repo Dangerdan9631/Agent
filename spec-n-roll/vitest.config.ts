@@ -14,6 +14,7 @@ export default defineConfig({
     passWithNoTests: true,
     environment: 'node',
     globals: false,
+    setupFiles: ['tests/setup/di.ts'],
     alias: {
       '@': path.resolve(rootDir, 'src'),
       '@fixtures': path.resolve(rootDir, 'tests/fixtures'),

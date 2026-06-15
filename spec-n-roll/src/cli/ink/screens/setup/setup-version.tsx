@@ -1,7 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 
-import { buildVersionReport, formatVersionReport } from '../../../commands/version.js';
+import { buildCliVersionReport } from '../../../version-invocation.js';
+import { formatVersionReport } from '../../../commands/version.js';
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
 
@@ -12,7 +13,7 @@ import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
  */
 export function SetupVersionScreen(_props: RoutedScreenProps): React.ReactElement {
   const session = useSession();
-  const report = buildVersionReport({ cwd: session.projectRoot });
+  const report = buildCliVersionReport({ cwd: session.projectRoot });
 
   return (
     <Box flexDirection="column">

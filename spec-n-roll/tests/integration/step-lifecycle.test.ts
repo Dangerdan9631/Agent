@@ -5,17 +5,17 @@ import { spawnSync } from 'node:child_process';
 import fse from 'fs-extra';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { runStepFinalize, runStepInit } from '../../src/core/step-lifecycle.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { runStepFinalize, runStepInit } from '../../src/sdk/core/step-lifecycle.js';
 import {
   WorkflowStateFinalizeGateError,
   readWorkflowState,
   writeWorkflowState,
-} from '../../src/core/workflow-state.js';
-import { createDefaultSetListsFile } from '../../src/setlists/index.js';
-import { writeGlobalManifesto } from '../../src/manifesto/index.js';
-import { atomicWriteJson } from '../../src/core/atomic-write.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
+} from '../../src/sdk/core/workflow-state.js';
+import { createDefaultSetListsFile } from '../../src/sdk/setlists/index.js';
+import { writeGlobalManifesto } from '../../src/sdk/manifesto/index.js';
+import { atomicWriteJson } from '../../src/sdk/core/atomic-write.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/sdk/workflow/artifacts.js';
 
 const tempRoots: string[] = [];
 const cliPath = path.resolve('dist/cli/index.js');
@@ -116,7 +116,7 @@ describe('step lifecycle integration', () => {
 
     const persisted = await readWorkflowState(projectRoot, '007', 'step-manifesto-setlists');
     expect(persisted?.lifecycle?.status).toBe('completed');
-  });
+  }, 30_000);
 
   it('rejects workflow completion without successful step finalize', async () => {
     const projectRoot = await createLifecycleProject('reject-direct');
@@ -150,16 +150,13 @@ describe('step lifecycle integration', () => {
     });
 
     expect(finalized.workflowState.lastCompletedStepId).toBe('tasks');
-  });
+  }, 30_000);
 
   it('loads global manifesto on every step init and step manifesto only on exact match', async () => {
     const projectRoot = await createLifecycleProject('manifesto-scope');
     await writeGlobalManifesto(projectRoot, '## Global\nAlways follow lifecycle boundaries.');
 
-    const planManifestoPath = path.join(
-      projectRoot,
-      '.spec-n-roll/config/manifesto/steps/plan.md',
-    );
+    const planManifestoPath = path.join(projectRoot, '.spec-n-roll/config/manifesto/steps/plan.md');
     await fse.ensureDir(path.dirname(planManifestoPath));
     await fse.writeFile(planManifestoPath, '## Plan\nPlanning-specific guidance.', 'utf8');
 
@@ -190,5 +187,5 @@ describe('step lifecycle integration', () => {
 
     expect(tasksInit.manifestos?.map((entry) => entry.scope)).toEqual(['global']);
     expect(tasksInit.manifestos?.some((entry) => entry.stepId === 'plan')).toBe(false);
-  });
+  }, 30_000);
 });

@@ -3,12 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { runInit } from '../../src/cli/commands/init.js';
-import { readTaskSpecStatus } from '../../src/core/task-lifecycle.js';
-import { readWorkflowState } from '../../src/core/workflow-state.js';
-import type { InterviewQuestion } from '../../src/specs/interview.js';
-import { runSpecify } from '../../src/specs/specify.js';
-import type { TriageAssessment } from '../../src/specs/triage.js';
+import { runInit } from '../../src/sdk/init.js';
+import { readTaskSpecStatus } from '../../src/sdk/core/task-lifecycle.js';
+import { readWorkflowState } from '../../src/sdk/core/workflow-state.js';
+import type { InterviewQuestion } from '../../src/sdk/specs/interview.js';
+import { runSpecify } from '../../src/sdk/specs/specify.js';
+import type { TriageAssessment } from '../../src/sdk/specs/triage.js';
 
 const tempDirs: string[] = [];
 

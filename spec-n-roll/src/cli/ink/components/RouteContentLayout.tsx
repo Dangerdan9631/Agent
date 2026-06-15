@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box } from 'ink';
 
 import { useTerminalSize } from '../hooks/use-terminal-size.js';
 import {
@@ -78,9 +78,7 @@ export function RouteContentLayout(props: RouteContentLayoutProps): React.ReactE
         paddingY={1}
       >
         {props.staticContent != null ? (
-          <Box flexDirection="column">
-            {props.staticContent}
-          </Box>
+          <Box flexDirection="column">{props.staticContent}</Box>
         ) : (
           <ContextContent state={contentState} />
         )}

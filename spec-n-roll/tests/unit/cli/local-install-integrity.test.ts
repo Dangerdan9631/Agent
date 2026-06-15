@@ -8,7 +8,7 @@ import {
   LOCAL_INSTALL_LAYOUT_VERSION,
   shouldBypassLocalInstallIntegrity,
   validateLocalInstall,
-} from '../../../src/cli/local-install-integrity.js';
+} from '../../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 

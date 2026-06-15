@@ -4,17 +4,17 @@ import path from 'node:path';
 import fse from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDefaultWorkflowConfig } from '../../src/cli/commands/init.js';
-import { atomicWriteJson } from '../../src/core/atomic-write.js';
+import { createDefaultWorkflowConfig } from '../../src/sdk/init.js';
+import { atomicWriteJson } from '../../src/sdk/core/atomic-write.js';
 import {
   createDefaultSetListsFile,
   evaluateSetListTriage,
   readSetListsFile,
   updateSetList,
-} from '../../src/setlists/index.js';
-import { assessTriage } from '../../src/specs/triage.js';
-import { migrateSetListsIfMissing } from '../../src/updates/migration.js';
-import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/workflow/artifacts.js';
+} from '../../src/sdk/setlists/index.js';
+import { assessTriage } from '../../src/sdk/specs/triage.js';
+import { migrateSetListsIfMissing } from '../../src/sdk/updates/migration.js';
+import { WORKFLOW_CONFIG_RELATIVE_PATH } from '../../src/sdk/workflow/artifacts.js';
 
 const tempRoots: string[] = [];
 

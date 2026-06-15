@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { render, Box, Text, useInput } from 'ink';
 
-import type { BackupConflict } from '../../updates/backup.js';
+import type { BackupConflict } from '../../sdk/updates/backup.js';
 
 /**
  * Input for the interactive update confirmation prompt.

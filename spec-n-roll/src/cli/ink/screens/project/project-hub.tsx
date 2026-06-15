@@ -21,7 +21,13 @@ interface ProjectHubMenuItem extends SelectableListItem {
   /**
    * Stable action identifier for selection handling.
    */
-  actionId: 'specs' | 'project-metadata' | 'manifesto' | 'set-lists' | 'back';
+  actionId:
+    | 'specs'
+    | 'project-metadata'
+    | 'manifesto'
+    | 'set-lists'
+    | 'repository-workflows'
+    | 'back';
   /**
    * Child route entered when the option is selected, if any.
    */
@@ -39,7 +45,7 @@ export type ProjectHubScreenProps = RoutedScreenProps;
  * @returns Menu items for specs, project metadata, and back navigation.
  */
 function buildMenuItems(): readonly ProjectHubMenuItem[] {
-  const back = buildBackMenuItem({ key: '5', routeId: 'local-home' });
+  const back = buildBackMenuItem({ key: '6', routeId: 'local-home' });
 
   return [
     {
@@ -76,6 +82,15 @@ function buildMenuItems(): readonly ProjectHubMenuItem[] {
       routeId: 'set-lists-list',
       label: '4 Set Lists',
       description: 'Browse and edit set list triage configuration',
+      disabled: false,
+    },
+    {
+      id: 'repository-workflows',
+      key: '5',
+      actionId: 'repository-workflows',
+      routeId: 'repository-workflows-list',
+      label: '5 Repository Workflow Reports',
+      description: 'Browse onboarding and drift workflow reports',
       disabled: false,
     },
     {
@@ -121,6 +136,7 @@ export function ProjectHubScreen(props: ProjectHubScreenProps): React.ReactEleme
         case 'project-metadata':
         case 'manifesto':
         case 'set-lists':
+        case 'repository-workflows':
           if (item.routeId != null) {
             session.pushRoute(item.routeId);
           }

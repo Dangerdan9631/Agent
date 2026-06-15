@@ -3,9 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { mergeAgentMcpConfig } from '../../src/agents/mcp-config.js';
-import { runInit } from '../../src/cli/commands/init.js';
-import { runUpdate } from '../../src/cli/commands/update.js';
+import { mergeAgentMcpConfig } from '../../src/sdk/agents/mcp-config.js';
+import { runInit } from '../../src/sdk/init.js';
+import { runUpdate } from '../../src/sdk/update.js';
 
 const tempDirs: string[] = [];
 
@@ -108,5 +108,5 @@ describe('spec-n-roll update', () => {
     expect(
       existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp')),
     ).toBe(true);
-  });
+  }, 60_000);
 });

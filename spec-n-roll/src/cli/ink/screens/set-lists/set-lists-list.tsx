@@ -8,7 +8,10 @@ import {
 } from '../../components/menu/back-menu-item.js';
 import { RouteContentLayout } from '../../components/RouteContentLayout.js';
 import { SelectableList, type SelectableListItem } from '../../components/SelectableList.js';
-import type { ContextContentState, SelectedOptionContext } from '../../components/ContextContent.js';
+import type {
+  ContextContentState,
+  SelectedOptionContext,
+} from '../../components/ContextContent.js';
 import { useSession } from '../../app/session-context.js';
 import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
@@ -116,14 +119,17 @@ export function SetListsListScreen(props: SetListsListScreenProps): React.ReactE
     [selectedContext],
   );
 
-  const reportFocusedContext = useCallback((item: SetListListItem | BackMenuItem | undefined): void => {
-    if (item == null || isBackMenuItem(item)) {
-      setSelectedContext(undefined);
-      return;
-    }
+  const reportFocusedContext = useCallback(
+    (item: SetListListItem | BackMenuItem | undefined): void => {
+      if (item == null || isBackMenuItem(item)) {
+        setSelectedContext(undefined);
+        return;
+      }
 
-    setSelectedContext(item.context);
-  }, []);
+      setSelectedContext(item.context);
+    },
+    [],
+  );
 
   const handleSelect = useCallback(
     (item: SetListListItem | BackMenuItem): void => {

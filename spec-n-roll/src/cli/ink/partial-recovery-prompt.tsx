@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { render, Box, Text, useInput } from 'ink';
 
-import type { PartialRecoveryChoice, PartialRecoveryPrompt } from '../../workflow/engine.js';
+import type { PartialRecoveryChoice, PartialRecoveryPrompt } from '../../sdk/workflow/engine.js';
 
 const CHOICE_LABELS: Record<PartialRecoveryChoice, string> = {
   restart: 'Restart — overwrite partial artifacts and restart the step',

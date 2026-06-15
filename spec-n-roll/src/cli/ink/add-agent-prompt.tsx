@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { render, Box, Text, useInput } from 'ink';
 
-import { getBundledAgentGenerator } from '../../agents/extension-loader.js';
+import { getBundledAgentGenerator } from '../../sdk/agents/extension-loader.js';
 
 /**
  * Resolves a display label for a agent id.

@@ -1,8 +1,8 @@
 import path from 'node:path';
 import React, { useMemo } from 'react';
-import { Box, Text, BoxProps } from 'ink';
+import { Box, Text } from 'ink';
 
-import { buildVersionReport } from '../../commands/version.js';
+import { buildCliVersionReport } from '../../version-invocation.js';
 import { formatBreadcrumb } from '../app/navigation.js';
 import { useSession } from '../app/session-context.js';
 
@@ -28,7 +28,7 @@ export function StatusBar(): React.ReactElement {
   const breadcrumb = formatBreadcrumb(session.navigationStack);
   const versionReport = useMemo(() => {
     try {
-      return buildVersionReport({ cwd: session.projectRoot });
+      return buildCliVersionReport({ cwd: session.projectRoot });
     } catch {
       return null;
     }
@@ -38,12 +38,7 @@ export function StatusBar(): React.ReactElement {
   const localPath = localBinaryPath == null ? '' : ` (${abbreviateProjectRoot(localBinaryPath)})`;
 
   return (
-    <Box
-      flexDirection="column"
-      padding={1}
-      width="100%"
-      backgroundColor="blackBright"
-    >
+    <Box flexDirection="column" padding={1} width="100%" backgroundColor="blackBright">
       <Box backgroundColor="black" justifyContent="center" width="100%">
         <Text color="white" bold={true}>
           Spec-N-Roll
@@ -51,7 +46,9 @@ export function StatusBar(): React.ReactElement {
         <Text color="grey">
           {binaryContext == 'local' ? ` (${binaryContext} ${localPath})` : ` (${binaryContext})`}
         </Text>
-        <Text color="grey" bold={true}>{' | '}</Text>
+        <Text color="grey" bold={true}>
+          {' | '}
+        </Text>
         <Text color="grey">{abbreviateProjectRoot(session.projectRoot)}</Text>
       </Box>
       <Box justifyContent="center" width="100%">

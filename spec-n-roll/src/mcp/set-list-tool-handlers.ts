@@ -1,9 +1,6 @@
-import {
-  loadSetListReadResult,
-  type SetListReadCliResult,
-} from '../cli/commands/set-list.js';
-import { runSetListTriage } from '../setlists/index.js';
-import type { SetListTriageResult } from '../setlists/triage.js';
+import { loadSetListReadResult, type SetListReadResult } from '../sdk/set-list.js';
+import { runSetListTriage } from '../sdk/setlists/index.js';
+import type { SetListTriageResult } from '../sdk/setlists/triage.js';
 
 /**
  * Input accepted by the `set_list_read` MCP tool.
@@ -43,7 +40,7 @@ export interface SetListTriageToolInput {
 export async function executeSetListRead(
   projectRoot: string,
   input: SetListReadToolInput = {},
-): Promise<SetListReadCliResult> {
+): Promise<SetListReadResult> {
   return loadSetListReadResult(projectRoot, { id: input.id });
 }
 

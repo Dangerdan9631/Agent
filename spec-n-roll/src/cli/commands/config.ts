@@ -1,14 +1,20 @@
 import { Command } from 'commander';
+import { injectable, injectAll } from 'tsyringe';
 
-import { registerConfigAgentCommand } from './config-agent.js';
+import { CONFIG_SUBCOMMAND } from '../../di/tokens.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
- * Registers the `config` command group and its subcommands on the root Commander program.
- *
- * @param program - Root Commander program to attach commands to.
+ * Registers the `config` command group and its subcommands.
  */
-export function registerConfigCommand(program: Command): void {
-  const config = program.command('config').description('Configure Spec-N-Roll project settings');
+@injectable()
+export class ConfigCommand implements CliCommand {
+  constructor(@injectAll(CONFIG_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
-  registerConfigAgentCommand(config);
+  register(command: Command): void {
+    const config = command.command('config').description('Configure Spec-N-Roll project settings');
+    for (const subcommand of this.subcommands) {
+      subcommand.register(config);
+    }
+  }
 }

@@ -1,16 +1,20 @@
 import { Command } from 'commander';
+import { injectable, injectAll } from 'tsyringe';
 
-import { registerConfigAgentAddCommand } from './config-agent-add.js';
-import { registerConfigAgentRemoveCommand } from './config-agent-remove.js';
+import { CONFIG_AGENT_SUBCOMMAND } from '../../di/tokens.js';
+import type { CliCommand } from './cli-command.js';
 
 /**
  * Registers the `config agent` command group and its subcommands.
- *
- * @param config - Commander `config` command to attach the group to.
  */
-export function registerConfigAgentCommand(config: Command): void {
-  const agent = config.command('agent').description('Manage configured AI coding agents');
+@injectable()
+export class ConfigAgentCommand implements CliCommand {
+  constructor(@injectAll(CONFIG_AGENT_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
-  registerConfigAgentAddCommand(agent);
-  registerConfigAgentRemoveCommand(agent);
+  register(command: Command): void {
+    const agent = command.command('agent').description('Manage configured AI coding agents');
+    for (const subcommand of this.subcommands) {
+      subcommand.register(agent);
+    }
+  }
 }

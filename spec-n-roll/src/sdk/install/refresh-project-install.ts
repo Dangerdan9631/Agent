@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-import { resolveGlobalToolkitRoot } from './dispatcher.js';
+import { resolveGlobalToolkitRoot } from '../../cli/dispatcher.js';
 import { installProjectBinaries } from './local-binaries.js';
-import type { InstallSource } from './ink/read-models/install-source.js';
+import type { InstallSource } from '../../cli/ink/read-models/install-source.js';
 
 /**
  * Options for refreshing the project-local CLI bundle from the global installation.

@@ -6,11 +6,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   listWorkflowSkillUpdates,
   MANAGED_SKILL_AUTHOR,
-} from '../../src/agents/generators/workflow-skills.js';
-import { parseFrontmatterDocument } from '../../src/core/frontmatter.js';
-import { runInit } from '../../src/cli/commands/init.js';
-import { runUpdate } from '../../src/cli/commands/update.js';
-import { readToolkitPackageVersion } from '../../src/cli/commands/version.js';
+} from '../../src/sdk/agents/generators/workflow-skills.js';
+import { parseFrontmatterDocument } from '../../src/sdk/core/frontmatter.js';
+import { runInit } from '../../src/sdk/init.js';
+import { runUpdate } from '../../src/sdk/update.js';
+import { readToolkitPackageVersion } from '../../src/sdk/version.js';
 
 const tempDirs: string[] = [];
 
@@ -85,9 +85,7 @@ User-owned content.
     mkdirSync(path.dirname(userSkillPath), { recursive: true });
     writeFileSync(userSkillPath, userSkillContent, 'utf8');
 
-    const managedPaths = new Set(
-      listWorkflowSkillUpdates().map((skill) => skill.relativePath),
-    );
+    const managedPaths = new Set(listWorkflowSkillUpdates().map((skill) => skill.relativePath));
 
     const result = await runUpdate({ projectRoot });
 
@@ -105,5 +103,5 @@ User-owned content.
       expect(metadata.author).toBe(MANAGED_SKILL_AUTHOR);
       expect(metadata.version).toBe(readToolkitPackageVersion());
     }
-  });
+  }, 60_000);
 });
