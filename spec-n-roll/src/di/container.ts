@@ -1,7 +1,10 @@
 import { container, type DependencyContainer } from 'tsyringe';
 
+import { DefaultInteractiveAppServices } from '../cli/ink/app/services.js';
+import { CoreMcpTools } from '../mcp/tools.js';
+import { RepositoryWorkflowReportViewService } from '../sdk/interactive/repository-workflows.js';
 import { ConsoleLoggerFactory } from '../sdk/logging/index.js';
-import { LOGGER_FACTORY } from './tokens.js';
+import { INTERACTIVE_APP_SERVICES, LOGGER_FACTORY, MCP_TOOL } from './tokens.js';
 
 /**
  * Application-wide tsyringe container used for service registration and resolution.
@@ -25,6 +28,11 @@ export function registerApplicationServices(): void {
   }
 
   rootContainer.register(LOGGER_FACTORY, { useClass: ConsoleLoggerFactory });
+  rootContainer.register(RepositoryWorkflowReportViewService, {
+    useClass: RepositoryWorkflowReportViewService,
+  });
+  rootContainer.register(INTERACTIVE_APP_SERVICES, { useClass: DefaultInteractiveAppServices });
+  rootContainer.register(MCP_TOOL, { useClass: CoreMcpTools });
   registerCliCommands();
   applicationServicesRegistered = true;
 }

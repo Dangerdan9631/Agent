@@ -1,12 +1,26 @@
 import type { InjectionToken } from 'tsyringe';
 
 import type { CliCommand } from '../cli/commands/cli-command.js';
+import type { InteractiveAppServices } from '../cli/ink/app/services.js';
+import type { McpTool } from '../mcp/mcp-tool.js';
 import type { LoggerFactory } from '../sdk/logging/index.js';
 
 /**
  * Injection token for the root logger factory used by CLI command adapters.
  */
 export const LOGGER_FACTORY: InjectionToken<LoggerFactory> = Symbol('LOGGER_FACTORY');
+
+/**
+ * Injection token for the service bundle used by the Ink application shell.
+ */
+export const INTERACTIVE_APP_SERVICES: InjectionToken<InteractiveAppServices> = Symbol(
+  'INTERACTIVE_APP_SERVICES',
+);
+
+/**
+ * Injection token for MCP tool groups registered on the MCP server.
+ */
+export const MCP_TOOL: InjectionToken<McpTool> = Symbol('MCP_TOOL');
 
 /**
  * Injection token for top-level CLI commands registered on the root program.

@@ -3,11 +3,7 @@ import { Box, Text } from 'ink';
 
 import { useSession } from '../../app/session-context.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
-import { readRepositoryWorkflowReport } from '../../../../sdk/repository/report.js';
-import {
-  assembleRepositoryWorkflowReportSummary,
-  type RepositoryWorkflowReportSummary,
-} from '../../read-models/repository-workflows.js';
+import type { RepositoryWorkflowReportSummary } from '../../../../sdk/interactive/repository-workflows.js';
 
 /**
  * Returns the current route context label from the navigation stack.
@@ -42,7 +38,8 @@ export function RepositoryWorkflowReportDetailScreen(
       };
     }
 
-    void assembleRepositoryWorkflowReportSummary(session.projectRoot, directoryName)
+    void session.services.repositoryWorkflowReports
+      .assembleReportSummary(session.projectRoot, directoryName)
       .then(async (loadedSummary) => {
         if (!active) {
           return;
@@ -54,7 +51,7 @@ export function RepositoryWorkflowReportDetailScreen(
           return;
         }
 
-        const report = await readRepositoryWorkflowReport(
+        const report = await session.services.repositoryWorkflowReports.readReport(
           session.projectRoot,
           loadedSummary.taskSpecId,
           loadedSummary.slug,
@@ -74,7 +71,7 @@ export function RepositoryWorkflowReportDetailScreen(
     return () => {
       active = false;
     };
-  }, [directoryName, session.projectRoot]);
+  }, [directoryName, session.projectRoot, session.services.repositoryWorkflowReports]);
 
   if (directoryName == null) {
     return (

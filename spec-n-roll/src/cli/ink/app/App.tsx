@@ -45,6 +45,7 @@ import { RepositoryWorkflowReportsListScreen } from '../screens/repository-workf
 import { SessionProvider, useSession } from './session-context.js';
 import { supplementalHintsForRoute, titleForRoute, type RouteId } from './navigation.js';
 import type { RoutedScreenProps } from './routed-screen-props.js';
+import type { InteractiveAppServices } from './services.js';
 
 /**
  * Startup props for the interactive application shell.
@@ -66,6 +67,10 @@ export interface AppProps {
    * Absolute local CLI path when the session is running through a project-local install.
    */
   localBinaryPath?: string;
+  /**
+   * Service bundle used by screens to load or mutate project data.
+   */
+  services?: InteractiveAppServices;
 }
 
 /**
@@ -298,6 +303,7 @@ export function App(props: AppProps): React.ReactElement {
       isInitialized={props.isInitialized}
       binaryContext={props.binaryContext}
       localBinaryPath={props.localBinaryPath}
+      services={props.services}
     >
       <AppShell />
     </SessionProvider>

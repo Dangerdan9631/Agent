@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { injectable } from 'tsyringe';
 import { z } from 'zod';
 
 import { CoreMutationError } from '../sdk/core/errors.js';
@@ -24,6 +25,7 @@ import {
   executeRepositoryWorkflowStart,
   executeRepositoryWorkflowTypesList,
 } from './repository-workflow-tool-handlers.js';
+import type { McpTool } from './mcp-tool.js';
 
 /**
  * Serializes a core mutation error into MCP tool error text.
@@ -419,4 +421,19 @@ export function registerCoreMcpTools(server: McpServer): void {
       }
     },
   );
+}
+
+/**
+ * Registers the core SDK-backed MCP tool group through dependency injection.
+ */
+@injectable()
+export class CoreMcpTools implements McpTool {
+  /**
+   * Adds all core SDK-backed tool handlers to the MCP server.
+   *
+   * @param server - MCP server instance receiving tool registrations.
+   */
+  register(server: McpServer): void {
+    registerCoreMcpTools(server);
+  }
 }

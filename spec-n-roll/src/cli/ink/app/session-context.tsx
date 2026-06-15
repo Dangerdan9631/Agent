@@ -10,6 +10,7 @@ import {
   type NavigationStackEntry,
   type RouteId,
 } from './navigation.js';
+import { createDefaultInteractiveAppServices, type InteractiveAppServices } from './services.js';
 
 /**
  * Immutable startup values for an interactive session.
@@ -31,6 +32,10 @@ export interface SessionProviderProps {
    * Absolute local CLI path when the session is running through a project-local install.
    */
   localBinaryPath?: string;
+  /**
+   * Service bundle used by screens to load or mutate project data.
+   */
+  services?: InteractiveAppServices;
   /**
    * Child Ink elements rendered inside the provider.
    */
@@ -70,6 +75,10 @@ export interface SessionContextValue {
    */
   localBinaryPath?: string;
   /**
+   * Service bundle used by screens to load or mutate project data.
+   */
+  services: InteractiveAppServices;
+  /**
    * Pushes a child route onto the stack with an optional context label.
    */
   pushRoute: (routeId: RouteId, contextLabel?: string) => void;
@@ -99,6 +108,10 @@ export function SessionProvider(props: SessionProviderProps): React.ReactElement
     rootNavigationStackFor(props.binaryContext),
   );
   const [selectedTaskSpec, setSelectedTaskSpec] = useState<TaskSpecIdentity | null>(null);
+  const services = useMemo(
+    () => props.services ?? createDefaultInteractiveAppServices(),
+    [props.services],
+  );
 
   const value = useMemo<SessionContextValue>(
     () => ({
@@ -109,6 +122,7 @@ export function SessionProvider(props: SessionProviderProps): React.ReactElement
       selectedTaskSpec,
       binaryContext: props.binaryContext,
       localBinaryPath: props.localBinaryPath,
+      services,
       pushRoute: (routeId, contextLabel) => {
         setNavigationStack((current) => pushRoute(current, routeId, contextLabel));
       },
@@ -123,6 +137,7 @@ export function SessionProvider(props: SessionProviderProps): React.ReactElement
       props.localBinaryPath,
       props.projectRoot,
       navigationStack,
+      services,
       selectedTaskSpec,
     ],
   );

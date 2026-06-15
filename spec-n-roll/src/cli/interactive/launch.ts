@@ -2,6 +2,8 @@ import path from 'node:path';
 import React from 'react';
 import { render } from 'ink';
 
+import { rootContainer } from '../../di/container.js';
+import { INTERACTIVE_APP_SERVICES } from '../../di/tokens.js';
 import { readWorkflowConfig } from '../../sdk/workflow/artifacts.js';
 import { buildCliVersionReport } from '../version-invocation.js';
 import { App } from '../ink/app/App.js';
@@ -48,6 +50,7 @@ export async function launchInteractiveApp(
     cwd: projectRoot,
     executedBinaryPath: options.executedBinaryPath,
   });
+  const services = rootContainer.resolve(INTERACTIVE_APP_SERVICES);
 
   const instance = render(
     React.createElement(App, {
@@ -55,6 +58,7 @@ export async function launchInteractiveApp(
       isInitialized,
       binaryContext: versionReport.invocation,
       localBinaryPath: versionReport.localCliPath,
+      services,
     }),
   );
 

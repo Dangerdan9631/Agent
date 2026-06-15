@@ -15,10 +15,8 @@ import {
 import { useSession } from '../../app/session-context.js';
 import { homeRouteIdFor, type RouteId } from '../../app/navigation.js';
 import type { RoutedScreenProps } from '../../app/routed-screen-props.js';
-import {
-  listRepositoryWorkflowReportSummaries,
-  type RepositoryWorkflowReportSummary,
-} from '../../read-models/repository-workflows.js';
+import type { RepositoryWorkflowReportSummary } from '../../../../sdk/interactive/repository-workflows.js';
+import { listTaskSpecSummaries } from '../../read-models/task-specs.js';
 
 /**
  * Selectable repository workflow report row with its backing summary.
@@ -157,7 +155,13 @@ export function RepositoryWorkflowReportsListScreen(
 
   useEffect(() => {
     let active = true;
-    void listRepositoryWorkflowReportSummaries(session.projectRoot)
+    void listTaskSpecSummaries(session.projectRoot)
+      .then((taskSpecs) =>
+        session.services.repositoryWorkflowReports.listReportSummaries(
+          session.projectRoot,
+          taskSpecs.recognized,
+        ),
+      )
       .then((result) => {
         if (active) {
           setSummaries(result);
@@ -174,7 +178,7 @@ export function RepositoryWorkflowReportsListScreen(
     return () => {
       active = false;
     };
-  }, [session.projectRoot]);
+  }, [session.projectRoot, session.services.repositoryWorkflowReports]);
 
   if (error != null) {
     return (

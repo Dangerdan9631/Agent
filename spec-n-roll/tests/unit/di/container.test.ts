@@ -6,6 +6,8 @@ import {
   resetApplicationContainer,
   rootContainer,
 } from '../../../src/di/container.js';
+import { INTERACTIVE_APP_SERVICES, MCP_TOOL } from '../../../src/di/tokens.js';
+import { McpServerFactory } from '../../../src/mcp/server-factory.js';
 
 /**
  * Test token for explicit constructor injection in DI smoke tests.
@@ -68,5 +70,17 @@ describe('dependency injection container', () => {
     const consumer = rootContainer.resolve(GreetingConsumer);
 
     expect(consumer.formatMessage()).toBe('hello:idempotent');
+  });
+
+  it('resolves non-CLI application adapters from the container', () => {
+    registerApplicationServices();
+
+    const interactiveServices = rootContainer.resolve(INTERACTIVE_APP_SERVICES);
+    const mcpTools = rootContainer.resolveAll(MCP_TOOL);
+    const mcpServerFactory = rootContainer.resolve(McpServerFactory);
+
+    expect(interactiveServices.repositoryWorkflowReports).toBeDefined();
+    expect(mcpTools.length).toBeGreaterThan(0);
+    expect(mcpServerFactory.createServer()).toBeDefined();
   });
 });
