@@ -1,8 +1,10 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { updateSpecFrontmatter } from '../../sdk/core/frontmatter.js';
 import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError, parseKeyValuePairs } from './core-cli-utils.js';
 
@@ -11,6 +13,12 @@ import { exitOnCoreError, parseKeyValuePairs } from './core-cli-utils.js';
  */
 @injectable()
 export class SpecFrontmatterUpdateCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('SpecFrontmatterUpdateCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('update')
@@ -21,10 +29,15 @@ export class SpecFrontmatterUpdateCommand implements CliCommand {
         try {
           const slug = await resolveTaskSpecSlug(process.cwd(), options.taskSpecId);
           const fields = parseKeyValuePairs(options.field);
-          const result = await updateSpecFrontmatter(process.cwd(), options.taskSpecId, slug, fields);
-          console.log(JSON.stringify(result, null, 2));
+          const result = await updateSpecFrontmatter(
+            process.cwd(),
+            options.taskSpecId,
+            slug,
+            fields,
+          );
+          this.output.info(JSON.stringify(result, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { loadSetListReadResult } from '../../sdk/set-list.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
@@ -10,6 +12,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class SetListShowCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('SetListShowCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('show')
@@ -18,9 +26,9 @@ export class SetListShowCommand implements CliCommand {
       .action(async (id: string) => {
         try {
           const result = await loadSetListReadResult(process.cwd(), { id });
-          console.log(JSON.stringify(result, null, 2));
+          this.output.info(JSON.stringify(result, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

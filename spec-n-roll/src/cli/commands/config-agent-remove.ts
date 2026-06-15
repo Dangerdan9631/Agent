@@ -1,7 +1,10 @@
+import chalk from 'chalk';
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { runConfigAgentRemove } from '../../sdk/config-agent.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
 
@@ -10,6 +13,12 @@ import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
  */
 @injectable()
 export class ConfigAgentRemoveCommand implements CliCommand {
+  private readonly logger: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.logger = loggerFactory.create('ConfigAgentRemoveCommand');
+  }
+
   register(command: Command): void {
     command
       .command('remove <agents>')
@@ -23,14 +32,14 @@ export class ConfigAgentRemoveCommand implements CliCommand {
 
           for (const agent of result.agents) {
             if (agent.notConfigured) {
-              console.log(`Agent not configured: ${agent.agentId}`);
+              this.logger.info(`Agent not configured: ${chalk.yellow(agent.agentId)}`);
             } else {
-              console.log(`Removed agent: ${agent.agentId}`);
+              this.logger.info(`Removed agent: ${chalk.green(agent.agentId)}`);
             }
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error(`config agent remove failed: ${message}`);
+          this.logger.error(`config agent remove failed: ${message}`);
           process.exitCode = 1;
         }
       });

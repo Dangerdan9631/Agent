@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { findLocalCli } from './dispatcher.js';
+import type { Logger } from '../sdk/logging/index.js';
 import {
   buildVersionReport,
   formatVersionReport,
@@ -56,13 +57,17 @@ export function buildCliVersionReport(options: VersionReportOptions = {}) {
 }
 
 /**
- * Prints the combined version report to stdout.
+ * Prints the combined version report using the given logger.
  *
+ * @param logger - Plain logger used for machine-readable version lines.
  * @param options - Optional cwd and executed binary path overrides.
  */
-export function printVersionReport(options: VersionReportOptions = {}): void {
+export function printVersionReport(logger: Logger, options: VersionReportOptions = {}): void {
   const report = buildCliVersionReport(options);
-  process.stdout.write(formatVersionReport(report));
+  const lines = formatVersionReport(report).trimEnd().split('\n');
+  for (const line of lines) {
+    logger.info(line);
+  }
 }
 
 /**

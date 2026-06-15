@@ -12,7 +12,9 @@ export class SpecFrontmatterCommand implements CliCommand {
   constructor(@injectAll(SPEC_FRONTMATTER_SUBCOMMAND) private readonly subcommands: CliCommand[]) {}
 
   register(command: Command): void {
-    const frontmatter = command.command('frontmatter').description('Non-status frontmatter updates');
+    const frontmatter = command
+      .command('frontmatter')
+      .description('Non-status frontmatter updates');
     for (const subcommand of this.subcommands) {
       subcommand.register(frontmatter);
     }

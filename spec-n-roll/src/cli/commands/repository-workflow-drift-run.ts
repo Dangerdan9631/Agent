@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import {
   runRepositoryDriftWorkflow,
   type RepositoryDriftWorkflowResult,
@@ -13,6 +15,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class RepositoryWorkflowDriftRunCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('RepositoryWorkflowDriftRunCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('run')
@@ -24,9 +32,9 @@ export class RepositoryWorkflowDriftRunCommand implements CliCommand {
             projectRoot: process.cwd(),
             description: options.description,
           });
-          console.log(JSON.stringify(result, null, 2));
+          this.output.info(JSON.stringify(result, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

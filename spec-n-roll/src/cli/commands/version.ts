@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { printVersionReport } from '../version-invocation.js';
 import type { CliCommand } from './cli-command.js';
 
@@ -21,12 +23,18 @@ export { argvRequestsVersion } from '../version-invocation.js';
  */
 @injectable()
 export class VersionCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('VersionCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('version')
       .description('Show installed Spec-N-Roll versions')
       .action(() => {
-        printVersionReport();
+        printVersionReport(this.output);
       });
   }
 }

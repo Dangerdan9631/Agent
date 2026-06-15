@@ -1,7 +1,9 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { formatBundledAgentsList, resolveListedAgents } from '../../sdk/list-agents.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 
 /**
@@ -9,6 +11,12 @@ import type { CliCommand } from './cli-command.js';
  */
 @injectable()
 export class ListAgentsCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('ListAgentsCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('agents')
@@ -19,7 +27,7 @@ export class ListAgentsCommand implements CliCommand {
           enabledOnly: commandOptions.enabled === true,
           projectRoot: process.cwd(),
         });
-        console.log(formatBundledAgentsList(agents));
+        this.output.info(formatBundledAgentsList(agents));
       });
   }
 }

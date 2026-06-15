@@ -745,14 +745,6 @@ describe('quickstart scenario 10: task spec lifecycle and locking', () => {
   });
 });
 
-describe('quickstart scenario 11: MCP/CLI parity for deterministic mutations', () => {
-  it('is covered by tests/contract/mcp-cli-parity.test.ts', () => {
-    expect(existsSync(path.join(repoRoot, 'tests', 'contract', 'mcp-cli-parity.test.ts'))).toBe(
-      true,
-    );
-  });
-});
-
 describe('quickstart scenario 12: documentation completeness', () => {
   const requiredDocs: Array<{ file: string; mustContain: string[] }> = [
     {

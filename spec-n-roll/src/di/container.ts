@@ -1,5 +1,8 @@
 import { container, type DependencyContainer } from 'tsyringe';
 
+import { ConsoleLoggerFactory } from '../sdk/logging/index.js';
+import { LOGGER_FACTORY } from './tokens.js';
+
 /**
  * Application-wide tsyringe container used for service registration and resolution.
  */
@@ -21,6 +24,7 @@ export function registerApplicationServices(): void {
     return;
   }
 
+  rootContainer.register(LOGGER_FACTORY, { useClass: ConsoleLoggerFactory });
   registerCliCommands();
   applicationServicesRegistered = true;
 }

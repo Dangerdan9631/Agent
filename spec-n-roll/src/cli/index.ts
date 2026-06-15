@@ -3,6 +3,7 @@
 import '../di/bootstrap.js';
 
 import { rootContainer } from '../di/container.js';
+import { LOGGER_FACTORY } from '../di/tokens.js';
 import { isCurrentModuleEntrypoint } from '../sdk/core/paths.js';
 import { CliProgramFactory } from './cli-program-factory.js';
 import { stripGlobalFlag } from './dispatcher.js';
@@ -29,7 +30,9 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   const { args } = stripGlobalFlag(rawArgs);
 
   if (argvRequestsVersion(args)) {
-    printVersionReport({ executedBinaryPath: argv[1] });
+    const loggerFactory = rootContainer.resolve(LOGGER_FACTORY);
+    const logger = loggerFactory.create('version', { plain: true });
+    printVersionReport(logger, { executedBinaryPath: argv[1] });
     return;
   }
 
@@ -54,7 +57,8 @@ if (isMainModule) {
       process.exit(process.exitCode ?? 0);
     })
     .catch((error: unknown) => {
-      console.error(error);
+      const loggerFactory = rootContainer.resolve(LOGGER_FACTORY);
+      loggerFactory.create('cli').error(error);
       process.exit(1);
     });
 }

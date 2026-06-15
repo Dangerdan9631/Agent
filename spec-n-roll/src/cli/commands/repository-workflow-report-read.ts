@@ -1,7 +1,9 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { loadRepositoryWorkflowReportReadResult } from '../../sdk/repository-workflow.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
@@ -11,6 +13,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class RepositoryWorkflowReportReadCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('RepositoryWorkflowReportReadCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('read')
@@ -24,9 +32,9 @@ export class RepositoryWorkflowReportReadCommand implements CliCommand {
             options.taskSpecId,
             slug,
           );
-          console.log(JSON.stringify(result, null, 2));
+          this.output.info(JSON.stringify(result, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

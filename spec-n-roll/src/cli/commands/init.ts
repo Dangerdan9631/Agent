@@ -1,10 +1,13 @@
 import path from 'node:path';
+import chalk from 'chalk';
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { listBundledAgentIds } from '../../sdk/agents/extension-loader.js';
 import { MCP_BINARY_RELATIVE_PATH } from '../../sdk/agents/mcp-config.js';
 import { runInit } from '../../sdk/init.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { promptForAgentSelection } from '../ink/init-prompts.js';
 import type { CliCommand } from './cli-command.js';
 import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
@@ -14,6 +17,12 @@ import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
  */
 @injectable()
 export class InitCommand implements CliCommand {
+  private readonly logger: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.logger = loggerFactory.create('InitCommand');
+  }
+
   register(command: Command): void {
     command
       .command('init')
@@ -34,13 +43,13 @@ export class InitCommand implements CliCommand {
             agents,
           });
 
-          console.log(
-            `Initialized Spec-N-Roll in ${result.projectRoot} for agents: ${result.selectedAgents.join(', ')}`,
+          this.logger.info(
+            `Initialized Spec-N-Roll in ${chalk.cyan(result.projectRoot)} for agents: ${chalk.green(result.selectedAgents.join(', '))}`,
           );
-          console.log(`MCP server: ${MCP_BINARY_RELATIVE_PATH}`);
+          this.logger.info(`MCP server: ${chalk.dim(MCP_BINARY_RELATIVE_PATH)}`);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error(`init failed: ${message}`);
+          this.logger.error(`init failed: ${message}`);
           process.exitCode = 1;
         }
       });

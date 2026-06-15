@@ -1,8 +1,10 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { writeProjectMetadata } from '../../sdk/core/project-metadata.js';
 import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
 
@@ -11,6 +13,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class ProjectMetadataWriteCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('ProjectMetadataWriteCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('write')
@@ -35,9 +43,9 @@ export class ProjectMetadataWriteCommand implements CliCommand {
               currentTaskSlug,
               implementationStartedAt: options.implementationStartedAt ?? undefined,
             });
-            console.log(JSON.stringify(result, null, 2));
+            this.output.info(JSON.stringify(result, null, 2));
           } catch (error) {
-            exitOnCoreError(error);
+            exitOnCoreError(error, this.output);
           }
         },
       );

@@ -1,7 +1,9 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { loadManifestoShowEntries } from '../../sdk/manifesto.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 
 /**
@@ -9,6 +11,14 @@ import type { CliCommand } from './cli-command.js';
  */
 @injectable()
 export class ManifestoShowCommand implements CliCommand {
+  private readonly logger: Logger;
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.logger = loggerFactory.create('ManifestoShowCommand');
+    this.output = loggerFactory.create('ManifestoShowCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('show')
@@ -17,12 +27,12 @@ export class ManifestoShowCommand implements CliCommand {
       .option('--step <stepId>', 'Show only the manifesto for one workflow step')
       .action(async (options: { global?: boolean; step?: string }) => {
         if (options.global === true && options.step != null) {
-          console.error('Use either --global or --step, not both.');
+          this.logger.error('Use either --global or --step, not both.');
           process.exit(1);
         }
 
         const entries = await loadManifestoShowEntries(process.cwd(), options);
-        console.log(JSON.stringify({ manifestos: entries }, null, 2));
+        this.output.info(JSON.stringify({ manifestos: entries }, null, 2));
       });
   }
 }

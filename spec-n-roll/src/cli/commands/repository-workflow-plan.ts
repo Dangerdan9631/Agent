@@ -1,7 +1,9 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import type { DiscoveryPlanBounds, RepositoryWorkflowScope } from '../../sdk/config/schema.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { planRepositoryWorkflow } from '../../sdk/repository/workflow-run.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
@@ -84,6 +86,12 @@ function buildDiscoveryPlanBoundsFromCliOptions(options: {
  */
 @injectable()
 export class RepositoryWorkflowPlanCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('RepositoryWorkflowPlanCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('plan')
@@ -131,7 +139,9 @@ export class RepositoryWorkflowPlanCommand implements CliCommand {
           try {
             const result = await planRepositoryWorkflow({
               projectRoot: process.cwd(),
-              workflowTypeId: options.workflowTypeId as 'repository-onboarding' | 'repository-drift',
+              workflowTypeId: options.workflowTypeId as
+                | 'repository-onboarding'
+                | 'repository-drift',
               scope: buildRepositoryWorkflowScopeFromCliOptions(
                 options.includedPath,
                 options.omittedPath,
@@ -142,9 +152,9 @@ export class RepositoryWorkflowPlanCommand implements CliCommand {
                 maxProductAreas: options.maxProductAreas,
               }),
             });
-            console.log(JSON.stringify(result, null, 2));
+            this.output.info(JSON.stringify(result, null, 2));
           } catch (error) {
-            exitOnCoreError(error);
+            exitOnCoreError(error, this.output);
           }
         },
       );

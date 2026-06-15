@@ -1,8 +1,10 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { setTaskCheckboxes } from '../../sdk/core/task-checkboxes.js';
 import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
 
@@ -11,6 +13,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class TaskCheckboxSetCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('TaskCheckboxSetCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('set')
@@ -27,7 +35,7 @@ export class TaskCheckboxSetCommand implements CliCommand {
           },
         ) => {
           if (completed !== 'true' && completed !== 'false') {
-            console.error('completed must be true or false');
+            this.output.error('completed must be true or false');
             process.exit(1);
           }
           try {
@@ -39,9 +47,9 @@ export class TaskCheckboxSetCommand implements CliCommand {
               options.taskId,
               completed === 'true',
             );
-            console.log(JSON.stringify(result, null, 2));
+            this.output.info(JSON.stringify(result, null, 2));
           } catch (error) {
-            exitOnCoreError(error);
+            exitOnCoreError(error, this.output);
           }
         },
       );

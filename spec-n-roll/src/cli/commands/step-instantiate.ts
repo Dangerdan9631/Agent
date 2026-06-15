@@ -1,8 +1,10 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
 import { instantiateStepOutput } from '../../sdk/core/templates.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError, parseKeyValuePairs } from './core-cli-utils.js';
 
@@ -11,6 +13,12 @@ import { exitOnCoreError, parseKeyValuePairs } from './core-cli-utils.js';
  */
 @injectable()
 export class StepInstantiateCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('StepInstantiateCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('instantiate')
@@ -28,9 +36,9 @@ export class StepInstantiateCommand implements CliCommand {
             options.stepId,
             { frontmatter: parseKeyValuePairs(options.frontmatter) },
           );
-          console.log(JSON.stringify({ path: relativePath }, null, 2));
+          this.output.info(JSON.stringify({ path: relativePath }, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

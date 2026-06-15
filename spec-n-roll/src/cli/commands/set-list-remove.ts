@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { removeSetList } from '../../sdk/setlists/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
@@ -10,6 +12,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class SetListRemoveCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('SetListRemoveCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('remove')
@@ -18,9 +26,9 @@ export class SetListRemoveCommand implements CliCommand {
       .action(async (id: string) => {
         try {
           const setListsFile = await removeSetList(process.cwd(), id);
-          console.log(JSON.stringify({ setListsFile }, null, 2));
+          this.output.info(JSON.stringify({ setListsFile }, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

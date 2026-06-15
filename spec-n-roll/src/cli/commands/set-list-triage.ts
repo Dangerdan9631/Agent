@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { runSetListTriage } from '../../sdk/setlists/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
@@ -10,6 +12,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class SetListTriageCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('SetListTriageCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('triage')
@@ -18,12 +26,12 @@ export class SetListTriageCommand implements CliCommand {
       .action(async (options: { intent: string }) => {
         try {
           const result = await runSetListTriage(process.cwd(), options.intent);
-          console.log(JSON.stringify(result, null, 2));
+          this.output.info(JSON.stringify(result, null, 2));
           if (result.blocking) {
             process.exit(1);
           }
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

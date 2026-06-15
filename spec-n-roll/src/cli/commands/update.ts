@@ -1,6 +1,9 @@
+import chalk from 'chalk';
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { runUpdate } from '../../sdk/update.js';
 import type { CliCommand } from './cli-command.js';
 
@@ -9,6 +12,12 @@ import type { CliCommand } from './cli-command.js';
  */
 @injectable()
 export class UpdateCommand implements CliCommand {
+  private readonly logger: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.logger = loggerFactory.create('UpdateCommand');
+  }
+
   register(command: Command): void {
     command
       .command('update')
@@ -23,39 +32,45 @@ export class UpdateCommand implements CliCommand {
             force: commandOptions.force === true,
           });
 
+          const versionTransition = `${chalk.yellow(result.previousToolkitVersion)} ${chalk.dim('->')} ${chalk.green(result.targetToolkitVersion)}`;
+
           if (result.dryRun) {
-            console.log(
-              `Dry run: would update toolkit ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}`,
+            this.logger.info(`Dry run: would update toolkit ${versionTransition}`);
+            this.logger.info(`Files: ${chalk.cyan(String(result.overwrittenFiles.length))}`);
+            this.logger.info(`Backups: ${chalk.cyan(String(result.backupConflicts.length))}`);
+            this.logger.info(
+              `Config migrations: ${chalk.cyan(String(result.configMigrations.length))}`,
             );
-            console.log(`Files: ${result.overwrittenFiles.length}`);
-            console.log(`Backups: ${result.backupConflicts.length}`);
-            console.log(`Config migrations: ${result.configMigrations.length}`);
             for (const warning of result.extensionWarnings) {
-              console.log(`Warning: ${warning}`);
+              this.logger.warn(warning);
             }
             return;
           }
 
-          console.log(
-            `Updated Spec-N-Roll ${result.previousToolkitVersion} -> ${result.targetToolkitVersion}`,
+          this.logger.info(`Updated Spec-N-Roll ${versionTransition}`);
+          this.logger.info(
+            `Overwrote ${chalk.cyan(String(result.overwrittenFiles.length))} toolkit-owned file(s).`,
           );
-          console.log(`Overwrote ${result.overwrittenFiles.length} toolkit-owned file(s).`);
           if (result.configMigrations.length > 0) {
-            console.log(`Migrated ${result.configMigrations.length} user-owned config file(s).`);
+            this.logger.info(
+              `Migrated ${chalk.cyan(String(result.configMigrations.length))} user-owned config file(s).`,
+            );
           }
           if (result.backupConflicts.length > 0) {
-            console.log(
-              `Backed up ${result.backupConflicts.length} locally modified toolkit-owned file(s) to .bak.`,
+            this.logger.info(
+              `Backed up ${chalk.cyan(String(result.backupConflicts.length))} locally modified toolkit-owned file(s) to .bak.`,
             );
           }
           for (const warning of result.extensionWarnings) {
-            console.log(`Warning: ${warning}`);
+            this.logger.warn(warning);
           }
           const refreshed = result.mcpRefresh.filter((entry) => entry.refreshed).length;
-          console.log(`Refreshed MCP config for ${refreshed} agent target(s).`);
+          this.logger.info(
+            `Refreshed MCP config for ${chalk.cyan(String(refreshed))} agent target(s).`,
+          );
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error(`update failed: ${message}`);
+          this.logger.error(`update failed: ${message}`);
           process.exitCode = 1;
         }
       });

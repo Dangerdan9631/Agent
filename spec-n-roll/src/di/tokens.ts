@@ -1,6 +1,12 @@
 import type { InjectionToken } from 'tsyringe';
 
 import type { CliCommand } from '../cli/commands/cli-command.js';
+import type { LoggerFactory } from '../sdk/logging/index.js';
+
+/**
+ * Injection token for the root logger factory used by CLI command adapters.
+ */
+export const LOGGER_FACTORY: InjectionToken<LoggerFactory> = Symbol('LOGGER_FACTORY');
 
 /**
  * Injection token for top-level CLI commands registered on the root program.
@@ -58,7 +64,8 @@ export const CONFIG_SUBCOMMAND: InjectionToken<CliCommand> = Symbol('CONFIG_SUBC
 /**
  * Injection token for subcommands registered on the `config agent` command group.
  */
-export const CONFIG_AGENT_SUBCOMMAND: InjectionToken<CliCommand> = Symbol('CONFIG_AGENT_SUBCOMMAND');
+export const CONFIG_AGENT_SUBCOMMAND: InjectionToken<CliCommand> =
+  Symbol('CONFIG_AGENT_SUBCOMMAND');
 
 /**
  * Injection token for subcommands registered on the `workflow` command group.

@@ -1,3 +1,5 @@
+import type { Logger } from '../../sdk/logging/index.js';
+
 /**
  * Parses a comma-separated agent id list from a CLI argument or flag value.
  *
@@ -25,16 +27,17 @@ export function parseCommaSeparatedAgentList(value: string | undefined): string[
 }
 
 /**
- * Prints a core mutation error to stderr and exits with code 1.
+ * Logs a core mutation error and exits with code 1.
  *
  * @param error - Error thrown from a core-library operation.
+ * @param logger - Logger used to write the error message.
  */
-export function exitOnCoreError(error: unknown): never {
+export function exitOnCoreError(error: unknown, logger: Logger): never {
   if (error instanceof Error) {
-    console.error(error.message);
+    logger.error(error.message);
     process.exit(1);
   }
-  console.error(String(error));
+  logger.error(String(error));
   process.exit(1);
 }
 

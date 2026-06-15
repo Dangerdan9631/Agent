@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import {
   startRepositoryWorkflow,
   type StartRepositoryWorkflowResult,
@@ -13,6 +15,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class RepositoryWorkflowStartCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('RepositoryWorkflowStartCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('start')
@@ -26,12 +34,13 @@ export class RepositoryWorkflowStartCommand implements CliCommand {
         try {
           const result: StartRepositoryWorkflowResult = await startRepositoryWorkflow({
             projectRoot: process.cwd(),
-            workflowTypeId: options.workflowTypeId as StartRepositoryWorkflowResult['workflowTypeId'],
+            workflowTypeId:
+              options.workflowTypeId as StartRepositoryWorkflowResult['workflowTypeId'],
             description: options.description,
           });
-          console.log(JSON.stringify(result, null, 2));
+          this.output.info(JSON.stringify(result, null, 2));
         } catch (error) {
-          exitOnCoreError(error);
+          exitOnCoreError(error, this.output);
         }
       });
   }

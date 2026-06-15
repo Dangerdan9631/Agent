@@ -1,8 +1,10 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { runStepFinalize } from '../../sdk/core/step-lifecycle.js';
 import { resolveTaskSpecSlug } from '../../sdk/core/task-lifecycle.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
 
@@ -28,6 +30,12 @@ function parseValidationPassed(value: string): boolean {
  */
 @injectable()
 export class StepFinalizeCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('StepFinalizeCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('finalize')
@@ -52,9 +60,9 @@ export class StepFinalizeCommand implements CliCommand {
               stepId: options.stepId,
               validationPassed: parseValidationPassed(options.validationPassed),
             });
-            console.log(JSON.stringify(result, null, 2));
+            this.output.info(JSON.stringify(result, null, 2));
           } catch (error) {
-            exitOnCoreError(error);
+            exitOnCoreError(error, this.output);
           }
         },
       );

@@ -1,6 +1,8 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import { createSetList } from '../../sdk/setlists/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
@@ -25,6 +27,12 @@ function parsePositiveInt(value: string): number {
  */
 @injectable()
 export class SetListCreateCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('SetListCreateCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('create')
@@ -54,9 +62,9 @@ export class SetListCreateCommand implements CliCommand {
               priority: options.priority,
               enabled: options.disabled !== true,
             });
-            console.log(JSON.stringify({ setListsFile }, null, 2));
+            this.output.info(JSON.stringify({ setListsFile }, null, 2));
           } catch (error) {
-            exitOnCoreError(error);
+            exitOnCoreError(error, this.output);
           }
         },
       );

@@ -1,7 +1,9 @@
 import { Command } from 'commander';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import { LOGGER_FACTORY } from '../../di/tokens.js';
 import { resolveTaskSpecSlug, setTaskSpecStatus } from '../../sdk/core/task-lifecycle.js';
+import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
 import type { CliCommand } from './cli-command.js';
 import { exitOnCoreError } from './core-cli-utils.js';
 
@@ -10,6 +12,12 @@ import { exitOnCoreError } from './core-cli-utils.js';
  */
 @injectable()
 export class TaskStatusSetCommand implements CliCommand {
+  private readonly output: Logger;
+
+  constructor(@inject(LOGGER_FACTORY) loggerFactory: LoggerFactory) {
+    this.output = loggerFactory.create('TaskStatusSetCommand', { plain: true });
+  }
+
   register(command: Command): void {
     command
       .command('set')
@@ -24,15 +32,15 @@ export class TaskStatusSetCommand implements CliCommand {
           },
         ) => {
           if (status !== 'Active' && status !== 'Complete' && status !== 'Locked') {
-            console.error('status must be Active, Complete, or Locked');
+            this.output.error('status must be Active, Complete, or Locked');
             process.exit(1);
           }
           try {
             const slug = await resolveTaskSpecSlug(process.cwd(), options.taskSpecId);
             const result = await setTaskSpecStatus(process.cwd(), options.taskSpecId, slug, status);
-            console.log(JSON.stringify(result, null, 2));
+            this.output.info(JSON.stringify(result, null, 2));
           } catch (error) {
-            exitOnCoreError(error);
+            exitOnCoreError(error, this.output);
           }
         },
       );
