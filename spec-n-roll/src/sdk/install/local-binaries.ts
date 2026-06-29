@@ -92,7 +92,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const binDir = path.dirname(fileURLToPath(import.meta.url));
-const bundleEntry = path.join(binDir, '..', 'dist', 'cli', 'index.js');
+const runtimeMode = process.argv.slice(2).length === 0 ? 'ink' : 'cli';
+const bundleEntry = path.join(binDir, '..', 'dist', runtimeMode, 'index.js');
 if (!existsSync(bundleEntry)) {
   console.error(\`Local Spec-N-Roll CLI bundle is missing at \${bundleEntry}. Run \\\`spec-n-roll update\\\` to repair.\`);
   process.exit(1);
@@ -234,9 +235,10 @@ export async function installProjectBinaries(
   const binDir = path.join(cliDir, 'bin');
   const stagedBundlePath = resolveStagedLocalBundlePath(toolkitRoot);
   const cliSource = path.join(stagedBundlePath, 'cli', 'index.js');
+  const inkSource = path.join(stagedBundlePath, 'ink', 'index.js');
   const mcpSource = path.join(stagedBundlePath, 'mcp', 'server.js');
 
-  if (!existsSync(cliSource) || !existsSync(mcpSource)) {
+  if (!existsSync(cliSource) || !existsSync(inkSource) || !existsSync(mcpSource)) {
     throw new Error(
       'Toolkit local bundle staging output is missing. Run `npm run build` in the Spec-N-Roll package before init.',
     );

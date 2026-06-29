@@ -204,7 +204,7 @@ Zero-knowledge meta-command that detects intent and advances the next workflow s
 3. Skip on-demand `clarify` and `analyze` unless explicitly invoked
 4. When state is missing, fall back to artifact detection (`src/workflow/artifacts.ts`) using configured workflow steps
 5. When parseable state conflicts with artifacts, **state wins** after a single confirmation prompt
-6. When partial artifacts exist for the next step (per `src/workflow/step-manifest.ts`), present one three-choice Ink prompt (`src/cli/ink/partial-recovery-prompt.tsx`): **restart** (overwrite partials), **cancel** (leave artifacts, `status: paused`), **force-clean** (delete partials then restart)
+6. When partial artifacts exist for the next step (per `src/workflow/step-manifest.ts`), present one three-choice Ink prompt (`src/ink/partial-recovery-prompt.tsx`): **restart** (overwrite partials), **cancel** (leave artifacts, `status: paused`), **force-clean** (delete partials then restart)
 7. Before `plan`, `tasks`, or `implement`, lock all **Complete** specs in the project
 8. For built-in automatic steps (`plan`, `tasks`), run `step_init` → handler → `step_finalize` in the engine path
 9. When the workflow has no remaining steps, set lifecycle **Complete** and operational workflow `status: complete`

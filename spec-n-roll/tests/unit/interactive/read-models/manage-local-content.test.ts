@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadManageLocalContent } from '../../../../src/cli/ink/read-models/manage-local-content.js';
+import { loadManageLocalContent } from '../../../../src/ink/read-models/manage-local-content.js';
 
 describe('loadManageLocalContent', () => {
   it('disables refresh and update when local and unlinked global versions match', async () => {

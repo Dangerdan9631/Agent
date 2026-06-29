@@ -9,7 +9,7 @@ import { installProjectBinaries } from '../../src/sdk/install/local-binaries.js'
 import { runInit } from '../../src/sdk/init.js';
 import { runConfigAgentAdd } from '../../src/sdk/config-agent.js';
 import { CoreMutationError } from '../../src/sdk/core/errors.js';
-import { buildDelegatedCliEnv } from '../../src/cli/dispatcher.js';
+import { buildDelegatedCliEnv } from '../../src/dispatcher/index.js';
 import { readProjectMetadata } from '../../src/sdk/core/project-metadata.js';
 import {
   lockCompleteTaskSpecs,
@@ -63,6 +63,28 @@ function runFullCli(
     cwd: projectRoot,
     encoding: 'utf8',
     env: buildDelegatedCliEnv(process.env),
+  });
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
+}
+
+/**
+ * Runs the dispatcher with arguments in a project directory.
+ *
+ * @param projectRoot - Absolute project root used as cwd.
+ * @param args - Dispatcher arguments after the script path.
+ * @returns Spawn result with stdout and stderr captured.
+ */
+function runDispatcher(
+  projectRoot: string,
+  args: string[],
+): { status: number | null; stdout: string; stderr: string } {
+  const result = spawnSync(process.execPath, [dispatcherPath, ...args], {
+    cwd: projectRoot,
+    encoding: 'utf8',
   });
   return {
     status: result.status,
@@ -303,7 +325,7 @@ describe('quickstart scenario 2b: interactive vs non-interactive CLI', () => {
     expect(help.status).toBe(0);
     expect(help.stdout).toContain('Initialize Spec-N-Roll in a project');
 
-    const bare = runFullCli(projectRoot, []);
+    const bare = runDispatcher(projectRoot, []);
     expect(`${bare.stdout}\n${bare.stderr}`).toMatch(
       /Main Menu|Global Home|Local Home|Raw mode is not supported/,
     );

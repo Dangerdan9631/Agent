@@ -6,16 +6,16 @@ import path from 'node:path';
 import fse from 'fs-extra';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { applyInteractiveAgentAdd } from '../../src/cli/ink/screens/agents/agent-add.js';
-import { applyInteractiveAgentRemove } from '../../src/cli/ink/screens/agents/agent-remove.js';
-import { applyInteractiveProjectMetadataWrite } from '../../src/cli/ink/screens/project/project-metadata-edit.js';
-import { applyInteractiveInit } from '../../src/cli/ink/screens/setup/setup-init.js';
-import { applyInteractiveUpdate } from '../../src/cli/ink/screens/setup/setup-update.js';
-import { applyInteractiveSpecFrontmatterUpdate } from '../../src/cli/ink/screens/specs/spec-frontmatter-update.js';
-import { applyInteractiveStepInstantiate } from '../../src/cli/ink/screens/specs/step-instantiate.js';
-import { applyInteractiveTaskCheckboxSet } from '../../src/cli/ink/screens/specs/task-checkbox-set.js';
-import { applyInteractiveTaskStatusSet } from '../../src/cli/ink/screens/specs/task-status-set.js';
-import { applyInteractiveWorkflowStateWrite } from '../../src/cli/ink/screens/specs/workflow-state.js';
+import { applyInteractiveAgentAdd } from '../../src/ink/screens/agents/agent-add.js';
+import { applyInteractiveAgentRemove } from '../../src/ink/screens/agents/agent-remove.js';
+import { applyInteractiveProjectMetadataWrite } from '../../src/ink/screens/project/project-metadata-edit.js';
+import { applyInteractiveInit } from '../../src/ink/screens/setup/setup-init.js';
+import { applyInteractiveUpdate } from '../../src/ink/screens/setup/setup-update.js';
+import { applyInteractiveSpecFrontmatterUpdate } from '../../src/ink/screens/specs/spec-frontmatter-update.js';
+import { applyInteractiveStepInstantiate } from '../../src/ink/screens/specs/step-instantiate.js';
+import { applyInteractiveTaskCheckboxSet } from '../../src/ink/screens/specs/task-checkbox-set.js';
+import { applyInteractiveTaskStatusSet } from '../../src/ink/screens/specs/task-status-set.js';
+import { applyInteractiveWorkflowStateWrite } from '../../src/ink/screens/specs/workflow-state.js';
 
 /**
  * Source fixture copied for each interactive parity test project.

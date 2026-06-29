@@ -6,19 +6,8 @@ import { rootContainer } from '../di/container.js';
 import { LOGGER_FACTORY } from '../di/tokens.js';
 import { isCurrentModuleEntrypoint } from '../sdk/core/paths.js';
 import { CliProgramFactory } from './cli-program-factory.js';
-import { stripGlobalFlag } from './dispatcher.js';
-import { launchInteractiveApp } from './interactive/launch.js';
+import { stripGlobalFlag } from '../dispatcher/index.js';
 import { argvRequestsVersion, printVersionReport } from './version-invocation.js';
-
-/**
- * Determines whether stripped command arguments should enter the interactive app.
- *
- * @param args - Command arguments after global flag handling.
- * @returns True when the full CLI was invoked without a subcommand or option.
- */
-export function shouldLaunchInteractiveApp(args: readonly string[]): boolean {
-  return args.length === 0;
-}
 
 /**
  * Entry point for the full CLI binary that parses subcommands and options.
@@ -33,11 +22,6 @@ export async function main(argv: string[] = process.argv): Promise<void> {
     const loggerFactory = rootContainer.resolve(LOGGER_FACTORY);
     const logger = loggerFactory.create('version', { plain: true });
     printVersionReport(logger, { executedBinaryPath: argv[1] });
-    return;
-  }
-
-  if (shouldLaunchInteractiveApp(args)) {
-    await launchInteractiveApp({ executedBinaryPath: argv[1] });
     return;
   }
 

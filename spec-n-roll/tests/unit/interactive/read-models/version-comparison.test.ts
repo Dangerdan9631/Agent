@@ -11,12 +11,12 @@ import {
   readDelegatedDispatcherIsLinked,
   readDelegatedDispatcherVersion,
   readGlobalInstallVersion,
-} from '../../../../src/cli/ink/read-models/version-comparison.js';
+} from '../../../../src/ink/read-models/version-comparison.js';
 import {
   installSourceMarkerRelativePath,
   readInstallSource,
   readGlobalInstallSource,
-} from '../../../../src/cli/ink/read-models/install-source.js';
+} from '../../../../src/ink/read-models/install-source.js';
 
 const tempDirs: string[] = [];
 

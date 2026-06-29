@@ -9,7 +9,7 @@ import {
   ROOT_NAVIGATION_STACK_GLOBAL,
   ROOT_NAVIGATION_STACK_LOCAL,
   titleForRoute,
-} from '../../../src/cli/ink/app/navigation.js';
+} from '../../../src/ink/app/navigation.js';
 
 describe('interactive navigation stack', () => {
   it('pushes routes with generated titles and preserves stack history', () => {

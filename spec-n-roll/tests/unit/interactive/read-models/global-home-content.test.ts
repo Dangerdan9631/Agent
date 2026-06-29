@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   loadGlobalHomeContent,
   readLocalProjectPackageVersion,
-} from '../../../../src/cli/ink/read-models/global-home-content.js';
+} from '../../../../src/ink/read-models/global-home-content.js';
 
 /**
  * Temporary project directories created by global home read-model tests.

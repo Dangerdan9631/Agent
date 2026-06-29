@@ -32,8 +32,9 @@ const stubReactDevtoolsCore = {
  */
 const publishConfig = defineConfig({
   entry: {
-    'cli/dispatcher': 'src/cli/dispatcher.ts',
+    'cli/dispatcher': 'src/dispatcher/index.ts',
     'cli/index': 'src/cli/index.ts',
+    'ink/index': 'src/ink/index.ts',
     'mcp/server': 'src/mcp/server.ts',
   },
   format: ['esm'],
@@ -51,6 +52,7 @@ const publishConfig = defineConfig({
 export const localBundleConfig = defineConfig({
   entry: {
     'cli/index': 'src/cli/index.ts',
+    'ink/index': 'src/ink/index.ts',
     'mcp/server': 'src/mcp/server.ts',
   },
   outDir: 'dist/local-bundle',

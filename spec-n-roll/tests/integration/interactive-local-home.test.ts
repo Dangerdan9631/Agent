@@ -6,10 +6,10 @@ import { render } from 'ink-testing-library';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { App } from '../../src/cli/ink/app/App.js';
+import { App } from '../../src/ink/app/App.js';
 import { installProjectBinaries } from '../../src/sdk/install/local-binaries.js';
-import * as manageLocalContentModule from '../../src/cli/ink/read-models/manage-local-content.js';
-import * as reloadModule from '../../src/cli/ink/reload.js';
+import * as manageLocalContentModule from '../../src/ink/read-models/manage-local-content.js';
+import * as reloadModule from '../../src/ink/reload.js';
 import { writeTaskMetadata } from '../../src/sdk/core/task-metadata.js';
 import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/sdk/install/local-install-integrity.js';
 

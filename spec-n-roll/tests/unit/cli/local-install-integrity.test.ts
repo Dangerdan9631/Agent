@@ -37,9 +37,11 @@ function writeValidLayoutV1Install(
 ): void {
   mkdirSync(path.join(cliRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(cliRoot, 'dist', 'cli'), { recursive: true });
+  mkdirSync(path.join(cliRoot, 'dist', 'ink'), { recursive: true });
   mkdirSync(path.join(cliRoot, 'dist', 'mcp'), { recursive: true });
 
   writeFileSync(path.join(cliRoot, 'dist', 'cli', 'index.js'), 'export {};\n', 'utf8');
+  writeFileSync(path.join(cliRoot, 'dist', 'ink', 'index.js'), 'export {};\n', 'utf8');
   writeFileSync(path.join(cliRoot, 'dist', 'mcp', 'server.js'), 'export {};\n', 'utf8');
   writeFileSync(path.join(cliRoot, 'bin', 'spec-n-roll'), buildInTreeLauncherSource(), 'utf8');
   writeFileSync(

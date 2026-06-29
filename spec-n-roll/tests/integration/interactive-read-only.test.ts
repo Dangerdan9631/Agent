@@ -5,7 +5,7 @@ import { render } from 'ink-testing-library';
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { App } from '../../src/cli/ink/app/App.js';
+import { App } from '../../src/ink/app/App.js';
 
 /**
  * Source fixture copied for each read-only integration test.

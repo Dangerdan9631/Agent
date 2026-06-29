@@ -1,7 +1,7 @@
 import type { InjectionToken } from 'tsyringe';
 
 import type { CliCommand } from '../cli/commands/cli-command.js';
-import type { InteractiveAppServices } from '../cli/ink/app/services.js';
+import type { InteractiveAppServices } from '../ink/app/services.js';
 import type { McpTool } from '../mcp/mcp-tool.js';
 import type { LoggerFactory } from '../sdk/logging/index.js';
 

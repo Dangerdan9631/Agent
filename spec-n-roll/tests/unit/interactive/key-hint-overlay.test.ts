@@ -2,8 +2,8 @@ import { render } from 'ink-testing-library';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { KEY_HINT_REGION_ROWS } from '../../../src/cli/ink/components/ContextContent.js';
-import { KeyHintOverlay } from '../../../src/cli/ink/components/KeyHintOverlay.js';
+import { KEY_HINT_REGION_ROWS } from '../../../src/ink/components/ContextContent.js';
+import { KeyHintOverlay } from '../../../src/ink/components/KeyHintOverlay.js';
 
 /**
  * Sets the process stdout column count for Ink test renders.

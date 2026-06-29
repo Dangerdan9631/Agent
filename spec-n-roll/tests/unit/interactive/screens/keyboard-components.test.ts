@@ -2,8 +2,8 @@ import { render } from 'ink-testing-library';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { KeyHintOverlay } from '../../../../src/cli/ink/components/KeyHintOverlay.js';
-import { scrollWindowStartIntoView } from '../../../../src/cli/ink/components/SelectableList.js';
+import { KeyHintOverlay } from '../../../../src/ink/components/KeyHintOverlay.js';
+import { scrollWindowStartIntoView } from '../../../../src/ink/components/SelectableList.js';
 
 describe('keyboard interaction components', () => {
   it('scrolls the selected list item into view when the viewport is constrained', () => {

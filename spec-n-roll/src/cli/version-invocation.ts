@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { findLocalCli } from './dispatcher.js';
+import { findLocalCli } from '../dispatcher/index.js';
 import type { Logger } from '../sdk/logging/index.js';
 import {
   buildVersionReport,

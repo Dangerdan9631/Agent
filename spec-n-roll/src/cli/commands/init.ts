@@ -8,7 +8,7 @@ import { listBundledAgentIds } from '../../sdk/agents/extension-loader.js';
 import { MCP_BINARY_RELATIVE_PATH } from '../../sdk/agents/mcp-config.js';
 import { runInit } from '../../sdk/init.js';
 import type { Logger, LoggerFactory } from '../../sdk/logging/index.js';
-import { promptForAgentSelection } from '../ink/init-prompts.js';
+import { promptForAgentSelection } from '../../ink/init-prompts.js';
 import type { CliCommand } from './cli-command.js';
 import { parseCommaSeparatedAgentList } from './core-cli-utils.js';
 

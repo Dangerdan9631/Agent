@@ -5,8 +5,8 @@ import { render } from 'ink-testing-library';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { App } from '../../src/cli/ink/app/App.js';
-import * as manageLocalContentModule from '../../src/cli/ink/read-models/manage-local-content.js';
+import { App } from '../../src/ink/app/App.js';
+import * as manageLocalContentModule from '../../src/ink/read-models/manage-local-content.js';
 
 /**
  * Source fixture copied for setup maintenance flow tests.

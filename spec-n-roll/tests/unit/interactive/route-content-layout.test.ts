@@ -6,13 +6,13 @@ import { describe, expect, it } from 'vitest';
 import {
   allocateRouteContentLayout,
   type ContextContentState,
-} from '../../../src/cli/ink/components/ContextContent.js';
-import { RouteContentLayout } from '../../../src/cli/ink/components/RouteContentLayout.js';
+} from '../../../src/ink/components/ContextContent.js';
+import { RouteContentLayout } from '../../../src/ink/components/RouteContentLayout.js';
 import {
   SelectableList,
   type SelectableListItem,
-} from '../../../src/cli/ink/components/SelectableList.js';
-import { useSelectionRowContribution } from '../../../src/cli/ink/components/SelectionRegion.js';
+} from '../../../src/ink/components/SelectableList.js';
+import { useSelectionRowContribution } from '../../../src/ink/components/SelectionRegion.js';
 
 /**
  * Sets the process stdout column count for Ink test renders.

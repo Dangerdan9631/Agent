@@ -167,7 +167,7 @@ describe('legacy install migration (quickstart scenario 5)', () => {
 
     const launcher = readFileSync(path.join(cliDir, 'bin', 'spec-n-roll'), 'utf8');
     expect(launcher).not.toContain('toolkitPackageRoot');
-    expect(launcher).toContain("'..', 'dist', 'cli', 'index.js'");
+    expect(launcher).toContain("'..', 'dist', runtimeMode, 'index.js'");
 
     const afterValidation = validateLocalInstall(cliDir);
     expect(afterValidation.status).toBe('valid');

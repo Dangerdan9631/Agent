@@ -1,6 +1,6 @@
 import { container, type DependencyContainer } from 'tsyringe';
 
-import { DefaultInteractiveAppServices } from '../cli/ink/app/services.js';
+import { DefaultInteractiveAppServices } from '../ink/app/services.js';
 import { CoreMcpTools } from '../mcp/tools.js';
 import { RepositoryWorkflowReportViewService } from '../sdk/interactive/repository-workflows.js';
 import { ConsoleLoggerFactory } from '../sdk/logging/index.js';

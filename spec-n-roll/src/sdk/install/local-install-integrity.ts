@@ -58,10 +58,14 @@ export interface LocalInstallValidationResult {
   message?: string;
 }
 
+/**
+ * Required project-local runtime paths for a complete layout v1 install.
+ */
 const REQUIRED_RELATIVE_PATHS = [
   'install.json',
   'package.json',
   'dist/cli/index.js',
+  'dist/ink/index.js',
   'dist/mcp/server.js',
   'bin/spec-n-roll',
 ] as const;

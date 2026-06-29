@@ -12,9 +12,10 @@ import {
   readDispatcherInstallSourceKind,
   resolveDelegation,
   resolveLocalCliPath,
+  selectDispatchRuntimeMode,
   shouldDelegateToLocal,
   stripGlobalFlag,
-} from '../../src/cli/dispatcher.js';
+} from '../../src/dispatcher/index.js';
 
 const tempDirs: string[] = [];
 
@@ -66,6 +67,16 @@ describe('stripGlobalFlag', () => {
       forceGlobal: false,
       args: ['version'],
     });
+  });
+});
+
+describe('selectDispatchRuntimeMode', () => {
+  it('selects interactive mode for bare invocation', () => {
+    expect(selectDispatchRuntimeMode([])).toBe('interactive');
+  });
+
+  it('selects non-interactive mode when command arguments are present', () => {
+    expect(selectDispatchRuntimeMode(['version'])).toBe('non-interactive');
   });
 });
 

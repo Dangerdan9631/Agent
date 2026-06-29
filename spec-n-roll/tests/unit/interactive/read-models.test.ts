@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 import {
   assembleRepositoryWorkflowReportSummary,
   listRepositoryWorkflowReportSummaries,
-} from '../../../src/cli/ink/read-models/repository-workflows.js';
+} from '../../../src/ink/read-models/repository-workflows.js';
 import {
   assembleTaskSpecSummary,
   listTaskSpecSummaries,
-} from '../../../src/cli/ink/read-models/task-specs.js';
+} from '../../../src/ink/read-models/task-specs.js';
 
 /**
  * Absolute path to the multi-spec fixture used by interactive read-model tests.

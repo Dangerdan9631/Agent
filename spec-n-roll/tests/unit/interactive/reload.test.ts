@@ -16,7 +16,7 @@ describe('reloadInteractiveApp', () => {
   });
 
   it('restarts through an explicit command when provided', async () => {
-    const { reloadInteractiveApp } = await import('../../../src/cli/ink/reload.js');
+    const { reloadInteractiveApp } = await import('../../../src/ink/reload.js');
 
     const exitCode = reloadInteractiveApp({
       cwd: 'C:/project',
@@ -34,7 +34,7 @@ describe('reloadInteractiveApp', () => {
   });
 
   it('falls back to the current Node entrypoint when no command is provided', async () => {
-    const { reloadInteractiveApp } = await import('../../../src/cli/ink/reload.js');
+    const { reloadInteractiveApp } = await import('../../../src/ink/reload.js');
 
     const exitCode = reloadInteractiveApp({
       cwd: 'C:/project',

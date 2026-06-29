@@ -8,11 +8,11 @@ import {
   ContextContent,
   scrollContextLines,
   type ContextContentState,
-} from '../../../src/cli/ink/components/ContextContent.js';
+} from '../../../src/ink/components/ContextContent.js';
 import {
   SelectableList,
   type SelectableListItem,
-} from '../../../src/cli/ink/components/SelectableList.js';
+} from '../../../src/ink/components/SelectableList.js';
 
 describe('context content', () => {
   const context: ContextContentState = {

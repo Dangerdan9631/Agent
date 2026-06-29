@@ -5,14 +5,14 @@ import { render } from 'ink-testing-library';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { App } from '../../../src/cli/ink/app/App.js';
+import { App } from '../../../src/ink/app/App.js';
 import {
   allocateAppScaffoldingLayout,
   allocateFullscreenLayout,
   isMinimumLayout,
   KEY_HINT_REGION_ROWS,
   STATUS_REGION_ROWS,
-} from '../../../src/cli/ink/components/ContextContent.js';
+} from '../../../src/ink/components/ContextContent.js';
 
 /**
  * Source fixture used by shell layout rendering tests.

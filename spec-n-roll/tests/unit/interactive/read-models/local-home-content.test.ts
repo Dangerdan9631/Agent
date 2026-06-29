@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { loadLocalHomeContent } from '../../../../src/cli/ink/read-models/local-home-content.js';
+import { loadLocalHomeContent } from '../../../../src/ink/read-models/local-home-content.js';
 import { writeTaskMetadata } from '../../../../src/sdk/core/task-metadata.js';
 
 const tempDirs: string[] = [];

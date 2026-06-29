@@ -1,10 +1,8 @@
 # CLI
 
-Command-line entry points for spec-n-roll. This layer routes user intent into toolkit operations without owning workflow or file mutation logic.
+Command-line entry points and command adapters for spec-n-roll. This layer routes explicit subcommands into toolkit operations without owning workflow or file mutation logic.
 
-The global dispatcher resolves whether to hand off to a project-local full CLI or continue in the lightweight global binary. The full CLI starts the Ink application for bare `spec-n-roll` invocation and keeps Commander subcommands non-interactive for scripted use.
-
-`interactive/launch.ts` owns the render lifecycle and startup context for the bare invocation path. It resolves the project root, detects initialization state, gathers binary context, and renders the shared Ink app without adding mutation behavior to the dispatch layer.
+The dispatcher lives in `src/dispatcher/` and decides whether bare invocation should launch the Ink entry point or command arguments should launch this CLI entry point. The full CLI remains non-interactive for scripted use and Commander subcommands.
 
 ## Self-contained local install layout
 
@@ -33,6 +31,6 @@ Commander subcommands include workflow mutations, step init/finalize, set-list m
 
 ## Dispatcher integrity behavior
 
-`dispatcher.ts` walks parent directories from `cwd` for `.spec-n-roll/cli/bin/spec-n-roll`. When a local binary is found, it runs `validateLocalInstall` on `.spec-n-roll/cli` before spawning unless the command is a repair flow (`update`, `init`, `remove`, or bare interactive invocation). Invalid installs exit non-zero with the validation message; the dispatcher does not silently fall back to the global full CLI unless `--global` was passed.
+`src/dispatcher/index.ts` walks parent directories from `cwd` for `.spec-n-roll/cli/bin/spec-n-roll`. When a local binary is found, it runs `validateLocalInstall` on `.spec-n-roll/cli` before spawning unless the command is a repair flow (`update`, `init`, `remove`, or bare interactive invocation). Invalid installs exit non-zero with the validation message; the dispatcher does not silently fall back to the global full CLI unless `--global` was passed.
 
 Version skew between dispatcher and local bundle is not blocked at spawn time. After delegation, the full CLI version report shows the executed bundled version from `.spec-n-roll/cli/package.json`.

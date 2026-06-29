@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { resolveDelegation } from '../../../src/cli/dispatcher.js';
+import { resolveDelegation } from '../../../src/dispatcher/index.js';
 import {
   LOCAL_INSTALL_LAYOUT_VERSION,
   validateLocalInstall,
@@ -38,12 +38,14 @@ function writeValidLocalInstall(
   const cliRoot = path.join(projectRoot, '.spec-n-roll', 'cli');
   mkdirSync(path.join(cliRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(cliRoot, 'dist', 'cli'), { recursive: true });
+  mkdirSync(path.join(cliRoot, 'dist', 'ink'), { recursive: true });
   mkdirSync(path.join(cliRoot, 'dist', 'mcp'), { recursive: true });
 
   const exitCode = options?.exitCode ?? 42;
   const launcherPath = path.join(cliRoot, 'bin', 'spec-n-roll');
   writeFileSync(launcherPath, `#!/usr/bin/env node\nprocess.exit(${exitCode});\n`, 'utf8');
   writeFileSync(path.join(cliRoot, 'dist', 'cli', 'index.js'), 'export {};\n', 'utf8');
+  writeFileSync(path.join(cliRoot, 'dist', 'ink', 'index.js'), 'export {};\n', 'utf8');
   writeFileSync(path.join(cliRoot, 'dist', 'mcp', 'server.js'), 'export {};\n', 'utf8');
   writeFileSync(
     path.join(cliRoot, 'package.json'),

@@ -43,11 +43,13 @@ function writeStagedLocalBundle(toolkitRoot: string, version = '1.2.3'): void {
 
   const bundleRoot = path.join(toolkitRoot, STAGED_LOCAL_BUNDLE_RELATIVE_PATH);
   mkdirSync(path.join(bundleRoot, 'cli'), { recursive: true });
+  mkdirSync(path.join(bundleRoot, 'ink'), { recursive: true });
   mkdirSync(path.join(bundleRoot, 'mcp'), { recursive: true });
   mkdirSync(path.join(bundleRoot, 'templates'), { recursive: true });
   mkdirSync(path.join(bundleRoot, 'scripts'), { recursive: true });
 
   writeFileSync(path.join(bundleRoot, 'cli', 'index.js'), 'export {};\n', 'utf8');
+  writeFileSync(path.join(bundleRoot, 'ink', 'index.js'), 'export {};\n', 'utf8');
   writeFileSync(path.join(bundleRoot, 'mcp', 'server.js'), 'export {};\n', 'utf8');
   writeFileSync(path.join(bundleRoot, 'templates', 'sample.md'), '# sample\n', 'utf8');
   writeFileSync(path.join(bundleRoot, 'scripts', 'sample.sh'), '#!/bin/sh\n', 'utf8');
@@ -71,7 +73,10 @@ describe('buildCliLauncherSource', () => {
   it('spawns the in-tree bundled CLI entry without reading install.json', () => {
     const source = buildCliLauncherSource();
 
-    expect(source).toContain("'..', 'dist', 'cli', 'index.js'");
+    expect(source).toContain(
+      "const runtimeMode = process.argv.slice(2).length === 0 ? 'ink' : 'cli'",
+    );
+    expect(source).toContain("'..', 'dist', runtimeMode, 'index.js'");
     expect(source).toContain('SPEC_N_ROLL_LOCAL_PIN');
     expect(source).not.toContain('toolkitPackageRoot');
     expect(source).not.toContain('install.json');
@@ -126,6 +131,7 @@ describe('installProjectBinaries', () => {
 
     const cliDir = path.join(projectRoot, '.spec-n-roll', 'cli');
     expect(existsSync(path.join(cliDir, 'dist', 'cli', 'index.js'))).toBe(true);
+    expect(existsSync(path.join(cliDir, 'dist', 'ink', 'index.js'))).toBe(true);
     expect(existsSync(path.join(cliDir, 'dist', 'mcp', 'server.js'))).toBe(true);
     expect(existsSync(path.join(cliDir, 'dist', 'templates', 'sample.md'))).toBe(true);
     expect(existsSync(path.join(cliDir, 'dist', 'scripts', 'sample.sh'))).toBe(true);
@@ -149,7 +155,7 @@ describe('installProjectBinaries', () => {
     expect(packageJson).toEqual({ name: 'spec-n-roll', version: '2.0.0', type: 'module' });
 
     const launcher = readFileSync(path.join(cliDir, 'bin', 'spec-n-roll'), 'utf8');
-    expect(launcher).toContain("'..', 'dist', 'cli', 'index.js'");
+    expect(launcher).toContain("'..', 'dist', runtimeMode, 'index.js'");
     expect(launcher).not.toContain('toolkitPackageRoot');
 
     const mcpLauncherPath = path.join(cliDir, 'bin', 'spec-n-roll-mcp');

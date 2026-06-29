@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { loadProjectHubView } from '../../../../src/cli/ink/read-models/project-hub.js';
+import { loadProjectHubView } from '../../../../src/ink/read-models/project-hub.js';
 
 const tempDirs: string[] = [];
 

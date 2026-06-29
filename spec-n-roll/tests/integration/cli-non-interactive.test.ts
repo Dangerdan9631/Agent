@@ -44,9 +44,9 @@ describe('SC-009 non-interactive management commands', () => {
   });
 
   it('completes init with --agents, update, and config agent add with zero Ink prompts', async () => {
-    const inkModule = await import('../../src/cli/ink/init-prompts.js');
-    const addAgentInkModule = await import('../../src/cli/ink/add-agent-prompt.js');
-    const updateInkModule = await import('../../src/cli/ink/update-prompts.js');
+    const inkModule = await import('../../src/ink/init-prompts.js');
+    const addAgentInkModule = await import('../../src/ink/add-agent-prompt.js');
+    const updateInkModule = await import('../../src/ink/update-prompts.js');
 
     const initPromptSpy = vi.spyOn(inkModule, 'promptForAgentSelection');
     const addAgentPromptSpy = vi.spyOn(addAgentInkModule, 'promptForAgentToAdd');

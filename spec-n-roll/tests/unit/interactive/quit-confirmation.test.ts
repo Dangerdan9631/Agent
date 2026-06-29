@@ -5,7 +5,7 @@ import React from 'react';
 import { Text, useInput } from 'ink';
 import { describe, expect, it, vi } from 'vitest';
 
-import { App } from '../../../src/cli/ink/app/App.js';
+import { App } from '../../../src/ink/app/App.js';
 import {
   isHomeRoute,
   QUIT_CONFIRMATION_ESCAPE_MESSAGE,
@@ -13,7 +13,7 @@ import {
   QUIT_CONFIRMATION_TIMEOUT_MS,
   reduceQuitKeyPress,
   useQuitConfirmation,
-} from '../../../src/cli/ink/hooks/use-quit-confirmation.js';
+} from '../../../src/ink/hooks/use-quit-confirmation.js';
 
 /**
  * Source fixture used by quit confirmation tests.
