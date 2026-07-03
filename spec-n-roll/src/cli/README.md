@@ -19,8 +19,7 @@ Project-local binaries live under `.spec-n-roll/cli/` as a complete, pinned tool
 └── dist/                 # copied from toolkit dist/local-bundle/
     ├── cli/index.js
     ├── mcp/server.js
-    ├── templates/
-    └── scripts/
+    └── templates/
 ```
 
 Launchers resolve `../dist/cli/index.js` or `../dist/mcp/server.js` relative to `bin/` and spawn Node with `stdio: 'inherit'`. The CLI launcher sets `SPEC_N_ROLL_LOCAL_PIN=1` on the bundled full CLI child. Legacy installs that reference an external `toolkitPackageRoot` are rejected until `update` migrates the layout.

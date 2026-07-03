@@ -46,7 +46,7 @@ When `update` runs:
 1. Read configured agents from `.spec-n-roll/config/workflow.config.json`.
 2. Plan user-owned config schema migrations (`src/updates/migration.ts`).
 3. Evaluate extension compatibility warnings from `.spec-n-roll/compatibility.json` (`src/extensions/compatibility.ts`).
-4. Plan toolkit-owned overwrites: binaries, platform scripts, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, extension manifests, and `compatibility.json`.
+4. Plan toolkit-owned overwrites: binaries, `.spec-n-roll/AGENTS.md`, workflow skills under `.agents/skills/`, extension manifests, and `compatibility.json`.
 5. For each toolkit-owned file that exists and differs from the new toolkit content, write a `.bak` sibling before overwrite.
 6. Apply confirmed config migrations, then apply toolkit-owned overwrites. User-owned paths outside migrated configs (`specs/`, `living-specs/`) remain byte-identical.
 7. Refresh the Spec-N-Roll MCP server entry in every configured agent's MCP config targets (stdio path `.spec-n-roll/cli/bin/spec-n-roll-mcp`).

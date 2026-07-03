@@ -26,7 +26,6 @@ import {
   installProjectBinaries,
   readStagedLocalBundleVersion,
 } from './install/local-binaries.js';
-import { installBundledPlatformScripts } from './workflow/platform-scripts.js';
 import { BUILT_IN_STEP_OUTPUTS } from './workflow/step-manifest.js';
 
 export { WORKFLOW_CONFIG_SCHEMA_VERSION, installProjectBinaries };
@@ -260,7 +259,6 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
 
   await ensureUserOwnedDirectories(projectRoot);
   await installProjectBinaries(projectRoot, toolkitRoot);
-  await installBundledPlatformScripts(projectRoot, toolkitRoot);
   await writeCanonicalAgentsMd(projectRoot);
   await generateWorkflowSkills(projectRoot);
   await installBundledExtensions(projectRoot, selectedAgents);

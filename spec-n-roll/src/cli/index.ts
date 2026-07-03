@@ -6,7 +6,6 @@ import { rootContainer } from '../di/container.js';
 import { LOGGER_FACTORY } from '../di/tokens.js';
 import { isCurrentModuleEntrypoint } from '../sdk/core/paths.js';
 import { CliProgramFactory } from './cli-program-factory.js';
-import { stripGlobalFlag } from '../dispatcher/index.js';
 import { argvRequestsVersion, printVersionReport } from './version-invocation.js';
 
 /**
@@ -16,9 +15,8 @@ import { argvRequestsVersion, printVersionReport } from './version-invocation.js
  */
 export async function main(argv: string[] = process.argv): Promise<void> {
   const rawArgs = argv.slice(2);
-  const { args } = stripGlobalFlag(rawArgs);
 
-  if (argvRequestsVersion(args)) {
+  if (argvRequestsVersion(rawArgs)) {
     const loggerFactory = rootContainer.resolve(LOGGER_FACTORY);
     const logger = loggerFactory.create('version', { plain: true });
     printVersionReport(logger, { executedBinaryPath: argv[1] });
@@ -27,7 +25,7 @@ export async function main(argv: string[] = process.argv): Promise<void> {
 
   const programFactory = rootContainer.resolve(CliProgramFactory);
   const program = programFactory.createProgram();
-  await program.parseAsync(args, { from: 'user' });
+  await program.parseAsync(rawArgs, { from: 'user' });
 }
 
 const isMainModule = isCurrentModuleEntrypoint(process.argv[1], import.meta.url, [

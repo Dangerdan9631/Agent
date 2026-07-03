@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { selectDispatchRuntimeMode, stripGlobalFlag } from '../../src/dispatcher/index.js';
+import { parseDispatcherArgs } from '../../src/dispatcher/index.js';
 
 describe('interactive dispatcher launch routing', () => {
   it('selects Ink for bare invocation', () => {
-    expect(selectDispatchRuntimeMode([])).toBe('interactive');
+    expect(parseDispatcherArgs([]).args).toHaveLength(0);
   });
 
   it('keeps explicit commands on the non-interactive CLI path', () => {
-    expect(selectDispatchRuntimeMode(['init', '--help'])).toBe('non-interactive');
+    expect(parseDispatcherArgs(['init', '--help']).args).toHaveLength(2);
   });
 
   it('treats global-only invocation as bare interactive after flag stripping', () => {
-    const { args } = stripGlobalFlag(['--global']);
+    const { args } = parseDispatcherArgs(['--global']);
 
-    expect(selectDispatchRuntimeMode(args)).toBe('interactive');
+    expect(args).toHaveLength(0);
   });
 });

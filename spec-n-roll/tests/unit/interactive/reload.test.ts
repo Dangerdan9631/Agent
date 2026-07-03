@@ -47,7 +47,6 @@ describe('reloadInteractiveApp', () => {
       cwd: 'C:/project',
       stdio: 'inherit',
       env: process.env,
-      shell: process.platform === 'win32',
     });
   });
 });

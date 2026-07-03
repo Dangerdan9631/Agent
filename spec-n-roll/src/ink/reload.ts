@@ -64,7 +64,6 @@ function spawnCurrentNodeEntrypoint(
       cwd,
       stdio: 'inherit',
       env: process.env,
-      shell: process.platform === 'win32',
     });
   }
 
@@ -72,6 +71,5 @@ function spawnCurrentNodeEntrypoint(
     cwd,
     stdio: 'inherit',
     env: process.env,
-    shell: process.platform === 'win32',
   });
 }

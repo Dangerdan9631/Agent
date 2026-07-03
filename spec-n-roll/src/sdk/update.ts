@@ -18,11 +18,6 @@ import {
 } from './agents/mcp-config.js';
 import { atomicWriteJson, atomicWriteText } from './core/atomic-write.js';
 import { readWorkflowConfig } from './workflow/artifacts.js';
-import {
-  BUNDLED_SCRIPT_BASE_NAMES,
-  installBundledPlatformScripts,
-  PROJECT_SCRIPTS_RELATIVE_DIR,
-} from './workflow/platform-scripts.js';
 import type { WorkflowConfig } from './config/schema.js';
 import {
   checkExtensionCompatibility,
@@ -222,35 +217,6 @@ function collectTextToolkitUpdates(agentIds: readonly string[]): ToolkitFileUpda
 }
 
 /**
- * Collects toolkit-owned platform script updates from script pairs.
- *
- * @param toolkitRoot - Absolute path to the toolkit package root.
- * @returns Relative script paths and expected file bodies.
- */
-function collectPlatformScriptUpdates(toolkitRoot: string): ToolkitFileUpdate[] {
-  const sourceDir = path.join(toolkitRoot, 'scripts');
-  const updates: ToolkitFileUpdate[] = [];
-
-  for (const scriptBaseName of BUNDLED_SCRIPT_BASE_NAMES) {
-    for (const extension of ['.sh', '.ps1'] as const) {
-      const sourcePath = path.join(sourceDir, `${scriptBaseName}${extension}`);
-      if (!existsSync(sourcePath)) {
-        continue;
-      }
-      updates.push({
-        relativePath: path.posix.join(
-          PROJECT_SCRIPTS_RELATIVE_DIR,
-          `${scriptBaseName}${extension}`,
-        ),
-        expectedContent: readFileSync(sourcePath),
-      });
-    }
-  }
-
-  return updates;
-}
-
-/**
  * Detects toolkit-owned files that differ from expected update content.
  *
  * @param projectRoot - Absolute path to the project root.
@@ -366,9 +332,8 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
   const migrationPlan = await planUserConfigMigrations(projectRoot, targetToolkitVersion);
 
   const textUpdates = collectTextToolkitUpdates(agentIds);
-  const scriptUpdates = collectPlatformScriptUpdates(toolkitRoot);
   const binaryUpdates = collectLauncherBinaryUpdates();
-  const allUpdates = [...textUpdates, ...scriptUpdates, ...binaryUpdates];
+  const allUpdates = [...textUpdates, ...binaryUpdates];
   const extensionWarnings = await checkExtensionCompatibility(
     projectRoot,
     targetToolkitVersion,
@@ -404,7 +369,6 @@ export async function runUpdate(options: UpdateOptions): Promise<UpdateResult> {
 
   await writeToolkitFileUpdates(projectRoot, allUpdates);
   await installProjectBinaries(projectRoot, toolkitRoot);
-  await installBundledPlatformScripts(projectRoot, toolkitRoot);
   await installBundledExtensions(projectRoot, agentIds);
   await atomicWriteJson(path.join(projectRoot, '.spec-n-roll', 'compatibility.json'), {
     incompatibleCombinations: [],

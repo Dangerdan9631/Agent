@@ -1,9 +1,14 @@
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveDelegation } from '../../../src/dispatcher/index.js';
+import {
+  findLocalCliOrThrow,
+  type LocalCliLookupResult,
+  parseDispatcherArgs,
+  runLocal,
+} from '../../../src/dispatcher/index.js';
 import {
   LOCAL_INSTALL_LAYOUT_VERSION,
   validateLocalInstall,
@@ -89,6 +94,33 @@ function writeLauncherOnly(projectRoot: string): string {
   return launcherPath;
 }
 
+/**
+ * Reads the local CLI fixture and fails loudly if fixture creation did not produce it.
+ *
+ * @param projectRoot - Absolute path to the test project root.
+ * @returns Discovered local CLI details for the project.
+ */
+function readRequiredLocalCli(projectRoot: string): LocalCliLookupResult {
+  const localCli = findLocalCliOrThrow(projectRoot);
+  if (localCli == null) {
+    throw new Error(`Expected local CLI fixture under ${projectRoot}.`);
+  }
+  return localCli;
+}
+
+/**
+ * Asserts that an operation fails with exit code 1 and a matching console error.
+ *
+ * @param action - Operation expected to report a local dispatcher error.
+ * @param messagePattern - Regular expression expected to match the emitted error.
+ */
+function expectLocalError(action: () => number, messagePattern: RegExp): void {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  expect(action()).toBe(1);
+  expect(error).toHaveBeenCalledWith(expect.stringMatching(messagePattern));
+  error.mockRestore();
+}
+
 afterEach(() => {
   while (tempDirs.length > 0) {
     const dir = tempDirs.pop();
@@ -102,7 +134,7 @@ afterEach(() => {
   }
 });
 
-describe('resolveDelegation integrity gating', () => {
+describe('runLocal integrity gating', () => {
   it('delegates when layout v1 install passes integrity validation', () => {
     if (process.platform === 'win32') {
       return;
@@ -114,8 +146,9 @@ describe('resolveDelegation integrity gating', () => {
     const cliRoot = path.join(projectRoot, '.spec-n-roll', 'cli');
     expect(validateLocalInstall(cliRoot).status).toBe('valid');
 
-    const result = resolveDelegation(['version'], { cwd: projectRoot });
-    expect(result).toEqual({ action: 'delegated', exitCode: 42 });
+    expect(
+      runLocal(readRequiredLocalCli(projectRoot), false, ['version'], { cwd: projectRoot }),
+    ).toBe(42);
   });
 
   it('returns actionable error when bundle files are missing', () => {
@@ -126,14 +159,10 @@ describe('resolveDelegation integrity gating', () => {
     const projectRoot = createProjectRoot('missing-bundle');
     writeLauncherOnly(projectRoot);
 
-    const result = resolveDelegation(['version'], { cwd: projectRoot });
-    expect(result.action).toBe('error');
-    if (result.action === 'error') {
-      expect(result.exitCode).toBe(1);
-      expect(result.message).toMatch(/incomplete/i);
-      expect(result.message).toMatch(/dist\/cli\/index\.js/);
-      expect(result.message).toMatch(/update/i);
-    }
+    expectLocalError(
+      () => runLocal(readRequiredLocalCli(projectRoot), false, ['version'], { cwd: projectRoot }),
+      /incomplete.*dist\/cli\/index\.js.*update/i,
+    );
   });
 
   it('returns legacy-layout error without falling back to global', () => {
@@ -144,13 +173,10 @@ describe('resolveDelegation integrity gating', () => {
     const projectRoot = createProjectRoot('legacy');
     writeValidLocalInstall(projectRoot, { legacy: true });
 
-    const result = resolveDelegation(['version'], { cwd: projectRoot });
-    expect(result.action).toBe('error');
-    if (result.action === 'error') {
-      expect(result.exitCode).toBe(1);
-      expect(result.message).toMatch(/deprecated layout/i);
-      expect(result.message).toMatch(/update/i);
-    }
+    expectLocalError(
+      () => runLocal(readRequiredLocalCli(projectRoot), false, ['version'], { cwd: projectRoot }),
+      /deprecated layout.*update/i,
+    );
   });
 
   it('delegates update on legacy layout so migration can run', () => {
@@ -161,8 +187,11 @@ describe('resolveDelegation integrity gating', () => {
     const projectRoot = createProjectRoot('legacy-update');
     writeValidLocalInstall(projectRoot, { legacy: true });
 
-    const result = resolveDelegation(['update', '--dry-run'], { cwd: projectRoot });
-    expect(result).toEqual({ action: 'delegated', exitCode: 42 });
+    expect(
+      runLocal(readRequiredLocalCli(projectRoot), false, ['update', '--dry-run'], {
+        cwd: projectRoot,
+      }),
+    ).toBe(42);
   });
 
   it('delegates update when bundle files are missing', () => {
@@ -173,19 +202,25 @@ describe('resolveDelegation integrity gating', () => {
     const projectRoot = createProjectRoot('missing-update');
     writeLauncherOnly(projectRoot);
 
-    const blocked = resolveDelegation(['version'], { cwd: projectRoot });
-    expect(blocked.action).toBe('error');
+    const localCli = readRequiredLocalCli(projectRoot);
 
-    const repair = resolveDelegation(['update'], { cwd: projectRoot });
-    expect(repair).toEqual({ action: 'delegated', exitCode: 42 });
+    expectLocalError(
+      () => runLocal(localCli, false, ['version'], { cwd: projectRoot }),
+      /incomplete/i,
+    );
+
+    const repair = runLocal(localCli, false, ['update'], { cwd: projectRoot });
+    expect(repair).toBe(42);
   });
 
-  it('continues for --global even when local install is corrupt', () => {
+  it('parses --global before local install inspection', () => {
     const projectRoot = createProjectRoot('global-bypass');
     writeLauncherOnly(projectRoot);
 
-    const result = resolveDelegation(['--global', 'version'], { cwd: projectRoot });
-    expect(result).toEqual({ action: 'continue' });
+    expect(parseDispatcherArgs(['--global', 'version'])).toEqual({
+      forceGlobal: true,
+      args: ['version'],
+    });
   });
 
   it('rejects unknown layout versions before spawn', () => {
@@ -196,10 +231,9 @@ describe('resolveDelegation integrity gating', () => {
     const projectRoot = createProjectRoot('unknown-layout');
     writeValidLocalInstall(projectRoot, { layoutVersion: 99 });
 
-    const result = resolveDelegation(['version'], { cwd: projectRoot });
-    expect(result.action).toBe('error');
-    if (result.action === 'error') {
-      expect(result.message).toMatch(/unsupported layout version/i);
-    }
+    expectLocalError(
+      () => runLocal(readRequiredLocalCli(projectRoot), false, ['version'], { cwd: projectRoot }),
+      /unsupported layout version/i,
+    );
   });
 });

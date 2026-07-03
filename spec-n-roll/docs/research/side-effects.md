@@ -9,7 +9,7 @@ This document lists surfaces where Spec-n-Roll affects state outside its interna
 - Writes command results to stdout.
 - Writes diagnostics and failures to stderr.
 - Sets process exit status for failed CLI commands.
-- Starts child processes for platform scripts, npm operations, and living-spec test execution.
+- Starts child processes for npm operations and living-spec test execution.
 - Reads child process exit status and output to decide workflow results.
 
 ## Project Initialization Effects
@@ -21,8 +21,6 @@ This document lists surfaces where Spec-n-Roll affects state outside its interna
 - `.spec-n-roll/cli/bin/snr`
 - `.spec-n-roll/cli/bin/spec-n-roll-mcp`
 - Windows command shims for local CLI and MCP binaries.
-- `.spec-n-roll/scripts/*.sh`
-- `.spec-n-roll/scripts/*.ps1`
 - `.spec-n-roll/AGENTS.md`
 - `.spec-n-roll/bundled-extensions/{agentId}/manifest.json`
 - `.spec-n-roll/compatibility.json`
@@ -38,7 +36,7 @@ This document lists surfaces where Spec-n-Roll affects state outside its interna
 - Agent-native MCP configuration files.
 - Agent-native rule pointer files.
 
-It can also set executable permissions on installed local binaries and platform scripts.
+It can also set executable permissions on installed local binaries.
 
 ## Toolkit Update Effects
 
@@ -47,7 +45,6 @@ It can also set executable permissions on installed local binaries and platform 
 - Overwrite product-managed files under `.spec-n-roll/` outside `.spec-n-roll/config/`.
 - Overwrite managed generated skills under `.agents/skills/spec-n-*`.
 - Refresh bundled extension manifests.
-- Refresh platform scripts.
 - Refresh local CLI and MCP binaries.
 - Refresh `.spec-n-roll/compatibility.json`.
 - Create `.bak` backups beside locally modified product-managed files before overwrite.

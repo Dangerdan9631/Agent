@@ -18,8 +18,4 @@ cpSync(path.join(rootDir, 'src', 'sdk', 'templates'), path.join(bundleDir, 'temp
   recursive: true,
 });
 
-cpSync(path.join(rootDir, 'src', 'scripts'), path.join(bundleDir, 'scripts'), {
-  recursive: true,
-});
-
 writeFileSync(path.join(bundleDir, '.built-package-version'), `${pkg.version}\n`, 'utf8');

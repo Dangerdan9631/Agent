@@ -148,7 +148,7 @@ describe('quickstart scenario 1 self-contained: init produces bundled layout', (
 });
 
 describe('quickstart scenario 1: initialize project with multiple agents', () => {
-  it('installs binaries, MCP config, workflow config, platform scripts, and metadata', async () => {
+  it('installs binaries, MCP config, workflow config, and metadata', async () => {
     const projectRoot = createTempProject('scenario-1');
     const preExistingMcp = path.join(projectRoot, '.cursor', 'mcp.json');
     mkdirSync(path.dirname(preExistingMcp), { recursive: true });
@@ -168,12 +168,6 @@ describe('quickstart scenario 1: initialize project with multiple agents', () =>
     );
     expect(
       existsSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-mcp')),
-    ).toBe(true);
-    expect(
-      existsSync(path.join(projectRoot, '.spec-n-roll', 'scripts', 'check-prerequisites.sh')),
-    ).toBe(true);
-    expect(
-      existsSync(path.join(projectRoot, '.spec-n-roll', 'scripts', 'check-prerequisites.ps1')),
     ).toBe(true);
 
     const cursorMcp = JSON.parse(readFileSync(preExistingMcp, 'utf8')) as {
@@ -788,10 +782,6 @@ describe('quickstart scenario 12: documentation completeness', () => {
     {
       file: 'multi-agent.md',
       mustContain: ['MCP configuration', 'cursor', 'config agent add'],
-    },
-    {
-      file: 'platform-scripts.md',
-      mustContain: ['.ps1', '.sh', 'auto-selection'],
     },
     {
       file: 'extension-quickstart.md',

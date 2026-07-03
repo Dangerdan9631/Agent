@@ -211,7 +211,6 @@ Spec-n-Roll accepts project state through file reads. These files are user-contr
 - `.spec-n-roll/cli/bin/spec-n-roll`
 - `.spec-n-roll/cli/bin/spec-n-roll-mcp`
 - `.spec-n-roll/bundled-extensions/**/manifest.json`
-- `.spec-n-roll/scripts/*`
 - `.agents/skills/spec-n-*/SKILL.md`
 
 ### Task Specification Artifacts
@@ -242,17 +241,6 @@ Spec-n-Roll accepts project state through file reads. These files are user-contr
 - Local `node_modules` presence used by living-spec test execution.
 
 ## Subprocess and Runtime Inputs
-
-### Platform Script Execution
-
-**Surface**: configured platform scripts.
-
-**Inputs**
-
-- Current platform.
-- Shell availability.
-- Script arguments.
-- Subprocess exit status, stdout, and stderr.
 
 ### Cucumber Execution
 
@@ -290,7 +278,6 @@ Spec-n-Roll accepts project state through file reads. These files are user-contr
 
 - Current working directory.
 - Operating system and path separator behavior.
-- Available shell runtime for platform scripts.
 - Executable permissions on local binaries.
 - Terminal input and output capabilities.
 - Filesystem permissions.

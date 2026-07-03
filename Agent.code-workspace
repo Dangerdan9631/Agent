@@ -11,6 +11,7 @@
 		}
 	],
 	"settings": {
-		"git.openRepositoryInParentFolders": "always"
+		"git.openRepositoryInParentFolders": "always",
+		"workbench.colorTheme": "Leo",
 	},
 }

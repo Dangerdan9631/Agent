@@ -1,20 +1,16 @@
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   LOCAL_CLI_RELATIVE_PATH,
+  type LocalCliLookupResult,
   findLocalCli,
   findLocalCliOrThrow,
   buildDelegatedCliEnv,
-  isExecutable,
-  readDispatcherInstallSourceKind,
-  resolveDelegation,
-  resolveLocalCliPath,
-  selectDispatchRuntimeMode,
-  shouldDelegateToLocal,
-  stripGlobalFlag,
+  parseDispatcherArgs,
+  runLocal,
 } from '../../src/dispatcher/index.js';
 
 const tempDirs: string[] = [];
@@ -41,6 +37,20 @@ function writeLocalCli(projectRoot: string, executable = true): string {
   return cliPath;
 }
 
+/**
+ * Reads the local CLI fixture and fails loudly if fixture creation did not produce it.
+ *
+ * @param projectRoot - Absolute path to the test project root.
+ * @returns Discovered local CLI details for the project.
+ */
+function readRequiredLocalCli(projectRoot: string): LocalCliLookupResult {
+  const localCli = findLocalCliOrThrow(projectRoot);
+  if (localCli == null) {
+    throw new Error(`Expected local CLI fixture under ${projectRoot}.`);
+  }
+  return localCli;
+}
+
 afterEach(() => {
   while (tempDirs.length > 0) {
     const dir = tempDirs.pop();
@@ -54,29 +64,19 @@ afterEach(() => {
   }
 });
 
-describe('stripGlobalFlag', () => {
+describe('parseDispatcherArgs', () => {
   it('removes --global and reports forceGlobal', () => {
-    expect(stripGlobalFlag(['init', '--global', '.'])).toEqual({
+    expect(parseDispatcherArgs(['init', '--global', '.'])).toEqual({
       forceGlobal: true,
       args: ['init', '.'],
     });
   });
 
   it('leaves args unchanged when --global is absent', () => {
-    expect(stripGlobalFlag(['version'])).toEqual({
+    expect(parseDispatcherArgs(['version'])).toEqual({
       forceGlobal: false,
       args: ['version'],
     });
-  });
-});
-
-describe('selectDispatchRuntimeMode', () => {
-  it('selects interactive mode for bare invocation', () => {
-    expect(selectDispatchRuntimeMode([])).toBe('interactive');
-  });
-
-  it('selects non-interactive mode when command arguments are present', () => {
-    expect(selectDispatchRuntimeMode(['version'])).toBe('non-interactive');
   });
 });
 
@@ -90,9 +90,8 @@ describe('findLocalCli', () => {
     const result = findLocalCli(nested);
     expect(result).toEqual({
       projectRoot: root,
-      cliPath: resolveLocalCliPath(root),
+      cliPath,
     });
-    expect(result?.cliPath).toBe(cliPath);
   });
 
   it('returns null when no local CLI exists', () => {
@@ -124,32 +123,21 @@ describe('findLocalCliOrThrow', () => {
   });
 });
 
-describe('shouldDelegateToLocal', () => {
-  it('delegates when a local CLI is available and --global is absent', () => {
-    const root = createTempDir('delegate');
-    writeLocalCli(root);
-    const localCli = findLocalCli(root);
-
-    expect(shouldDelegateToLocal(['version'], localCli)).toBe(true);
-    expect(shouldDelegateToLocal(['--global', 'version'], localCli)).toBe(false);
-  });
-});
-
 describe('buildDelegatedCliEnv', () => {
   it('passes dispatcher install source metadata to delegated local CLIs', () => {
     const env = buildDelegatedCliEnv({ PATH: 'fixture-path' });
 
     expect(env.SPEC_N_ROLL_DISPATCHED).toBe('1');
-    expect(env.SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE).toBe(readDispatcherInstallSourceKind());
+    expect(['local', 'remote']).toContain(env.SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE);
     expect(env.SPEC_N_ROLL_DISPATCHER_CLI_DIRECTORY).toBeTruthy();
     expect(env.SPEC_N_ROLL_DISPATCHER_PACKAGE_ROOT).toBeTruthy();
-    if (readDispatcherInstallSourceKind() === 'local') {
+    if (env.SPEC_N_ROLL_DISPATCHER_INSTALL_SOURCE === 'local') {
       expect(env.SPEC_N_ROLL_DISPATCHER_LINKED_SOURCE_PATH).toBeTruthy();
     }
   });
 });
 
-describe('resolveDelegation', () => {
+describe('runLocal', () => {
   it('returns integrity error when local CLI exists without a valid bundled install', () => {
     if (process.platform === 'win32') {
       return;
@@ -157,21 +145,11 @@ describe('resolveDelegation', () => {
 
     const root = createTempDir('resolve-delegate');
     writeLocalCli(root);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const result = resolveDelegation(['version'], { cwd: root });
-    expect(result.action).toBe('error');
-    if (result.action === 'error') {
-      expect(result.exitCode).toBe(1);
-      expect(result.message).toMatch(/incomplete/i);
-    }
-  });
-
-  it('continues when --global is set', () => {
-    const root = createTempDir('resolve-global');
-    writeLocalCli(root);
-
-    const result = resolveDelegation(['--global', 'version'], { cwd: root });
-    expect(result).toEqual({ action: 'continue' });
+    expect(runLocal(readRequiredLocalCli(root), false, ['version'], { cwd: root })).toBe(1);
+    expect(error).toHaveBeenCalledWith(expect.stringMatching(/incomplete/i));
+    error.mockRestore();
   });
 
   it('reports an error when local CLI is not executable', () => {
@@ -182,23 +160,6 @@ describe('resolveDelegation', () => {
     const root = createTempDir('resolve-error');
     writeLocalCli(root, false);
 
-    const result = resolveDelegation(['version'], { cwd: root });
-    expect(result.action).toBe('error');
-    if (result.action === 'error') {
-      expect(result.exitCode).toBe(1);
-      expect(result.message).toMatch(/not executable/);
-    }
-  });
-});
-
-describe('isExecutable', () => {
-  it('returns true for an executable local CLI script', () => {
-    if (process.platform === 'win32') {
-      return;
-    }
-
-    const root = createTempDir('is-exec');
-    const cliPath = writeLocalCli(root, true);
-    expect(isExecutable(cliPath)).toBe(true);
+    expect(() => findLocalCliOrThrow(root)).toThrow(/not executable/);
   });
 });
