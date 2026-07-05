@@ -1,9 +1,27 @@
 ## Coding Conventions
 
+### Object Oriented Design
+
+This project should follow object oriented programming and SOLID principles.
+Prefer classes and interfaces over top level functions for application behavior.
+
+- Model behavior with small classes that have one clear responsibility.
+- Depend on interfaces at boundaries and inject implementations through
+  constructors or explicit composition roots.
+- Keep concrete framework, persistence, filesystem, network, and vendor types
+  behind local interfaces or adapters.
+- Avoid static utility collections and top level function dumping grounds for
+  business behavior. If shared behavior is needed, name the concept and model it
+  as a focused type.
+- Keep constructors simple. Construction should wire dependencies, not perform
+  validation, I/O, or business work.
+- Prefer explicit interface contracts over reaching into another class's
+  representation or relying on concrete implementation details.
+
 ### Doc Comments
 
-Add doc comments to all top level functions, types, and values. All schema
-fields should also have doc comments.
+Add doc comments to all top level classes, interfaces, types, and values. All
+schema fields should also have doc comments.
 
 - Doc comments should be 1-2 plain english sentences.
 - Doc comments look inward. They should not explain how the code is used by
