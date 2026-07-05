@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-import { resolveGlobalToolkitRoot } from '../../dispatcher/index.js';
+import { resolveGlobalToolkitRoot } from '../../dispatcher/location.js';
 import type { InstallSource } from './install-source.js';
 import { installProjectBinaries } from './local-binaries.js';
 

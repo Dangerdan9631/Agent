@@ -1,19 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseDispatcherArgs } from '../../src/dispatcher/index.js';
+import { Dispatcher } from '../../src/dispatcher/dispatcher.js';
 
-describe('interactive dispatcher launch routing', () => {
-  it('selects Ink for bare invocation', () => {
-    expect(parseDispatcherArgs([]).args).toHaveLength(0);
-  });
-
-  it('keeps explicit commands on the non-interactive CLI path', () => {
-    expect(parseDispatcherArgs(['init', '--help']).args).toHaveLength(2);
-  });
-
-  it('treats global-only invocation as bare interactive after flag stripping', () => {
-    const { args } = parseDispatcherArgs(['--global']);
-
-    expect(args).toHaveLength(0);
+describe('dispatcher launch routing', () => {
+  it('requires a root path when --root is present', () => {
+    expect(() => new Dispatcher().run(['--root'])).toThrow(/requires a directory path/);
   });
 });

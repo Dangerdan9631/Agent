@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveGlobalCliPath } from '../../dispatcher/index.js';
+import { resolveGlobalCliPath } from '../../dispatcher/location.js';
 import { findToolkitPackageRoot } from '../../sdk/core/paths.js';
 import type { InstallSource, ReadInstallSourceOptions } from '../../sdk/install/install-source.js';
 export type {

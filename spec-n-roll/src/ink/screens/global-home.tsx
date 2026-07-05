@@ -4,7 +4,7 @@ import { Box, Text, useApp, useInput } from 'ink';
 
 import { runProjectRemove } from '../../sdk/remove.js';
 import { runUpdate, type UpdateResult } from '../../sdk/update.js';
-import { resolveGlobalToolkitRoot } from '../../dispatcher/index.js';
+import { resolveGlobalToolkitRoot } from '../../dispatcher/location.js';
 import { runRefreshProjectInstall } from '../../sdk/install/refresh-project-install.js';
 import { listBundledAgentIds } from '../../sdk/agents/extension-loader.js';
 import { useSession } from '../app/session-context.js';

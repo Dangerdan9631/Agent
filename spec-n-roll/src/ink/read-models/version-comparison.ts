@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-import { resolveGlobalCliPath } from '../../dispatcher/index.js';
+import { resolveGlobalCliPath } from '../../dispatcher/location.js';
 import { readToolkitVersionFromRoot } from '../../sdk/install/local-binaries.js';
 import { readRuntimePackageVersion } from '../../sdk/install/build-version.js';
 

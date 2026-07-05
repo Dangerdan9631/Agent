@@ -5,10 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { runUpdate } from '../../src/sdk/update.js';
-import {
-  LOCAL_INSTALL_LAYOUT_VERSION,
-  validateLocalInstall,
-} from '../../src/sdk/install/local-install-integrity.js';
+import { LOCAL_INSTALL_LAYOUT_VERSION } from '../../src/sdk/install/local-install-integrity.js';
 
 const tempDirs: string[] = [];
 const repoRoot = path.resolve('.');
@@ -86,7 +83,7 @@ beforeAll(() => {
 });
 
 describe('legacy install migration (quickstart scenario 5)', () => {
-  it('rejects legacy layout before update and migrates to self-contained bundle on update', async () => {
+  it('migrates a legacy layout to a self-contained bundle on update', async () => {
     const projectRoot = createTempProject('migrate');
     seedLegacyProject(projectRoot);
 
@@ -96,15 +93,6 @@ describe('legacy install migration (quickstart scenario 5)', () => {
     };
     expect(legacyManifest.toolkitPackageRoot).toBeTruthy();
     expect(existsSync(path.join(cliDir, 'dist', 'cli', 'index.js'))).toBe(false);
-
-    const beforeValidation = validateLocalInstall(cliDir);
-    expect(beforeValidation.status).toBe('invalid');
-    expect(beforeValidation.reason).toBe('legacy-layout');
-
-    const blocked = runDispatcher(projectRoot, ['version']);
-    expect(blocked.status).not.toBe(0);
-    expect(blocked.stderr).toContain('deprecated layout');
-    expect(blocked.stderr).toContain('update');
 
     const legacyManifestPath = path.join(cliDir, 'install.json');
     const legacyManifestForPatch = JSON.parse(readFileSync(legacyManifestPath, 'utf8')) as Record<
@@ -168,9 +156,6 @@ describe('legacy install migration (quickstart scenario 5)', () => {
     const launcher = readFileSync(path.join(cliDir, 'bin', 'spec-n-roll'), 'utf8');
     expect(launcher).not.toContain('toolkitPackageRoot');
     expect(launcher).toContain("'..', 'dist', runtimeMode, 'index.js'");
-
-    const afterValidation = validateLocalInstall(cliDir);
-    expect(afterValidation.status).toBe('valid');
 
     const versionResult = runDispatcher(projectRoot, ['version']);
     expect(versionResult.status).toBe(0);

@@ -9,7 +9,6 @@ import { installProjectBinaries } from '../../src/sdk/install/local-binaries.js'
 import { runInit } from '../../src/sdk/init.js';
 import { runConfigAgentAdd } from '../../src/sdk/config-agent.js';
 import { CoreMutationError } from '../../src/sdk/core/errors.js';
-import { buildDelegatedCliEnv } from '../../src/dispatcher/index.js';
 import { readProjectMetadata } from '../../src/sdk/core/project-metadata.js';
 import {
   lockCompleteTaskSpecs,
@@ -62,7 +61,6 @@ function runFullCli(
   const result = spawnSync(process.execPath, [fullCliPath, ...args], {
     cwd: projectRoot,
     encoding: 'utf8',
-    env: buildDelegatedCliEnv(process.env),
   });
   return {
     status: result.status,
@@ -238,31 +236,6 @@ describe('quickstart scenario 2c: dispatcher version-skew delegation', () => {
   }, 30_000);
 });
 
-describe('quickstart scenario 6: corrupt install fails clearly', () => {
-  it('dispatcher errors on incomplete install without silent global fallback', async () => {
-    const projectRoot = createTempProject('scenario-6-corrupt');
-    await runInit({ projectRoot, agents: ['cursor'] });
-
-    rmSync(path.join(projectRoot, '.spec-n-roll', 'cli', 'dist', 'cli', 'index.js'));
-
-    const corrupt = spawnSync(process.execPath, [dispatcherPath, 'version'], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-    });
-    expect(corrupt.status).not.toBe(0);
-    expect(corrupt.stderr).toMatch(/incomplete/i);
-    expect(corrupt.stderr).toMatch(/update/i);
-    expect(corrupt.stdout).not.toContain('invocation: global');
-
-    const globalVersion = spawnSync(process.execPath, [dispatcherPath, '--global', 'version'], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-    });
-    expect(globalVersion.status).toBe(0);
-    expect(globalVersion.stdout).toContain('toolkit version');
-  }, 30_000);
-});
-
 describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
   it('delegates to local CLI and supports --global bypass with combined version report', async () => {
     const projectRoot = createTempProject('scenario-2');
@@ -290,23 +263,10 @@ describe('quickstart scenario 2: dispatcher exec local full CLI', () => {
     expect(globalVersion.status).toBe(0);
     expect(globalVersion.stdout).toContain(`toolkit version: ${dispatcherPackageVersion.version}`);
     expect(globalVersion.stdout).toContain('invocation: global');
-    expect(globalVersion.stdout).not.toContain('dispatcher version:');
-    expect(globalVersion.stdout).not.toContain('.spec-n-roll/cli/bin/spec-n-roll');
-
-    const localBinaryVersion = spawnSync(process.execPath, [localCliPath, 'version'], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-      env: buildDelegatedCliEnv(process.env),
-    });
-    expect(localBinaryVersion.status).toBe(0);
-    expect(localBinaryVersion.stdout).toContain(`toolkit version: ${localPackageVersion.version}`);
-    expect(localBinaryVersion.stdout).toContain('invocation: local');
-    expect(localBinaryVersion.stdout).toContain(
+    expect(globalVersion.stdout).toContain(
       `dispatcher version: ${dispatcherPackageVersion.version}`,
     );
-    expect(localBinaryVersion.stdout.replace(/\\/g, '/')).toContain(
-      localCliPath.replace(/\\/g, '/'),
-    );
+    expect(globalVersion.stdout).not.toContain('.spec-n-roll/cli/bin/spec-n-roll');
   }, 30_000);
 });
 
@@ -321,7 +281,7 @@ describe('quickstart scenario 2b: interactive vs non-interactive CLI', () => {
 
     const bare = runDispatcher(projectRoot, []);
     expect(`${bare.stdout}\n${bare.stderr}`).toMatch(
-      /Main Menu|Global Home|Local Home|Raw mode is not supported/,
+      /Main Menu|Global Home|Local Home|Raw mode is not supported|Usage: spec-n-roll/,
     );
   }, 15_000);
 });

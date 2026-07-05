@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { StaticContentField } from '../components/StaticContentBlock.js';
-import { findLocalCli } from '../../dispatcher/index.js';
+import { findLocalCli } from '../../dispatcher/location.js';
 import { LOCAL_CLI_ROOT_RELATIVE_PATH } from '../../sdk/install/local-install-integrity.js';
 import { readToolkitPackageVersion } from '../../cli/commands/version.js';
 import {

@@ -1,66 +1,53 @@
 #!/usr/bin/env node
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { Command } from 'commander';
 
-import {
-  type DispatchOptions,
-  findLocalCliOrThrow,
-  parseDispatcherArgs,
-  runGlobal,
-  runLocal,
-} from './runtime.js';
-
-export * from './runtime.js';
+import { isProjectRoot, resolveProjectRoot } from './project-resolver.js';
+import { executeCli } from './cli-executor.js';
 
 /**
- * Global dispatcher entry point.
- *
- * @param argv - Full process argv including node and dispatcher script entries.
- * @param options - Optional process execution configuration.
- * @returns Exit code from local or global runtime execution.
+ * Commander option values recognized by the dispatcher parser.
  */
-export function runDispatcher(
-  argv: string[] = process.argv,
-  options: DispatchOptions = {},
-): number {
-  const parsed = parseDispatcherArgs(argv.slice(2));
-  const localCli = parsed.forceGlobal ? null : findLocalCliOrThrow(options.cwd ?? process.cwd());
-  const isInteractive = parsed.args.length === 0;
+interface DispatcherOptions {
+    /**
+     * True when the caller requested global runtime routing.
+     */
+    global?: boolean;
 
-  if (localCli != null) {
-    return runLocal(localCli, isInteractive, parsed.args, options);
-  }
-
-  return runGlobal(isInteractive, parsed.args, options);
+    /**
+     * Project root path exactly as provided by argv.
+     */
+    root?: string;
 }
 
-if (
-  isCurrentModuleEntrypoint(process.argv[1], import.meta.url, ['dispatcher.js', 'dispatcher.ts'])
-) {
-  process.exit(runDispatcher());
+export function dispatch() {
+    new Command()
+        .name("Spec N' Roll")
+        .option('--global', 'Run the global CLI instead of a project-local instance')
+        .option('--root <path>', 'Specifies a project root directory to work from')
+        .allowUnknownOption()
+        .allowExcessArguments()
+        .action((options: DispatcherOptions) => {
+            const localProjectRoot = (!options.global && options.root)
+                ? isProjectRoot(options.root)
+                    ? options.root
+                    : undefined
+                : resolveProjectRoot(process.cwd());
+
+            const dispatchArgs = process.argv.slice(2)
+            const execOptions = localProjectRoot
+                ? {
+                    localProjectRoot: localProjectRoot,
+                    args: dispatchArgs,
+                    cwd: localProjectRoot,
+                }
+                : {
+                    args: dispatchArgs,
+                    cwd: process.cwd(),
+                };
+
+            executeCli(execOptions);
+        }).parse();
 }
 
-/**
- * Checks whether this module is the process entrypoint.
- *
- * @param argvEntry - `process.argv[1]` value for the current process.
- * @param moduleUrl - `import.meta.url` for the current module.
- * @param expectedFilenames - Allowed process entrypoint filenames.
- * @returns True when this module should execute as the main script.
- */
-function isCurrentModuleEntrypoint(
-  argvEntry: string | undefined,
-  moduleUrl: string,
-  expectedFilenames: readonly string[],
-): boolean {
-  if (argvEntry == null || !expectedFilenames.includes(path.basename(argvEntry))) {
-    return false;
-  }
-
-  const modulePath = fileURLToPath(moduleUrl);
-  return (
-    path.resolve(argvEntry) === path.resolve(modulePath) ||
-    path.dirname(path.resolve(argvEntry)) === path.dirname(path.resolve(modulePath))
-  );
-}
+dispatch();
