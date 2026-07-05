@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { filesOfProject } from 'tsarch';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import ts from 'typescript';
 
 /**
  * Reads workspace architecture fixture data for dependency boundary tests.
@@ -29,6 +30,73 @@ class WorkspaceArchitectureFixtureReader {
     return JSON.parse(readFileSync(resolve(relativePath), 'utf8')) as {
       dependencies?: Record<string, string>;
     };
+  }
+}
+
+/**
+ * Checks package entrypoints for direct type declarations.
+ */
+class WorkspaceIndexEntrypointPolicy {
+  /**
+   * Finds direct type declarations in workspace package entrypoints.
+   *
+   * @param sourceRoot - Repository-relative source root that contains workspace packages.
+   * @returns Violation descriptions for package `src/index.ts` files that declare types directly.
+   */
+  directTypeDeclarationViolations(sourceRoot: string): string[] {
+    const resolvedSourceRoot = resolve(sourceRoot);
+    const violations: string[] = [];
+
+    for (const packageDirectory of readdirSync(resolvedSourceRoot, {
+      withFileTypes: true,
+    })) {
+      if (!packageDirectory.isDirectory()) {
+        continue;
+      }
+
+      const indexPath = join(
+        resolvedSourceRoot,
+        packageDirectory.name,
+        'src',
+        'index.ts',
+      );
+      if (!existsSync(indexPath)) {
+        continue;
+      }
+
+      violations.push(...this.directTypeDeclarations(indexPath));
+    }
+
+    return violations;
+  }
+
+  private directTypeDeclarations(indexPath: string): string[] {
+    const sourceFile = ts.createSourceFile(
+      indexPath,
+      readFileSync(indexPath, 'utf8'),
+      ts.ScriptTarget.ES2022,
+      true,
+      ts.ScriptKind.TS,
+    );
+    const violations: string[] = [];
+
+    for (const statement of sourceFile.statements) {
+      if (this.isDirectTypeDeclaration(statement)) {
+        violations.push(
+          `${relative(resolve(), indexPath)} declares ${ts.SyntaxKind[statement.kind]}`,
+        );
+      }
+    }
+
+    return violations;
+  }
+
+  private isDirectTypeDeclaration(statement: ts.Statement): boolean {
+    return (
+      ts.isInterfaceDeclaration(statement) ||
+      ts.isTypeAliasDeclaration(statement) ||
+      ts.isEnumDeclaration(statement)
+    );
   }
 }
 
@@ -69,5 +137,13 @@ describe('workspace architecture tests', () => {
     expect(runtimePackage.dependencies).toMatchObject({
       'spec-n-roll-api': '0.1.0',
     });
+  });
+
+  it('keeps package index files free of direct type definitions', () => {
+    expect(
+      new WorkspaceIndexEntrypointPolicy().directTypeDeclarationViolations(
+        'src',
+      ),
+    ).toEqual([]);
   });
 });

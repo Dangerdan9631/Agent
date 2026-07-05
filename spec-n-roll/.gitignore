@@ -4,3 +4,4 @@ coverage/
 .specify/
 specs/
 src/*/architecture/
+.tmp/

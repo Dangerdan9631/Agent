@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "arch": "node dist/index.js",
-    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap",
+    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --external typescript",
     "lint": "eslint .",
     "test": "vitest run test"
   },
@@ -23,6 +23,7 @@
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "reflect-metadata": "^0.2.2",
+    "typescript": "^5.8.2",
     "tsyringe": "^4.10.0",
     "tslog": "^4.9.3"
   },

@@ -27,16 +27,24 @@ Only use classes and interfaces instead of top level functions.
 
 ### File Structure
 
-- Each file should contain one top level export. 
+- Each file should contain one top level export.
   - Additional module level types are allowed.
   - Additional exports can be used when they are inherently coupled to the top
     level export (e.g. a type used as input to a function).
-  - Top level constants can be grouped into a single file when they are related 
-    (e.g. multiple constants all related to configuration paths). 
+  - Top level constants can be grouped into a single file when they are related
+    (e.g. multiple constants all related to configuration paths).
 - Do not use barrel files, and do not re-export types. Types can be re-exported
   from a library's index file when they are a part of the library's public API.
-- Use path aliases for package local file imports. Use subpath exports to 
+- Use path aliases for package local file imports. Use subpath exports to
   provide namespaced imports from a library.
+- Organize files in subdirectores based on architectural layer, then by domain.
+  folders should only contain child folders or code files. Mixed folders should
+  be rare and only used for things like index files that don't contain app
+  logic.
+  - Layers should be logical and avoid cyclic dependencies between layers.
+  - Domains should generally be centered around related functionality or domain
+    entities. Domains should generally depend on types in the same domain in
+    other layers, and cyclic dependencies between domains should be rare.
 
 ### Logging
 
@@ -93,15 +101,10 @@ export function isExecutable(filePath: string): boolean {
 
 Each `src/` subdirectory should have a `README.md` with a high level
 overview of the purpose, conventions, and contents of the directory.
+[README.template.md](.docs\README.template.md) includes the format and
+conventions for these files. Refer to that when making edits to them.
 
-- The overview should be concise and focused on the intent of the code rather
-  than implementation details.
-- The overview should not be a list of the files in the directory, but rather a
-  description of the responsibilities and abstractions contained within.
-- Modifying files in the directory should not typically require changes to the
-  README.
-- When creating or modifying files in a directory, reference that directory's
-  `README.md` to understand the purpose and conventions of the files in it.
+When creating or modifying files in a directory, reference that directory's `README.md` to understand the purpose and conventions of the files in it.
 
 ### OBEY Clean Code by Robert C. Martin
 
@@ -111,7 +114,7 @@ Working code is not automatically clean code.
 
 #### Decision rules
 
-- Treat cleanliness as part of delivery. Preserve behavior, leave touched code 
+- Treat cleanliness as part of delivery. Preserve behavior, leave touched code
   cleaner within scope, and do not add mess.
 - Treat versions before `1.0.0` as pre-release. Breaking changes are acceptable
   when they produce the right application API; do not add backwards
@@ -143,8 +146,8 @@ Working code is not automatically clean code.
   added via a new implementation rather than edited branching logic, and can
   alternate implementations substitute for one another without caller
   caveats?
-- Does each touched file still have exactly one top level export, with no
-  barrel files or re-exported types introduced?
+- Does each touched file still have exactly one primary top level export, with
+  no barrel files or re-exported types introduced?
 - Do all touched top level classes, interfaces, types, values, and schema
   fields have multiline doc comments describing intent, constraints, and
   return values?

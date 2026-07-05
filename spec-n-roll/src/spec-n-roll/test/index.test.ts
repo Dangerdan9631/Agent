@@ -11,15 +11,15 @@ import { dirname, join, resolve } from 'node:path';
 import 'reflect-metadata';
 import { Logger } from 'tslog';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DispatcherApplication } from '#dispatcher/dispatcher-application.js';
-import { DispatcherCli } from '#dispatcher/dispatcher-cli.js';
-import { DispatcherContainerFactory } from '#dispatcher/dispatcher-container-factory.js';
-import type { DispatcherEnvironment } from '#dispatcher/dispatcher-environment.js';
-import { DispatcherMetadataReader } from '#dispatcher/dispatcher-metadata-reader.js';
-import { NodeRuntimeProcessExecutor } from '#dispatcher/node-runtime-process-executor.js';
-import { ProjectRootResolver } from '#dispatcher/project-root-resolver.js';
-import type { RuntimeProcessExecutor } from '#dispatcher/runtime-process-executor.js';
-import { RuntimeTargetResolver } from '#dispatcher/runtime-target-resolver.js';
+import { DispatcherApplication } from '#dispatcher/application/dispatch/dispatcher-application.js';
+import { DispatcherCli } from '#dispatcher/presentation/cli/dispatcher-cli.js';
+import { DispatcherContainerFactory } from '#dispatcher/composition/dispatcher/dispatcher-container-factory.js';
+import type { DispatcherEnvironment } from '#dispatcher/infrastructure/environment/dispatcher-environment.js';
+import { DispatcherMetadataReader } from '#dispatcher/infrastructure/metadata/dispatcher-metadata-reader.js';
+import { NodeRuntimeProcessExecutor } from '#dispatcher/infrastructure/runtime/node-runtime-process-executor.js';
+import { ProjectRootResolver } from '#dispatcher/application/project/project-root-resolver.js';
+import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';
+import { RuntimeTargetResolver } from '#dispatcher/application/runtime/runtime-target-resolver.js';
 import type { RuntimeInvocation, RuntimeTarget } from 'spec-n-roll-api';
 
 vi.mock('node:child_process', () => ({
@@ -239,7 +239,9 @@ describe('spec-n-roll dispatcher executable', () => {
     const commandContainer = new DispatcherContainerFactory().create();
     commandContainer.registerInstance(DispatcherApplication, application);
 
-    commandContainer.resolve(DispatcherCli).run(['node', 'spec-n-roll', ...argv]);
+    commandContainer
+      .resolve(DispatcherCli)
+      .run(['node', 'spec-n-roll', ...argv]);
 
     expect(run).toHaveBeenCalledWith({
       argv,
@@ -248,6 +250,14 @@ describe('spec-n-roll dispatcher executable', () => {
         root: 'project',
       },
     });
+  });
+
+  it('resolves concrete services through tsyringe auto construction', () => {
+    const commandContainer = new DispatcherContainerFactory().create();
+
+    expect(commandContainer.resolve(ProjectRootResolver)).toBeInstanceOf(
+      ProjectRootResolver,
+    );
   });
 });
 

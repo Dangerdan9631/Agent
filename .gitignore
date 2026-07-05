@@ -30,3 +30,4 @@ npm-debug.log*
 # Env files
 .env*
 !.env.example
+spec-n-roll/.codex-temp/*
