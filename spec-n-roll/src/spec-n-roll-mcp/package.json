@@ -1,0 +1,27 @@
+{
+  "name": "spec-n-roll-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "spec-n-roll-mcp": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap",
+    "lint": "eslint .",
+    "test": "vitest run test"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "reflect-metadata": "^0.2.2",
+    "tsyringe": "^4.10.0",
+    "tslog": "^4.9.3"
+  },
+  "devDependencies": {
+    "spec-n-roll-test": "0.1.0"
+  }
+}

@@ -1,54 +1,42 @@
 {
-  "name": "spec-n-roll",
-  "version": "0.1.2",
-  "description": "Specification-driven workflow toolkit for AI coding agents",
+  "name": "spec-n-roll-workspace",
+  "version": "0.1.0",
+  "private": true,
   "type": "module",
+  "bin": {
+    "spec-n-roll": "./src/spec-n-roll/dist/index.js",
+    "snr": "./src/spec-n-roll/dist/index.js"
+  },
   "engines": {
     "node": ">=22"
   },
-  "bin": {
-    "spec-n-roll": "./dist/cli/dispatcher.js",
-    "snr": "./dist/cli/dispatcher.js",
-    "spec-n-roll-cli": "./dist/cli/index.js",
-    "spec-n-roll-mcp": "./dist/mcp/server.js"
-  },
-  "files": [
-    "dist"
+  "workspaces": [
+    "src/*"
   ],
   "scripts": {
-    "build": "tsc --noEmit && tsup && tsup --config tsup.local-bundle.config.ts && node scripts/copy-wrappers.mjs && node scripts/build-local-bundle.mjs && node scripts/write-source-package-root.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:cucumber": "cucumber-js",
+    "build": "npm run build --workspace spec-n-roll-api && npm run build --workspace spec-n-roll-sdk && npm run build --workspace spec-n-roll-test && npm run build --workspace spec-n-roll-runtime && npm run build --workspace spec-n-roll-mcp && npm run build --workspace spec-n-roll-arch && npm run build --workspace spec-n-roll",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint . --fix && prettier --write .",
-    "prepublish": "npm run build"
-  },
-  "dependencies": {
-    "@cucumber/cucumber": "^11.2.0",
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "chalk": "^5.6.2",
-    "commander": "^13.1.0",
-    "fs-extra": "^11.3.0",
-    "ink": "^7.0.6",
-    "react": "^19.2.7",
-    "reflect-metadata": "^0.2.2",
-    "semver": "^7.7.1",
-    "tsyringe": "^4.10.0",
-    "yaml": "^2.7.0",
-    "zod": "^3.24.2"
+    "test": "vitest run",
+    "test:cucumber": "cucumber-js src/spec-n-roll-test/test/features --import src/spec-n-roll-test/dist/cucumber/**/*.js",
+    "arch": "npm run arch --workspace spec-n-roll-arch"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^11.2.0",
     "@eslint/js": "^9.22.0",
-    "@swc/core": "^1.11.24",
-    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.13.10",
-    "@types/react": "^19.2.0",
-    "ajv": "^8.20.0",
+    "dependency-cruiser": "^16.10.4",
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
-    "ink-testing-library": "^4.0.0",
     "prettier": "^3.5.3",
+    "spec-n-roll": "0.1.0",
+    "spec-n-roll-api": "0.1.0",
+    "spec-n-roll-arch": "0.1.0",
+    "spec-n-roll-mcp": "0.1.0",
+    "spec-n-roll-runtime": "0.1.0",
+    "spec-n-roll-sdk": "0.1.0",
+    "spec-n-roll-test": "0.1.0",
+    "tsarch": "^5.4.1",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",

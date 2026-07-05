@@ -8,33 +8,20 @@ export default tseslint.config(
       'dist/',
       'node_modules/',
       'coverage/',
-      '.agents/',
-      '.specify/',
-      'specs/',
-      'tests/fixtures/',
+      'V0/',
+      'src/*/dist/',
+      'src/*/architecture/',
     ],
   },
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  eslintConfigPrettier,
   {
-    files: ['**/*.{ts,tsx}'],
-    ignores: ['vitest.config.ts'],
+    files: ['**/*.cjs'],
     languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+      globals: {
+        module: 'readonly',
       },
     },
-    rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-    },
   },
-  {
-    files: ['vitest.config.ts', 'tests/**/*.ts'],
-    extends: [tseslint.configs.disableTypeChecked],
-  },
+  ...tseslint.configs.recommended,
+  eslintConfigPrettier,
 );

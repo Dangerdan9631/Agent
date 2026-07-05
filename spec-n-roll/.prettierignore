@@ -1,10 +1,7 @@
 dist/
 node_modules/
 coverage/
-package-lock.json
-.agents/
-.specify/
-specs/
-tests/fixtures/
-Scratch.md
-AGENTS.md
+src/*/architecture/
+V0/dist/
+V0/node_modules/
+V0/

@@ -1,5 +1,0 @@
----
-status: Active
----
-
-# Second Feature

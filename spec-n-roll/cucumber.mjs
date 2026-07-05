@@ -1,7 +1,6 @@
-/** @type {import('@cucumber/cucumber').IConfiguration} */
 export default {
-  paths: ['tests/features/**/*.feature'],
-  import: ['tests/step-definitions/**/*.ts'],
-  format: ['progress'],
-  publishQuiet: true,
+  default: {
+    import: ['src/spec-n-roll-test/dist/cucumber/**/*.js'],
+    paths: ['src/spec-n-roll-test/test/features/**/*.feature'],
+  },
 };

@@ -2,7 +2,7 @@
 
 ### Doc Comments
 
-Add doc comments to all top level functions, types, and values. All schema
+Add doc comments to all top level functions, types, and values. All schema 
 fields should also have doc comments.
 
 - Doc comments should be 1-2 plain english sentences.
@@ -15,7 +15,6 @@ fields should also have doc comments.
   if it is short.
 
 Example:
-
 ```ts
 /**
  * Checks if a file path is executable to prevent attempting to run non-executable
@@ -34,19 +33,14 @@ export function isExecutable(filePath: string): boolean {
 }
 ```
 
-### README.md
-
-Each `src/` subdirectory should have a `README.md` with a high level
-overview of the purpose, conventions, and contents of the directory.
-
-- The overview should be concise and focused on the intent of the code rather
+Each `src/` subdirectory should also have a `README.md` with a high level 
+overview of the purpose and contents of the directory.
+- The overview should be concise and focused on the intent of the code rather 
   than implementation details.
 - The overview should not be a list of the files in the directory, but rather a
   description of the responsibilities and abstractions contained within.
 - Modifying files in the directory should not typically require changes to the
   README.
-- When creating or modifying files in a directory, reference that directory's
-  `README.md` to understand the purpose and conventions of the files in it.
 
 ### OBEY Clean Code by Robert C. Martin
 
@@ -56,7 +50,7 @@ Working code is not automatically clean code.
 
 #### Decision rules
 
-- Treat cleanliness as part of delivery. Preserve behavior, leave touched code cleaner within scope, and do not add mess.
+- Treat cleanliness as part of delivery. Preserve behavior, leave touched code cleaner within scope, and do not add mess because the schedule is tight or a rewrite is promised.
 - Treat versions before `1.0.0` as pre-release. Breaking changes are acceptable when they produce the right application API; do not add backwards compatibility scaffolding for pre-1.0 behavior unless needed to protect user-authored data.
 - Write for local reasoning. A reader should understand the path without reconstructing hidden state, wide jumps, or naming trivia.
 - Use precise names and one term per concept. Rename code when vocabulary hides intent, overloads meaning, or forces comments to compensate.
@@ -69,6 +63,8 @@ Working code is not automatically clean code.
 - Make public APIs small, explicit, and hard to misuse. Encode boundary logic, required order, and likely changes where readers can see them.
 - Use comments only for rationale, constraints, warnings, or external contracts. Do not narrate code instead of improving it.
 - Treat tests as production code: readable, deterministic, aligned with the behavior or contract they protect, and backed by proportionate validation before calling the change done.
+- Let design emerge through tests, duplication removal, expressiveness, and minimal structure; do not add needless abstractions or infrastructure.
+- When touching code, remove the smell that most increases change cost, but do not silently broaden the task beyond the smallest cleanup that makes the requested change safe.
 
 #### Trigger rules
 
@@ -85,6 +81,8 @@ Working code is not automatically clean code.
 
 - Can a reader follow the change locally?
 - Are names and APIs carrying the meaning without narration?
+- Is mutation explicit and the happy path still clear?
 - Did framework, persistence, vendor, and construction details stay behind boundaries?
+- Did I remove at least one smell from the touched area?
 - Do tests protect the changed behavior or contract?
 - Did I actually run the relevant tests or checks for this change?
