@@ -2,6 +2,10 @@
   "name": "spec-n-roll-arch",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#arch/*.js": "./src/*.ts",
+    "#arch/*": "./src/*.ts"
+  },
   "bin": {
     "spec-n-roll-arch": "./dist/index.js"
   },

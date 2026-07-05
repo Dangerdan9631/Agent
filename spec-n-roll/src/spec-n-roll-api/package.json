@@ -2,6 +2,10 @@
   "name": "spec-n-roll-api",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#api/*.js": "./src/*.ts",
+    "#api/*": "./src/*.ts"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,10 +19,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean --sourcemap",
     "lint": "eslint .",
-    "test": "vitest run test"
-  },
-  "dependencies": {
-    "tslog": "^4.9.3"
+    "test": "vitest run --config ./vitest.config.ts"
   },
   "devDependencies": {
     "spec-n-roll-test": "0.1.0"

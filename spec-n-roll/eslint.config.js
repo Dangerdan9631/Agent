@@ -23,5 +23,16 @@ export default tseslint.config(
     },
   },
   ...tseslint.configs.recommended,
+  {
+    rules: {
+      'no-console': 'error',
+    },
+  },
+  {
+    files: ['src/spec-n-roll-runtime/src/console-runtime-output-writer.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
   eslintConfigPrettier,
 );

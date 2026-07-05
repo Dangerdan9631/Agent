@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { discoverRuntimePackages } from '../src/index.js';
+import { RuntimePackageDiscoverer } from '#arch/index.js';
 
 describe('spec-n-roll-arch', () => {
   it('discovers runtime packages and excludes arch and test packages', () => {
@@ -24,9 +24,9 @@ describe('spec-n-roll-arch', () => {
     }
 
     expect(
-      discoverRuntimePackages(workspaceRoot).map(
-        (workspacePackage) => workspacePackage.name,
-      ),
+      new RuntimePackageDiscoverer()
+        .discover(workspaceRoot)
+        .map((workspacePackage) => workspacePackage.name),
     ).toEqual(['spec-n-roll']);
   });
 });

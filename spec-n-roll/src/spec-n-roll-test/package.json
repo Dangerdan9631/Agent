@@ -2,6 +2,10 @@
   "name": "spec-n-roll-test",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#test-support/*.js": "./src/*.ts",
+    "#test-support/*": "./src/*.ts"
+  },
   "bin": {
     "spec-n-roll-test": "./dist/cli.js"
   },

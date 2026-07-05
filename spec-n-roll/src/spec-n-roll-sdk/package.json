@@ -2,6 +2,10 @@
   "name": "spec-n-roll-sdk",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#sdk/*.js": "./src/*.ts",
+    "#sdk/*": "./src/*.ts"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

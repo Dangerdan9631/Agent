@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#sdk/*.js": ["src/*.ts"],
+      "#sdk/*": ["src/*"]
+    },
     "rootDir": ".",
     "outDir": "dist"
   },

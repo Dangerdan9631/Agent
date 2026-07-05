@@ -1,31 +1,11 @@
-import { Logger } from 'tslog';
-
-/**
- * Emits package diagnostics for the public API boundary.
- */
-export const apiLogger = new Logger({ name: 'spec-n-roll-api', minLevel: 6 });
-
-/**
- * Describes the argument payload passed across the dispatcher/runtime boundary.
- */
-export interface RuntimeInvocation {
-  /**
-   * Ordered CLI arguments without the node executable or script path.
-   */
-  readonly argv: readonly string[];
-}
-
-/**
- * Describes a resolved runtime executable target.
- */
-export interface RuntimeTarget {
-  /**
-   * Package name that owns the runtime executable. Must be an npm package name.
-   */
-  readonly packageName: string;
-
-  /**
-   * Executable command name used to launch the runtime process.
-   */
-  readonly commandName: string;
-}
+export type { DispatcherInstallSource } from '#api/dispatcher-install-source.js';
+export type { DispatcherMetadata } from '#api/dispatcher-metadata.js';
+export {
+  DISPATCHER_LOCAL_SOURCE_MARKER_FILE,
+  LOCAL_CLI_RELATIVE_PATH_SEGMENTS,
+  SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
+} from '#api/dispatcher-path-constants.js';
+export type { PathResolutionContext } from '#api/path-resolution-context.js';
+export type { ProjectRootResolution } from '#api/project-root-resolution.js';
+export type { RuntimeInvocation } from '#api/runtime-invocation.js';
+export type { RuntimeTarget } from '#api/runtime-target.js';

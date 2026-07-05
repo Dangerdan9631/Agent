@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#api/*.js": ["src/*.ts"],
+      "#api/*": ["src/*"]
+    },
     "rootDir": ".",
     "outDir": "dist"
   },

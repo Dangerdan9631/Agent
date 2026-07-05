@@ -2,6 +2,10 @@
   "name": "spec-n-roll-mcp",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#mcp/*.js": "./src/*.ts",
+    "#mcp/*": "./src/*.ts"
+  },
   "bin": {
     "spec-n-roll-mcp": "./dist/index.js"
   },

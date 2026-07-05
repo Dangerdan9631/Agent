@@ -2,6 +2,10 @@
   "name": "spec-n-roll-runtime",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#runtime/*.js": "./src/*.ts",
+    "#runtime/*": "./src/*.ts"
+  },
   "bin": {
     "spec-n-roll-runtime": "./dist/index.js"
   },
@@ -12,13 +16,11 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean --sourcemap",
     "lint": "eslint .",
-    "test": "vitest run test"
+    "test": "vitest run --config ./vitest.config.ts"
   },
   "dependencies": {
-    "chalk": "^5.4.1",
     "commander": "^13.1.0",
-    "reflect-metadata": "^0.2.2",
-    "tsyringe": "^4.10.0",
+    "spec-n-roll-api": "0.1.0",
     "tslog": "^4.9.3"
   },
   "devDependencies": {

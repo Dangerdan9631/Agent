@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#mcp/*.js": ["src/*.ts"],
+      "#mcp/*": ["src/*"]
+    },
     "rootDir": ".",
     "outDir": "dist"
   },

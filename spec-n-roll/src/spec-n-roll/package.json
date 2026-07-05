@@ -2,25 +2,30 @@
   "name": "spec-n-roll",
   "version": "0.1.0",
   "type": "module",
+  "imports": {
+    "#dispatcher/*.js": "./src/*.ts",
+    "#dispatcher/*": "./src/*.ts"
+  },
   "bin": {
     "spec-n-roll": "./dist/index.js",
     "snr": "./dist/index.js"
   },
-  "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "!dist/.source-package-root"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap",
+    "build": "tsup src/index.ts --format esm --clean --sourcemap && node scripts/write-dispatcher-source-marker.mjs",
     "lint": "eslint .",
     "test": "vitest run --config ./vitest.config.ts"
   },
   "dependencies": {
-    "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "reflect-metadata": "^0.2.2",
-    "tsyringe": "^4.10.0",
-    "tslog": "^4.9.3"
+    "spec-n-roll-api": "0.1.0",
+    "spec-n-roll-runtime": "0.1.0",
+    "tslog": "^4.9.3",
+    "tsyringe": "^4.10.0"
   },
   "devDependencies": {
     "spec-n-roll-test": "0.1.0"
