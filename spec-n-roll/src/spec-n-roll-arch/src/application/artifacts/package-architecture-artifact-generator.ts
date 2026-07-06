@@ -58,6 +58,10 @@ export class PackageArchitectureArtifactGenerator {
       readFileSync(dependencyCruiserJsonPath, 'utf8'),
       workspacePackage,
       exclusionFilter,
+      {
+        rootParentId: workspacePackage.name,
+        rootParentLabel: workspacePackage.name,
+      },
     );
     this.writer.write(cytoscapeJsonPath, cytoscapeHtmlPath, elements, pages);
 

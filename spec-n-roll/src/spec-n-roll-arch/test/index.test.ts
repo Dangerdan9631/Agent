@@ -1,11 +1,20 @@
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
+import { ArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
 import { DependencyCruiserCytoscapeConverter } from '#arch/application/graph/dependency-cruiser-cytoscape-converter.js';
+import { PackageFolderArchitectureArtifactGenerator } from '#arch/application/artifacts/package-folder-architecture-artifact-generator.js';
 import { PackageDependencyCytoscapeConverter } from '#arch/application/graph/package-dependency-cytoscape-converter.js';
+import { PackageFolderDependencyCytoscapeConverter } from '#arch/application/graph/package-folder-dependency-cytoscape-converter.js';
 import { PackagePublicApiExportIndex } from '#arch/application/graph/package-public-api-export-index.js';
 import { RuntimePackageDiscoverer } from '#arch/index.js';
 
@@ -541,7 +550,262 @@ describe('spec-n-roll-arch', () => {
     ]);
   });
 
-  it('renders architecture diagram labels at 2.5x the prior size', () => {
+  it('groups package diagrams under the package node', () => {
+    const elements = new DependencyCruiserCytoscapeConverter().convert(
+      JSON.stringify({
+        modules: [
+          {
+            source: 'src/alpha/src/application/use-case.ts',
+            dependencies: [],
+          },
+        ],
+      }),
+      {
+        name: 'alpha',
+        root: 'D:/repo/src/alpha',
+        dependencies: {},
+      },
+      undefined,
+      {
+        rootParentId: 'alpha',
+        rootParentLabel: 'alpha',
+      },
+    );
+
+    expect(elements).toEqual([
+      { data: { id: 'alpha', label: 'alpha' } },
+      {
+        data: {
+          id: 'directory:alpha:application',
+          label: 'application',
+          parent: 'alpha',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts',
+          label: 'use-case',
+          parent: 'directory:alpha:application',
+        },
+      },
+    ]);
+  });
+
+  it('builds configured folder diagrams with external package nodes', () => {
+    const elements = new PackageFolderDependencyCytoscapeConverter().convert(
+      JSON.stringify({
+        modules: [
+          {
+            source: 'src/alpha/src/application/use-case.ts',
+            dependencies: [
+              {
+                module: 'src/alpha/src/application/model.ts',
+                resolved: 'src/alpha/src/application/model.ts',
+              },
+              {
+                module: 'src/alpha/src/infrastructure/adapter.ts',
+                resolved: 'src/alpha/src/infrastructure/adapter.ts',
+              },
+              {
+                module: 'beta',
+                resolved: 'src/beta/src/index.ts',
+              },
+              {
+                module: 'tslog',
+                resolved: 'node_modules/tslog/index.js',
+              },
+            ],
+          },
+          {
+            source: 'src/alpha/src/infrastructure/adapter.ts',
+            dependencies: [],
+          },
+        ],
+      }),
+      {
+        name: 'alpha',
+        root: 'D:/repo/src/alpha',
+        dependencies: { beta: '0.1.0', tslog: '4.0.0' },
+      },
+      'src/application',
+    );
+
+    expect(elements).toEqual([
+      {
+        data: {
+          id: 'folder:alpha:src/application',
+          label: 'src/application',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts',
+          label: 'use-case',
+          parent: 'folder:alpha:src/application',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/model.ts',
+          label: 'model',
+          parent: 'folder:alpha:src/application',
+        },
+      },
+      {
+        data: {
+          id: 'external:alpha:infrastructure',
+          label: 'infrastructure',
+          externalDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'external:beta',
+          label: 'beta',
+          externalDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'external:tslog',
+          label: 'tslog',
+          externalDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts->src/alpha/src/application/model.ts',
+          source: 'src/alpha/src/application/use-case.ts',
+          target: 'src/alpha/src/application/model.ts',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts->external:alpha:infrastructure',
+          source: 'src/alpha/src/application/use-case.ts',
+          target: 'external:alpha:infrastructure',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts->external:beta',
+          source: 'src/alpha/src/application/use-case.ts',
+          target: 'external:beta',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts->external:tslog',
+          source: 'src/alpha/src/application/use-case.ts',
+          target: 'external:tslog',
+        },
+      },
+    ]);
+  });
+
+  it('consolidates resolved workspace dependencies in folder diagrams', () => {
+    const packages = [
+      {
+        name: 'alpha',
+        root: 'D:/repo/src/alpha',
+        dependencies: { beta: '0.1.0' },
+      },
+      {
+        name: 'beta',
+        root: 'D:/repo/src/beta',
+        dependencies: {},
+      },
+    ];
+    const elements = new PackageFolderDependencyCytoscapeConverter().convert(
+      JSON.stringify({
+        modules: [
+          {
+            source: 'src/alpha/src/application/use-case.ts',
+            dependencies: [
+              {
+                module: '#beta/contracts/beta-thing.js',
+                resolved: 'src/beta/src/contracts/beta-thing.ts',
+              },
+            ],
+          },
+        ],
+      }),
+      packages[0],
+      'src/application',
+      packages,
+    );
+
+    expect(elements).toContainEqual({
+      data: {
+        id: 'external:beta',
+        label: 'beta',
+        externalDependency: 'true',
+      },
+    });
+    expect(elements).toContainEqual({
+      data: {
+        id: 'src/alpha/src/application/use-case.ts->external:beta',
+        source: 'src/alpha/src/application/use-case.ts',
+        target: 'external:beta',
+      },
+    });
+  });
+  it('uses package exclusions as folder diagram defaults', () => {
+    const filter = new ArchitectureExclusionFilter({
+      exclusions: {
+        externalDependencies: ['tslog'],
+        projectFiles: {
+          allPackages: ['src/**/*.test.ts'],
+          packages: {
+            alpha: ['ignored.ts'],
+          },
+        },
+      },
+    }).forFolderDiagram('alpha', { path: 'src/application' });
+
+    expect(filter.excludesExternalDependency('tslog')).toBe(true);
+    expect(
+      filter.excludesProjectFile('alpha', 'src/application/ignored.ts'),
+    ).toBe(true);
+    expect(
+      filter.excludesProjectFile('alpha', 'src/application/model.test.ts'),
+    ).toBe(true);
+  });
+  it('generates configured folder diagram artifacts without seeding layout files', () => {
+    const outputRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-folder-'));
+    const packageOutputRoot = join(outputRoot, 'alpha');
+    mkdirSync(packageOutputRoot);
+    writeFileSync(
+      join(packageOutputRoot, 'dependency-cruiser.json'),
+      JSON.stringify({
+        modules: [
+          {
+            source: 'src/alpha/src/application/use-case.ts',
+            dependencies: [],
+          },
+        ],
+      }),
+    );
+
+    new PackageFolderArchitectureArtifactGenerator().generate(
+      outputRoot,
+      {
+        name: 'alpha',
+        root: 'D:/repo/src/alpha',
+        dependencies: {},
+      },
+      {
+        path: 'src/application',
+      },
+    );
+
+    expect(
+      existsSync(
+        join(packageOutputRoot, 'folder-src-application.cytoscape.layout.json'),
+      ),
+    ).toBe(false);
+  });
+  it('renders architecture diagram controls and server-backed layout behavior', () => {
     const artifactRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-html-'));
     const cytoscapeJsonPath = join(artifactRoot, 'graph.json');
     const cytoscapeHtmlPath = join(artifactRoot, 'graph.html');
@@ -557,5 +821,131 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('cytoscape-fcose@2.2.0');
     expect(html).toContain("const preferredLayout = { name: 'fcose'");
     expect(html).toContain("const fallbackLayout = { name: 'cose'");
+    expect(html).toContain('id="fit-diagram"');
+    expect(html).toContain('id="layout-status"');
+    expect(html).toContain('class DiagramLayoutStore');
+    expect(html).toContain('class DiagramLayoutClient');
+    expect(html).toContain("fetch(this.layoutPath, { cache: 'no-store' })");
+    expect(html).toContain("method: 'PUT'");
+    expect(html).toContain("'/__spec-n-roll/layout?diagram='");
+    expect(html).toContain(
+      "window.location.pathname === '/' ? '/project-dependencies.cytoscape.html'",
+    );
+    expect(html).toContain('Layout autosave unavailable');
+    expect(html).toContain('layoutStore.applySavedLayout()');
+    expect(html).toContain('layoutStore.flushPendingSave()');
+    expect(html).toContain('node.position(savedPosition.position)');
+    expect(html).toContain('x: position.x');
+    expect(html).toContain(
+      "cy.on('dragfree', 'node', () => layoutStore.saveSoon());",
+    );
+    expect(html).not.toContain('id="export-layout"');
+    expect(html).not.toContain('DiagramLayoutExporter');
+    expect(html).not.toContain('localStorage');
+    expect(html).not.toContain('REPO_LAYOUT');
+  });
+
+  it('serves diagrams and persists cleaned layout files through the viewer server', async () => {
+    const artifactRoot = mkdtempSync(
+      join(tmpdir(), 'spec-n-roll-arch-server-'),
+    );
+    writeFileSync(
+      join(artifactRoot, 'graph.html'),
+      '<!doctype html><html></html>',
+    );
+    writeFileSync(
+      join(artifactRoot, 'project-dependencies.cytoscape.html'),
+      '<!doctype html><html></html>',
+    );
+    writeFileSync(
+      join(artifactRoot, 'graph.json'),
+      JSON.stringify([
+        { data: { id: 'alpha', label: 'alpha' } },
+        { data: { id: 'beta', label: 'beta', parent: 'alpha' } },
+        { data: { id: 'alpha->beta', source: 'alpha', target: 'beta' } },
+      ]),
+    );
+    writeFileSync(
+      join(artifactRoot, 'project-dependencies.cytoscape.json'),
+      JSON.stringify([{ data: { id: 'project', label: 'project' } }]),
+    );
+    const runningServer = await new ArchitectureViewerHttpServer().start({
+      artifactRoot,
+      host: '127.0.0.1',
+      port: 0,
+    });
+
+    try {
+      const htmlResponse = await fetch(`${runningServer.url}graph.html`);
+      expect(await htmlResponse.text()).toContain('<!doctype html>');
+
+      const saveResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/layout?diagram=graph.html`,
+        {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            version: 2,
+            nodes: {
+              alpha: { parentId: null, position: { x: 10, y: 20 } },
+              beta: { parentId: 'alpha', position: { x: 5, y: 6 } },
+              removed: { parentId: null, position: { x: 30, y: 40 } },
+            },
+          }),
+        },
+      );
+
+      expect(saveResponse.status).toBe(200);
+      const layoutJson = readFileSync(
+        join(artifactRoot, 'graph.layout.json'),
+        'utf8',
+      );
+      expect(layoutJson).toContain('"alpha"');
+      expect(layoutJson).toContain('"beta"');
+      expect(layoutJson).not.toContain('"removed"');
+
+      const traversalResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/layout?diagram=..%2Foutside.html`,
+        {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ version: 2, nodes: {} }),
+        },
+      );
+      expect(traversalResponse.status).toBe(400);
+
+      const rootDiagramResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/layout?diagram=project-dependencies.cytoscape.html`,
+        {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            version: 2,
+            nodes: {
+              project: { parentId: null, position: { x: 1, y: 2 } },
+            },
+          }),
+        },
+      );
+      expect(rootDiagramResponse.status).toBe(200);
+      expect(
+        readFileSync(
+          join(artifactRoot, 'project-dependencies.cytoscape.layout.json'),
+          'utf8',
+        ),
+      ).toContain('"project"');
+
+      const malformedResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/layout?diagram=graph.html`,
+        {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: '{',
+        },
+      );
+      expect(malformedResponse.status).toBe(400);
+    } finally {
+      await runningServer.close();
+    }
   });
 });

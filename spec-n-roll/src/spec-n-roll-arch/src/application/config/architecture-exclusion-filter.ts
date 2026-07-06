@@ -1,5 +1,8 @@
 import { basename } from 'node:path';
-import type { ArchitectureConfig } from '#arch/application/config/architecture-config.js';
+import type {
+  ArchitectureConfig,
+  ArchitectureFolderDiagramConfig,
+} from '#arch/application/config/architecture-config.js';
 
 /**
  * Applies user-configured exclusions to architecture graph dependencies and project files.
@@ -11,6 +14,35 @@ export class ArchitectureExclusionFilter {
    * @param config - User-editable architecture diagram configuration.
    */
   constructor(private readonly config: ArchitectureConfig = {}) {}
+
+  /**
+   * Creates an exclusion filter for a configured folder diagram.
+   *
+   * @param packageName - Workspace package name containing the folder diagram.
+   * @param folderDiagram - Folder diagram configuration with optional exclusion overrides.
+   * @returns Exclusion filter using folder overrides when present and package defaults otherwise.
+   */
+  forFolderDiagram(
+    packageName: string,
+    folderDiagram: ArchitectureFolderDiagramConfig,
+  ): ArchitectureExclusionFilter {
+    return new ArchitectureExclusionFilter({
+      exclusions: {
+        externalDependencies:
+          folderDiagram.exclusions?.externalDependencies ??
+          this.config.exclusions?.externalDependencies,
+        projectFiles: {
+          allPackages: this.config.exclusions?.projectFiles?.allPackages,
+          packages: {
+            [packageName]:
+              folderDiagram.exclusions?.projectFiles ??
+              this.config.exclusions?.projectFiles?.packages?.[packageName] ??
+              [],
+          },
+        },
+      },
+    });
+  }
 
   /**
    * Checks whether an external dependency should be excluded.

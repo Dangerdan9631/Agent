@@ -17,7 +17,8 @@
     "arch": "node dist/index.js",
     "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --external typescript",
     "lint": "eslint .",
-    "test": "vitest run test"
+    "test": "vitest run --root ../.. src/spec-n-roll-arch/test",
+    "view": "node dist/index.js view"
   },
   "dependencies": {
     "chalk": "^5.4.1",

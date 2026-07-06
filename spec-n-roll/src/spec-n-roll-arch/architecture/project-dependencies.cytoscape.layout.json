@@ -1,0 +1,369 @@
+{
+  "version": 2,
+  "nodes": {
+    "spec-n-roll": {
+      "parentId": null,
+      "position": {
+        "x": 16835.88045084318,
+        "y": 71.11914012381166
+      }
+    },
+    "spec-n-roll-api": {
+      "parentId": null,
+      "position": {
+        "x": 15930.11201662664,
+        "y": 964.0507919345923
+      }
+    },
+    "spec-n-roll-mcp": {
+      "parentId": null,
+      "position": {
+        "x": 16888.820661851507,
+        "y": 1646.2174467055816
+      }
+    },
+    "spec-n-roll-runtime": {
+      "parentId": null,
+      "position": {
+        "x": 17916.85125475481,
+        "y": 955.9211941882311
+      }
+    },
+    "spec-n-roll-sdk": {
+      "parentId": null,
+      "position": {
+        "x": 17315.28571397716,
+        "y": 2270.556662115632
+      }
+    },
+    "directory:spec-n-roll:application": {
+      "parentId": "spec-n-roll",
+      "position": {
+        "x": 16408.31796491963,
+        "y": 80.07186783031696
+      }
+    },
+    "directory:spec-n-roll:application/project": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": 16369.314152740091,
+        "y": -16.91984144117663
+      }
+    },
+    "directory:spec-n-roll-api:contracts": {
+      "parentId": "spec-n-roll-api",
+      "position": {
+        "x": 15930.11201662664,
+        "y": 976.8007919345923
+      }
+    },
+    "directory:spec-n-roll-api:contracts/dispatcher": {
+      "parentId": "directory:spec-n-roll-api:contracts",
+      "position": {
+        "x": 15893.3128863226,
+        "y": 987.9252702799904
+      }
+    },
+    "directory:spec-n-roll-api:contracts/project": {
+      "parentId": "directory:spec-n-roll-api:contracts",
+      "position": {
+        "x": 15237.295044440792,
+        "y": 990.1148025424436
+      }
+    },
+    "directory:spec-n-roll:application/runtime": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": 16408.31796491963,
+        "y": 167.89317461428158
+      }
+    },
+    "directory:spec-n-roll-api:contracts/runtime": {
+      "parentId": "directory:spec-n-roll-api:contracts",
+      "position": {
+        "x": 16557.989109718488,
+        "y": 957.2514636360555
+      }
+    },
+    "directory:spec-n-roll:infrastructure": {
+      "parentId": "spec-n-roll",
+      "position": {
+        "x": 17002.507095753637,
+        "y": 112.87947792642103
+      }
+    },
+    "directory:spec-n-roll:infrastructure/metadata": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": 17008.873792090348,
+        "y": 41.100834164042126
+      }
+    },
+    "directory:spec-n-roll:infrastructure/runtime": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": 17002.507095753637,
+        "y": 210.15812168879998
+      }
+    },
+    "directory:spec-n-roll:presentation": {
+      "parentId": "spec-n-roll",
+      "position": {
+        "x": 17433.42998903503,
+        "y": 183.7736614963418
+      }
+    },
+    "directory:spec-n-roll:presentation/cli": {
+      "parentId": "directory:spec-n-roll:presentation",
+      "position": {
+        "x": 17433.42998903503,
+        "y": 196.5236614963418
+      }
+    },
+    "directory:spec-n-roll-mcp:infrastructure": {
+      "parentId": "spec-n-roll-mcp",
+      "position": {
+        "x": 16687.249655724034,
+        "y": 1658.2513353111535
+      }
+    },
+    "directory:spec-n-roll-mcp:infrastructure/commands": {
+      "parentId": "directory:spec-n-roll-mcp:infrastructure",
+      "position": {
+        "x": 16687.249655724034,
+        "y": 1671.0013353111535
+      }
+    },
+    "directory:spec-n-roll-mcp:composition": {
+      "parentId": "spec-n-roll-mcp",
+      "position": {
+        "x": 17097.39166797898,
+        "y": 1659.6835581000096
+      }
+    },
+    "directory:spec-n-roll-mcp:composition/mcp": {
+      "parentId": "directory:spec-n-roll-mcp:composition",
+      "position": {
+        "x": 17097.39166797898,
+        "y": 1672.4335581000096
+      }
+    },
+    "directory:spec-n-roll-runtime:application": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 17645.315555154495,
+        "y": 1143.7717624006468
+      }
+    },
+    "directory:spec-n-roll-runtime:application/invocation": {
+      "parentId": "directory:spec-n-roll-runtime:application",
+      "position": {
+        "x": 17645.315555154495,
+        "y": 1156.5217624006468
+      }
+    },
+    "directory:spec-n-roll-runtime:infrastructure": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 17641.367808119565,
+        "y": 928.3075919530729
+      }
+    },
+    "directory:spec-n-roll-runtime:infrastructure/process": {
+      "parentId": "directory:spec-n-roll-runtime:infrastructure",
+      "position": {
+        "x": 17641.367808119565,
+        "y": 941.0575919530729
+      }
+    },
+    "directory:spec-n-roll-runtime:composition": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 18230.834701390057,
+        "y": 793.5706259758153
+      }
+    },
+    "directory:spec-n-roll-runtime:composition/runtime": {
+      "parentId": "directory:spec-n-roll-runtime:composition",
+      "position": {
+        "x": 18230.834701390057,
+        "y": 806.3206259758153
+      }
+    },
+    "directory:spec-n-roll-runtime:presentation": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 18164.04387669752,
+        "y": 1057.3622315774269
+      }
+    },
+    "directory:spec-n-roll-runtime:presentation/cli": {
+      "parentId": "directory:spec-n-roll-runtime:presentation",
+      "position": {
+        "x": 18164.04387669752,
+        "y": 1070.1122315774269
+      }
+    },
+    "src/spec-n-roll/src/application/project/project-root-resolver.ts": {
+      "parentId": "directory:spec-n-roll:application/project",
+      "position": {
+        "x": 16369.314152740091,
+        "y": -3.9198414411766294
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-path-constants.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
+      "position": {
+        "x": 16087.615381202977,
+        "y": 988.2215851003392
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/project/path-resolution-context.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/project",
+      "position": {
+        "x": 15236.986850793754,
+        "y": 1035.77722513552
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/project/project-root-resolution.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/project",
+      "position": {
+        "x": 15243.103238087831,
+        "y": 970.4523799493671
+      }
+    },
+    "src/spec-n-roll/src/application/runtime/runtime-process-executor.ts": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": 16510.305017187937,
+        "y": 146.2227721267526
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/runtime/runtime-invocation.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/runtime",
+      "position": {
+        "x": 16648.237182459525,
+        "y": 969.3243587336646
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/runtime/runtime-target.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/runtime",
+      "position": {
+        "x": 16443.24103697745,
+        "y": 971.1785685384465
+      }
+    },
+    "src/spec-n-roll/src/application/runtime/runtime-target-resolver.ts": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": 16290.830912651327,
+        "y": 215.56357710181055
+      }
+    },
+    "src/spec-n-roll/src/infrastructure/metadata/dispatcher-metadata-reader.ts": {
+      "parentId": "directory:spec-n-roll:infrastructure/metadata",
+      "position": {
+        "x": 17008.873792090348,
+        "y": 54.100834164042126
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-install-source.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
+      "position": {
+        "x": 15855.969604611155,
+        "y": 1014.8843339562627
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-metadata.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
+      "position": {
+        "x": 15669.010391442222,
+        "y": 986.966206603718
+      }
+    },
+    "src/spec-n-roll/src/infrastructure/runtime/node-runtime-process-executor.ts": {
+      "parentId": "directory:spec-n-roll:infrastructure/runtime",
+      "position": {
+        "x": 17002.507095753637,
+        "y": 223.15812168879998
+      }
+    },
+    "src/spec-n-roll/src/presentation/cli/dispatcher-cli.ts": {
+      "parentId": "directory:spec-n-roll:presentation/cli",
+      "position": {
+        "x": 17433.42998903503,
+        "y": 209.5236614963418
+      }
+    },
+    "src/spec-n-roll-mcp/src/infrastructure/commands/mcp-command-runner.ts": {
+      "parentId": "directory:spec-n-roll-mcp:infrastructure/commands",
+      "position": {
+        "x": 16687.249655724034,
+        "y": 1684.0013353111535
+      }
+    },
+    "src/spec-n-roll-mcp/src/composition/mcp/mcp-program-factory.ts": {
+      "parentId": "directory:spec-n-roll-mcp:composition/mcp",
+      "position": {
+        "x": 17097.39166797898,
+        "y": 1685.4335581000096
+      }
+    },
+    "src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-parser.ts": {
+      "parentId": "directory:spec-n-roll-runtime:application/invocation",
+      "position": {
+        "x": 17645.315555154495,
+        "y": 1169.5217624006468
+      }
+    },
+    "src/spec-n-roll-runtime/src/infrastructure/process/stdin-runtime-invocation-reader.ts": {
+      "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
+      "position": {
+        "x": 17641.367808119565,
+        "y": 954.0575919530729
+      }
+    },
+    "src/spec-n-roll-runtime/src/composition/runtime/runtime-program-factory.ts": {
+      "parentId": "directory:spec-n-roll-runtime:composition/runtime",
+      "position": {
+        "x": 18230.834701390057,
+        "y": 819.3206259758153
+      }
+    },
+    "src/spec-n-roll-runtime/src/presentation/cli/runtime-cli.ts": {
+      "parentId": "directory:spec-n-roll-runtime:presentation/cli",
+      "position": {
+        "x": 18164.04387669752,
+        "y": 1083.1122315774269
+      }
+    },
+    "external:fs": {
+      "parentId": null,
+      "position": {
+        "x": 18068.6304999399,
+        "y": 128.65989006431096
+      }
+    },
+    "external:child_process": {
+      "parentId": null,
+      "position": {
+        "x": 17104.225385211612,
+        "y": 420.98109565329145
+      }
+    },
+    "external:commander": {
+      "parentId": null,
+      "position": {
+        "x": 18221.963581488697,
+        "y": 1694.0228211088245
+      }
+    },
+    "external:chalk": {
+      "parentId": null,
+      "position": {
+        "x": 17121.776374621186,
+        "y": 903.4431574444365
+      }
+    }
+  }
+}

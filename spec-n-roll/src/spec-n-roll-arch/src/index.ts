@@ -10,10 +10,14 @@ export type { CytoscapeElement } from '#arch/application/graph/cytoscape-element
 export { DependencyCruiserCytoscapeConverter } from '#arch/application/graph/dependency-cruiser-cytoscape-converter.js';
 export { DependencyCruiserRunner } from '#arch/infrastructure/dependency-cruiser/dependency-cruiser-runner.js';
 export { PackageArchitectureArtifactGenerator } from '#arch/application/artifacts/package-architecture-artifact-generator.js';
+export { PackageFolderArchitectureArtifactGenerator } from '#arch/application/artifacts/package-folder-architecture-artifact-generator.js';
 export { PackageDependencyCytoscapeConverter } from '#arch/application/graph/package-dependency-cytoscape-converter.js';
+export { PackageFolderDependencyCytoscapeConverter } from '#arch/application/graph/package-folder-dependency-cytoscape-converter.js';
 export { ProjectArchitectureArtifactGenerator } from '#arch/application/artifacts/project-architecture-artifact-generator.js';
 export { RuntimePackageDiscoverer } from '#arch/application/packages/runtime-package-discoverer.js';
 export { RuntimePackagePolicy } from '#arch/application/packages/runtime-package-policy.js';
+export { ArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
+export type { ArchitectureViewerHttpServerOptions, RunningArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
 export { WorkspacePackageReader } from '#arch/infrastructure/workspace/workspace-package-reader.js';
 export type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 export { WorkspaceRootResolver } from '#arch/infrastructure/workspace/workspace-root-resolver.js';

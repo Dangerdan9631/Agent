@@ -6,6 +6,21 @@ import { ExternalDependencyIdentifier } from '#arch/application/graph/external-d
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 
 /**
+ * Describes optional dependency-cruiser conversion settings.
+ */
+export interface DependencyCruiserCytoscapeConversionOptions {
+  /**
+   * Parent graph node used to contain package file and directory nodes.
+   */
+  rootParentId?: string;
+
+  /**
+   * Display label for the root parent node when one is configured.
+   */
+  rootParentLabel?: string;
+}
+
+/**
  * Converts dependency-cruiser reports into Cytoscape graph elements.
  */
 export class DependencyCruiserCytoscapeConverter {
@@ -26,12 +41,14 @@ export class DependencyCruiserCytoscapeConverter {
    * @param dependencyCruiserJson - Dependency-cruiser report serialized as JSON.
    * @param workspacePackage - Package metadata used to apply package-specific file exclusions.
    * @param exclusionFilter - User-configured dependency and project file exclusion filter.
+   * @param options - Optional graph conversion settings.
    * @returns Cytoscape node and edge elements derived from the report.
    */
   convert(
     dependencyCruiserJson: string,
     workspacePackage?: WorkspacePackage,
     exclusionFilter?: ArchitectureExclusionFilter,
+    options: DependencyCruiserCytoscapeConversionOptions = {},
   ): CytoscapeElement[] {
     const report = JSON.parse(dependencyCruiserJson) as {
       modules?: Array<{
@@ -115,20 +132,44 @@ export class DependencyCruiserCytoscapeConverter {
         return { data };
       }
 
-      const grouping = this.directoryGroupBuilder.build(id, data.label);
+      const grouping = this.directoryGroupBuilder.build(
+        id,
+        data.label,
+        options.rootParentId,
+      );
       for (const group of grouping.groups) {
         groupNodes.set(group.data.id, group);
       }
 
       data.label = grouping.fileLabel;
-      if (grouping.parentId) {
-        data.parent = grouping.parentId;
+      data.parent = grouping.parentId ?? options.rootParentId ?? '';
+      if (!data.parent) {
+        delete data.parent;
       }
 
       return { data };
     });
 
-    return [...groupNodes.values()].concat(nodes, [...edges.values()]);
+    return this.rootNode(options).concat([...groupNodes.values()], nodes, [
+      ...edges.values(),
+    ]);
+  }
+
+  private rootNode(
+    options: DependencyCruiserCytoscapeConversionOptions,
+  ): CytoscapeElement[] {
+    if (!options.rootParentId) {
+      return [];
+    }
+
+    return [
+      {
+        data: {
+          id: options.rootParentId,
+          label: options.rootParentLabel ?? options.rootParentId,
+        },
+      },
+    ];
   }
 
   private excludesDependency(

@@ -2,12 +2,18 @@ import { mkdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import chalk from 'chalk';
 import { Logger } from 'tslog';
+import type {
+  ArchitectureConfig,
+  ArchitectureFolderDiagramConfig,
+} from '#arch/application/config/architecture-config.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { ArchitectureConfigReader } from '#arch/application/config/architecture-config-reader.js';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import { PackageArchitectureArtifactGenerator } from '#arch/application/artifacts/package-architecture-artifact-generator.js';
+import { PackageFolderArchitectureArtifactGenerator } from '#arch/application/artifacts/package-folder-architecture-artifact-generator.js';
 import { ProjectArchitectureArtifactGenerator } from '#arch/application/artifacts/project-architecture-artifact-generator.js';
 import { RuntimePackageDiscoverer } from '#arch/application/packages/runtime-package-discoverer.js';
+import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 import { WorkspaceRootResolver } from '#arch/infrastructure/workspace/workspace-root-resolver.js';
 
 /**
@@ -21,6 +27,7 @@ export class ArchitectureArtifactGenerator {
    * @param configReader - Reader for user-editable architecture diagram configuration.
    * @param packageDiscoverer - Discoverer for runtime workspace packages.
    * @param packageGenerator - Generator for package-level graph artifacts.
+   * @param packageFolderGenerator - Generator for configured package folder graph artifacts.
    * @param projectGenerator - Generator for workspace-level graph artifacts.
    * @param logger - Logger used to report resolved configuration and generated artifacts.
    */
@@ -29,6 +36,7 @@ export class ArchitectureArtifactGenerator {
     private readonly configReader = new ArchitectureConfigReader(),
     private readonly packageDiscoverer = new RuntimePackageDiscoverer(),
     private readonly packageGenerator = new PackageArchitectureArtifactGenerator(),
+    private readonly packageFolderGenerator = new PackageFolderArchitectureArtifactGenerator(),
     private readonly projectGenerator = new ProjectArchitectureArtifactGenerator(),
     private readonly logger = new Logger({
       name: 'spec-n-roll-arch',
@@ -58,27 +66,37 @@ export class ArchitectureArtifactGenerator {
       'architecture',
     );
     mkdirSync(outputRoot, { recursive: true });
-    const pages: ArchitecturePage[] = [
-      {
-        title: 'Project dependencies',
-        htmlPath: join(outputRoot, 'project-dependencies.cytoscape.html'),
-      },
-      ...packages.map((workspacePackage) => ({
-        title: workspacePackage.name,
-        htmlPath: join(outputRoot, workspacePackage.name, 'cytoscape.html'),
-      })),
-    ];
+    const folderDiagramEntries = this.folderDiagramEntries(config, packages);
+    this.logger.debug('Resolved configured package folder diagrams.', {
+      folderDiagramCount: folderDiagramEntries.length,
+    });
+    const pages = this.pages(outputRoot, packages, folderDiagramEntries);
 
-    const generatedFiles = [
-      ...packages.flatMap((workspacePackage) =>
-        this.packageGenerator.generate(
-          workspaceRoot,
-          outputRoot,
-          workspacePackage,
-          pages,
-          exclusionFilter,
+    const packageFiles = packages.flatMap((workspacePackage) =>
+      this.packageGenerator.generate(
+        workspaceRoot,
+        outputRoot,
+        workspacePackage,
+        pages,
+        exclusionFilter,
+      ),
+    );
+    const folderFiles = folderDiagramEntries.flatMap((entry) =>
+      this.packageFolderGenerator.generate(
+        outputRoot,
+        entry.workspacePackage,
+        entry.folderDiagram,
+        packages,
+        pages,
+        exclusionFilter.forFolderDiagram(
+          entry.workspacePackage.name,
+          entry.folderDiagram,
         ),
       ),
+    );
+    const generatedFiles = [
+      ...packageFiles,
+      ...folderFiles,
       ...this.projectGenerator.generate(
         outputRoot,
         packages,
@@ -92,5 +110,58 @@ export class ArchitectureArtifactGenerator {
     }
 
     return generatedFiles;
+  }
+
+  private folderDiagramEntries(
+    config: ArchitectureConfig,
+    packages: WorkspacePackage[],
+  ): Array<{
+    workspacePackage: WorkspacePackage;
+    folderDiagram: ArchitectureFolderDiagramConfig;
+  }> {
+    return packages.flatMap((workspacePackage) =>
+      (config.folderDiagrams?.packages?.[workspacePackage.name] ?? []).map(
+        (folderDiagram) => ({ workspacePackage, folderDiagram }),
+      ),
+    );
+  }
+
+  private pages(
+    outputRoot: string,
+    packages: WorkspacePackage[],
+    folderDiagramEntries: Array<{
+      workspacePackage: WorkspacePackage;
+      folderDiagram: ArchitectureFolderDiagramConfig;
+    }>,
+  ): ArchitecturePage[] {
+    return [
+      {
+        title: 'Project dependencies',
+        htmlPath: join(outputRoot, 'project-dependencies.cytoscape.html'),
+      },
+      ...packages.map((workspacePackage) => ({
+        title: workspacePackage.name,
+        htmlPath: join(outputRoot, workspacePackage.name, 'cytoscape.html'),
+      })),
+      ...folderDiagramEntries.map((entry) => ({
+        title:
+          entry.folderDiagram.title ??
+          `${entry.workspacePackage.name} ${entry.folderDiagram.path}`,
+        htmlPath: join(
+          outputRoot,
+          entry.workspacePackage.name,
+          `${this.diagramSlug(entry.folderDiagram.path)}.cytoscape.html`,
+        ),
+      })),
+    ];
+  }
+
+  private diagramSlug(folderPath: string): string {
+    const normalizedPath = folderPath
+      .replaceAll('\\', '/')
+      .replace(/^\.\//u, '')
+      .replace(/\/$/u, '');
+
+    return `folder-${normalizedPath.replaceAll('/', '-')}`;
   }
 }

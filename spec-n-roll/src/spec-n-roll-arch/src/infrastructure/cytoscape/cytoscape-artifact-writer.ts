@@ -9,6 +9,11 @@ import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element
 const ARCHITECTURE_LABEL_FONT_SIZE = 25;
 
 /**
+ * Defines the schema version for persisted architecture diagram layouts.
+ */
+const ARCHITECTURE_LAYOUT_VERSION = 2;
+
+/**
  * Writes Cytoscape graph artifacts to disk.
  */
 export class CytoscapeArtifactWriter {
@@ -71,6 +76,8 @@ export class CytoscapeArtifactWriter {
       .search-input { border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; height: 30px; min-width: 220px; padding: 0 10px; }
       .toolbar-button { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #111827; cursor: pointer; font-size: 13px; height: 30px; padding: 0 10px; }
       .toolbar-button.active { background: #1d4ed8; border-color: #1d4ed8; color: #ffffff; }
+      .layout-status { color: #64748b; font-size: 12px; margin-left: auto; min-width: 142px; text-align: right; }
+      .layout-status.error { color: #b91c1c; }
       #cy { height: 100%; min-height: 0; min-width: 0; width: 100%; }
     </style>
   </head>
@@ -92,6 +99,8 @@ export class CytoscapeArtifactWriter {
           <button class="toolbar-button" id="filter-inbound" type="button">Inbound</button>
           <button class="toolbar-button" id="filter-outbound" type="button">Outbound</button>
           <button class="toolbar-button active" id="toggle-external" type="button">External</button>
+          <button class="toolbar-button" id="fit-diagram" type="button">Fit</button>
+          <span class="layout-status" id="layout-status" aria-live="polite"></span>
         </div>
         <div id="cy"></div>
       </main>
@@ -117,14 +126,176 @@ export class CytoscapeArtifactWriter {
       const BASE_WHEEL_SENSITIVITY = 0.5;
       const WHEEL_ZOOM_EXPONENT = 0.001;
       const FIT_PADDING = 36;
+      const LAYOUT_STORAGE_VERSION = ${ARCHITECTURE_LAYOUT_VERSION};
       const preferredLayout = { name: 'fcose', quality: 'proof', randomize: false, animate: false, padding: FIT_PADDING, nodeSeparation: 90, idealEdgeLength: 120 };
       const fallbackLayout = { name: 'cose', randomize: false, animate: false, padding: FIT_PADDING, idealEdgeLength: 120 };
 
-      function runLayout() {
+      class DiagramLayoutClient {
+        constructor(pagePath) {
+          this.pagePath = pagePath;
+          this.layoutPath = pagePath.replace(/\\.html$/u, '.layout.json');
+          this.savePath = '/__spec-n-roll/layout?diagram=' + encodeURIComponent(pagePath.replace(/^\\//u, ''));
+        }
+
+        async read() {
+          try {
+            const response = await fetch(this.layoutPath, { cache: 'no-store' });
+            if (response.status === 404) {
+              return null;
+            }
+            if (!response.ok) {
+              throw new Error('Layout read failed.');
+            }
+            return await response.json();
+          } catch {
+            return null;
+          }
+        }
+
+        async write(layout) {
+          const response = await fetch(this.savePath, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(layout),
+          });
+          if (!response.ok) {
+            throw new Error('Layout autosave failed.');
+          }
+        }
+      }
+
+      class DiagramLayoutStore {
+        constructor(graph, client, status) {
+          this.graph = graph;
+          this.client = client;
+          this.status = status;
+          this.saveTimeout = null;
+          this.pendingSave = null;
+        }
+
+        async applySavedLayout() {
+          const savedLayout = await this.client.read();
+          if (!savedLayout || savedLayout.version !== LAYOUT_STORAGE_VERSION || !savedLayout.nodes) {
+            return false;
+          }
+
+          const nodeEntries = Object.entries(savedLayout.nodes)
+            .filter(([nodeId, position]) => this.canApply(nodeId, position))
+            .sort(([leftId], [rightId]) => this.depth(leftId) - this.depth(rightId));
+
+          for (const [nodeId, savedPosition] of nodeEntries) {
+            const node = this.graph.getElementById(nodeId);
+            node.position(savedPosition.position);
+          }
+
+          return nodeEntries.length > 0;
+        }
+
+        saveSoon() {
+          window.clearTimeout(this.saveTimeout);
+          this.saveTimeout = window.setTimeout(() => {
+            void this.saveNow();
+          }, 100);
+        }
+
+        async flushPendingSave() {
+          window.clearTimeout(this.saveTimeout);
+          this.saveTimeout = null;
+          if (this.pendingSave) {
+            await this.pendingSave;
+            return;
+          }
+          await this.saveNow();
+        }
+
+        async saveNow() {
+          const layout = this.currentLayout();
+          this.status.textContent = 'Saving layout';
+          this.status.classList.remove('error');
+          const save = this.client.write(layout)
+            .then(() => {
+              this.status.textContent = 'Layout saved';
+              this.status.classList.remove('error');
+            })
+            .catch(() => {
+              this.status.textContent = 'Layout autosave unavailable';
+              this.status.classList.add('error');
+            })
+            .finally(() => {
+              if (this.pendingSave === save) {
+                this.pendingSave = null;
+              }
+            });
+          this.pendingSave = save;
+          await save;
+        }
+
+        currentLayout() {
+          const nodes = {};
+
+          this.graph.nodes().forEach((node) => {
+            nodes[node.id()] = this.snapshot(node);
+          });
+
+          return {
+            version: LAYOUT_STORAGE_VERSION,
+            nodes,
+          };
+        }
+
+        canApply(nodeId, savedPosition) {
+          if (!savedPosition || !savedPosition.position) {
+            return false;
+          }
+
+          const node = this.graph.getElementById(nodeId);
+          if (node.empty()) {
+            return false;
+          }
+
+          const currentParentId = this.parentId(node);
+          if (savedPosition.parentId !== currentParentId) {
+            return false;
+          }
+
+          return !savedPosition.parentId || !this.graph.getElementById(savedPosition.parentId).empty();
+        }
+
+        depth(nodeId) {
+          return this.graph.getElementById(nodeId).ancestors().length;
+        }
+
+        parentId(node) {
+          const parent = node.parent();
+          return parent.empty() ? null : parent.id();
+        }
+
+        snapshot(node) {
+          const parentId = this.parentId(node);
+          const position = node.position();
+
+          return {
+            parentId,
+            position: {
+              x: position.x,
+              y: position.y,
+            },
+          };
+        }
+      }
+
+      const currentDiagramPath = window.location.pathname === '/' ? '/project-dependencies.cytoscape.html' : window.location.pathname;
+      const layoutStore = new DiagramLayoutStore(
+        cy,
+        new DiagramLayoutClient(currentDiagramPath),
+        document.getElementById('layout-status'),
+      );
+
+      function runLayout(onComplete) {
         try {
-          cy.layout(preferredLayout).run();
+          cy.layout({ ...preferredLayout, stop: onComplete }).run();
         } catch {
-          cy.layout(fallbackLayout).run();
+          cy.layout({ ...fallbackLayout, stop: onComplete }).run();
         }
       }
 
@@ -133,8 +304,9 @@ export class CytoscapeArtifactWriter {
         cy.fit(undefined, FIT_PADDING);
       }
 
-      runLayout();
-      requestAnimationFrame(fitGraph);
+      runLayout(() => {
+        void layoutStore.applySavedLayout().finally(() => requestAnimationFrame(fitGraph));
+      });
 
       function normalizedWheelDelta(event) {
         if (event.deltaMode === 1) {
@@ -176,11 +348,11 @@ export class CytoscapeArtifactWriter {
         outbound: document.getElementById('filter-outbound')
       };
       const externalToggle = document.getElementById('toggle-external');
+      const fitDiagram = document.getElementById('fit-diagram');
 
       document.getElementById('nav-toggle').addEventListener('click', () => {
         shell.classList.toggle('nav-collapsed');
-        cy.resize();
-        cy.fit(undefined, 24);
+        fitGraph();
       });
 
       function selectedScope() {
@@ -287,11 +459,26 @@ export class CytoscapeArtifactWriter {
           updateGraph();
         }
       });
+      document.querySelectorAll('.navigation-link').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          void layoutStore.flushPendingSave().finally(() => {
+            window.location.href = link.href;
+          });
+        });
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          void layoutStore.flushPendingSave();
+        }
+      });
       search.addEventListener('input', updateGraph);
       modeButtons.both.addEventListener('click', () => setMode('both'));
       modeButtons.inbound.addEventListener('click', () => setMode('inbound'));
       modeButtons.outbound.addEventListener('click', () => setMode('outbound'));
       externalToggle.addEventListener('click', toggleExternalDependencies);
+      fitDiagram.addEventListener('click', fitGraph);
+      cy.on('dragfree', 'node', () => layoutStore.saveSoon());
     </script>
   </body>
 </html>

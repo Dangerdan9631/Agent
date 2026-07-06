@@ -7,3 +7,7 @@ This directory contains architecture configuration models, readers, and filters.
 ### Configuration behavior
 
 Keep config interpretation and exclusion decisions here. Filesystem mechanics should remain isolated from policy decisions.
+
+### Layout ownership
+
+Do not model diagram layout as architecture configuration. Layout is persisted automatically by the local viewer in checked-in `*.layout.json` files next to generated diagrams.
