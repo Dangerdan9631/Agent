@@ -1,0 +1,89 @@
+{
+  "version": 2,
+  "nodes": {
+    "spec-n-roll-api": {
+      "parentId": null,
+      "position": {
+        "x": 100871.71123421019,
+        "y": 126.75505637872456
+      }
+    },
+    "directory:spec-n-roll-api:contracts": {
+      "parentId": "spec-n-roll-api",
+      "position": {
+        "x": 100871.71123421019,
+        "y": 139.50505637872456
+      }
+    },
+    "directory:spec-n-roll-api:contracts/dispatcher": {
+      "parentId": "directory:spec-n-roll-api:contracts",
+      "position": {
+        "x": 100871.71123421019,
+        "y": 138.22341095821335
+      }
+    },
+    "directory:spec-n-roll-api:contracts/project": {
+      "parentId": "directory:spec-n-roll-api:contracts",
+      "position": {
+        "x": 101058.71552329458,
+        "y": 2
+      }
+    },
+    "directory:spec-n-roll-api:contracts/runtime": {
+      "parentId": "directory:spec-n-roll-api:contracts",
+      "position": {
+        "x": 100784.28574548879,
+        "y": 152.25505637872456
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-install-source.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
+      "position": {
+        "x": 100573.9569451258,
+        "y": 15
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-metadata.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
+      "position": {
+        "x": 100635.71482792599,
+        "y": 287.4468219164267
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-path-constants.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
+      "position": {
+        "x": 101160.96552329458,
+        "y": 15
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/project/path-resolution-context.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/project",
+      "position": {
+        "x": 101090.96552329458,
+        "y": 15
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/project/project-root-resolution.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/project",
+      "position": {
+        "x": 101020.96552329458,
+        "y": 15
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/runtime/runtime-invocation.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/runtime",
+      "position": {
+        "x": 100642.10596768299,
+        "y": 315.5101127574491
+      }
+    },
+    "src/spec-n-roll-api/src/contracts/runtime/runtime-target.ts": {
+      "parentId": "directory:spec-n-roll-api:contracts/runtime",
+      "position": {
+        "x": 100950.96552329458,
+        "y": 15
+      }
+    }
+  }
+}

@@ -1,12 +1,15 @@
+import { existsSync } from 'node:fs';
 import {
   createServer,
   type IncomingMessage,
   type Server,
   type ServerResponse,
 } from 'node:http';
+import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, extname, relative, resolve, sep } from 'node:path';
+import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { Logger } from 'tslog';
+import type { ArchitectureConfig } from '#arch/application/config/architecture-config.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 
 /**
@@ -32,6 +35,11 @@ export interface ArchitectureViewerHttpServerOptions {
    * Network port for the local viewer. Use 0 to request an available port from the OS.
    */
   port: number;
+
+  /**
+   * Absolute repository root containing the user-editable architecture config file. When omitted, config writes use the artifact root ancestry.
+   */
+  workspaceRoot?: string;
 }
 
 /**
@@ -49,6 +57,21 @@ export interface RunningArchitectureViewerHttpServer {
    * @returns A promise that resolves after the server has stopped listening.
    */
   close(): Promise<void>;
+}
+
+/**
+ * Describes a viewer request to update user-editable architecture configuration.
+ */
+interface ArchitectureViewerConfigAction {
+  /**
+   * Requested configuration action. Supported values are node hiding and folder diagram creation.
+   */
+  action: 'hide-node' | 'create-folder-diagram';
+
+  /**
+   * Cytoscape node id selected by the user. The id must exist in the current diagram JSON.
+   */
+  nodeId: string;
 }
 
 /**
@@ -117,8 +140,11 @@ export class ArchitectureViewerHttpServer {
     options: ArchitectureViewerHttpServerOptions,
   ): Promise<RunningArchitectureViewerHttpServer> {
     const artifactRoot = resolve(options.artifactRoot);
+    const workspaceRoot = resolve(
+      options.workspaceRoot ?? join(artifactRoot, '..', '..', '..'),
+    );
     const server = createServer((request, response) => {
-      void this.handleRequest(request, response, artifactRoot);
+      void this.handleRequest(request, response, artifactRoot, workspaceRoot);
     });
 
     await new Promise<void>((resolveStart, rejectStart) => {
@@ -157,6 +183,7 @@ export class ArchitectureViewerHttpServer {
     request: IncomingMessage,
     response: ServerResponse,
     artifactRoot: string,
+    workspaceRoot: string,
   ): Promise<void> {
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
@@ -165,6 +192,20 @@ export class ArchitectureViewerHttpServer {
         url.pathname === '/__spec-n-roll/layout'
       ) {
         await this.persistLayout(request, response, artifactRoot, url);
+        return;
+      }
+
+      if (
+        request.method === 'POST' &&
+        url.pathname === '/__spec-n-roll/config'
+      ) {
+        await this.persistConfig(
+          request,
+          response,
+          artifactRoot,
+          workspaceRoot,
+          url,
+        );
         return;
       }
 
@@ -247,6 +288,241 @@ export class ArchitectureViewerHttpServer {
     await mkdir(dirname(layoutPath), { recursive: true });
     await writeFile(layoutPath, `${JSON.stringify(layout, null, 2)}\n`);
     this.respondJson(response, 200, { saved: true });
+  }
+
+  private async persistConfig(
+    request: IncomingMessage,
+    response: ServerResponse,
+    artifactRoot: string,
+    workspaceRoot: string,
+    url: URL,
+  ): Promise<void> {
+    const diagramPath = url.searchParams.get('diagram');
+    if (!diagramPath || !diagramPath.endsWith('.html')) {
+      this.respondText(response, 400, 'A diagram HTML path is required.');
+      return;
+    }
+
+    const htmlPath = this.resolveArtifactPath(artifactRoot, diagramPath);
+    if (!htmlPath) {
+      this.respondText(response, 400, 'Invalid diagram path.');
+      return;
+    }
+
+    const action = await this.readJsonBody(request);
+    if (!this.isArchitectureViewerConfigAction(action)) {
+      this.respondText(response, 400, 'Invalid config action.');
+      return;
+    }
+
+    const elements = await this.readElements(
+      htmlPath.replace(/\.html$/u, '.json'),
+    );
+    const node = elements
+      .filter((element) => this.isNodeElement(element))
+      .find((element) => element.data.id === action.nodeId);
+    if (!node) {
+      this.respondText(response, 400, 'Selected node was not found.');
+      return;
+    }
+
+    const updated = await this.updateConfig(
+      workspaceRoot,
+      action,
+      node,
+      elements,
+    );
+    if (!updated) {
+      this.respondText(response, 400, 'Selected node is not configurable.');
+      return;
+    }
+
+    this.respondJson(response, 200, { saved: true });
+  }
+
+  private async updateConfig(
+    workspaceRoot: string,
+    action: ArchitectureViewerConfigAction,
+    node: CytoscapeElement & { data: { id: string } },
+    elements: CytoscapeElement[],
+  ): Promise<boolean> {
+    const config = this.readArchitectureConfig(workspaceRoot);
+
+    if (action.action === 'hide-node' && this.isExternalNode(node)) {
+      config.exclusions ??= {};
+      config.exclusions.externalDependencies = this.sortedUnique([
+        ...(config.exclusions.externalDependencies ?? []),
+        node.data.label,
+      ]);
+      await this.writeArchitectureConfig(workspaceRoot, config);
+      return true;
+    }
+
+    const projectFile = this.projectFileSelection(node, elements);
+    if (action.action === 'hide-node' && projectFile) {
+      config.exclusions ??= {};
+      config.exclusions.projectFiles ??= {};
+      config.exclusions.projectFiles.packages ??= {};
+      config.exclusions.projectFiles.packages[projectFile.packageName] =
+        this.sortedUnique([
+          ...(config.exclusions.projectFiles.packages[
+            projectFile.packageName
+          ] ?? []),
+          projectFile.packageRelativePath,
+        ]);
+      await this.writeArchitectureConfig(workspaceRoot, config);
+      return true;
+    }
+
+    const folder = this.folderSelection(node);
+    if (action.action === 'create-folder-diagram' && folder) {
+      config.folderDiagrams ??= {};
+      config.folderDiagrams.packages ??= {};
+      const packageDiagrams =
+        config.folderDiagrams.packages[folder.packageName] ?? [];
+      config.folderDiagrams.packages[folder.packageName] = [
+        ...packageDiagrams.filter(
+          (diagram) =>
+            this.normalizeConfigPath(diagram.path) !== folder.folderPath,
+        ),
+        { path: folder.folderPath },
+      ].sort((left, right) =>
+        this.normalizeConfigPath(left.path).localeCompare(
+          this.normalizeConfigPath(right.path),
+        ),
+      );
+      await this.writeArchitectureConfig(workspaceRoot, config);
+      return true;
+    }
+
+    return false;
+  }
+
+  private isExternalNode(
+    node: CytoscapeElement & { data: { id: string } },
+  ): node is CytoscapeElement & { data: { id: string; label: string } } {
+    return node.data.externalDependency === 'true' && !!node.data.label;
+  }
+
+  private projectFileSelection(
+    node: CytoscapeElement & { data: { id: string } },
+    elements: CytoscapeElement[],
+  ): { packageName: string; packageRelativePath: string } | null {
+    if (this.isExternalNode(node) || this.hasChildren(node, elements)) {
+      return null;
+    }
+
+    const match = /^src\/([^/]+)\/(.+)$/u.exec(
+      this.normalizeConfigPath(node.data.id),
+    );
+    if (!match) {
+      return null;
+    }
+
+    return {
+      packageName: match[1],
+      packageRelativePath: match[2],
+    };
+  }
+
+  private folderSelection(
+    node: CytoscapeElement & { data: { id: string } },
+  ): { packageName: string; folderPath: string } | null {
+    const normalizedId = this.normalizeConfigPath(node.data.id);
+    const folderRootMatch = /^folder:([^:]+):(.+)$/u.exec(normalizedId);
+    if (folderRootMatch) {
+      return {
+        packageName: folderRootMatch[1],
+        folderPath: this.normalizeConfigPath(folderRootMatch[2]),
+      };
+    }
+
+    const folderChildMatch = /^directory:folder:([^:]+):(.+):(.+)$/u.exec(
+      normalizedId,
+    );
+    if (folderChildMatch) {
+      return {
+        packageName: folderChildMatch[1],
+        folderPath: this.normalizeConfigPath(
+          `${folderChildMatch[2]}/${folderChildMatch[3]}`,
+        ),
+      };
+    }
+
+    const packageFolderMatch = /^directory:([^:]+):(.+)$/u.exec(normalizedId);
+    if (!packageFolderMatch) {
+      return null;
+    }
+
+    return {
+      packageName: packageFolderMatch[1],
+      folderPath: this.normalizeConfigPath(`src/${packageFolderMatch[2]}`),
+    };
+  }
+
+  private hasChildren(
+    node: CytoscapeElement & { data: { id: string } },
+    elements: CytoscapeElement[],
+  ): boolean {
+    return elements.some(
+      (element) =>
+        this.isNodeElement(element) && element.data.parent === node.data.id,
+    );
+  }
+
+  private readArchitectureConfig(workspaceRoot: string): ArchitectureConfig {
+    const configPath = this.architectureConfigPath(workspaceRoot);
+    if (!existsSync(configPath)) {
+      return {};
+    }
+
+    const requireConfig = createRequire(import.meta.url);
+    delete requireConfig.cache[requireConfig.resolve(configPath)];
+    return requireConfig(configPath) as ArchitectureConfig;
+  }
+
+  private async writeArchitectureConfig(
+    workspaceRoot: string,
+    config: ArchitectureConfig,
+  ): Promise<void> {
+    await writeFile(
+      this.architectureConfigPath(workspaceRoot),
+      `${this.architectureConfigHeader()}module.exports = ${JSON.stringify(config, null, 2)};\n`,
+    );
+  }
+
+  private architectureConfigPath(workspaceRoot: string): string {
+    return join(workspaceRoot, 'spec-n-roll.architecture.config.cjs');
+  }
+
+  private architectureConfigHeader(): string {
+    return `// User-editable architecture diagram configuration.
+//
+// External dependencies are matched by displayed package/module name, such as
+// "tslog", "commander", or "fs". Project file exclusions can be exact file
+// names, exact paths relative to the package root, or glob patterns relative
+// to the package root, such as "src/**/*.test.ts".
+//
+// Folder diagrams are opt in per package. Paths are relative to the package root,
+// such as "src/application". Folder exclusions inherit the containing package
+// exclusions unless overridden on that folder diagram.
+//
+// Diagram layouts are saved automatically by the architecture viewer as checked-in
+// *.layout.json files next to each generated diagram artifact.
+`;
+  }
+
+  private sortedUnique(values: string[]): string[] {
+    return [
+      ...new Set(values.map((value) => this.normalizeConfigPath(value))),
+    ].sort();
+  }
+
+  private normalizeConfigPath(value: string): string {
+    return value
+      .replaceAll('\\', '/')
+      .replace(/^\.\//u, '')
+      .replace(/\/$/u, '');
   }
 
   private async readElements(jsonPath: string): Promise<CytoscapeElement[]> {
@@ -354,6 +630,22 @@ export class ArchitectureViewerHttpServer {
       'content-type': 'text/plain; charset=utf-8',
     });
     response.end(body);
+  }
+
+  private isArchitectureViewerConfigAction(
+    action: unknown,
+  ): action is ArchitectureViewerConfigAction {
+    if (!action || typeof action !== 'object') {
+      return false;
+    }
+
+    const candidate = action as { action?: unknown; nodeId?: unknown };
+
+    return (
+      (candidate.action === 'hide-node' ||
+        candidate.action === 'create-folder-diagram') &&
+      typeof candidate.nodeId === 'string'
+    );
   }
 
   private isPersistedArchitectureLayout(

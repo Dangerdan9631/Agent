@@ -78,6 +78,7 @@ export class CytoscapeArtifactWriter {
       .toolbar-button.active { background: #1d4ed8; border-color: #1d4ed8; color: #ffffff; }
       .layout-status { color: #64748b; font-size: 12px; margin-left: auto; min-width: 142px; text-align: right; }
       .layout-status.error { color: #b91c1c; }
+      .toolbar-button[hidden] { display: none; }
       #cy { height: 100%; min-height: 0; min-width: 0; width: 100%; }
     </style>
   </head>
@@ -98,8 +99,11 @@ export class CytoscapeArtifactWriter {
           <button class="toolbar-button active" id="filter-both" type="button">Both</button>
           <button class="toolbar-button" id="filter-inbound" type="button">Inbound</button>
           <button class="toolbar-button" id="filter-outbound" type="button">Outbound</button>
+          <button class="toolbar-button" id="filter-none" type="button">None</button>
           <button class="toolbar-button active" id="toggle-external" type="button">External</button>
           <button class="toolbar-button" id="fit-diagram" type="button">Fit</button>
+          <button class="toolbar-button" id="hide-node" type="button" hidden>Hide</button>
+          <button class="toolbar-button" id="create-folder-diagram" type="button" hidden>Create Diagram</button>
           <span class="layout-status" id="layout-status" aria-live="polite"></span>
         </div>
         <div id="cy"></div>
@@ -160,6 +164,23 @@ export class CytoscapeArtifactWriter {
           });
           if (!response.ok) {
             throw new Error('Layout autosave failed.');
+          }
+        }
+      }
+
+      class DiagramConfigClient {
+        constructor(pagePath) {
+          this.savePath = '/__spec-n-roll/config?diagram=' + encodeURIComponent(pagePath.replace(/^\\//u, ''));
+        }
+
+        async write(action) {
+          const response = await fetch(this.savePath, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(action),
+          });
+          if (!response.ok) {
+            throw new Error('Config update failed.');
           }
         }
       }
@@ -285,11 +306,13 @@ export class CytoscapeArtifactWriter {
       }
 
       const currentDiagramPath = window.location.pathname === '/' ? '/project-dependencies.cytoscape.html' : window.location.pathname;
+      const layoutStatus = document.getElementById('layout-status');
       const layoutStore = new DiagramLayoutStore(
         cy,
         new DiagramLayoutClient(currentDiagramPath),
-        document.getElementById('layout-status'),
+        layoutStatus,
       );
+      const configClient = new DiagramConfigClient(currentDiagramPath);
 
       function runLayout(onComplete) {
         try {
@@ -339,21 +362,51 @@ export class CytoscapeArtifactWriter {
       let selectedNode = null;
       let dependencyMode = 'both';
       let showExternalDependencies = true;
+      const locallyHiddenNodeIds = new Set();
+      const locallyCreatedFolderDiagramKeys = new Set();
 
       const shell = document.getElementById('shell');
       const search = document.getElementById('search');
       const modeButtons = {
         both: document.getElementById('filter-both'),
         inbound: document.getElementById('filter-inbound'),
-        outbound: document.getElementById('filter-outbound')
+        outbound: document.getElementById('filter-outbound'),
+        none: document.getElementById('filter-none')
       };
       const externalToggle = document.getElementById('toggle-external');
       const fitDiagram = document.getElementById('fit-diagram');
+      const hideNode = document.getElementById('hide-node');
+      const createFolderDiagram = document.getElementById('create-folder-diagram');
 
       document.getElementById('nav-toggle').addEventListener('click', () => {
         shell.classList.toggle('nav-collapsed');
         fitGraph();
       });
+
+      function existingPagePaths() {
+        return new Set(
+          [...document.querySelectorAll('.navigation-link')].map((link) =>
+            new URL(link.href).pathname.replace(/^\\//u, ''),
+          ),
+        );
+      }
+
+      function normalizeConfigPath(value) {
+        return value.replaceAll('\\\\', '/').replace(/^\\.\\//u, '').replace(/\\/$/u, '');
+      }
+
+      function folderDiagramKey(packageName, folderPath) {
+        return packageName + ':' + normalizeConfigPath(folderPath);
+      }
+
+      function folderDiagramPagePath(packageName, folderPath) {
+        return packageName + '/folder-' + normalizeConfigPath(folderPath).replaceAll('/', '-') + '.cytoscape.html';
+      }
+
+      function hasFolderDiagram(packageName, folderPath) {
+        return existingPagePaths().has(folderDiagramPagePath(packageName, folderPath)) ||
+          locallyCreatedFolderDiagramKeys.has(folderDiagramKey(packageName, folderPath));
+      }
 
       function selectedScope() {
         if (!selectedNode) {
@@ -404,6 +457,58 @@ export class CytoscapeArtifactWriter {
         return matches.union(matches.parents());
       }
 
+      function isExternalNode(node) {
+        return node.data('externalDependency') === 'true';
+      }
+
+      function projectFileSelection(node) {
+        if (isExternalNode(node) || node.children().length > 0) {
+          return null;
+        }
+
+        const match = /^src\\/([^/]+)\\/(.+)$/u.exec(normalizeConfigPath(node.id()));
+        return match ? { packageName: match[1], packageRelativePath: match[2] } : null;
+      }
+
+      function folderSelection(node) {
+        const normalizedId = normalizeConfigPath(node.id());
+        const folderRootMatch = /^folder:([^:]+):(.+)$/u.exec(normalizedId);
+        if (folderRootMatch) {
+          return { packageName: folderRootMatch[1], folderPath: normalizeConfigPath(folderRootMatch[2]) };
+        }
+
+        const folderChildMatch = /^directory:folder:([^:]+):(.+):(.+)$/u.exec(normalizedId);
+        if (folderChildMatch) {
+          return { packageName: folderChildMatch[1], folderPath: normalizeConfigPath(folderChildMatch[2] + '/' + folderChildMatch[3]) };
+        }
+
+        const packageFolderMatch = /^directory:([^:]+):(.+)$/u.exec(normalizedId);
+        return packageFolderMatch ? { packageName: packageFolderMatch[1], folderPath: normalizeConfigPath('src/' + packageFolderMatch[2]) } : null;
+      }
+
+      function canHideSelectedNode() {
+        return !!selectedNode && (isExternalNode(selectedNode) || !!projectFileSelection(selectedNode));
+      }
+
+      function canCreateSelectedFolderDiagram() {
+        if (!selectedNode) {
+          return false;
+        }
+
+        const folder = folderSelection(selectedNode);
+        return !!folder && !hasFolderDiagram(folder.packageName, folder.folderPath);
+      }
+
+      function updateActionButtons() {
+        hideNode.hidden = !canHideSelectedNode();
+        createFolderDiagram.hidden = !canCreateSelectedFolderDiagram();
+      }
+
+      function showConfigStatus(message, isError = false) {
+        layoutStatus.textContent = message;
+        layoutStatus.classList.toggle('error', isError);
+      }
+
       function updateGraph() {
         cy.elements().removeClass('faded inbound outbound hidden-by-filter search-match');
 
@@ -413,6 +518,12 @@ export class CytoscapeArtifactWriter {
         if (query) {
           searchNodes.filter((node) => node.data('label').toLowerCase().includes(query)).addClass('search-match');
           cy.nodes().not(searchNodes).addClass('hidden-by-filter');
+        }
+
+        cy.nodes().filter((node) => locallyHiddenNodeIds.has(node.id())).addClass('hidden-by-filter');
+
+        if (dependencyMode === 'none') {
+          cy.edges().addClass('hidden-by-filter');
         }
 
         if (selectedNode) {
@@ -433,6 +544,7 @@ export class CytoscapeArtifactWriter {
         }
 
         cy.edges().filter((edge) => edge.source().hasClass('hidden-by-filter') || edge.target().hasClass('hidden-by-filter')).addClass('hidden-by-filter');
+        updateActionButtons();
       }
 
       function setMode(nextMode) {
@@ -447,6 +559,40 @@ export class CytoscapeArtifactWriter {
         showExternalDependencies = !showExternalDependencies;
         externalToggle.classList.toggle('active', showExternalDependencies);
         updateGraph();
+      }
+
+      async function hideSelectedNode() {
+        if (!canHideSelectedNode()) {
+          return;
+        }
+
+        const nodeId = selectedNode.id();
+        try {
+          await configClient.write({ action: 'hide-node', nodeId });
+          locallyHiddenNodeIds.add(nodeId);
+          selectedNode = null;
+          showConfigStatus('Config saved; regenerate diagrams');
+          updateGraph();
+        } catch {
+          showConfigStatus('Config update failed', true);
+        }
+      }
+
+      async function createSelectedFolderDiagram() {
+        if (!canCreateSelectedFolderDiagram()) {
+          return;
+        }
+
+        const nodeId = selectedNode.id();
+        const folder = folderSelection(selectedNode);
+        try {
+          await configClient.write({ action: 'create-folder-diagram', nodeId });
+          locallyCreatedFolderDiagramKeys.add(folderDiagramKey(folder.packageName, folder.folderPath));
+          showConfigStatus('Config saved; regenerate diagrams');
+          updateGraph();
+        } catch {
+          showConfigStatus('Config update failed', true);
+        }
       }
 
       cy.on('tap', 'node', (event) => {
@@ -476,7 +622,10 @@ export class CytoscapeArtifactWriter {
       modeButtons.both.addEventListener('click', () => setMode('both'));
       modeButtons.inbound.addEventListener('click', () => setMode('inbound'));
       modeButtons.outbound.addEventListener('click', () => setMode('outbound'));
+      modeButtons.none.addEventListener('click', () => setMode('none'));
       externalToggle.addEventListener('click', toggleExternalDependencies);
+      hideNode.addEventListener('click', () => void hideSelectedNode());
+      createFolderDiagram.addEventListener('click', () => void createSelectedFolderDiagram());
       fitDiagram.addEventListener('click', fitGraph);
       cy.on('dragfree', 'node', () => layoutStore.saveSoon());
     </script>

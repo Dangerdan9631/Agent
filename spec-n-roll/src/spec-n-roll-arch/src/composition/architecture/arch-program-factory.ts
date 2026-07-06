@@ -89,6 +89,7 @@ export class ArchProgramFactory {
             'spec-n-roll-arch',
             'architecture',
           ),
+          workspaceRoot,
           host: options.host,
           port: Number.parseInt(options.port, 10),
         });

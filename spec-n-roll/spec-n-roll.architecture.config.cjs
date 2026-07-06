@@ -12,26 +12,33 @@
 // Diagram layouts are saved automatically by the architecture viewer as checked-in
 // *.layout.json files next to each generated diagram artifact.
 module.exports = {
-  exclusions: {
-    externalDependencies: [
-      'module',
-      'path',
-      'reflect-metadata',
-      'ts',
-      'tslog',
-      'tsyringe',
-      'url',
+  "exclusions": {
+    "externalDependencies": [
+      "module",
+      "path",
+      "reflect-metadata",
+      "ts",
+      "tslog",
+      "tsyringe",
+      "url"
     ],
-    projectFiles: {
-      allPackages: [],
-      packages: {
-        'spec-n-roll-api': ['src/index.ts'],
-        'spec-n-roll-runtime': ['src/index.ts'],
-        'spec-n-roll-sdk': ['src/index.ts'],
-      },
-    },
+    "projectFiles": {
+      "allPackages": [],
+      "packages": {
+        "spec-n-roll-api": [
+          "src/index.ts"
+        ],
+        "spec-n-roll-runtime": [
+          "src/index.ts"
+        ],
+        "spec-n-roll-sdk": [
+          "src/index.ts"
+        ]
+      }
+    }
   },
-  folderDiagrams: {
-    packages: {},
-  },
+  "folderDiagrams": {
+    "packages": {
+    }
+  }
 };
