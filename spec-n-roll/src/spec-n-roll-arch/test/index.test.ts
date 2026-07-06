@@ -10,8 +10,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
+import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
 import { ArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
 import { DependencyCruiserCytoscapeConverter } from '#arch/application/graph/dependency-cruiser-cytoscape-converter.js';
+import { DependencyMatrix } from '#arch/application/graph/dependency-matrix.js';
 import { PackageFolderArchitectureArtifactGenerator } from '#arch/application/artifacts/package-folder-architecture-artifact-generator.js';
 import { PackageDependencyCytoscapeConverter } from '#arch/application/graph/package-dependency-cytoscape-converter.js';
 import { PackageFolderDependencyCytoscapeConverter } from '#arch/application/graph/package-folder-dependency-cytoscape-converter.js';
@@ -805,6 +807,68 @@ describe('spec-n-roll-arch', () => {
       ),
     ).toBe(false);
   });
+
+  it('builds sorted dependency matrices with graph complexity metrics', () => {
+    const matrix = DependencyMatrix.fromElements([
+      { data: { id: 'src/alpha/src/zeta.ts', label: 'zeta' } },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts',
+          label: 'use-case',
+        },
+      },
+      { data: { id: 'directory:alpha:application', label: 'application' } },
+      {
+        data: {
+          id: 'external:tslog',
+          label: 'tslog',
+          externalDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/application/use-case.ts->src/alpha/src/zeta.ts',
+          source: 'src/alpha/src/application/use-case.ts',
+          target: 'src/alpha/src/zeta.ts',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/zeta.ts->src/alpha/src/application/use-case.ts',
+          source: 'src/alpha/src/zeta.ts',
+          target: 'src/alpha/src/application/use-case.ts',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/zeta.ts->external:tslog',
+          source: 'src/alpha/src/zeta.ts',
+          target: 'external:tslog',
+        },
+      },
+    ]);
+
+    expect(matrix.files).toEqual([
+      'src/alpha/src/application/use-case.ts',
+      'src/alpha/src/zeta.ts',
+    ]);
+    expect(
+      matrix.hasDependency(
+        'src/alpha/src/application/use-case.ts',
+        'src/alpha/src/zeta.ts',
+      ),
+    ).toBe(true);
+    expect(matrix.metrics).toEqual({
+      fileCount: 2,
+      dependencyCount: 2,
+      density: 1,
+      averageOutboundDependencies: 1,
+      maximumOutboundDependencies: 1,
+      maximumInboundDependencies: 1,
+      isolatedFileCount: 0,
+      cycleGroupCount: 1,
+    });
+  });
   it('renders architecture diagram controls and server-backed layout behavior', () => {
     const artifactRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-html-'));
     const cytoscapeJsonPath = join(artifactRoot, 'graph.json');
@@ -845,6 +909,62 @@ describe('spec-n-roll-arch', () => {
     expect(html).not.toContain('REPO_LAYOUT');
   });
 
+  it('renders dependency matrix navigation and metrics', () => {
+    const artifactRoot = mkdtempSync(
+      join(tmpdir(), 'spec-n-roll-arch-matrix-'),
+    );
+    const matrixHtmlPath = join(artifactRoot, 'matrix.html');
+
+    new DependencyMatrixArtifactWriter().write(
+      matrixHtmlPath,
+      [
+        { data: { id: 'src/alpha/src/zeta.ts', label: 'zeta' } },
+        {
+          data: {
+            id: 'src/alpha/src/application/use-case.ts',
+            label: 'use-case',
+          },
+        },
+        {
+          data: {
+            id: 'src/alpha/src/application/use-case.ts->src/alpha/src/zeta.ts',
+            source: 'src/alpha/src/application/use-case.ts',
+            target: 'src/alpha/src/zeta.ts',
+          },
+        },
+      ],
+      [
+        { title: 'alpha', htmlPath: join(artifactRoot, 'cytoscape.html') },
+        { title: 'alpha matrix', htmlPath: matrixHtmlPath },
+      ],
+    );
+
+    const html = readFileSync(matrixHtmlPath, 'utf8');
+
+    expect(html).toContain('alpha matrix');
+    expect(html).toContain('class="navigation-link current"');
+    expect(html).toContain('Dependency graph metrics');
+    expect(html).toContain('src/alpha/src/application/use-case.ts');
+    expect(html).toContain('src/alpha/src/zeta.ts');
+    expect(html).toContain('Files');
+    expect(html).toContain('Dependencies');
+    expect(html).toContain('Density');
+    expect(html).toContain('50.00%');
+    expect(html).toContain('rotate(-90deg)');
+    expect(html).toContain('width: max-content');
+    expect(html).toContain('max-width: 30px');
+    expect(html).toContain('class="column-file-name">use-case.ts</span>');
+    expect(html).toContain('class="row-file-name">use-case.ts</span>');
+    expect(html).toContain(
+      'class="column-folder-path">src/alpha/src/application</span>',
+    );
+    expect(html).toContain(
+      'class="row-folder-path">src/alpha/src/application</span>',
+    );
+    expect(html).toContain('column-odd');
+    expect(html).toContain('row-folder-even');
+    expect(html).toContain('column-folder-odd');
+  });
   it('serves diagrams and persists cleaned layout files through the viewer server', async () => {
     const artifactRoot = mkdtempSync(
       join(tmpdir(), 'spec-n-roll-arch-server-'),

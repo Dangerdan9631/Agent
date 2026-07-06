@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
+import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
 import { PackageDependencyCytoscapeConverter } from '#arch/application/graph/package-dependency-cytoscape-converter.js';
 import { PackagePublicApiExportIndex } from '#arch/application/graph/package-public-api-export-index.js';
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
@@ -16,10 +17,12 @@ export class ProjectArchitectureArtifactGenerator {
    *
    * @param converter - Converter from workspace package metadata to graph elements.
    * @param writer - Writer for Cytoscape JSON and HTML artifacts.
+   * @param matrixWriter - Writer for dependency matrix HTML artifacts.
    */
   constructor(
     private readonly converter = new PackageDependencyCytoscapeConverter(),
     private readonly writer = new CytoscapeArtifactWriter(),
+    private readonly matrixWriter = new DependencyMatrixArtifactWriter(),
   ) {}
 
   /**
@@ -61,10 +64,12 @@ export class ProjectArchitectureArtifactGenerator {
       outputRoot,
       'project-dependencies.cytoscape.html',
     );
+    const matrixHtmlPath = join(outputRoot, 'project-dependencies.matrix.html');
 
     this.writer.write(cytoscapeJsonPath, cytoscapeHtmlPath, elements, pages);
+    this.matrixWriter.write(matrixHtmlPath, elements, pages);
 
-    return [cytoscapeJsonPath, cytoscapeHtmlPath];
+    return [cytoscapeJsonPath, cytoscapeHtmlPath, matrixHtmlPath];
   }
 
   private publicApiExportIndex(

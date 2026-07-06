@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
+import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
 import { DependencyCruiserCytoscapeConverter } from '#arch/application/graph/dependency-cruiser-cytoscape-converter.js';
 import { DependencyCruiserRunner } from '#arch/infrastructure/dependency-cruiser/dependency-cruiser-runner.js';
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
@@ -17,11 +18,13 @@ export class PackageArchitectureArtifactGenerator {
    * @param cruiser - Dependency-cruiser process runner.
    * @param converter - Converter from dependency-cruiser reports to graph elements.
    * @param writer - Writer for Cytoscape JSON and HTML artifacts.
+   * @param matrixWriter - Writer for dependency matrix HTML artifacts.
    */
   constructor(
     private readonly cruiser = new DependencyCruiserRunner(),
     private readonly converter = new DependencyCruiserCytoscapeConverter(),
     private readonly writer = new CytoscapeArtifactWriter(),
+    private readonly matrixWriter = new DependencyMatrixArtifactWriter(),
   ) {}
 
   /**
@@ -49,6 +52,7 @@ export class PackageArchitectureArtifactGenerator {
     );
     const cytoscapeJsonPath = join(packageOutputRoot, 'cytoscape.json');
     const cytoscapeHtmlPath = join(packageOutputRoot, 'cytoscape.html');
+    const matrixHtmlPath = join(packageOutputRoot, 'matrix.html');
 
     writeFileSync(
       dependencyCruiserJsonPath,
@@ -64,7 +68,13 @@ export class PackageArchitectureArtifactGenerator {
       },
     );
     this.writer.write(cytoscapeJsonPath, cytoscapeHtmlPath, elements, pages);
+    this.matrixWriter.write(matrixHtmlPath, elements, pages);
 
-    return [dependencyCruiserJsonPath, cytoscapeJsonPath, cytoscapeHtmlPath];
+    return [
+      dependencyCruiserJsonPath,
+      cytoscapeJsonPath,
+      cytoscapeHtmlPath,
+      matrixHtmlPath,
+    ];
   }
 }

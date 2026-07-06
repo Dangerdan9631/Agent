@@ -139,9 +139,17 @@ export class ArchitectureArtifactGenerator {
         title: 'Project dependencies',
         htmlPath: join(outputRoot, 'project-dependencies.cytoscape.html'),
       },
+      {
+        title: 'Project dependency matrix',
+        htmlPath: join(outputRoot, 'project-dependencies.matrix.html'),
+      },
       ...packages.map((workspacePackage) => ({
         title: workspacePackage.name,
         htmlPath: join(outputRoot, workspacePackage.name, 'cytoscape.html'),
+      })),
+      ...packages.map((workspacePackage) => ({
+        title: `${workspacePackage.name} matrix`,
+        htmlPath: join(outputRoot, workspacePackage.name, 'matrix.html'),
       })),
       ...folderDiagramEntries.map((entry) => ({
         title:
