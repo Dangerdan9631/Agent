@@ -258,6 +258,9 @@ describe('spec-n-roll dispatcher executable', () => {
     expect(commandContainer.resolve(ProjectRootResolver)).toBeInstanceOf(
       ProjectRootResolver,
     );
+    expect(commandContainer.resolve(DispatcherMetadataReader)).toBeInstanceOf(
+      DispatcherMetadataReader,
+    );
   });
 });
 
@@ -305,7 +308,7 @@ describe('DispatcherMetadataReader', () => {
     const installDirectory =
       new DispatcherFixtureFactory().createDispatcherInstallFixture('remote');
 
-    expect(new DispatcherMetadataReader(installDirectory).read()).toEqual({
+    expect(new DispatcherMetadataReader().read(installDirectory)).toEqual({
       installSource: 'remote',
       installDirectory: dirname(installDirectory),
       packageVersion: '9.8.7',
@@ -316,7 +319,7 @@ describe('DispatcherMetadataReader', () => {
     const installDirectory =
       new DispatcherFixtureFactory().createDispatcherInstallFixture('local');
 
-    expect(new DispatcherMetadataReader(installDirectory).read()).toEqual({
+    expect(new DispatcherMetadataReader().read(installDirectory)).toEqual({
       installSource: 'local',
       installDirectory: dirname(installDirectory),
       packageVersion: '9.8.7',
@@ -378,6 +381,7 @@ describe('DispatcherApplication', () => {
         installDirectory,
       ),
       new ProjectRootResolver(),
+      new DispatcherMetadataReader(),
       executor,
       new Logger({ name: 'spec-n-roll', minLevel: 6 }),
     );

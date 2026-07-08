@@ -167,6 +167,7 @@ export class DependencyCruiserCytoscapeConverter {
         data: {
           id: options.rootParentId,
           label: options.rootParentLabel ?? options.rootParentId,
+          workspaceDependency: 'true',
         },
       },
     ];

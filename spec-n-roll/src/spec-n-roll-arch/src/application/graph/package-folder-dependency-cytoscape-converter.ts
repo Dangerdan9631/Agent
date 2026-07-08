@@ -108,6 +108,7 @@ export class PackageFolderDependencyCytoscapeConverter {
             externalNodes,
             dependencyNode.id,
             dependencyNode.label,
+            dependencyNode.workspaceDependency ?? false,
           );
         }
 
@@ -143,7 +144,7 @@ export class PackageFolderDependencyCytoscapeConverter {
     exclusionFilter?: ArchitectureExclusionFilter,
   ):
     | { kind: 'file'; id: string }
-    | { kind: 'external'; id: string; label: string }
+    | { kind: 'external'; id: string; label: string; workspaceDependency?: boolean }
     | undefined {
     const externalId = this.externalDependencyIdentifier.identify(dependency);
     if (externalId) {
@@ -165,6 +166,7 @@ export class PackageFolderDependencyCytoscapeConverter {
             kind: 'external',
             id: `external:${dependencyPackage.name}`,
             label: dependencyPackage.name,
+            workspaceDependency: true,
           };
     }
 
@@ -243,6 +245,7 @@ export class PackageFolderDependencyCytoscapeConverter {
     externalNodes: Map<string, CytoscapeElement>,
     id: string,
     label: string,
+    workspaceDependency: boolean,
   ): void {
     if (externalNodes.has(id)) {
       return;
@@ -253,6 +256,7 @@ export class PackageFolderDependencyCytoscapeConverter {
         id,
         label,
         externalDependency: 'true',
+        ...(workspaceDependency ? { workspaceDependency: 'true' } : {}),
       },
     });
   }

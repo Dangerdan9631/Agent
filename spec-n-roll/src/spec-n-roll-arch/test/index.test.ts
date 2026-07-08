@@ -1,6 +1,7 @@
 import {
   existsSync,
   mkdtempSync,
+  readdirSync,
   mkdirSync,
   readFileSync,
   writeFileSync,
@@ -881,11 +882,32 @@ describe('spec-n-roll-arch', () => {
     const html = readFileSync(cytoscapeHtmlPath, 'utf8');
 
     expect(html).toContain("'font-size': 25");
-    expect(html).toContain('#cy { height: 100%;');
+    expect(html).toContain('#cy { background: #ffffff; height: 100%;');
     expect(html).toContain('cytoscape-fcose@2.2.0');
     expect(html).toContain("const preferredLayout = { name: 'fcose'");
     expect(html).toContain("const fallbackLayout = { name: 'cose'");
     expect(html).toContain('id="fit-diagram"');
+    expect(html).toContain('id="export-diagram-image"');
+    expect(html).toContain('id="hide-connection"');
+    expect(html).toContain('id="toggle-hidden-connections"');
+    expect(html).toContain('id="collapse-group"');
+    expect(html).toContain('class HiddenConnectionState');
+    expect(html).toContain('selectedEdgeId');
+    expect(html).toContain('edge.selected-connection');
+    expect(html).toContain('event.stopPropagation();');
+    expect(html).toContain(
+      'hiddenConnections: this.hiddenConnectionState.ids()',
+    );
+    expect(html).toContain('synchronizeCollapsedGroups()');
+    expect(html).toContain('class DiagramImageExportClient');
+    expect(html).toContain('class DiagramImageExporter');
+    expect(html).toContain("'/__spec-n-roll/image?diagram='");
+    expect(html).toContain("'content-type': 'image/png'");
+    expect(html).toContain("output: 'blob'");
+    expect(html).toContain('scale: 2');
+    expect(html).toContain('Image exported: ');
+    expect(html).not.toContain('URL.createObjectURL');
+    expect(html).not.toContain('downloadLink');
     expect(html).toContain('id="layout-status"');
     expect(html).toContain('class DiagramLayoutStore');
     expect(html).toContain('class DiagramLayoutClient');
@@ -900,12 +922,13 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('layoutStore.flushPendingSave()');
     expect(html).toContain('node.position(savedPosition.position)');
     expect(html).toContain('x: position.x');
-    expect(html).toContain(
-      "cy.on('dragfree', 'node', () => layoutStore.saveSoon());",
-    );
+    expect(html).toContain("cy.on('dragfree', 'node', (event) => {");
+    expect(html).toContain("event.target.hasClass('collapsed-proxy')");
     expect(html).not.toContain('id="export-layout"');
     expect(html).not.toContain('DiagramLayoutExporter');
-    expect(html).not.toContain('localStorage');
+    expect(html).toContain('spec-n-roll-arch-dark-mode');
+    expect(html).toContain('loadDarkModePreference()');
+    expect(html).toContain('saveDarkModePreference()');
     expect(html).not.toContain('REPO_LAYOUT');
   });
 
@@ -944,6 +967,9 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('alpha matrix');
     expect(html).toContain('class="navigation-link current"');
     expect(html).toContain('Dependency graph metrics');
+    expect(html).not.toContain('id="export-diagram-image"');
+    expect(html).not.toContain('class DiagramImageExportClient');
+    expect(html).not.toContain('class DiagramImageExporter');
     expect(html).toContain('src/alpha/src/application/use-case.ts');
     expect(html).toContain('src/alpha/src/zeta.ts');
     expect(html).toContain('Files');
@@ -964,6 +990,99 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('column-odd');
     expect(html).toContain('row-folder-even');
     expect(html).toContain('column-folder-odd');
+    expect(html).toContain('spec-n-roll-arch-dark-mode');
+    expect(html).toContain('loadDarkModePreference()');
+    expect(html).toContain('saveDarkModePreference()');
+  });
+
+  it('writes hidden node exclusions to the root config section for the current diagram', async () => {
+    const workspaceRoot = mkdtempSync(
+      join(tmpdir(), 'spec-n-roll-arch-config-'),
+    );
+    const artifactRoot = join(workspaceRoot, 'architecture');
+    const packageArtifactRoot = join(artifactRoot, 'alpha');
+    mkdirSync(packageArtifactRoot, { recursive: true });
+    writeFileSync(
+      join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
+      [
+        'module.exports = {',
+        '  exclusions: {',
+        '    projectFiles: { packages: { alpha: ["src/keep.ts"] } }',
+        '  },',
+        '  folderDiagrams: {',
+        '    packages: { alpha: [{ path: "src/application" }] }',
+        '  }',
+        '};',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(packageArtifactRoot, 'folder-src-application.cytoscape.html'),
+      '<!doctype html><html></html>',
+    );
+    writeFileSync(
+      join(packageArtifactRoot, 'folder-src-application.cytoscape.json'),
+      JSON.stringify([
+        {
+          data: {
+            id: 'src/alpha/src/application/use-case.ts',
+            label: 'use-case',
+          },
+        },
+      ]),
+    );
+    writeFileSync(
+      join(packageArtifactRoot, 'cytoscape.html'),
+      '<!doctype html><html></html>',
+    );
+    writeFileSync(
+      join(packageArtifactRoot, 'cytoscape.json'),
+      JSON.stringify([{ data: { id: 'src/alpha/src/cli.ts', label: 'cli' } }]),
+    );
+
+    const runningServer = await new ArchitectureViewerHttpServer().start({
+      artifactRoot,
+      workspaceRoot,
+      host: '127.0.0.1',
+      port: 0,
+    });
+
+    try {
+      const folderHideResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/config?diagram=alpha/folder-src-application.cytoscape.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'hide-node',
+            nodeId: 'src/alpha/src/application/use-case.ts',
+          }),
+        },
+      );
+      expect(folderHideResponse.status).toBe(200);
+
+      const packageHideResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/config?diagram=alpha/cytoscape.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'hide-node',
+            nodeId: 'src/alpha/src/cli.ts',
+          }),
+        },
+      );
+      expect(packageHideResponse.status).toBe(200);
+
+      const configText = readFileSync(
+        join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
+        'utf8',
+      );
+      expect(configText).toContain('"src/application/use-case.ts"');
+      expect(configText).toContain('"src/keep.ts"');
+      expect(configText).toContain('"src/cli.ts"');
+    } finally {
+      await runningServer.close();
+    }
   });
   it('serves diagrams and persists cleaned layout files through the viewer server', async () => {
     const artifactRoot = mkdtempSync(
@@ -1005,12 +1124,13 @@ describe('spec-n-roll-arch', () => {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            version: 2,
+            version: 3,
             nodes: {
               alpha: { parentId: null, position: { x: 10, y: 20 } },
               beta: { parentId: 'alpha', position: { x: 5, y: 6 } },
               removed: { parentId: null, position: { x: 30, y: 40 } },
             },
+            hiddenConnections: ['alpha->beta', 'removed->edge'],
           }),
         },
       );
@@ -1023,13 +1143,50 @@ describe('spec-n-roll-arch', () => {
       expect(layoutJson).toContain('"alpha"');
       expect(layoutJson).toContain('"beta"');
       expect(layoutJson).not.toContain('"removed"');
+      expect(layoutJson).toContain('"alpha->beta"');
+      expect(layoutJson).not.toContain('"removed->edge"');
+      const pngBody = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+      ]);
+      const imageResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/image?diagram=graph.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'image/png' },
+          body: pngBody,
+        },
+      );
+      const imageResult = (await imageResponse.json()) as { fileName: string };
+      expect(imageResponse.status).toBe(200);
+      expect(imageResult.fileName).toMatch(
+        /^graph\.\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z\.png$/u,
+      );
+      expect(readFileSync(join(artifactRoot, imageResult.fileName))).toEqual(
+        pngBody,
+      );
+      expect(readdirSync(artifactRoot)).toContain(imageResult.fileName);
+
+      writeFileSync(join(artifactRoot, 'matrix.html'), '<!doctype html>');
+      const matrixImageResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/image?diagram=matrix.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'image/png' },
+          body: pngBody,
+        },
+      );
+      expect(matrixImageResponse.status).toBe(400);
 
       const traversalResponse = await fetch(
         `${runningServer.url}__spec-n-roll/layout?diagram=..%2Foutside.html`,
         {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ version: 2, nodes: {} }),
+          body: JSON.stringify({
+            version: 3,
+            nodes: {},
+            hiddenConnections: [],
+          }),
         },
       );
       expect(traversalResponse.status).toBe(400);
@@ -1040,10 +1197,11 @@ describe('spec-n-roll-arch', () => {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            version: 2,
+            version: 3,
             nodes: {
               project: { parentId: null, position: { x: 1, y: 2 } },
             },
+            hiddenConnections: [],
           }),
         },
       );

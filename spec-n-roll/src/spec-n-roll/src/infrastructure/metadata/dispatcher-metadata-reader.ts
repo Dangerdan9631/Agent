@@ -11,22 +11,16 @@ import {
  */
 export class DispatcherMetadataReader {
   /**
-   * Creates a dispatcher metadata reader.
-   *
-   * @param entryDirectory - Directory containing the running dispatcher entry file.
-   */
-  constructor(private readonly entryDirectory: string) {}
-
-  /**
    * Reads metadata that must be sent to delegated runtimes.
    *
+   * @param entryDirectory - Directory containing the running dispatcher entry file.
    * @returns Dispatcher metadata for the current install.
    */
-  read(): DispatcherMetadata {
-    const packageRoot = this.findPackageRoot();
+  read(entryDirectory: string): DispatcherMetadata {
+    const packageRoot = this.findPackageRoot(entryDirectory);
 
     return {
-      installSource: this.resolveInstallSource(),
+      installSource: this.resolveInstallSource(entryDirectory),
       installDirectory: packageRoot,
       packageVersion: this.readPackageVersion(packageRoot),
     };
@@ -35,11 +29,12 @@ export class DispatcherMetadataReader {
   /**
    * Finds the package root containing the dispatcher package manifest.
    *
+   * @param entryDirectory - Directory containing the running dispatcher entry file.
    * @returns Absolute package root for the dispatcher install.
    */
-  findPackageRoot(): string {
+  findPackageRoot(entryDirectory: string): string {
     for (
-      let current = resolve(this.entryDirectory);
+      let current = resolve(entryDirectory);
       ;
       current = dirname(current)
     ) {
@@ -49,7 +44,7 @@ export class DispatcherMetadataReader {
 
       if (current === parse(current).root) {
         throw new Error(
-          `Unable to locate spec-n-roll package root from ${this.entryDirectory}.`,
+          `Unable to locate spec-n-roll package root from ${entryDirectory}.`,
         );
       }
     }
@@ -58,10 +53,13 @@ export class DispatcherMetadataReader {
   /**
    * Resolves whether this dispatcher came from npm or a linked local build.
    *
+   * @param entryDirectory - Directory containing the running dispatcher entry file.
    * @returns Install source detected from the local source marker.
    */
-  private resolveInstallSource(): DispatcherInstallSource {
-    const sourcePath = this.readLocalSourceMarker();
+  private resolveInstallSource(
+    entryDirectory: string,
+  ): DispatcherInstallSource {
+    const sourcePath = this.readLocalSourceMarker(entryDirectory);
     return sourcePath != null && this.isDispatcherPackageRoot(sourcePath)
       ? 'local'
       : 'remote';
@@ -93,12 +91,13 @@ export class DispatcherMetadataReader {
   /**
    * Reads the local source marker next to the built dispatcher entrypoint.
    *
+   * @param entryDirectory - Directory containing the running dispatcher entry file.
    * @returns Absolute linked source root when a marker is readable.
    */
-  private readLocalSourceMarker(): string | undefined {
+  private readLocalSourceMarker(entryDirectory: string): string | undefined {
     try {
       const markerPath = join(
-        this.entryDirectory,
+        entryDirectory,
         DISPATCHER_LOCAL_SOURCE_MARKER_FILE,
       );
       const sourcePath = readFileSync(markerPath, 'utf8').trim();

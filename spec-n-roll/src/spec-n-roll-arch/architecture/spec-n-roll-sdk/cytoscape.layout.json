@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "nodes": {
     "spec-n-roll-sdk": {
       "parentId": null,
@@ -50,5 +50,6 @@
         "y": 259.0003825912888
       }
     }
-  }
+  },
+  "hiddenConnections": []
 }

@@ -1,18 +1,18 @@
 {
-  "version": 2,
+  "version": 3,
   "nodes": {
     "spec-n-roll": {
       "parentId": null,
       "position": {
-        "x": 16835.88045084318,
+        "x": 16819.969201800057,
         "y": 71.11914012381166
       }
     },
     "spec-n-roll-api": {
       "parentId": null,
       "position": {
-        "x": 15930.11201662664,
-        "y": 964.0507919345923
+        "x": 15481.429464712386,
+        "y": 774.6070477930192
       }
     },
     "spec-n-roll-mcp": {
@@ -32,8 +32,8 @@
     "spec-n-roll-sdk": {
       "parentId": null,
       "position": {
-        "x": 17315.28571397716,
-        "y": 2270.556662115632
+        "x": 16314.075541163933,
+        "y": 1285.8954177786595
       }
     },
     "directory:spec-n-roll:application": {
@@ -53,22 +53,22 @@
     "directory:spec-n-roll-api:contracts": {
       "parentId": "spec-n-roll-api",
       "position": {
-        "x": 15930.11201662664,
-        "y": 976.8007919345923
+        "x": 15481.429464712386,
+        "y": 787.3570477930192
       }
     },
     "directory:spec-n-roll-api:contracts/dispatcher": {
       "parentId": "directory:spec-n-roll-api:contracts",
       "position": {
-        "x": 15893.3128863226,
-        "y": 987.9252702799904
+        "x": 15444.630334408346,
+        "y": 798.4815261384172
       }
     },
     "directory:spec-n-roll-api:contracts/project": {
       "parentId": "directory:spec-n-roll-api:contracts",
       "position": {
-        "x": 15237.295044440792,
-        "y": 990.1148025424436
+        "x": 14788.61249252654,
+        "y": 800.6710584008705
       }
     },
     "directory:spec-n-roll:application/runtime": {
@@ -81,8 +81,8 @@
     "directory:spec-n-roll-api:contracts/runtime": {
       "parentId": "directory:spec-n-roll-api:contracts",
       "position": {
-        "x": 16557.989109718488,
-        "y": 957.2514636360555
+        "x": 16109.30655780423,
+        "y": 767.8077194944824
       }
     },
     "directory:spec-n-roll:infrastructure": {
@@ -109,15 +109,15 @@
     "directory:spec-n-roll:presentation": {
       "parentId": "spec-n-roll",
       "position": {
-        "x": 17433.42998903503,
-        "y": 183.7736614963418
+        "x": 17401.607490948787,
+        "y": 193.56519936903226
       }
     },
     "directory:spec-n-roll:presentation/cli": {
       "parentId": "directory:spec-n-roll:presentation",
       "position": {
-        "x": 17433.42998903503,
-        "y": 196.5236614963418
+        "x": 17401.607490948787,
+        "y": 206.31519936903229
       }
     },
     "directory:spec-n-roll-mcp:infrastructure": {
@@ -214,22 +214,22 @@
     "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-path-constants.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
       "position": {
-        "x": 16087.615381202977,
-        "y": 988.2215851003392
+        "x": 15638.932829288724,
+        "y": 798.7778409587661
       }
     },
     "src/spec-n-roll-api/src/contracts/project/path-resolution-context.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/project",
       "position": {
-        "x": 15236.986850793754,
-        "y": 1035.77722513552
+        "x": 14788.3042988795,
+        "y": 846.333480993947
       }
     },
     "src/spec-n-roll-api/src/contracts/project/project-root-resolution.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/project",
       "position": {
-        "x": 15243.103238087831,
-        "y": 970.4523799493671
+        "x": 14794.420686173578,
+        "y": 781.008635807794
       }
     },
     "src/spec-n-roll/src/application/runtime/runtime-process-executor.ts": {
@@ -242,15 +242,15 @@
     "src/spec-n-roll-api/src/contracts/runtime/runtime-invocation.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/runtime",
       "position": {
-        "x": 16648.237182459525,
-        "y": 969.3243587336646
+        "x": 16199.554630545272,
+        "y": 779.8806145920914
       }
     },
     "src/spec-n-roll-api/src/contracts/runtime/runtime-target.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/runtime",
       "position": {
-        "x": 16443.24103697745,
-        "y": 971.1785685384465
+        "x": 15994.55848506319,
+        "y": 781.7348243968734
       }
     },
     "src/spec-n-roll/src/application/runtime/runtime-target-resolver.ts": {
@@ -270,15 +270,15 @@
     "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-install-source.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
       "position": {
-        "x": 15855.969604611155,
-        "y": 1014.8843339562627
+        "x": 15407.287052696902,
+        "y": 825.4405898146896
       }
     },
     "src/spec-n-roll-api/src/contracts/dispatcher/dispatcher-metadata.ts": {
       "parentId": "directory:spec-n-roll-api:contracts/dispatcher",
       "position": {
-        "x": 15669.010391442222,
-        "y": 986.966206603718
+        "x": 15220.327839527969,
+        "y": 797.5224624621449
       }
     },
     "src/spec-n-roll/src/infrastructure/runtime/node-runtime-process-executor.ts": {
@@ -291,8 +291,8 @@
     "src/spec-n-roll/src/presentation/cli/dispatcher-cli.ts": {
       "parentId": "directory:spec-n-roll:presentation/cli",
       "position": {
-        "x": 17433.42998903503,
-        "y": 209.5236614963418
+        "x": 17401.607490948787,
+        "y": 219.31519936903229
       }
     },
     "src/spec-n-roll-mcp/src/infrastructure/commands/mcp-command-runner.ts": {
@@ -340,22 +340,22 @@
     "external:fs": {
       "parentId": null,
       "position": {
-        "x": 18068.6304999399,
-        "y": 128.65989006431096
+        "x": 16665.58953229483,
+        "y": 501.14149660870794
       }
     },
     "external:child_process": {
       "parentId": null,
       "position": {
-        "x": 17104.225385211612,
-        "y": 420.98109565329145
+        "x": 17064.34249170812,
+        "y": 490.77615928439735
       }
     },
     "external:commander": {
       "parentId": null,
       "position": {
-        "x": 18221.963581488697,
-        "y": 1694.0228211088245
+        "x": 17396.495921333426,
+        "y": 498.70276776710443
       }
     },
     "external:chalk": {
@@ -365,5 +365,6 @@
         "y": 903.4431574444365
       }
     }
-  }
+  },
+  "hiddenConnections": []
 }

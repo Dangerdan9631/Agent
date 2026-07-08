@@ -33,12 +33,15 @@ module.exports = {
         ],
         "spec-n-roll-sdk": [
           "src/index.ts"
+        ],
+        "spec-n-roll": [
+          "src/composition/dispatcher/dispatcher-container-factory.ts",
+          "src/composition/dispatcher/dispatcher-injection-tokens.ts"
         ]
       }
     }
   },
   "folderDiagrams": {
-    "packages": {
-    }
+    "packages": {}
   }
 };

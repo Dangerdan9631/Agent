@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "nodes": {
     "spec-n-roll-api": {
       "parentId": null,
@@ -85,5 +85,6 @@
         "y": 15
       }
     }
-  }
+  },
+  "hiddenConnections": []
 }

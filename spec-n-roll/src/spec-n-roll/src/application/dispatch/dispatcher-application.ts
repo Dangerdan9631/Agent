@@ -15,12 +15,14 @@ export class DispatcherApplication {
    *
    * @param environment - Process environment abstraction for runtime values.
    * @param projectRootResolver - Resolver for project-root discovery.
+   * @param metadataReader - Reader for dispatcher install metadata.
    * @param processExecutor - Executor for selected runtime targets.
    * @param logger - Logger used to report resolved configuration and routing decisions.
    */
   constructor(
     private readonly environment: DispatcherEnvironment,
     private readonly projectRootResolver: ProjectRootResolver,
+    private readonly metadataReader: DispatcherMetadataReader,
     private readonly processExecutor: RuntimeProcessExecutor,
     private readonly logger: Logger,
   ) {}
@@ -33,7 +35,7 @@ export class DispatcherApplication {
    */
   run(request: DispatcherRunRequest): number {
     const installDirectory = this.environment.dispatcherInstallDirectory();
-    const metadata = new DispatcherMetadataReader(installDirectory).read();
+    const metadata = this.metadataReader.read(installDirectory);
     this.logger.debug('Resolved dispatcher install metadata.', metadata);
 
     const projectRoot = this.projectRootResolver.resolve({

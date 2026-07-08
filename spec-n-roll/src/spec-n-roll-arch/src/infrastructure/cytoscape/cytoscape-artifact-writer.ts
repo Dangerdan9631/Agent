@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { dirname, relative } from 'node:path';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
+import { ArchitectureViewerDarkModeScript } from '#arch/infrastructure/cytoscape/architecture-viewer-dark-mode-script.js';
 
 /**
  * Defines the rendered graph label font size in pixels for architecture diagrams.
@@ -11,7 +12,12 @@ const ARCHITECTURE_LABEL_FONT_SIZE = 25;
 /**
  * Defines the schema version for persisted architecture diagram layouts.
  */
-const ARCHITECTURE_LAYOUT_VERSION = 2;
+const ARCHITECTURE_LAYOUT_VERSION = 3;
+
+/**
+ * Defines the background color used when exporting architecture diagrams.
+ */
+const ARCHITECTURE_EXPORT_BACKGROUND_COLOR = '#ffffff';
 
 /**
  * Writes Cytoscape graph artifacts to disk.
@@ -59,7 +65,8 @@ export class CytoscapeArtifactWriter {
     <script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
     <style>
       html, body { height: 100%; margin: 0; }
-      body { color: #111827; font-family: Arial, sans-serif; overflow: hidden; }
+      body { background: #ffffff; color: #111827; font-family: Arial, sans-serif; overflow: hidden; }
+      body.dark-mode { background: #0f172a; color: #e5e7eb; }
       .shell { display: grid; grid-template-columns: 280px 1fr; height: 100%; min-width: 0; transition: grid-template-columns 160ms ease; }
       .shell.nav-collapsed { grid-template-columns: 44px 1fr; }
       .navigation { background: #f8fafc; border-right: 1px solid #d1d5db; min-width: 0; overflow: hidden; }
@@ -79,7 +86,16 @@ export class CytoscapeArtifactWriter {
       .layout-status { color: #64748b; font-size: 12px; margin-left: auto; min-width: 142px; text-align: right; }
       .layout-status.error { color: #b91c1c; }
       .toolbar-button[hidden] { display: none; }
-      #cy { height: 100%; min-height: 0; min-width: 0; width: 100%; }
+      .dark-mode .navigation { background: #111827; border-right-color: #334155; }
+      .dark-mode .nav-toggle, .dark-mode .toolbar-button, .dark-mode .search-input { background: #1f2937; border-color: #475569; color: #e5e7eb; }
+      .dark-mode .navigation-link { color: #cbd5e1; }
+      .dark-mode .navigation-link:hover { background: #334155; color: #f8fafc; }
+      .dark-mode .navigation-link.current, .dark-mode .toolbar-button.active { background: #6d28d9; border-color: #6d28d9; color: #ffffff; }
+      .dark-mode .toolbar { background: #0f172a; border-bottom-color: #334155; }
+      .dark-mode .layout-status { color: #94a3b8; }
+      .dark-mode .layout-status.error { color: #fca5a5; }
+      #cy { background: #ffffff; height: 100%; min-height: 0; min-width: 0; width: 100%; }
+      .dark-mode #cy { background: #0f172a; }
     </style>
   </head>
   <body>
@@ -101,8 +117,13 @@ export class CytoscapeArtifactWriter {
           <button class="toolbar-button" id="filter-outbound" type="button">Outbound</button>
           <button class="toolbar-button" id="filter-none" type="button">None</button>
           <button class="toolbar-button active" id="toggle-external" type="button">External</button>
+          <button class="toolbar-button" id="toggle-dark-mode" type="button">Dark Mode</button>
           <button class="toolbar-button" id="fit-diagram" type="button">Fit</button>
+          <button class="toolbar-button" id="export-diagram-image" type="button">Export Image</button>
           <button class="toolbar-button" id="hide-node" type="button" hidden>Hide</button>
+          <button class="toolbar-button" id="hide-connection" type="button" hidden>Hide Connection</button>
+          <button class="toolbar-button" id="toggle-hidden-connections" type="button">Hidden Connections</button>
+          <button class="toolbar-button" id="collapse-group" type="button" hidden>Collapse</button>
           <button class="toolbar-button" id="create-folder-diagram" type="button" hidden>Create Diagram</button>
           <span class="layout-status" id="layout-status" aria-live="polite"></span>
         </div>
@@ -118,7 +139,12 @@ export class CytoscapeArtifactWriter {
           { selector: 'node', style: { label: 'data(label)', 'background-color': '#3b82f6', color: '#111827', 'font-size': ${ARCHITECTURE_LABEL_FONT_SIZE}, 'text-wrap': 'wrap', 'text-max-width': 180 } },
           { selector: ':parent', style: { label: 'data(label)', 'background-color': '#f8fafc', 'border-color': '#64748b', 'border-width': 1, padding: 24, 'text-valign': 'top', 'text-halign': 'center' } },
           { selector: 'node[externalDependency = "true"]', style: { 'background-color': '#6b7280', color: '#111827' } },
+          { selector: 'node[workspaceDependency = "true"]', style: { 'background-color': '#f3f0ff', color: '#111827' } },
           { selector: 'edge', style: { width: 2, 'line-color': '#94a3b8', 'target-arrow-shape': 'triangle', 'target-arrow-color': '#94a3b8', 'curve-style': 'bezier' } },
+          { selector: 'node.collapsed-proxy', style: { shape: 'round-rectangle', width: 160, height: 64, 'background-color': '#f59e0b', 'border-color': '#b45309', 'border-width': 2, color: '#111827', 'text-valign': 'center', 'text-halign': 'center' } },
+          { selector: 'edge.collapsed-proxy', style: { 'line-style': 'dashed' } },
+          { selector: 'edge.hidden-connection', style: { opacity: 0.22, 'line-style': 'dotted' } },
+          { selector: 'edge.selected-connection', style: { 'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b', width: 6 } },
           { selector: '.faded', style: { opacity: 0.12 } },
           { selector: 'edge.inbound', style: { 'line-color': '#16a34a', 'target-arrow-color': '#16a34a', width: 4 } },
           { selector: 'edge.outbound', style: { 'line-color': '#2563eb', 'target-arrow-color': '#2563eb', width: 4 } },
@@ -185,11 +211,61 @@ export class CytoscapeArtifactWriter {
         }
       }
 
-      class DiagramLayoutStore {
-        constructor(graph, client, status) {
+      class DiagramImageExportClient {
+        constructor(pagePath) {
+          this.savePath = '/__spec-n-roll/image?diagram=' + encodeURIComponent(pagePath.replace(/^\\//u, ''));
+        }
+
+        async write(image) {
+          const response = await fetch(this.savePath, {
+            method: 'POST',
+            headers: { 'content-type': 'image/png' },
+            body: image,
+          });
+          if (!response.ok) {
+            throw new Error('Image export failed.');
+          }
+          return await response.json();
+        }
+      }
+
+      class DiagramImageExporter {
+        constructor(graph, client, status, backgroundColor) {
           this.graph = graph;
           this.client = client;
           this.status = status;
+          this.backgroundColor = backgroundColor;
+        }
+
+        async export() {
+          this.status.textContent = 'Exporting image';
+          this.status.classList.remove('error');
+          try {
+            const result = await this.client.write(this.imageBlob());
+            this.status.textContent = 'Image exported: ' + result.fileName;
+            this.status.classList.remove('error');
+          } catch {
+            this.status.textContent = 'Image export failed';
+            this.status.classList.add('error');
+          }
+        }
+
+        imageBlob() {
+          return this.graph.png({
+            bg: this.backgroundColor,
+            full: true,
+            output: 'blob',
+            scale: 2,
+          });
+        }
+      }
+
+      class DiagramLayoutStore {
+        constructor(graph, client, status, hiddenConnectionState) {
+          this.graph = graph;
+          this.client = client;
+          this.status = status;
+          this.hiddenConnectionState = hiddenConnectionState;
           this.saveTimeout = null;
           this.pendingSave = null;
         }
@@ -199,6 +275,8 @@ export class CytoscapeArtifactWriter {
           if (!savedLayout || savedLayout.version !== LAYOUT_STORAGE_VERSION || !savedLayout.nodes) {
             return false;
           }
+
+          this.hiddenConnectionState.replace(savedLayout.hiddenConnections ?? []);
 
           const nodeEntries = Object.entries(savedLayout.nodes)
             .filter(([nodeId, position]) => this.canApply(nodeId, position))
@@ -254,13 +332,14 @@ export class CytoscapeArtifactWriter {
         currentLayout() {
           const nodes = {};
 
-          this.graph.nodes().forEach((node) => {
+          this.graph.nodes().not('.collapsed-proxy').forEach((node) => {
             nodes[node.id()] = this.snapshot(node);
           });
 
           return {
             version: LAYOUT_STORAGE_VERSION,
             nodes,
+            hiddenConnections: this.hiddenConnectionState.ids(),
           };
         }
 
@@ -304,15 +383,52 @@ export class CytoscapeArtifactWriter {
           };
         }
       }
+      class HiddenConnectionState {
+        constructor() {
+          this.hiddenConnectionIds = new Set();
+          this.showHiddenConnections = false;
+        }
 
+        replace(edgeIds) {
+          this.hiddenConnectionIds = new Set(edgeIds);
+        }
+
+        hide(edgeId) {
+          this.hiddenConnectionIds.add(edgeId);
+        }
+
+        isHidden(edgeId) {
+          return this.hiddenConnectionIds.has(edgeId);
+        }
+
+        toggleVisibility() {
+          this.showHiddenConnections = !this.showHiddenConnections;
+        }
+
+        showsHiddenConnections() {
+          return this.showHiddenConnections;
+        }
+
+        ids() {
+          return [...this.hiddenConnectionIds].sort();
+        }
+      }
       const currentDiagramPath = window.location.pathname === '/' ? '/project-dependencies.cytoscape.html' : window.location.pathname;
       const layoutStatus = document.getElementById('layout-status');
+      const hiddenConnectionState = new HiddenConnectionState();
       const layoutStore = new DiagramLayoutStore(
         cy,
         new DiagramLayoutClient(currentDiagramPath),
         layoutStatus,
+        hiddenConnectionState,
       );
       const configClient = new DiagramConfigClient(currentDiagramPath);
+      const imageExporter = new DiagramImageExporter(
+        cy,
+        new DiagramImageExportClient(currentDiagramPath),
+        layoutStatus,
+        '${ARCHITECTURE_EXPORT_BACKGROUND_COLOR}',
+      );
 
       function runLayout(onComplete) {
         try {
@@ -360,10 +476,11 @@ export class CytoscapeArtifactWriter {
       }, { passive: false });
 
       let selectedNode = null;
+      let selectedEdgeId = null;
       let dependencyMode = 'both';
       let showExternalDependencies = true;
-      const locallyHiddenNodeIds = new Set();
       const locallyCreatedFolderDiagramKeys = new Set();
+      const collapsedGroupIds = new Set();
 
       const shell = document.getElementById('shell');
       const search = document.getElementById('search');
@@ -375,14 +492,85 @@ export class CytoscapeArtifactWriter {
       };
       const externalToggle = document.getElementById('toggle-external');
       const fitDiagram = document.getElementById('fit-diagram');
+      const exportDiagramImage = document.getElementById('export-diagram-image');
       const hideNode = document.getElementById('hide-node');
+      const hideConnection = document.getElementById('hide-connection');
+      const hiddenConnectionToggle = document.getElementById('toggle-hidden-connections');
+      const collapseGroup = document.getElementById('collapse-group');
       const createFolderDiagram = document.getElementById('create-folder-diagram');
+      const darkModeToggle = document.getElementById('toggle-dark-mode');
+      ${ArchitectureViewerDarkModeScript.render()}
 
       document.getElementById('nav-toggle').addEventListener('click', () => {
         shell.classList.toggle('nav-collapsed');
         fitGraph();
       });
 
+
+      function diagramTheme() {
+        const darkMode = document.body.classList.contains('dark-mode');
+        return darkMode
+          ? {
+              fileNode: '#60a5fa',
+              workspaceNode: '#1f1633',
+              externalNode: '#9ca3af',
+              collapsedNode: '#fbbf24',
+              collapsedBorder: '#f59e0b',
+              parentBackground: '#1f2937',
+              parentBorder: '#64748b',
+              text: '#e5e7eb',
+              edge: '#64748b',
+              inbound: '#22c55e',
+              outbound: '#60a5fa',
+              search: '#fbbf24',
+            }
+          : {
+              fileNode: '#3b82f6',
+              workspaceNode: '#f3f0ff',
+              externalNode: '#6b7280',
+              collapsedNode: '#f59e0b',
+              collapsedBorder: '#b45309',
+              parentBackground: '#f8fafc',
+              parentBorder: '#64748b',
+              text: '#111827',
+              edge: '#94a3b8',
+              inbound: '#16a34a',
+              outbound: '#2563eb',
+              search: '#f59e0b',
+            };
+      }
+
+      function applyDiagramTheme() {
+        const theme = diagramTheme();
+        cy.style()
+          .selector('node')
+          .style({ 'background-color': theme.fileNode, color: theme.text })
+          .selector(':parent')
+          .style({ 'background-color': theme.parentBackground, 'border-color': theme.parentBorder, color: theme.text })
+          .selector('node[externalDependency = "true"]')
+          .style({ 'background-color': theme.externalNode, color: theme.text })
+          .selector('node[workspaceDependency = "true"]')
+          .style({ 'background-color': theme.workspaceNode, color: theme.text })
+          .selector('node.collapsed-proxy')
+          .style({ 'background-color': theme.collapsedNode, 'border-color': theme.collapsedBorder, color: theme.text })
+          .selector('edge')
+          .style({ 'line-color': theme.edge, 'target-arrow-color': theme.edge })
+          .selector('edge.inbound')
+          .style({ 'line-color': theme.inbound, 'target-arrow-color': theme.inbound })
+          .selector('edge.outbound')
+          .style({ 'line-color': theme.outbound, 'target-arrow-color': theme.outbound })
+          .selector('edge.selected-connection')
+          .style({ 'line-color': theme.search, 'target-arrow-color': theme.search })
+          .selector('node.search-match')
+          .style({ 'border-color': theme.search })
+          .update();
+      }
+
+      function toggleDarkMode() {
+        setDarkMode(!isDarkModeEnabled());
+        saveDarkModePreference();
+        applyDiagramTheme();
+      }
       function existingPagePaths() {
         return new Set(
           [...document.querySelectorAll('.navigation-link')].map((link) =>
@@ -416,6 +604,85 @@ export class CytoscapeArtifactWriter {
         return selectedNode.union(selectedNode.descendants());
       }
 
+
+      function collapsedNodeId(groupId) {
+        return 'collapsed:' + groupId;
+      }
+
+      function originalEdgeId(edge) {
+        return edge.data('originalEdgeId') || edge.id();
+      }
+
+      function isCollapsedProxyNode(node) {
+        return !!node.data('collapsedGroupId');
+      }
+
+      function collapsedEndpointId(node) {
+        for (const groupId of collapsedGroupIds) {
+          const group = cy.getElementById(groupId);
+          if (!group.empty() && (node.same(group) || node.ancestors().anySame(group))) {
+            return collapsedNodeId(groupId);
+          }
+        }
+
+        return node.id();
+      }
+
+      function synchronizeCollapsedGroups() {
+        const previousPositions = new Map();
+        cy.nodes('.collapsed-proxy').forEach((node) => {
+          previousPositions.set(node.data('collapsedGroupId'), node.position());
+        });
+        cy.elements('.collapsed-proxy').remove();
+
+        for (const groupId of [...collapsedGroupIds]) {
+          const group = cy.getElementById(groupId);
+          if (group.empty()) {
+            collapsedGroupIds.delete(groupId);
+            continue;
+          }
+
+          const nodeId = collapsedNodeId(groupId);
+          cy.add({
+            group: 'nodes',
+            classes: 'collapsed-proxy',
+            data: {
+              id: nodeId,
+              label: group.data('label'),
+              collapsedGroupId: groupId,
+            },
+            position: previousPositions.get(groupId) ?? group.position(),
+          });
+        }
+
+        cy.edges().not('.collapsed-proxy').forEach((edge) => {
+          const sourceId = collapsedEndpointId(edge.source());
+          const targetId = collapsedEndpointId(edge.target());
+          if (sourceId === targetId || (sourceId === edge.source().id() && targetId === edge.target().id())) {
+            return;
+          }
+
+          cy.add({
+            group: 'edges',
+            classes: 'collapsed-proxy',
+            data: {
+              id: 'collapsed-edge:' + edge.id() + ':' + sourceId + '->' + targetId,
+              source: sourceId,
+              target: targetId,
+              originalEdgeId: edge.id(),
+            },
+          });
+        });
+      }
+
+      function hideCollapsedGroups() {
+        for (const groupId of collapsedGroupIds) {
+          const group = cy.getElementById(groupId);
+          if (!group.empty()) {
+            group.union(group.descendants()).addClass('hidden-by-filter');
+          }
+        }
+      }
       function dependencyEdges() {
         const scope = selectedScope();
         if (scope.empty()) {
@@ -490,6 +757,14 @@ export class CytoscapeArtifactWriter {
         return !!selectedNode && (isExternalNode(selectedNode) || !!projectFileSelection(selectedNode));
       }
 
+      function canHideSelectedConnection() {
+        return !!selectedEdgeId;
+      }
+
+      function canToggleSelectedGroupCollapse() {
+        return !!selectedNode && (isCollapsedProxyNode(selectedNode) || selectedNode.children().length > 0);
+      }
+
       function canCreateSelectedFolderDiagram() {
         if (!selectedNode) {
           return false;
@@ -501,6 +776,10 @@ export class CytoscapeArtifactWriter {
 
       function updateActionButtons() {
         hideNode.hidden = !canHideSelectedNode();
+        hideConnection.hidden = !canHideSelectedConnection();
+        collapseGroup.hidden = !canToggleSelectedGroupCollapse();
+        collapseGroup.textContent = selectedNode && isCollapsedProxyNode(selectedNode) ? 'Expand' : 'Collapse';
+        hiddenConnectionToggle.classList.toggle('active', hiddenConnectionState.showsHiddenConnections());
         createFolderDiagram.hidden = !canCreateSelectedFolderDiagram();
       }
 
@@ -510,7 +789,9 @@ export class CytoscapeArtifactWriter {
       }
 
       function updateGraph() {
-        cy.elements().removeClass('faded inbound outbound hidden-by-filter search-match');
+        synchronizeCollapsedGroups();
+        cy.elements().removeClass('faded inbound outbound hidden-by-filter search-match hidden-connection selected-connection');
+        hideCollapsedGroups();
 
         const searchNodes = visibleSearchNodes();
         const query = search.value.trim().toLowerCase();
@@ -520,10 +801,9 @@ export class CytoscapeArtifactWriter {
           cy.nodes().not(searchNodes).addClass('hidden-by-filter');
         }
 
-        cy.nodes().filter((node) => locallyHiddenNodeIds.has(node.id())).addClass('hidden-by-filter');
 
         if (dependencyMode === 'none') {
-          cy.edges().addClass('hidden-by-filter');
+          cy.edges().not('.collapsed-proxy').addClass('hidden-by-filter');
         }
 
         if (selectedNode) {
@@ -543,10 +823,34 @@ export class CytoscapeArtifactWriter {
           cy.nodes('[externalDependency = "true"]').addClass('hidden-by-filter');
         }
 
+        cy.edges().filter((edge) => hiddenConnectionState.isHidden(originalEdgeId(edge))).forEach((edge) => {
+          if (hiddenConnectionState.showsHiddenConnections()) {
+            edge.addClass('hidden-connection');
+            return;
+          }
+
+          edge.addClass('hidden-by-filter');
+        });
+
+        if (selectedEdgeId) {
+          cy.edges().filter((edge) => originalEdgeId(edge) === selectedEdgeId).addClass('selected-connection');
+        }
+
         cy.edges().filter((edge) => edge.source().hasClass('hidden-by-filter') || edge.target().hasClass('hidden-by-filter')).addClass('hidden-by-filter');
+        hideEmptyGroups();
         updateActionButtons();
       }
 
+
+      function hideEmptyGroups() {
+        const groups = cy.nodes(':parent').sort((left, right) => right.ancestors().length - left.ancestors().length);
+        groups.forEach((group) => {
+          const visibleChildren = group.children().filter((child) => !child.hasClass('hidden-by-filter'));
+          if (visibleChildren.empty()) {
+            group.addClass('hidden-by-filter');
+          }
+        });
+      }
       function setMode(nextMode) {
         dependencyMode = nextMode;
         for (const [mode, button] of Object.entries(modeButtons)) {
@@ -569,7 +873,6 @@ export class CytoscapeArtifactWriter {
         const nodeId = selectedNode.id();
         try {
           await configClient.write({ action: 'hide-node', nodeId });
-          locallyHiddenNodeIds.add(nodeId);
           selectedNode = null;
           showConfigStatus('Config saved; regenerate diagrams');
           updateGraph();
@@ -578,6 +881,40 @@ export class CytoscapeArtifactWriter {
         }
       }
 
+
+      function hideSelectedConnection() {
+        if (!canHideSelectedConnection()) {
+          return;
+        }
+
+        hiddenConnectionState.hide(selectedEdgeId);
+        selectedEdgeId = null;
+        layoutStore.saveSoon();
+        showConfigStatus('Layout saved with hidden connection');
+        updateGraph();
+      }
+
+      function toggleHiddenConnections() {
+        hiddenConnectionState.toggleVisibility();
+        updateGraph();
+      }
+
+      function toggleSelectedGroupCollapse() {
+        if (!canToggleSelectedGroupCollapse()) {
+          return;
+        }
+
+        if (isCollapsedProxyNode(selectedNode)) {
+          collapsedGroupIds.delete(selectedNode.data('collapsedGroupId'));
+          selectedNode = null;
+          updateGraph();
+          return;
+        }
+
+        collapsedGroupIds.add(selectedNode.id());
+        selectedNode = null;
+        updateGraph();
+      }
       async function createSelectedFolderDiagram() {
         if (!canCreateSelectedFolderDiagram()) {
           return;
@@ -596,12 +933,22 @@ export class CytoscapeArtifactWriter {
       }
 
       cy.on('tap', 'node', (event) => {
+        event.stopPropagation();
+        selectedEdgeId = null;
         selectedNode = event.target.same(selectedNode) ? null : event.target;
+        updateGraph();
+      });
+      cy.on('tap', 'edge', (event) => {
+        event.stopPropagation();
+        const edgeId = originalEdgeId(event.target);
+        selectedNode = null;
+        selectedEdgeId = edgeId === selectedEdgeId ? null : edgeId;
         updateGraph();
       });
       cy.on('tap', (event) => {
         if (event.target === cy) {
           selectedNode = null;
+          selectedEdgeId = null;
           updateGraph();
         }
       });
@@ -625,9 +972,20 @@ export class CytoscapeArtifactWriter {
       modeButtons.none.addEventListener('click', () => setMode('none'));
       externalToggle.addEventListener('click', toggleExternalDependencies);
       hideNode.addEventListener('click', () => void hideSelectedNode());
+      hideConnection.addEventListener('click', hideSelectedConnection);
+      hiddenConnectionToggle.addEventListener('click', toggleHiddenConnections);
+      collapseGroup.addEventListener('click', toggleSelectedGroupCollapse);
       createFolderDiagram.addEventListener('click', () => void createSelectedFolderDiagram());
+      darkModeToggle.addEventListener('click', toggleDarkMode);
       fitDiagram.addEventListener('click', fitGraph);
-      cy.on('dragfree', 'node', () => layoutStore.saveSoon());
+      exportDiagramImage.addEventListener('click', () => void imageExporter.export());
+      loadDarkModePreference();
+      applyDiagramTheme();
+      cy.on('dragfree', 'node', (event) => {
+        if (!event.target.hasClass('collapsed-proxy')) {
+          layoutStore.saveSoon();
+        }
+      });
     </script>
   </body>
 </html>

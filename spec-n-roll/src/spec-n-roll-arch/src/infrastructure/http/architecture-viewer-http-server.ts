@@ -7,15 +7,33 @@ import {
 } from 'node:http';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import {
+  basename,
+  dirname,
+  extname,
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'node:path';
 import { Logger } from 'tslog';
-import type { ArchitectureConfig } from '#arch/application/config/architecture-config.js';
+import type {
+  ArchitectureConfig,
+  ArchitectureFolderDiagramConfig,
+} from '#arch/application/config/architecture-config.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 
 /**
  * Defines the schema version accepted by checked-in architecture diagram layouts.
  */
-const ARCHITECTURE_LAYOUT_VERSION = 2;
+const ARCHITECTURE_LAYOUT_VERSION = 3;
+
+/**
+ * Defines the file signature required for persisted PNG diagram image exports.
+ */
+const PNG_FILE_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
 
 /**
  * Describes the settings used to start the local architecture viewer.
@@ -77,6 +95,26 @@ interface ArchitectureViewerConfigAction {
 /**
  * Describes one persisted node position in Cytoscape model coordinates.
  */
+
+/**
+ * Describes the generated diagram that originated a viewer configuration update.
+ */
+interface ArchitectureViewerDiagramContext {
+  /**
+   * Diagram scope used to decide where root configuration exclusions should be written.
+   */
+  kind: 'project' | 'package' | 'folder';
+
+  /**
+   * Workspace package name for package and folder diagrams. The value is omitted for project diagrams.
+   */
+  packageName?: string;
+
+  /**
+   * Folder diagram configuration object owned by the root architecture config. The value is present only for configured folder diagrams.
+   */
+  folderDiagram?: ArchitectureFolderDiagramConfig;
+}
 interface PersistedNodeLayout {
   /**
    * Parent Cytoscape node id, or null for root-level nodes.
@@ -112,6 +150,11 @@ interface PersistedArchitectureLayout {
    * Saved node positions keyed by Cytoscape node id.
    */
   nodes: Record<string, PersistedNodeLayout>;
+
+  /**
+   * Hidden dependency connection ids keyed by the backing Cytoscape edge id.
+   */
+  hiddenConnections: string[];
 }
 
 /**
@@ -209,6 +252,14 @@ export class ArchitectureViewerHttpServer {
         return;
       }
 
+      if (
+        request.method === 'POST' &&
+        url.pathname === '/__spec-n-roll/image'
+      ) {
+        await this.persistImage(request, response, artifactRoot, url);
+        return;
+      }
+
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         this.respondText(response, 405, 'Method not allowed.');
         return;
@@ -290,6 +341,43 @@ export class ArchitectureViewerHttpServer {
     this.respondJson(response, 200, { saved: true });
   }
 
+  private async persistImage(
+    request: IncomingMessage,
+    response: ServerResponse,
+    artifactRoot: string,
+    url: URL,
+  ): Promise<void> {
+    const diagramPath = url.searchParams.get('diagram');
+    if (!diagramPath || !diagramPath.endsWith('.html')) {
+      this.respondText(response, 400, 'A diagram HTML path is required.');
+      return;
+    }
+
+    const htmlPath = this.resolveArtifactPath(artifactRoot, diagramPath);
+    if (!htmlPath) {
+      this.respondText(response, 400, 'Invalid diagram path.');
+      return;
+    }
+
+    const jsonPath = htmlPath.replace(/\.html$/u, '.json');
+    if (!existsSync(jsonPath)) {
+      this.respondText(response, 400, 'Diagram JSON was not found.');
+      return;
+    }
+
+    const image = await this.readBody(request);
+    if (!this.isPngImage(image)) {
+      this.respondText(response, 400, 'Invalid diagram image.');
+      return;
+    }
+
+    const fileName = this.exportedImageFileName(htmlPath);
+    const imagePath = join(dirname(htmlPath), fileName);
+    await mkdir(dirname(imagePath), { recursive: true });
+    await writeFile(imagePath, image);
+    this.respondJson(response, 200, { saved: true, fileName });
+  }
+
   private async persistConfig(
     request: IncomingMessage,
     response: ServerResponse,
@@ -331,6 +419,7 @@ export class ArchitectureViewerHttpServer {
       action,
       node,
       elements,
+      diagramPath,
     );
     if (!updated) {
       this.respondText(response, 400, 'Selected node is not configurable.');
@@ -345,31 +434,27 @@ export class ArchitectureViewerHttpServer {
     action: ArchitectureViewerConfigAction,
     node: CytoscapeElement & { data: { id: string } },
     elements: CytoscapeElement[],
+    diagramPath: string,
   ): Promise<boolean> {
     const config = this.readArchitectureConfig(workspaceRoot);
+    const diagramContext = this.diagramContext(diagramPath, config);
+    if (!diagramContext) {
+      return false;
+    }
 
     if (action.action === 'hide-node' && this.isExternalNode(node)) {
-      config.exclusions ??= {};
-      config.exclusions.externalDependencies = this.sortedUnique([
-        ...(config.exclusions.externalDependencies ?? []),
+      this.addExternalDependencyExclusion(
+        config,
+        diagramContext,
         node.data.label,
-      ]);
+      );
       await this.writeArchitectureConfig(workspaceRoot, config);
       return true;
     }
 
     const projectFile = this.projectFileSelection(node, elements);
     if (action.action === 'hide-node' && projectFile) {
-      config.exclusions ??= {};
-      config.exclusions.projectFiles ??= {};
-      config.exclusions.projectFiles.packages ??= {};
-      config.exclusions.projectFiles.packages[projectFile.packageName] =
-        this.sortedUnique([
-          ...(config.exclusions.projectFiles.packages[
-            projectFile.packageName
-          ] ?? []),
-          projectFile.packageRelativePath,
-        ]);
+      this.addProjectFileExclusion(config, diagramContext, projectFile);
       await this.writeArchitectureConfig(workspaceRoot, config);
       return true;
     }
@@ -398,6 +483,111 @@ export class ArchitectureViewerHttpServer {
     return false;
   }
 
+  private diagramContext(
+    diagramPath: string,
+    config: ArchitectureConfig,
+  ): ArchitectureViewerDiagramContext | null {
+    const normalizedPath = this.normalizeConfigPath(diagramPath);
+    if (normalizedPath === 'project-dependencies.cytoscape.html') {
+      return { kind: 'project' };
+    }
+
+    const packageMatch = /^([^/]+)\/cytoscape\.html$/u.exec(normalizedPath);
+    if (packageMatch) {
+      return { kind: 'package', packageName: packageMatch[1] };
+    }
+
+    const folderMatch = /^([^/]+)\/(folder-.+)\.cytoscape\.html$/u.exec(
+      normalizedPath,
+    );
+    if (!folderMatch) {
+      return null;
+    }
+
+    const packageName = folderMatch[1];
+    const folderDiagram = this.folderDiagramForSlug(
+      config,
+      packageName,
+      folderMatch[2],
+    );
+    if (!folderDiagram) {
+      return null;
+    }
+
+    return { kind: 'folder', packageName, folderDiagram };
+  }
+
+  private folderDiagramForSlug(
+    config: ArchitectureConfig,
+    packageName: string,
+    slug: string,
+  ): ArchitectureFolderDiagramConfig | null {
+    return (
+      config.folderDiagrams?.packages?.[packageName]?.find(
+        (folderDiagram) => this.diagramSlug(folderDiagram.path) === slug,
+      ) ?? null
+    );
+  }
+
+  private addExternalDependencyExclusion(
+    config: ArchitectureConfig,
+    diagramContext: ArchitectureViewerDiagramContext,
+    dependencyName: string,
+  ): void {
+    if (diagramContext.kind === 'folder' && diagramContext.folderDiagram) {
+      diagramContext.folderDiagram.exclusions ??= {};
+      diagramContext.folderDiagram.exclusions.externalDependencies =
+        this.sortedUnique([
+          ...(config.exclusions?.externalDependencies ?? []),
+          ...(diagramContext.folderDiagram.exclusions.externalDependencies ??
+            []),
+          dependencyName,
+        ]);
+      return;
+    }
+
+    config.exclusions ??= {};
+    config.exclusions.externalDependencies = this.sortedUnique([
+      ...(config.exclusions.externalDependencies ?? []),
+      dependencyName,
+    ]);
+  }
+
+  private addProjectFileExclusion(
+    config: ArchitectureConfig,
+    diagramContext: ArchitectureViewerDiagramContext,
+    projectFile: { packageName: string; packageRelativePath: string },
+  ): void {
+    if (
+      diagramContext.kind === 'folder' &&
+      diagramContext.folderDiagram &&
+      diagramContext.packageName === projectFile.packageName
+    ) {
+      diagramContext.folderDiagram.exclusions ??= {};
+      diagramContext.folderDiagram.exclusions.projectFiles = this.sortedUnique([
+        ...(config.exclusions?.projectFiles?.packages?.[
+          projectFile.packageName
+        ] ?? []),
+        ...(diagramContext.folderDiagram.exclusions.projectFiles ?? []),
+        projectFile.packageRelativePath,
+      ]);
+      return;
+    }
+
+    config.exclusions ??= {};
+    config.exclusions.projectFiles ??= {};
+    config.exclusions.projectFiles.packages ??= {};
+    config.exclusions.projectFiles.packages[projectFile.packageName] =
+      this.sortedUnique([
+        ...(config.exclusions.projectFiles.packages[projectFile.packageName] ??
+          []),
+        projectFile.packageRelativePath,
+      ]);
+  }
+
+  private diagramSlug(folderPath: string): string {
+    return `folder-${this.normalizeConfigPath(folderPath).replaceAll('/', '-')}`;
+  }
   private isExternalNode(
     node: CytoscapeElement & { data: { id: string } },
   ): node is CytoscapeElement & { data: { id: string; label: string } } {
@@ -535,16 +725,20 @@ export class ArchitectureViewerHttpServer {
   }
 
   private async readJsonBody(request: IncomingMessage): Promise<unknown> {
+    try {
+      return JSON.parse((await this.readBody(request)).toString('utf8'));
+    } catch {
+      return null;
+    }
+  }
+
+  private async readBody(request: IncomingMessage): Promise<Buffer> {
     const chunks: Buffer[] = [];
     for await (const chunk of request) {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
 
-    try {
-      return JSON.parse(Buffer.concat(chunks).toString('utf8'));
-    } catch {
-      return null;
-    }
+    return Buffer.concat(chunks);
   }
 
   private cleanLayout(
@@ -560,6 +754,11 @@ export class ArchitectureViewerHttpServer {
         .filter((element) => this.isNodeElement(element))
         .map((element) => element.data.id),
     );
+    const edgeIds = new Set(
+      elements
+        .filter((element) => this.isEdgeElement(element))
+        .map((element) => element.data.id),
+    );
     const nodes: Record<string, PersistedNodeLayout> = {};
 
     for (const [nodeId, nodeLayout] of Object.entries(layout.nodes)) {
@@ -573,7 +772,13 @@ export class ArchitectureViewerHttpServer {
       nodes[nodeId] = nodeLayout;
     }
 
-    return { version: ARCHITECTURE_LAYOUT_VERSION, nodes };
+    return {
+      version: ARCHITECTURE_LAYOUT_VERSION,
+      nodes,
+      hiddenConnections: layout.hiddenConnections.filter((edgeId) =>
+        edgeIds.has(edgeId),
+      ),
+    };
   }
 
   private resolveArtifactPath(
@@ -595,6 +800,20 @@ export class ArchitectureViewerHttpServer {
     return resolvedPath;
   }
 
+  private exportedImageFileName(htmlPath: string): string {
+    const baseName = basename(htmlPath, '.html');
+    const timestamp = new Date().toISOString().replaceAll(':', '-');
+
+    return `${baseName}.${timestamp}.png`;
+  }
+
+  private isPngImage(image: Buffer): boolean {
+    return (
+      image.length >= PNG_FILE_SIGNATURE.length &&
+      image.subarray(0, PNG_FILE_SIGNATURE.length).equals(PNG_FILE_SIGNATURE)
+    );
+  }
+
   private contentType(filePath: string): string {
     switch (extname(filePath)) {
       case '.html':
@@ -605,6 +824,8 @@ export class ArchitectureViewerHttpServer {
         return 'text/javascript; charset=utf-8';
       case '.css':
         return 'text/css; charset=utf-8';
+      case '.png':
+        return 'image/png';
       default:
         return 'application/octet-stream';
     }
@@ -658,6 +879,7 @@ export class ArchitectureViewerHttpServer {
     const candidate = layout as {
       version?: unknown;
       nodes?: unknown;
+      hiddenConnections?: unknown;
     };
 
     return (
@@ -666,7 +888,9 @@ export class ArchitectureViewerHttpServer {
       typeof candidate.nodes === 'object' &&
       Object.values(candidate.nodes).every((nodeLayout) =>
         this.isPersistedNodeLayout(nodeLayout),
-      )
+      ) &&
+      Array.isArray(candidate.hiddenConnections) &&
+      candidate.hiddenConnections.every((edgeId) => typeof edgeId === 'string')
     );
   }
 
@@ -687,6 +911,18 @@ export class ArchitectureViewerHttpServer {
       !!candidate.position &&
       typeof candidate.position.x === 'number' &&
       typeof candidate.position.y === 'number'
+    );
+  }
+
+  private isEdgeElement(
+    element: CytoscapeElement,
+  ): element is CytoscapeElement & {
+    data: { id: string; source: string; target: string };
+  } {
+    return (
+      typeof element.data.id === 'string' &&
+      typeof element.data.source === 'string' &&
+      typeof element.data.target === 'string'
     );
   }
 

@@ -64,6 +64,7 @@ export class PackageDependencyCytoscapeConverter {
         data: {
           id: workspacePackage.name,
           label: workspacePackage.name,
+          workspaceDependency: 'true',
         },
       }),
     );

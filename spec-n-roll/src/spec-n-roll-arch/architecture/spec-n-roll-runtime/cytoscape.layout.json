@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "nodes": {
     "spec-n-roll-runtime": {
       "parentId": null,
@@ -162,5 +162,6 @@
         "y": 442.7864404022175
       }
     }
-  }
+  },
+  "hiddenConnections": []
 }

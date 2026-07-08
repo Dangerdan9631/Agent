@@ -3,6 +3,7 @@ import { dirname, relative } from 'node:path';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { DependencyMatrix } from '#arch/application/graph/dependency-matrix.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
+import { ArchitectureViewerDarkModeScript } from '#arch/infrastructure/cytoscape/architecture-viewer-dark-mode-script.js';
 
 /**
  * Writes browser-renderable dependency matrix artifacts to disk.
@@ -48,7 +49,8 @@ export class DependencyMatrixArtifactWriter {
     <title>spec-n-roll dependency matrix</title>
     <style>
       html, body { height: 100%; margin: 0; }
-      body { color: #111827; font-family: Arial, sans-serif; overflow: hidden; }
+      body { background: #ffffff; color: #111827; font-family: Arial, sans-serif; overflow: hidden; }
+      body.dark-mode { background: #0f172a; color: #e5e7eb; }
       .shell { display: grid; grid-template-columns: 280px 1fr; height: 100%; min-width: 0; transition: grid-template-columns 160ms ease; }
       .shell.nav-collapsed { grid-template-columns: 44px 1fr; }
       .navigation { background: #f8fafc; border-right: 1px solid #d1d5db; min-width: 0; overflow: hidden; }
@@ -101,6 +103,28 @@ export class DependencyMatrixArtifactWriter {
       td.has-dependency { --dependency-overlay: rgba(37, 99, 235, 0.88); color: #ffffff; font-weight: 700; }
       td.self:not(.has-dependency) { --dependency-overlay: rgba(100, 116, 139, 0.18); color: transparent; }
       .empty-state { color: #64748b; font-size: 14px; padding: 24px; }
+      .theme-toggle { margin-left: auto; }
+      .toolbar-button { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #111827; cursor: pointer; font-size: 13px; height: 30px; padding: 0 10px; }
+      .toolbar-button.active { background: #6d28d9; border-color: #6d28d9; color: #ffffff; }
+      .dark-mode .navigation, .dark-mode thead th:first-child, .dark-mode thead th.column-even, .dark-mode tbody tr.row-folder-odd th { background: #111827; }
+      .dark-mode .navigation { border-right-color: #334155; }
+      .dark-mode .nav-toggle, .dark-mode .toolbar-button { background: #1f2937; border-color: #475569; color: #e5e7eb; }
+      .dark-mode .navigation-link { color: #cbd5e1; }
+      .dark-mode .navigation-link:hover { background: #334155; color: #f8fafc; }
+      .dark-mode .navigation-link.current, .dark-mode .toolbar-button.active { background: #6d28d9; border-color: #6d28d9; color: #ffffff; }
+      .dark-mode .summary { background: #0f172a; border-bottom-color: #334155; }
+      .dark-mode .metric { background: #111827; border-color: #334155; }
+      .dark-mode .metric-label, .dark-mode .row-folder-path, .dark-mode .column-folder-path, .dark-mode .empty-state { color: #94a3b8; }
+      .dark-mode .metric-value, .dark-mode .row-file-name, .dark-mode .column-file-name, .dark-mode th { color: #e5e7eb; }
+      .dark-mode th, .dark-mode td { border-bottom-color: #334155; border-right-color: #334155; }
+      .dark-mode tbody tr.row-folder-even th, .dark-mode td.row-folder-even { background: #0f172a; }
+      .dark-mode thead th.column-odd, .dark-mode td.row-folder-odd { background: #1e1b4b; }
+      .dark-mode td.matrix-cell { --row-background: #0f172a; }
+      .dark-mode td.column-odd { --column-overlay: rgba(129, 140, 248, 0.08); }
+      .dark-mode td.column-even { --column-overlay: rgba(45, 212, 191, 0.05); }
+      .dark-mode td.row-folder-even { --folder-row-overlay: rgba(45, 212, 191, 0.05); }
+      .dark-mode td.row-folder-odd { --row-background: #111827; --folder-row-overlay: rgba(251, 191, 36, 0.08); }
+      .dark-mode td.has-dependency { --dependency-overlay: rgba(124, 58, 237, 0.9); }
     </style>
   </head>
   <body>
@@ -117,6 +141,7 @@ export class DependencyMatrixArtifactWriter {
       <main class="workspace">
         <div class="summary" aria-label="Dependency graph metrics">
           ${this.renderMetrics(matrix)}
+          <button class="toolbar-button theme-toggle" id="toggle-dark-mode" type="button">Dark Mode</button>
         </div>
         <div class="matrix-scroll">
           ${this.renderMatrix(matrix)}
@@ -125,9 +150,16 @@ export class DependencyMatrixArtifactWriter {
     </div>
     <script>
       const shell = document.getElementById('shell');
+      const darkModeToggle = document.getElementById('toggle-dark-mode');
+      ${ArchitectureViewerDarkModeScript.render()}
       document.getElementById('nav-toggle').addEventListener('click', () => {
         shell.classList.toggle('nav-collapsed');
       });
+      darkModeToggle.addEventListener('click', () => {
+        setDarkMode(!isDarkModeEnabled());
+        saveDarkModePreference();
+      });
+      loadDarkModePreference();
     </script>
   </body>
 </html>

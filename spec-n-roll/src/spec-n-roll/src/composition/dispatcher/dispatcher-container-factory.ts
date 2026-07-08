@@ -13,6 +13,7 @@ import { NodeRuntimeProcessExecutor } from '#dispatcher/infrastructure/runtime/n
 import { ProcessDispatcherEnvironment } from '#dispatcher/infrastructure/environment/process-dispatcher-environment.js';
 import { ProjectRootResolver } from '#dispatcher/application/project/project-root-resolver.js';
 import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';
+import { DispatcherMetadataReader } from '#dispatcher/infrastructure/metadata/dispatcher-metadata-reader.js';
 
 /**
  * Creates dependency containers for dispatcher command invocations.
@@ -52,6 +53,7 @@ export class DispatcherContainerFactory {
             dispatcherEnvironmentToken,
           ),
           dependencyContainer.resolve(ProjectRootResolver),
+          dependencyContainer.resolve(DispatcherMetadataReader),
           dependencyContainer.resolve<RuntimeProcessExecutor>(
             runtimeProcessExecutorToken,
           ),
