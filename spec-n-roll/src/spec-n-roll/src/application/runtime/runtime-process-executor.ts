@@ -1,4 +1,4 @@
-import type { RuntimeInvocation, RuntimeTarget } from 'spec-n-roll-api';
+import type { RuntimeProcessRequest } from '#dispatcher/application/runtime/runtime-process-request.js';
 
 /**
  * Spawns runtime processes after dispatcher target selection.
@@ -7,9 +7,8 @@ export interface RuntimeProcessExecutor {
   /**
    * Executes the selected runtime with the invocation payload on stdin.
    *
-   * @param target - Runtime executable selected by the dispatcher.
-   * @param invocation - JSON-serializable dispatcher invocation payload.
+   * @param request - Raw process launch data prepared by dispatcher application behavior.
    * @returns Runtime process exit code.
    */
-  execute(target: RuntimeTarget, invocation: RuntimeInvocation): number;
+  execute(request: RuntimeProcessRequest): number;
 }

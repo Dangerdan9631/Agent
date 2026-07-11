@@ -4,120 +4,120 @@
     "spec-n-roll-mcp": {
       "parentId": null,
       "position": {
-        "x": 918.3692464143434,
-        "y": 288.32190226746513
+        "x": 0,
+        "y": 406.5
       }
     },
     "directory:spec-n-roll-mcp:application": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": 923.0762089811774,
-        "y": 278.93435542235727
+        "x": -232,
+        "y": 344.25
       }
     },
     "directory:spec-n-roll-mcp:application/commands": {
       "parentId": "directory:spec-n-roll-mcp:application",
       "position": {
-        "x": 923.0762089811773,
-        "y": 291.68435542235727
+        "x": -232,
+        "y": 357
       }
     },
     "directory:spec-n-roll-mcp:composition": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": 919.068883144331,
-        "y": 286.6226578746033
+        "x": 206.5,
+        "y": 344.25
       }
     },
     "directory:spec-n-roll-mcp:composition/mcp": {
       "parentId": "directory:spec-n-roll-mcp:composition",
       "position": {
-        "x": 919.068883144331,
-        "y": 299.3726578746033
+        "x": 206.5,
+        "y": 357
       }
     },
     "directory:spec-n-roll-mcp:infrastructure": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": 892.36666015529,
-        "y": 309.555365287598
+        "x": -151,
+        "y": 708.75
       }
     },
     "directory:spec-n-roll-mcp:infrastructure/commands": {
       "parentId": "directory:spec-n-roll-mcp:infrastructure",
       "position": {
-        "x": 892.3666601552899,
-        "y": 322.305365287598
+        "x": -151,
+        "y": 721.5
       }
     },
     "directory:spec-n-roll-mcp:presentation": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": 952.4745497002087,
-        "y": 323.6792030232869
+        "x": 234,
+        "y": 708.75
       }
     },
     "directory:spec-n-roll-mcp:presentation/cli": {
       "parentId": "directory:spec-n-roll-mcp:presentation",
       "position": {
-        "x": 952.4745497002087,
-        "y": 336.4292030232869
+        "x": 234,
+        "y": 721.5
       }
     },
     "src/spec-n-roll-mcp/src/application/commands/command-runner.ts": {
       "parentId": "directory:spec-n-roll-mcp:application/commands",
       "position": {
-        "x": 923.0762089811773,
-        "y": 304.68435542235727
+        "x": -232,
+        "y": 370
       }
     },
     "src/spec-n-roll-mcp/src/composition/mcp/mcp-container-factory.ts": {
       "parentId": "directory:spec-n-roll-mcp:composition/mcp",
       "position": {
-        "x": 891.7659336152652,
-        "y": 304.2146015116434
+        "x": 206.5,
+        "y": 459.5
       }
     },
     "src/spec-n-roll-mcp/src/infrastructure/commands/mcp-command-runner.ts": {
       "parentId": "directory:spec-n-roll-mcp:infrastructure/commands",
       "position": {
-        "x": 892.3666601552899,
-        "y": 335.305365287598
+        "x": -151,
+        "y": 734.5
       }
     },
-    "external:chalk": {
+    "src/spec-n-roll-mcp/node_modules/chalk/source/index.js": {
       "parentId": null,
       "position": {
-        "x": 862.6058990581315,
-        "y": 335.07752699400294
+        "x": 129,
+        "y": 985.5
       }
     },
     "src/spec-n-roll-mcp/src/composition/mcp/mcp-program-factory.ts": {
       "parentId": "directory:spec-n-roll-mcp:composition/mcp",
       "position": {
-        "x": 951.3718326733967,
-        "y": 320.53071423756313
+        "x": 206.5,
+        "y": 280.5
       }
     },
     "external:commander": {
       "parentId": null,
       "position": {
-        "x": 983.0375162685522,
-        "y": 329.89104570217097
+        "x": -374.5,
+        "y": 985.5
       }
     },
     "src/spec-n-roll-mcp/src/index.ts": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": 922.777061398228,
-        "y": 335.24058099637864
+        "x": 0,
+        "y": 53.5
       }
     },
     "src/spec-n-roll-mcp/src/presentation/cli/mcp-cli.ts": {
       "parentId": "directory:spec-n-roll-mcp:presentation/cli",
       "position": {
-        "x": 952.4745497002087,
-        "y": 349.4292030232869
+        "x": 234,
+        "y": 734.5
       }
     }
   },

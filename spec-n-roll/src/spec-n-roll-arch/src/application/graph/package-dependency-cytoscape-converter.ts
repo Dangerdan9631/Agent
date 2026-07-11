@@ -1,6 +1,7 @@
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 import { DirectoryCytoscapeGroupBuilder } from '#arch/application/graph/directory-cytoscape-group-builder.js';
+import { DisconnectedCytoscapeElementPruner } from '#arch/application/graph/disconnected-cytoscape-element-pruner.js';
 import { ExternalDependencyIdentifier } from '#arch/application/graph/external-dependency-identifier.js';
 import { PackageImportSymbolReader } from '#arch/application/graph/package-import-symbol-reader.js';
 import type { PackagePublicApiExportIndex } from '#arch/application/graph/package-public-api-export-index.js';
@@ -16,11 +17,13 @@ export class PackageDependencyCytoscapeConverter {
    * @param importSymbolReader - Reader that maps package imports to requested public symbols.
    * @param directoryGroupBuilder - Builder that turns package-relative file paths into nested Cytoscape groups.
    * @param externalDependencyIdentifier - Classifier for npm and Node.js core dependencies.
+   * @param disconnectedElementPruner - Pruner that removes nodes disconnected by project filtering.
    */
   constructor(
     private readonly importSymbolReader = new PackageImportSymbolReader(),
     private readonly directoryGroupBuilder = new DirectoryCytoscapeGroupBuilder(),
     private readonly externalDependencyIdentifier = new ExternalDependencyIdentifier(),
+    private readonly disconnectedElementPruner = new DisconnectedCytoscapeElementPruner(),
   ) {}
 
   /**
@@ -92,7 +95,7 @@ export class PackageDependencyCytoscapeConverter {
         );
         if (
           !sourcePackage ||
-          this.excludesProjectFile(
+          this.excludesProjectNode(
             sourcePackage,
             module.source,
             packageRelativeRoots,
@@ -119,7 +122,7 @@ export class PackageDependencyCytoscapeConverter {
             if (
               !dependencyPackage ||
               dependencyPackage === sourcePackage ||
-              this.excludesProjectFile(
+              this.excludesProjectNode(
                 dependencyPackage,
                 dependencyPath,
                 packageRelativeRoots,
@@ -162,19 +165,14 @@ export class PackageDependencyCytoscapeConverter {
           }
 
           if (
-            exclusionFilter?.excludesExternalDependency(
+            exclusionFilter?.excludesLandscapeDependency(
               this.externalDependencyIdentifier.label(externalId),
             )
           ) {
             continue;
           }
 
-          this.addFileNode(
-            fileNodes,
-            groupNodes,
-            module.source,
-            sourcePackage,
-          );
+          this.addFileNode(fileNodes, groupNodes, module.source, sourcePackage);
           this.addExternalNode(externalNodes, externalId);
           edges.set(`${module.source}->${externalId}`, {
             data: {
@@ -187,11 +185,13 @@ export class PackageDependencyCytoscapeConverter {
       }
     }
 
-    return packageNodes.concat(
-      [...groupNodes.values()],
-      [...fileNodes.values()],
-      [...externalNodes.values()],
-      [...edges.values()],
+    return this.disconnectedElementPruner.prune(
+      packageNodes.concat(
+        [...groupNodes.values()],
+        [...fileNodes.values()],
+        [...externalNodes.values()],
+        [...edges.values()],
+      ),
     );
   }
 
@@ -282,30 +282,28 @@ export class PackageDependencyCytoscapeConverter {
     );
   }
 
-  private excludesProjectFile(
+  private excludesProjectNode(
     packageName: string,
     filePath: string,
     packageRelativeRoots: ReadonlyMap<string, string>,
     exclusionFilter?: ArchitectureExclusionFilter,
   ): boolean {
     return (
-      exclusionFilter?.excludesProjectFile(
+      exclusionFilter?.excludesProjectNode(
         packageName,
-        this.packageRelativePath(
-          filePath,
-          packageRelativeRoots.get(packageName) ?? '',
-        ),
+        this.nodeName(filePath, packageRelativeRoots.get(packageName) ?? ''),
       ) ?? false
     );
   }
 
-  private packageRelativePath(filePath: string, packageRoot: string): string {
+  private nodeName(filePath: string, packageRoot: string): string {
     const normalizedFilePath = this.normalizePath(filePath);
     const rootPrefix = `${packageRoot}/`;
 
-    return normalizedFilePath.startsWith(rootPrefix)
+    const packageRelativePath = normalizedFilePath.startsWith(rootPrefix)
       ? normalizedFilePath.slice(rootPrefix.length)
       : normalizedFilePath;
+    return packageRelativePath.replace(/^src\//u, '').replace(/\.[^./]+$/u, '');
   }
 
   private addFileNode(

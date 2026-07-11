@@ -8,4 +8,5 @@ src/spec-n-roll-arch/architecture/**
 !src/spec-n-roll-arch/architecture/**/
 !src/spec-n-roll-arch/architecture/*/cytoscape.layout.json
 !src/spec-n-roll-arch/architecture/project-dependencies.cytoscape.layout.json
+!src/spec-n-roll-arch/architecture/**/*.png
 .tmp/

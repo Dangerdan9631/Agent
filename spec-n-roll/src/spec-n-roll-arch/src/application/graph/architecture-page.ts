@@ -8,7 +8,12 @@ export interface ArchitecturePage {
   title: string;
 
   /**
-   * Absolute path to the generated HTML page.
+   * Absolute path to the generated HTML page. Groups omit this value.
    */
-  htmlPath: string;
+  htmlPath?: string;
+
+  /**
+   * Child navigation items rendered beneath this item. Children are always visible.
+   */
+  children?: ArchitecturePage[];
 }

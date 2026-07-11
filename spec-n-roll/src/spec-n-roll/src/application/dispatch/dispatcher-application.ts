@@ -1,7 +1,7 @@
 import { Logger } from 'tslog';
-import { DispatcherMetadataReader } from '#dispatcher/infrastructure/metadata/dispatcher-metadata-reader.js';
-import type { DispatcherEnvironment } from '#dispatcher/infrastructure/environment/dispatcher-environment.js';
+import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 import type { DispatcherRunRequest } from '#dispatcher/application/dispatch/dispatcher-run-request.js';
+import { DispatcherMetadataResolver } from '#dispatcher/application/metadata/dispatcher-metadata-resolver.js';
 import { ProjectRootResolver } from '#dispatcher/application/project/project-root-resolver.js';
 import { RuntimeTargetResolver } from '#dispatcher/application/runtime/runtime-target-resolver.js';
 import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';
@@ -15,16 +15,18 @@ export class DispatcherApplication {
    *
    * @param environment - Process environment abstraction for runtime values.
    * @param projectRootResolver - Resolver for project-root discovery.
-   * @param metadataReader - Reader for dispatcher install metadata.
+   * @param metadataResolver - Resolver for dispatcher install metadata.
+   * @param runtimeTargetResolver - Resolver for selected runtime targets.
    * @param processExecutor - Executor for selected runtime targets.
    * @param logger - Logger used to report resolved configuration and routing decisions.
    */
   constructor(
     private readonly environment: DispatcherEnvironment,
     private readonly projectRootResolver: ProjectRootResolver,
-    private readonly metadataReader: DispatcherMetadataReader,
+    private readonly metadataResolver: DispatcherMetadataResolver,
+    private readonly runtimeTargetResolver: RuntimeTargetResolver,
     private readonly processExecutor: RuntimeProcessExecutor,
-    private readonly logger: Logger,
+    private readonly logger: Logger<unknown>,
   ) {}
 
   /**
@@ -35,7 +37,7 @@ export class DispatcherApplication {
    */
   run(request: DispatcherRunRequest): number {
     const installDirectory = this.environment.dispatcherInstallDirectory();
-    const metadata = this.metadataReader.read(installDirectory);
+    const metadata = this.metadataResolver.resolve(installDirectory);
     this.logger.debug('Resolved dispatcher install metadata.', metadata);
 
     const projectRoot = this.projectRootResolver.resolve({
@@ -49,9 +51,10 @@ export class DispatcherApplication {
     });
 
     const forceGlobal = request.options.global === true;
-    const target = new RuntimeTargetResolver(installDirectory).resolve(
+    const target = this.runtimeTargetResolver.resolve(
       projectRoot,
       forceGlobal,
+      installDirectory,
     );
     this.logger.info('Selected runtime target.', {
       executablePath: target.executablePath,
@@ -59,11 +62,18 @@ export class DispatcherApplication {
       forceGlobal,
     });
 
-    return this.processExecutor.execute(target, {
+    const invocation = {
       argv: request.argv,
       dispatcher: metadata,
       ...(projectRoot == null ? {} : { projectRoot }),
       cwd,
+    };
+
+    return this.processExecutor.execute({
+      executablePath: target.executablePath,
+      argv: invocation.argv,
+      cwd: invocation.cwd,
+      stdin: `${JSON.stringify(invocation)}\n`,
     });
   }
 }

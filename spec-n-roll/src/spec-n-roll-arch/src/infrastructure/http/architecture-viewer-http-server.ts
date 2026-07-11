@@ -21,6 +21,7 @@ import type {
   ArchitectureConfig,
   ArchitectureFolderDiagramConfig,
 } from '#arch/application/config/architecture-config.js';
+import { ArchitectureArtifactGenerator } from '#arch/application/artifacts/architecture-artifact-generator.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 
 /**
@@ -82,14 +83,28 @@ export interface RunningArchitectureViewerHttpServer {
  */
 interface ArchitectureViewerConfigAction {
   /**
-   * Requested configuration action. Supported values are node hiding and folder diagram creation.
+   * Requested configuration action. Supported values include node hiding, folder diagram creation, and exclusion updates.
    */
-  action: 'hide-node' | 'create-folder-diagram';
+  action:
+    | 'hide-node'
+    | 'create-folder-diagram'
+    | 'add-exclusion'
+    | 'remove-exclusion';
 
   /**
    * Cytoscape node id selected by the user. The id must exist in the current diagram JSON.
    */
-  nodeId: string;
+  nodeId?: string;
+
+  /**
+   * Exclusion collection updated by an exclusion action.
+   */
+  scope?: 'all-packages' | 'diagram';
+
+  /**
+   * Node-name exclusion added or removed by an exclusion action.
+   */
+  exclusion?: string;
 }
 
 /**
@@ -114,6 +129,26 @@ interface ArchitectureViewerDiagramContext {
    * Folder diagram configuration object owned by the root architecture config. The value is present only for configured folder diagrams.
    */
   folderDiagram?: ArchitectureFolderDiagramConfig;
+}
+
+/**
+ * Describes the exclusion rules displayed for the currently viewed diagram.
+ */
+interface ArchitectureViewerExclusions {
+  /**
+   * Node-name exclusions that apply to every workspace package.
+   */
+  allPackages: string[];
+
+  /**
+   * Node-name exclusions that apply only to the current diagram.
+   */
+  diagram: string[];
+
+  /**
+   * Human-readable label for the diagram-specific exclusion section.
+   */
+  diagramLabel: string;
 }
 interface PersistedNodeLayout {
   /**
@@ -167,6 +202,7 @@ export class ArchitectureViewerHttpServer {
    * @param logger - Logger used to report the serving URL and rejected persistence requests.
    */
   constructor(
+    private readonly generator?: ArchitectureArtifactGenerator,
     private readonly logger = new Logger({
       name: 'spec-n-roll-arch-viewer',
       minLevel: 6,
@@ -231,6 +267,14 @@ export class ArchitectureViewerHttpServer {
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
       if (
+        request.method === 'GET' &&
+        url.pathname === '/__spec-n-roll/config'
+      ) {
+        await this.readConfig(response, workspaceRoot, url);
+        return;
+      }
+
+      if (
         request.method === 'PUT' &&
         url.pathname === '/__spec-n-roll/layout'
       ) {
@@ -279,9 +323,7 @@ export class ArchitectureViewerHttpServer {
     url: URL,
   ): Promise<void> {
     const relativePath =
-      url.pathname === '/'
-        ? 'project-dependencies.cytoscape.html'
-        : url.pathname.slice(1);
+      url.pathname === '/' ? 'landscape.cytoscape.html' : url.pathname.slice(1);
     const filePath = this.resolveArtifactPath(artifactRoot, relativePath);
     if (!filePath) {
       this.respondText(response, 400, 'Invalid artifact path.');
@@ -403,13 +445,16 @@ export class ArchitectureViewerHttpServer {
       return;
     }
 
-    const elements = await this.readElements(
-      htmlPath.replace(/\.html$/u, '.json'),
-    );
+    const requiresNode =
+      action.action === 'hide-node' ||
+      action.action === 'create-folder-diagram';
+    const elements = requiresNode
+      ? await this.readElements(htmlPath.replace(/\.html$/u, '.json'))
+      : [];
     const node = elements
       .filter((element) => this.isNodeElement(element))
       .find((element) => element.data.id === action.nodeId);
-    if (!node) {
+    if (requiresNode && !node) {
       this.respondText(response, 400, 'Selected node was not found.');
       return;
     }
@@ -429,10 +474,31 @@ export class ArchitectureViewerHttpServer {
     this.respondJson(response, 200, { saved: true });
   }
 
+  private async readConfig(
+    response: ServerResponse,
+    workspaceRoot: string,
+    url: URL,
+  ): Promise<void> {
+    const diagramPath = url.searchParams.get('diagram');
+    if (!diagramPath || !diagramPath.endsWith('.html')) {
+      this.respondText(response, 400, 'A diagram HTML path is required.');
+      return;
+    }
+
+    const config = this.readArchitectureConfig(workspaceRoot);
+    const diagramContext = this.diagramContext(diagramPath, config);
+    if (!diagramContext) {
+      this.respondText(response, 400, 'Unknown diagram path.');
+      return;
+    }
+
+    this.respondJson(response, 200, this.exclusionsFor(config, diagramContext));
+  }
+
   private async updateConfig(
     workspaceRoot: string,
     action: ArchitectureViewerConfigAction,
-    node: CytoscapeElement & { data: { id: string } },
+    node: (CytoscapeElement & { data: { id: string } }) | undefined,
     elements: CytoscapeElement[],
     diagramPath: string,
   ): Promise<boolean> {
@@ -442,24 +508,39 @@ export class ArchitectureViewerHttpServer {
       return false;
     }
 
-    if (action.action === 'hide-node' && this.isExternalNode(node)) {
-      this.addExternalDependencyExclusion(
+    if (
+      action.action === 'add-exclusion' ||
+      action.action === 'remove-exclusion'
+    ) {
+      if (!action.scope || !action.exclusion) {
+        return false;
+      }
+      this.updateExclusion(config, diagramContext, action);
+      await this.writeArchitectureConfig(workspaceRoot, config);
+      this.regenerateArtifacts(workspaceRoot);
+      return true;
+    }
+
+    if (action.action === 'hide-node' && node && this.isExternalNode(node)) {
+      this.configureHiddenExternalDependency(
         config,
         diagramContext,
         node.data.label,
       );
       await this.writeArchitectureConfig(workspaceRoot, config);
+      this.regenerateArtifacts(workspaceRoot);
       return true;
     }
 
-    const projectFile = this.projectFileSelection(node, elements);
+    const projectFile = node ? this.projectFileSelection(node, elements) : null;
     if (action.action === 'hide-node' && projectFile) {
       this.addProjectFileExclusion(config, diagramContext, projectFile);
       await this.writeArchitectureConfig(workspaceRoot, config);
+      this.regenerateArtifacts(workspaceRoot);
       return true;
     }
 
-    const folder = this.folderSelection(node);
+    const folder = node ? this.folderSelection(node) : null;
     if (action.action === 'create-folder-diagram' && folder) {
       config.folderDiagrams ??= {};
       config.folderDiagrams.packages ??= {};
@@ -477,6 +558,7 @@ export class ArchitectureViewerHttpServer {
         ),
       );
       await this.writeArchitectureConfig(workspaceRoot, config);
+      this.regenerateArtifacts(workspaceRoot);
       return true;
     }
 
@@ -488,7 +570,7 @@ export class ArchitectureViewerHttpServer {
     config: ArchitectureConfig,
   ): ArchitectureViewerDiagramContext | null {
     const normalizedPath = this.normalizeConfigPath(diagramPath);
-    if (normalizedPath === 'project-dependencies.cytoscape.html') {
+    if (normalizedPath === 'landscape.cytoscape.html') {
       return { kind: 'project' };
     }
 
@@ -529,26 +611,35 @@ export class ArchitectureViewerHttpServer {
     );
   }
 
-  private addExternalDependencyExclusion(
+  private configureHiddenExternalDependency(
     config: ArchitectureConfig,
     diagramContext: ArchitectureViewerDiagramContext,
     dependencyName: string,
   ): void {
-    if (diagramContext.kind === 'folder' && diagramContext.folderDiagram) {
-      diagramContext.folderDiagram.exclusions ??= {};
-      diagramContext.folderDiagram.exclusions.externalDependencies =
-        this.sortedUnique([
-          ...(config.exclusions?.externalDependencies ?? []),
-          ...(diagramContext.folderDiagram.exclusions.externalDependencies ??
-            []),
-          dependencyName,
-        ]);
+    if (diagramContext.kind === 'project') {
+      config.exclusions ??= {};
+      config.exclusions.landscape = this.sortedUnique([
+        ...(config.exclusions.landscape ?? []),
+        dependencyName,
+      ]);
       return;
     }
 
+    if (diagramContext.kind === 'folder' && diagramContext.folderDiagram) {
+      diagramContext.folderDiagram.exclusions ??= {};
+      diagramContext.folderDiagram.exclusions.projectFiles = this.sortedUnique([
+        ...(diagramContext.folderDiagram.exclusions.projectFiles ?? []),
+        dependencyName,
+      ]);
+      return;
+    }
+
+    const packageName = diagramContext.packageName ?? '';
     config.exclusions ??= {};
-    config.exclusions.externalDependencies = this.sortedUnique([
-      ...(config.exclusions.externalDependencies ?? []),
+    config.exclusions.projectFiles ??= {};
+    config.exclusions.projectFiles.packages ??= {};
+    config.exclusions.projectFiles.packages[packageName] = this.sortedUnique([
+      ...(config.exclusions.projectFiles.packages[packageName] ?? []),
       dependencyName,
     ]);
   }
@@ -556,7 +647,7 @@ export class ArchitectureViewerHttpServer {
   private addProjectFileExclusion(
     config: ArchitectureConfig,
     diagramContext: ArchitectureViewerDiagramContext,
-    projectFile: { packageName: string; packageRelativePath: string },
+    projectFile: { packageName: string; nodeName: string },
   ): void {
     if (
       diagramContext.kind === 'folder' &&
@@ -569,7 +660,7 @@ export class ArchitectureViewerHttpServer {
           projectFile.packageName
         ] ?? []),
         ...(diagramContext.folderDiagram.exclusions.projectFiles ?? []),
-        projectFile.packageRelativePath,
+        projectFile.nodeName,
       ]);
       return;
     }
@@ -581,8 +672,94 @@ export class ArchitectureViewerHttpServer {
       this.sortedUnique([
         ...(config.exclusions.projectFiles.packages[projectFile.packageName] ??
           []),
-        projectFile.packageRelativePath,
+        projectFile.nodeName,
       ]);
+  }
+
+  private exclusionsFor(
+    config: ArchitectureConfig,
+    diagramContext: ArchitectureViewerDiagramContext,
+  ): ArchitectureViewerExclusions {
+    const allPackages = config.exclusions?.projectFiles?.allPackages ?? [];
+    if (diagramContext.kind === 'project') {
+      return {
+        allPackages,
+        diagram: config.exclusions?.landscape ?? [],
+        diagramLabel: 'Landscape',
+      };
+    }
+
+    const packageName = diagramContext.packageName ?? '';
+    return {
+      allPackages,
+      diagram:
+        diagramContext.folderDiagram?.exclusions?.projectFiles ??
+        config.exclusions?.projectFiles?.packages?.[packageName] ??
+        [],
+      diagramLabel: packageName,
+    };
+  }
+
+  private updateExclusion(
+    config: ArchitectureConfig,
+    diagramContext: ArchitectureViewerDiagramContext,
+    action: ArchitectureViewerConfigAction,
+  ): void {
+    const exclusion = this.normalizeConfigPath(action.exclusion ?? '');
+    config.exclusions ??= {};
+    if (action.scope === 'all-packages') {
+      config.exclusions.projectFiles ??= {};
+      config.exclusions.projectFiles.allPackages = this.updatedExclusions(
+        config.exclusions.projectFiles.allPackages ?? [],
+        exclusion,
+        action.action,
+      );
+      return;
+    }
+
+    if (diagramContext.kind === 'project') {
+      config.exclusions.landscape = this.updatedExclusions(
+        config.exclusions.landscape ?? [],
+        exclusion,
+        action.action,
+      );
+      return;
+    }
+
+    const packageName = diagramContext.packageName ?? '';
+    if (diagramContext.folderDiagram) {
+      diagramContext.folderDiagram.exclusions ??= {};
+      diagramContext.folderDiagram.exclusions.projectFiles =
+        this.updatedExclusions(
+          diagramContext.folderDiagram.exclusions.projectFiles ?? [],
+          exclusion,
+          action.action,
+        );
+      return;
+    }
+
+    config.exclusions.projectFiles ??= {};
+    config.exclusions.projectFiles.packages ??= {};
+    config.exclusions.projectFiles.packages[packageName] =
+      this.updatedExclusions(
+        config.exclusions.projectFiles.packages[packageName] ?? [],
+        exclusion,
+        action.action,
+      );
+  }
+
+  private updatedExclusions(
+    exclusions: string[],
+    exclusion: string,
+    action: ArchitectureViewerConfigAction['action'],
+  ): string[] {
+    return action === 'add-exclusion'
+      ? this.sortedUnique([...exclusions, exclusion])
+      : exclusions.filter((candidate) => candidate !== exclusion);
+  }
+
+  private regenerateArtifacts(workspaceRoot: string): void {
+    this.generator?.generate(workspaceRoot);
   }
 
   private diagramSlug(folderPath: string): string {
@@ -597,7 +774,7 @@ export class ArchitectureViewerHttpServer {
   private projectFileSelection(
     node: CytoscapeElement & { data: { id: string } },
     elements: CytoscapeElement[],
-  ): { packageName: string; packageRelativePath: string } | null {
+  ): { packageName: string; nodeName: string } | null {
     if (this.isExternalNode(node) || this.hasChildren(node, elements)) {
       return null;
     }
@@ -611,7 +788,7 @@ export class ArchitectureViewerHttpServer {
 
     return {
       packageName: match[1],
-      packageRelativePath: match[2],
+      nodeName: match[2].replace(/^src\//u, '').replace(/\.[^./]+$/u, ''),
     };
   }
 
@@ -689,13 +866,15 @@ export class ArchitectureViewerHttpServer {
     return `// User-editable architecture diagram configuration.
 //
 // External dependencies are matched by displayed package/module name, such as
-// "tslog", "commander", or "fs". Project file exclusions can be exact file
-// names, exact paths relative to the package root, or glob patterns relative
-// to the package root, such as "src/**/*.test.ts".
+// "tslog", "commander", or "fs". Collapsed dependencies render as one node;
+// landscape exclusions are omitted from the landscape diagram. Project node
+// exclusions are exact node names or node-name globs, such as
+// "composition/**/*.test". Node names are relative to the package source root
+// and omit the file extension.
 //
 // Folder diagrams are opt in per package. Paths are relative to the package root,
-// such as "src/application". Folder exclusions inherit the containing package
-// exclusions unless overridden on that folder diagram.
+// such as "src/application". Folder collapse and exclusion settings inherit the
+// workspace settings unless overridden on that folder diagram.
 //
 // Diagram layouts are saved automatically by the architecture viewer as checked-in
 // *.layout.json files next to each generated diagram artifact.
@@ -860,12 +1039,21 @@ export class ArchitectureViewerHttpServer {
       return false;
     }
 
-    const candidate = action as { action?: unknown; nodeId?: unknown };
+    const candidate = action as {
+      action?: unknown;
+      nodeId?: unknown;
+      scope?: unknown;
+      exclusion?: unknown;
+    };
 
     return (
-      (candidate.action === 'hide-node' ||
+      ((candidate.action === 'hide-node' ||
         candidate.action === 'create-folder-diagram') &&
-      typeof candidate.nodeId === 'string'
+        typeof candidate.nodeId === 'string') ||
+      ((candidate.action === 'add-exclusion' ||
+        candidate.action === 'remove-exclusion') &&
+        (candidate.scope === 'all-packages' || candidate.scope === 'diagram') &&
+        typeof candidate.exclusion === 'string')
     );
   }
 

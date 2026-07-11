@@ -44,7 +44,7 @@ export class ArchProgramFactory {
    */
   constructor(
     private readonly generator = new ArchitectureArtifactGenerator(),
-    private readonly viewerServer = new ArchitectureViewerHttpServer(),
+    private readonly viewerServer = new ArchitectureViewerHttpServer(generator),
     private readonly workspaceRootResolver = new WorkspaceRootResolver(),
     private readonly viewerOutputWriter = new ProcessArchitectureViewerOutputWriter(),
   ) {}

@@ -1,6 +1,6 @@
 # Dispatcher runtime infrastructure - src/spec-n-roll/src/infrastructure/runtime
 
-This directory contains concrete runtime process execution adapters. It translates runtime execution requests into Node process launches.
+This directory contains concrete runtime process execution adapters. It translates raw runtime process requests into Node process launches.
 
 ## Conventions
 

@@ -23,24 +23,16 @@ export class DependencyMatrixArtifactWriter {
       { title: 'Dependency matrix', htmlPath: matrixHtmlPath },
     ],
   ): void {
-    const pageLinks = pages.map((page) => ({
-      title: page.title,
-      href: relative(dirname(matrixHtmlPath), page.htmlPath).replaceAll(
-        '\\',
-        '/',
-      ),
-      isCurrent: page.htmlPath === matrixHtmlPath,
-    }));
-
     writeFileSync(
       matrixHtmlPath,
-      this.renderHtml(DependencyMatrix.fromElements(elements), pageLinks),
+      this.renderHtml(DependencyMatrix.fromElements(elements), pages, matrixHtmlPath),
     );
   }
 
   private renderHtml(
     matrix: DependencyMatrix,
-    pageLinks: Array<{ title: string; href: string; isCurrent: boolean }>,
+    pages: ArchitecturePage[],
+    currentPath: string,
   ): string {
     return `<!doctype html>
 <html lang="en">
@@ -57,9 +49,11 @@ export class DependencyMatrixArtifactWriter {
       .navigation-header { align-items: center; display: flex; gap: 8px; height: 44px; padding: 0 8px; }
       .nav-toggle { align-items: center; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #111827; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px; }
       .navigation-title { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .navigation-links { display: flex; flex-direction: column; gap: 4px; padding: 0 8px 12px; }
+      .navigation-links, .navigation-children { display: flex; flex-direction: column; gap: 2px; padding: 0 8px 12px; }
+      .navigation-children { padding: 0 0 0 16px; }
       .nav-collapsed .navigation-title, .nav-collapsed .navigation-links { display: none; }
-      .navigation-link { border-radius: 6px; color: #334155; font-size: 13px; line-height: 1.3; padding: 8px 10px; text-decoration: none; }
+      .navigation-group-title { color: #0f172a; font-size: 13px; font-weight: 700; line-height: 1.3; padding: 8px 10px 4px; }
+      .navigation-link { border-radius: 6px; color: #334155; display: block; font-size: 13px; line-height: 1.3; padding: 8px 10px; text-decoration: none; }
       .navigation-link:hover { background: #e2e8f0; color: #0f172a; }
       .navigation-link.current { background: #dbeafe; color: #1d4ed8; font-weight: 700; }
       .workspace { display: grid; grid-template-rows: auto 1fr; min-height: 0; min-width: 0; }
@@ -110,6 +104,7 @@ export class DependencyMatrixArtifactWriter {
       .dark-mode .navigation { border-right-color: #334155; }
       .dark-mode .nav-toggle, .dark-mode .toolbar-button { background: #1f2937; border-color: #475569; color: #e5e7eb; }
       .dark-mode .navigation-link { color: #cbd5e1; }
+      .dark-mode .navigation-group-title { color: #e5e7eb; }
       .dark-mode .navigation-link:hover { background: #334155; color: #f8fafc; }
       .dark-mode .navigation-link.current, .dark-mode .toolbar-button.active { background: #6d28d9; border-color: #6d28d9; color: #ffffff; }
       .dark-mode .summary { background: #0f172a; border-bottom-color: #334155; }
@@ -135,7 +130,7 @@ export class DependencyMatrixArtifactWriter {
           <div class="navigation-title">Architecture</div>
         </div>
         <div class="navigation-links">
-          ${pageLinks.map((page) => this.renderPageLink(page)).join('\n          ')}
+          ${this.renderNavigation(pages, currentPath, dirname(currentPath))}
         </div>
       </nav>
       <main class="workspace">
@@ -363,12 +358,20 @@ export class DependencyMatrixArtifactWriter {
     return folderBand % 2 === 0 ? 'column-folder-even' : 'column-folder-odd';
   }
 
-  private renderPageLink(page: {
-    title: string;
-    href: string;
-    isCurrent: boolean;
-  }): string {
-    return `<a class="navigation-link${page.isCurrent ? ' current' : ''}" href="${this.escapeHtml(page.href)}">${this.escapeHtml(page.title)}</a>`;
+  private renderNavigation(
+    pages: ArchitecturePage[],
+    currentPath: string,
+    basePath: string,
+  ): string {
+    return pages.map((page) => {
+      const children = page.children?.length
+        ? `<div class="navigation-children">${this.renderNavigation(page.children, currentPath, basePath)}</div>`
+        : '';
+      const item = page.htmlPath
+        ? `<a class="navigation-link${page.htmlPath === currentPath ? ' current' : ''}" href="${this.escapeHtml(relative(basePath, page.htmlPath).replaceAll('\\', '/'))}">${this.escapeHtml(page.title)}</a>`
+        : `<div class="navigation-group-title">${this.escapeHtml(page.title)}</div>`;
+      return `<div class="navigation-item">${item}${children}</div>`;
+    }).join('\n          ');
   }
 
   private formatRatio(value: number): string {

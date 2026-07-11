@@ -3,24 +3,27 @@ import {
   chmodSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import 'reflect-metadata';
 import { Logger } from 'tslog';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DispatcherApplication } from '#dispatcher/application/dispatch/dispatcher-application.js';
 import { DispatcherCli } from '#dispatcher/presentation/cli/dispatcher-cli.js';
 import { DispatcherContainerFactory } from '#dispatcher/composition/dispatcher/dispatcher-container-factory.js';
-import type { DispatcherEnvironment } from '#dispatcher/infrastructure/environment/dispatcher-environment.js';
-import { DispatcherMetadataReader } from '#dispatcher/infrastructure/metadata/dispatcher-metadata-reader.js';
+import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
+import { DispatcherMetadataResolver } from '#dispatcher/application/metadata/dispatcher-metadata-resolver.js';
+import { NodeDispatcherFileSystem } from '#dispatcher/infrastructure/filesystem/node-dispatcher-file-system.js';
+import { NodeRuntimePackageManifestPathResolver } from '#dispatcher/infrastructure/module/node-runtime-package-manifest-path-resolver.js';
 import { NodeRuntimeProcessExecutor } from '#dispatcher/infrastructure/runtime/node-runtime-process-executor.js';
 import { ProjectRootResolver } from '#dispatcher/application/project/project-root-resolver.js';
 import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';
 import { RuntimeTargetResolver } from '#dispatcher/application/runtime/runtime-target-resolver.js';
-import type { RuntimeInvocation, RuntimeTarget } from 'spec-n-roll-api';
+import type { RuntimeProcessRequest } from '#dispatcher/application/runtime/runtime-process-request.js';
 
 vi.mock('node:child_process', () => ({
   spawnSync: vi.fn(() => ({
@@ -183,24 +186,72 @@ class RecordingRuntimeProcessExecutor implements RuntimeProcessExecutor {
   /**
    * Last runtime target received by the executor.
    */
-  target?: RuntimeTarget;
-
-  /**
-   * Last runtime invocation received by the executor.
-   */
-  invocation?: RuntimeInvocation;
+  request?: RuntimeProcessRequest;
 
   /**
    * Records a runtime execution request.
    *
-   * @param target - Runtime target selected by the dispatcher.
-   * @param invocation - Runtime invocation payload serialized for the child process.
+   * @param request - Raw runtime process request prepared by the dispatcher.
    * @returns Fixture runtime process exit code.
    */
-  execute(target: RuntimeTarget, invocation: RuntimeInvocation): number {
-    this.target = target;
-    this.invocation = invocation;
+  execute(request: RuntimeProcessRequest): number {
+    this.request = request;
     return 17;
+  }
+}
+
+/**
+ * Checks dispatcher production sources for layer-boundary import violations.
+ */
+class DispatcherSourceArchitecturePolicy {
+  /**
+   * Finds imports that place filesystem access or shared API contracts in the wrong layer.
+   *
+   * @param sourceRoot - Absolute or relative dispatcher source root.
+   * @returns Descriptions of source files with forbidden layer imports.
+   */
+  boundaryViolations(sourceRoot: string): string[] {
+    return this.sourceFiles(resolve(sourceRoot)).flatMap((sourcePath) => {
+      const source = readFileSync(sourcePath, 'utf8');
+      const relativePath = relative(resolve(sourceRoot), sourcePath).replaceAll(
+        '\\',
+        '/',
+      );
+      const isInfrastructure = relativePath.startsWith('infrastructure/');
+      const violations: string[] = [];
+
+      if (!isInfrastructure && /from ['"]node:fs['"]/u.test(source)) {
+        violations.push(
+          `${relativePath} imports node:fs outside infrastructure`,
+        );
+      }
+
+      if (isInfrastructure && /from ['"]spec-n-roll-api['"]/u.test(source)) {
+        violations.push(
+          `${relativePath} imports spec-n-roll-api in infrastructure`,
+        );
+      }
+
+      return violations;
+    });
+  }
+
+  /**
+   * Recursively collects TypeScript production source files.
+   *
+   * @param directory - Absolute directory to inspect.
+   * @returns Absolute paths to TypeScript source files below the directory.
+   */
+  private sourceFiles(directory: string): string[] {
+    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        return this.sourceFiles(path);
+      }
+
+      return entry.isFile() && entry.name.endsWith('.ts') ? [path] : [];
+    });
   }
 }
 
@@ -255,12 +306,19 @@ describe('spec-n-roll dispatcher executable', () => {
   it('resolves concrete services through tsyringe auto construction', () => {
     const commandContainer = new DispatcherContainerFactory().create();
 
-    expect(commandContainer.resolve(ProjectRootResolver)).toBeInstanceOf(
-      ProjectRootResolver,
+    expect(commandContainer.resolve(DispatcherApplication)).toBeInstanceOf(
+      DispatcherApplication,
     );
-    expect(commandContainer.resolve(DispatcherMetadataReader)).toBeInstanceOf(
-      DispatcherMetadataReader,
-    );
+  });
+});
+
+describe('dispatcher architecture', () => {
+  it('keeps filesystem imports in infrastructure and API contracts above it', () => {
+    expect(
+      new DispatcherSourceArchitecturePolicy().boundaryViolations(
+        'src/spec-n-roll/src',
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -270,7 +328,7 @@ describe('ProjectRootResolver', () => {
     const projectRoot = join(cwd, 'missing-project');
 
     expect(
-      new ProjectRootResolver().resolve({
+      new ProjectRootResolver(new NodeDispatcherFileSystem()).resolve({
         cwd,
         requestedProjectRoot: 'missing-project',
       }).projectRoot,
@@ -286,7 +344,7 @@ describe('ProjectRootResolver', () => {
     mkdirSync(nestedDirectory, { recursive: true });
 
     expect(
-      new ProjectRootResolver().resolve({
+      new ProjectRootResolver(new NodeDispatcherFileSystem()).resolve({
         cwd: nestedDirectory,
       }).projectRoot,
     ).toBe(projectRoot);
@@ -296,19 +354,23 @@ describe('ProjectRootResolver', () => {
     const cwd = new DispatcherFixtureFactory().createTempDir('missing-root');
 
     expect(
-      new ProjectRootResolver().resolve({
+      new ProjectRootResolver(new NodeDispatcherFileSystem()).resolve({
         cwd,
       }).projectRoot,
     ).toBeUndefined();
   });
 });
 
-describe('DispatcherMetadataReader', () => {
+describe('DispatcherMetadataResolver', () => {
   it('reports remote installs when the local marker is absent', () => {
     const installDirectory =
       new DispatcherFixtureFactory().createDispatcherInstallFixture('remote');
 
-    expect(new DispatcherMetadataReader().read(installDirectory)).toEqual({
+    expect(
+      new DispatcherMetadataResolver(new NodeDispatcherFileSystem()).resolve(
+        installDirectory,
+      ),
+    ).toEqual({
       installSource: 'remote',
       installDirectory: dirname(installDirectory),
       packageVersion: '9.8.7',
@@ -319,7 +381,11 @@ describe('DispatcherMetadataReader', () => {
     const installDirectory =
       new DispatcherFixtureFactory().createDispatcherInstallFixture('local');
 
-    expect(new DispatcherMetadataReader().read(installDirectory)).toEqual({
+    expect(
+      new DispatcherMetadataResolver(new NodeDispatcherFileSystem()).resolve(
+        installDirectory,
+      ),
+    ).toEqual({
       installSource: 'local',
       installDirectory: dirname(installDirectory),
       packageVersion: '9.8.7',
@@ -342,10 +408,10 @@ describe('RuntimeTargetResolver', () => {
     new DispatcherFixtureFactory().writeNodeLauncher(localExecutable);
 
     expect(
-      new RuntimeTargetResolver(import.meta.dirname).resolve(
-        projectRoot,
-        false,
-      ),
+      new RuntimeTargetResolver(
+        new NodeDispatcherFileSystem(),
+        new NodeRuntimePackageManifestPathResolver(),
+      ).resolve(projectRoot, false, import.meta.dirname),
     ).toEqual({
       executablePath: localExecutable,
       projectLocal: true,
@@ -356,10 +422,10 @@ describe('RuntimeTargetResolver', () => {
     const projectRoot = new DispatcherFixtureFactory().createTempDir(
       'global-target',
     );
-    const target = new RuntimeTargetResolver(import.meta.dirname).resolve(
-      projectRoot,
-      false,
-    );
+    const target = new RuntimeTargetResolver(
+      new NodeDispatcherFileSystem(),
+      new NodeRuntimePackageManifestPathResolver(),
+    ).resolve(projectRoot, false, import.meta.dirname);
 
     expect(target.projectLocal).toBe(false);
     expect(target.executablePath).toMatch(
@@ -380,8 +446,12 @@ describe('DispatcherApplication', () => {
         join(projectRoot, 'nested'),
         installDirectory,
       ),
-      new ProjectRootResolver(),
-      new DispatcherMetadataReader(),
+      new ProjectRootResolver(new NodeDispatcherFileSystem()),
+      new DispatcherMetadataResolver(new NodeDispatcherFileSystem()),
+      new RuntimeTargetResolver(
+        new NodeDispatcherFileSystem(),
+        new NodeRuntimePackageManifestPathResolver(),
+      ),
       executor,
       new Logger({ name: 'spec-n-roll', minLevel: 6 }),
     );
@@ -392,7 +462,7 @@ describe('DispatcherApplication', () => {
     });
 
     expect(exitCode).toBe(17);
-    expect(executor.invocation).toEqual({
+    expect(JSON.parse(executor.request?.stdin ?? '')).toEqual({
       argv: ['--global', '--root', projectRoot, 'version'],
       dispatcher: {
         installSource: 'local',
@@ -402,7 +472,9 @@ describe('DispatcherApplication', () => {
       projectRoot,
       cwd: projectRoot,
     });
-    expect(executor.target?.projectLocal).toBe(false);
+    expect(executor.request?.executablePath).toMatch(
+      /spec-n-roll-runtime[\\/]dist[\\/]index\.js/u,
+    );
   });
 });
 
@@ -421,20 +493,14 @@ describe('NodeRuntimeProcessExecutor', () => {
         'C:\\Program Files\\nodejs\\node.exe',
       ),
     );
-    const invocation: RuntimeInvocation = {
+    const request: RuntimeProcessRequest = {
+      executablePath,
       argv: ['--root', 'my project', 'version'],
-      dispatcher: {
-        installSource: 'remote',
-        installDirectory: import.meta.dirname,
-        packageVersion: '1.2.3',
-      },
-      projectRoot: 'C:\\workspace\\my project',
       cwd: 'C:\\workspace\\my project',
+      stdin: '{"example":true}\n',
     };
 
-    expect(
-      executor.execute({ executablePath, projectLocal: false }, invocation),
-    ).toBe(0);
+    expect(executor.execute(request)).toBe(0);
 
     expect(mockedSpawnSync).toHaveBeenCalledWith(
       'C:\\Program Files\\nodejs\\node.exe',
@@ -442,7 +508,7 @@ describe('NodeRuntimeProcessExecutor', () => {
       {
         cwd: 'C:\\workspace\\my project',
         encoding: 'utf8',
-        input: `${JSON.stringify(invocation)}\n`,
+        input: '{"example":true}\n',
         stdio: ['pipe', 'inherit', 'inherit'],
       },
     );

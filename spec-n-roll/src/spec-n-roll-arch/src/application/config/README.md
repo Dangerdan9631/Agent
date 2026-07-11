@@ -6,7 +6,7 @@ This directory contains architecture configuration models, readers, and filters.
 
 ### Configuration behavior
 
-Keep config interpretation and exclusion decisions here. Filesystem mechanics should remain isolated from policy decisions.
+Keep config interpretation, collapse decisions, and exclusion decisions here. Filesystem mechanics should remain isolated from policy decisions.
 
 ### Layout ownership
 

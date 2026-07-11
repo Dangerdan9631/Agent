@@ -4,50 +4,50 @@
     "spec-n-roll-sdk": {
       "parentId": null,
       "position": {
-        "x": 336.75,
-        "y": 220.50038259128883
+        "x": 0,
+        "y": 63
       }
     },
     "directory:spec-n-roll-sdk:application": {
       "parentId": "spec-n-roll-sdk",
       "position": {
-        "x": 381,
-        "y": 233.25038259128883
+        "x": -211.5,
+        "y": 75.75
       }
     },
     "directory:spec-n-roll-sdk:application/identity": {
       "parentId": "directory:spec-n-roll-sdk:application",
       "position": {
-        "x": 381,
-        "y": 246.00038259128883
+        "x": -211.5,
+        "y": 88.5
       }
     },
     "directory:spec-n-roll-sdk:infrastructure": {
       "parentId": "spec-n-roll-sdk",
       "position": {
-        "x": 311,
-        "y": 233.25038259128883
+        "x": 193,
+        "y": 75.75
       }
     },
     "directory:spec-n-roll-sdk:infrastructure/logging": {
       "parentId": "directory:spec-n-roll-sdk:infrastructure",
       "position": {
-        "x": 311,
-        "y": 246.00038259128883
+        "x": 193,
+        "y": 88.5
       }
     },
     "src/spec-n-roll-sdk/src/application/identity/spec-n-roll-sdk.ts": {
       "parentId": "directory:spec-n-roll-sdk:application/identity",
       "position": {
-        "x": 381,
-        "y": 259.0003825912888
+        "x": -211.5,
+        "y": 101.5
       }
     },
     "src/spec-n-roll-sdk/src/infrastructure/logging/sdk-logger-factory.ts": {
       "parentId": "directory:spec-n-roll-sdk:infrastructure/logging",
       "position": {
-        "x": 311,
-        "y": 259.0003825912888
+        "x": 193,
+        "y": 101.5
       }
     }
   },

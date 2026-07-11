@@ -1,8 +1,8 @@
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
-import type { RuntimeInvocation, RuntimeTarget } from 'spec-n-roll-api';
-import type { DispatcherEnvironment } from '#dispatcher/infrastructure/environment/dispatcher-environment.js';
+import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';
+import type { RuntimeProcessRequest } from '#dispatcher/application/runtime/runtime-process-request.js';
 
 /**
  * Executes runtime targets by spawning Node.js without shell interpolation.
@@ -18,24 +18,23 @@ export class NodeRuntimeProcessExecutor implements RuntimeProcessExecutor {
   /**
    * Executes the selected runtime with the invocation payload on stdin.
    *
-   * @param target - Runtime target selected by the dispatcher.
-   * @param invocation - Runtime invocation payload to serialize as JSON.
+   * @param request - Raw process launch data prepared by application behavior.
    * @returns Runtime process exit code.
    */
-  execute(target: RuntimeTarget, invocation: RuntimeInvocation): number {
-    this.validateReadableExecutable(target.executablePath);
+  execute(request: RuntimeProcessRequest): number {
+    this.validateReadableExecutable(request.executablePath);
     const result = spawnSync(
       this.environment.nodeExecutablePath(),
-      [target.executablePath, ...invocation.argv],
+      [request.executablePath, ...request.argv],
       {
-        cwd: invocation.cwd,
+        cwd: request.cwd,
         encoding: 'utf8',
-        input: `${JSON.stringify(invocation)}\n`,
+        input: request.stdin,
         stdio: ['pipe', 'inherit', 'inherit'],
       },
     );
 
-    this.throwIfSpawnFailed(target.executablePath, result);
+    this.throwIfSpawnFailed(request.executablePath, result);
     return result.status ?? 1;
   }
 

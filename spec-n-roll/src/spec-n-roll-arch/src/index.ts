@@ -17,7 +17,10 @@ export { ProjectArchitectureArtifactGenerator } from '#arch/application/artifact
 export { RuntimePackageDiscoverer } from '#arch/application/packages/runtime-package-discoverer.js';
 export { RuntimePackagePolicy } from '#arch/application/packages/runtime-package-policy.js';
 export { ArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
-export type { ArchitectureViewerHttpServerOptions, RunningArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
+export type {
+  ArchitectureViewerHttpServerOptions,
+  RunningArchitectureViewerHttpServer,
+} from '#arch/infrastructure/http/architecture-viewer-http-server.js';
 export { WorkspacePackageReader } from '#arch/infrastructure/workspace/workspace-package-reader.js';
 export type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 export { WorkspaceRootResolver } from '#arch/infrastructure/workspace/workspace-root-resolver.js';

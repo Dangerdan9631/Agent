@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { dirname, relative } from 'node:path';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
+import { ArchitectureViewerAutoLayoutScript } from '#arch/infrastructure/cytoscape/architecture-viewer-auto-layout-script.js';
 import { ArchitectureViewerDarkModeScript } from '#arch/infrastructure/cytoscape/architecture-viewer-dark-mode-script.js';
 
 /**
@@ -17,7 +18,22 @@ const ARCHITECTURE_LAYOUT_VERSION = 3;
 /**
  * Defines the background color used when exporting architecture diagrams.
  */
-const ARCHITECTURE_EXPORT_BACKGROUND_COLOR = '#ffffff';
+const ARCHITECTURE_LIGHT_EXPORT_BACKGROUND_COLOR = '#ffffff';
+
+/**
+ * Defines the dark canvas color used when exporting architecture diagrams.
+ */
+const ARCHITECTURE_DARK_EXPORT_BACKGROUND_COLOR = '#0f172a';
+
+/**
+ * Defines the slowest wheel sensitivity used by architecture diagrams.
+ */
+const ARCHITECTURE_MINIMUM_WHEEL_SENSITIVITY = 0.15;
+
+/**
+ * Defines the fastest wheel sensitivity used by architecture diagrams.
+ */
+const ARCHITECTURE_MAXIMUM_WHEEL_SENSITIVITY = 1;
 
 /**
  * Writes Cytoscape graph artifacts to disk.
@@ -39,22 +55,17 @@ export class CytoscapeArtifactWriter {
       { title: 'Dependency graph', htmlPath: cytoscapeHtmlPath },
     ],
   ): void {
-    const pageLinks = pages.map((page) => ({
-      title: page.title,
-      href: relative(dirname(cytoscapeHtmlPath), page.htmlPath).replaceAll(
-        '\\',
-        '/',
-      ),
-      isCurrent: page.htmlPath === cytoscapeHtmlPath,
-    }));
-
     writeFileSync(cytoscapeJsonPath, `${JSON.stringify(elements, null, 2)}\n`);
-    writeFileSync(cytoscapeHtmlPath, this.renderHtml(elements, pageLinks));
+    writeFileSync(
+      cytoscapeHtmlPath,
+      this.renderHtml(elements, pages, cytoscapeHtmlPath),
+    );
   }
 
   private renderHtml(
     elements: CytoscapeElement[],
-    pageLinks: Array<{ title: string; href: string; isCurrent: boolean }>,
+    pages: ArchitecturePage[],
+    currentPath: string,
   ): string {
     return `<!doctype html>
 <html lang="en">
@@ -62,7 +73,6 @@ export class CytoscapeArtifactWriter {
     <meta charset="utf-8" />
     <title>spec-n-roll dependency graph</title>
     <script src="https://unpkg.com/cytoscape@3.31.2/dist/cytoscape.min.js"></script>
-    <script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
     <style>
       html, body { height: 100%; margin: 0; }
       body { background: #ffffff; color: #111827; font-family: Arial, sans-serif; overflow: hidden; }
@@ -73,26 +83,47 @@ export class CytoscapeArtifactWriter {
       .navigation-header { align-items: center; display: flex; gap: 8px; height: 44px; padding: 0 8px; }
       .nav-toggle { align-items: center; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #111827; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px; }
       .navigation-title { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .navigation-links { display: flex; flex-direction: column; gap: 4px; padding: 0 8px 12px; }
+      .navigation-links, .navigation-children { display: flex; flex-direction: column; gap: 2px; padding: 0 8px 12px; }
+      .navigation-children { padding: 0 0 0 16px; }
       .nav-collapsed .navigation-title, .nav-collapsed .navigation-links { display: none; }
-      .navigation-link { border-radius: 6px; color: #334155; font-size: 13px; line-height: 1.3; padding: 8px 10px; text-decoration: none; }
+      .navigation-group-title { color: #0f172a; font-size: 13px; font-weight: 700; line-height: 1.3; padding: 8px 10px 4px; }
+      .navigation-link { border-radius: 6px; color: #334155; display: block; font-size: 13px; line-height: 1.3; padding: 8px 10px; text-decoration: none; }
       .navigation-link:hover { background: #e2e8f0; color: #0f172a; }
       .navigation-link.current { background: #dbeafe; color: #1d4ed8; font-weight: 700; }
-      .workspace { display: grid; grid-template-rows: auto 1fr; min-height: 0; min-width: 0; }
-      .toolbar { align-items: center; border-bottom: 1px solid #d1d5db; display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; padding: 6px 10px; }
+      .workspace { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; min-width: 0; }
+      .toolbar { border-bottom: 1px solid #d1d5db; display: grid; gap: 6px; padding: 6px 10px; }
+      .toolbar-row { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+      .toolbar-row-primary .theme-toggle { margin-left: auto; }
       .search-input { border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; height: 30px; min-width: 220px; padding: 0 10px; }
       .toolbar-button { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #111827; cursor: pointer; font-size: 13px; height: 30px; padding: 0 10px; }
       .toolbar-button.active { background: #1d4ed8; border-color: #1d4ed8; color: #ffffff; }
-      .layout-status { color: #64748b; font-size: 12px; margin-left: auto; min-width: 142px; text-align: right; }
+      .toolbar-button:disabled { cursor: not-allowed; opacity: 0.45; }
+      .toolbar-separator { color: #94a3b8; font-size: 18px; line-height: 30px; }
+      .layout-control { align-items: center; display: inline-flex; font-size: 12px; gap: 6px; white-space: nowrap; }
+      .layout-control input { accent-color: #2563eb; width: 96px; }
+      .layout-control output { color: #475569; font-variant-numeric: tabular-nums; min-width: 24px; }
+      .exclusion-control { margin-left: auto; position: relative; }
+      .exclusion-menu { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18); display: grid; gap: 8px; padding: 10px; position: absolute; right: 0; top: 36px; width: 300px; z-index: 2; }
+      .exclusion-menu[hidden] { display: none; }
+      .exclusion-section { display: grid; gap: 6px; }
+      .exclusion-section + .exclusion-section { border-top: 1px solid #d1d5db; padding-top: 8px; }
+      .exclusion-label { color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+      .exclusion-rule { align-items: center; display: flex; font-size: 12px; gap: 6px; overflow-wrap: anywhere; }
+      .exclusion-add { display: flex; gap: 6px; }
+      .exclusion-add input { border: 1px solid #cbd5e1; border-radius: 4px; flex: 1; font-size: 12px; height: 26px; min-width: 0; padding: 0 6px; }
+      .exclusion-add button { min-width: 28px; padding: 0; }
+      .status-bar { align-items: center; border-top: 1px solid #d1d5db; display: flex; min-height: 28px; padding: 0 10px; }
+      .layout-status { color: #64748b; font-size: 12px; min-width: 142px; }
       .layout-status.error { color: #b91c1c; }
-      .toolbar-button[hidden] { display: none; }
       .dark-mode .navigation { background: #111827; border-right-color: #334155; }
-      .dark-mode .nav-toggle, .dark-mode .toolbar-button, .dark-mode .search-input { background: #1f2937; border-color: #475569; color: #e5e7eb; }
+      .dark-mode .nav-toggle, .dark-mode .toolbar-button, .dark-mode .search-input, .dark-mode .exclusion-menu, .dark-mode .exclusion-add input { background: #1f2937; border-color: #475569; color: #e5e7eb; }
+      .dark-mode .toolbar-separator, .dark-mode .layout-control output { color: #94a3b8; }
       .dark-mode .navigation-link { color: #cbd5e1; }
+      .dark-mode .navigation-group-title { color: #e5e7eb; }
       .dark-mode .navigation-link:hover { background: #334155; color: #f8fafc; }
       .dark-mode .navigation-link.current, .dark-mode .toolbar-button.active { background: #6d28d9; border-color: #6d28d9; color: #ffffff; }
       .dark-mode .toolbar { background: #0f172a; border-bottom-color: #334155; }
-      .dark-mode .layout-status { color: #94a3b8; }
+      .dark-mode .layout-status, .dark-mode .exclusion-label { color: #94a3b8; }
       .dark-mode .layout-status.error { color: #fca5a5; }
       #cy { background: #ffffff; height: 100%; min-height: 0; min-width: 0; width: 100%; }
       .dark-mode #cy { background: #0f172a; }
@@ -106,28 +137,52 @@ export class CytoscapeArtifactWriter {
           <div class="navigation-title">Architecture</div>
         </div>
         <div class="navigation-links">
-          ${pageLinks.map((page) => this.renderPageLink(page)).join('\n          ')}
+          ${this.renderNavigation(pages, currentPath, dirname(currentPath))}
         </div>
       </nav>
       <main class="workspace">
         <div class="toolbar" aria-label="Graph controls">
-          <input class="search-input" id="search" type="search" placeholder="Search nodes" />
-          <button class="toolbar-button active" id="filter-both" type="button">Both</button>
-          <button class="toolbar-button" id="filter-inbound" type="button">Inbound</button>
-          <button class="toolbar-button" id="filter-outbound" type="button">Outbound</button>
-          <button class="toolbar-button" id="filter-none" type="button">None</button>
-          <button class="toolbar-button active" id="toggle-external" type="button">External</button>
-          <button class="toolbar-button" id="toggle-dark-mode" type="button">Dark Mode</button>
-          <button class="toolbar-button" id="fit-diagram" type="button">Fit</button>
-          <button class="toolbar-button" id="export-diagram-image" type="button">Export Image</button>
-          <button class="toolbar-button" id="hide-node" type="button" hidden>Hide</button>
-          <button class="toolbar-button" id="hide-connection" type="button" hidden>Hide Connection</button>
-          <button class="toolbar-button" id="toggle-hidden-connections" type="button">Hidden Connections</button>
-          <button class="toolbar-button" id="collapse-group" type="button" hidden>Collapse</button>
-          <button class="toolbar-button" id="create-folder-diagram" type="button" hidden>Create Diagram</button>
-          <span class="layout-status" id="layout-status" aria-live="polite"></span>
+          <div class="toolbar-row toolbar-row-primary">
+            <input class="search-input" id="search" type="search" placeholder="Search nodes" />
+            <button class="toolbar-button active" id="filter-both" type="button">Both</button>
+            <button class="toolbar-button" id="filter-inbound" type="button">Inbound</button>
+            <button class="toolbar-button" id="filter-outbound" type="button">Outbound</button>
+            <button class="toolbar-button" id="filter-none" type="button">None</button>
+            <span class="toolbar-separator" aria-hidden="true">|</span>
+            <button class="toolbar-button active" id="toggle-external" type="button">External</button>
+            <button class="toolbar-button" id="toggle-hidden-connections" type="button">Hidden</button>
+            <span class="toolbar-separator" aria-hidden="true">|</span>
+            <button class="toolbar-button" id="create-folder-diagram" type="button" disabled>Create Diagram</button>
+            <button class="toolbar-button" id="export-diagram-image" type="button">Export Image</button>
+            <button class="toolbar-button theme-toggle" id="toggle-dark-mode" type="button">Dark Mode</button>
+          </div>
+          <div class="toolbar-row toolbar-row-secondary">
+            <button class="toolbar-button" id="fit-diagram" type="button">Fit</button>
+            <span class="toolbar-separator" aria-hidden="true">|</span>
+            <button class="toolbar-button" id="collapse-group" type="button" disabled>Collapse</button>
+            <button class="toolbar-button" id="hide-action" type="button" disabled>Hide</button>
+            <span class="toolbar-separator" aria-hidden="true">|</span>
+            <button class="toolbar-button" id="auto-layout" type="button">Auto layout</button>
+            <label class="layout-control" for="layout-columns">Layout Columns
+              <input id="layout-columns" type="range" min="3" max="8" value="5" />
+              <output id="layout-columns-value" for="layout-columns">5</output>
+            </label>
+            <label class="layout-control" for="horizontal-gap">Horizontal Gap
+              <input id="horizontal-gap" type="range" min="80" max="200" step="5" value="120" />
+              <output id="horizontal-gap-value" for="horizontal-gap">120</output>
+            </label>
+            <label class="layout-control" for="vertical-gap">Vertical Gap
+              <input id="vertical-gap" type="range" min="80" max="200" step="5" value="120" />
+              <output id="vertical-gap-value" for="vertical-gap">120</output>
+            </label>
+            <div class="exclusion-control">
+              <button class="toolbar-button" id="excluded-toggle" type="button" aria-expanded="false">Excluded</button>
+              <div class="exclusion-menu" id="excluded-menu" hidden></div>
+            </div>
+          </div>
         </div>
         <div id="cy"></div>
+        <div class="status-bar"><span class="layout-status" id="layout-status" aria-live="polite"></span></div>
       </main>
     </div>
     <script>
@@ -154,11 +209,12 @@ export class CytoscapeArtifactWriter {
       });
 
       const BASE_WHEEL_SENSITIVITY = 0.5;
+      const MINIMUM_WHEEL_SENSITIVITY = ${ARCHITECTURE_MINIMUM_WHEEL_SENSITIVITY};
+      const MAXIMUM_WHEEL_SENSITIVITY = ${ARCHITECTURE_MAXIMUM_WHEEL_SENSITIVITY};
       const WHEEL_ZOOM_EXPONENT = 0.001;
       const FIT_PADDING = 36;
       const LAYOUT_STORAGE_VERSION = ${ARCHITECTURE_LAYOUT_VERSION};
-      const preferredLayout = { name: 'fcose', quality: 'proof', randomize: false, animate: false, padding: FIT_PADDING, nodeSeparation: 90, idealEdgeLength: 120 };
-      const fallbackLayout = { name: 'cose', randomize: false, animate: false, padding: FIT_PADDING, idealEdgeLength: 120 };
+      ${ArchitectureViewerAutoLayoutScript.render()}
 
       class DiagramLayoutClient {
         constructor(pagePath) {
@@ -209,6 +265,14 @@ export class CytoscapeArtifactWriter {
             throw new Error('Config update failed.');
           }
         }
+
+        async read() {
+          const response = await fetch(this.savePath, { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error('Config read failed.');
+          }
+          return await response.json();
+        }
       }
 
       class DiagramImageExportClient {
@@ -230,11 +294,10 @@ export class CytoscapeArtifactWriter {
       }
 
       class DiagramImageExporter {
-        constructor(graph, client, status, backgroundColor) {
+        constructor(graph, client, status) {
           this.graph = graph;
           this.client = client;
           this.status = status;
-          this.backgroundColor = backgroundColor;
         }
 
         async export() {
@@ -252,7 +315,7 @@ export class CytoscapeArtifactWriter {
 
         imageBlob() {
           return this.graph.png({
-            bg: this.backgroundColor,
+            bg: document.body.classList.contains('dark-mode') ? '${ARCHITECTURE_DARK_EXPORT_BACKGROUND_COLOR}' : '${ARCHITECTURE_LIGHT_EXPORT_BACKGROUND_COLOR}',
             full: true,
             output: 'blob',
             scale: 2,
@@ -413,7 +476,7 @@ export class CytoscapeArtifactWriter {
           return [...this.hiddenConnectionIds].sort();
         }
       }
-      const currentDiagramPath = window.location.pathname === '/' ? '/project-dependencies.cytoscape.html' : window.location.pathname;
+      const currentDiagramPath = window.location.pathname === '/' ? '/landscape.cytoscape.html' : window.location.pathname;
       const layoutStatus = document.getElementById('layout-status');
       const hiddenConnectionState = new HiddenConnectionState();
       const layoutStore = new DiagramLayoutStore(
@@ -423,29 +486,136 @@ export class CytoscapeArtifactWriter {
         hiddenConnectionState,
       );
       const configClient = new DiagramConfigClient(currentDiagramPath);
+      const excludedToggle = document.getElementById('excluded-toggle');
+      const excludedMenu = document.getElementById('excluded-menu');
+
+      class DiagramExclusionMenu {
+        constructor(client, menu, toggle, status) {
+          this.client = client;
+          this.menu = menu;
+          this.toggle = toggle;
+          this.status = status;
+        }
+
+        async toggleMenu() {
+          const opens = this.menu.hidden;
+          this.menu.hidden = !opens;
+          this.toggle.setAttribute('aria-expanded', String(opens));
+          if (opens) {
+            await this.render();
+          }
+        }
+
+        async render() {
+          try {
+            this.renderExclusions(await this.client.read());
+          } catch {
+            this.status.textContent = 'Exclusions unavailable';
+            this.status.classList.add('error');
+          }
+        }
+
+        renderExclusions(exclusions) {
+          this.menu.replaceChildren(
+            this.section('All packages', 'all-packages', exclusions.allPackages),
+            this.section(exclusions.diagramLabel, 'diagram', exclusions.diagram),
+          );
+        }
+
+        section(label, scope, exclusions) {
+          const section = document.createElement('section');
+          section.className = 'exclusion-section';
+          const heading = document.createElement('div');
+          heading.className = 'exclusion-label';
+          heading.textContent = label;
+          section.append(heading);
+
+          for (const exclusion of exclusions) {
+            const row = document.createElement('label');
+            row.className = 'exclusion-rule';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            checkbox.addEventListener('change', () => {
+              if (!checkbox.checked) {
+                void this.update('remove-exclusion', scope, exclusion);
+              }
+            });
+            const text = document.createElement('span');
+            text.textContent = exclusion;
+            row.append(checkbox, text);
+            section.append(row);
+          }
+
+          const add = document.createElement('div');
+          add.className = 'exclusion-add';
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Node name or glob';
+          const button = document.createElement('button');
+          button.className = 'toolbar-button';
+          button.type = 'button';
+          button.textContent = '+';
+          button.addEventListener('click', () => {
+            void this.update('add-exclusion', scope, input.value);
+          });
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              void this.update('add-exclusion', scope, input.value);
+            }
+          });
+          add.append(input, button);
+          section.append(add);
+          return section;
+        }
+
+        async update(action, scope, exclusion) {
+          const value = exclusion.trim();
+          if (!value) {
+            return;
+          }
+
+          try {
+            await this.client.write({ action, scope, exclusion: value });
+            window.location.reload();
+          } catch {
+            this.status.textContent = 'Exclusion update failed';
+            this.status.classList.add('error');
+          }
+        }
+      }
+
+      const exclusionMenu = new DiagramExclusionMenu(
+        configClient,
+        excludedMenu,
+        excludedToggle,
+        layoutStatus,
+      );
       const imageExporter = new DiagramImageExporter(
         cy,
         new DiagramImageExportClient(currentDiagramPath),
         layoutStatus,
-        '${ARCHITECTURE_EXPORT_BACKGROUND_COLOR}',
       );
-
-      function runLayout(onComplete) {
-        try {
-          cy.layout({ ...preferredLayout, stop: onComplete }).run();
-        } catch {
-          cy.layout({ ...fallbackLayout, stop: onComplete }).run();
-        }
-      }
+      const autoLayout = new DiagramAutoLayout(cy);
 
       function fitGraph() {
         cy.resize();
         cy.fit(undefined, FIT_PADDING);
       }
 
-      runLayout(() => {
-        void layoutStore.applySavedLayout().finally(() => requestAnimationFrame(fitGraph));
-      });
+      async function initializeDiagramLayout() {
+        const hasSavedLayout = await layoutStore.applySavedLayout();
+
+        if (!hasSavedLayout) {
+          autoLayout.layout();
+          layoutStore.saveSoon();
+        }
+
+        requestAnimationFrame(fitGraph);
+      }
+
+      void initializeDiagramLayout();
 
       function normalizedWheelDelta(event) {
         if (event.deltaMode === 1) {
@@ -466,11 +636,14 @@ export class CytoscapeArtifactWriter {
         }
 
         const zoom = cy.zoom();
-        const dynamicSensitivity = BASE_WHEEL_SENSITIVITY / zoom;
+        const dynamicSensitivity = Math.min(
+          MAXIMUM_WHEEL_SENSITIVITY,
+          Math.max(MINIMUM_WHEEL_SENSITIVITY, BASE_WHEEL_SENSITIVITY / zoom),
+        );
         const factor = Math.pow(10, -deltaY * WHEEL_ZOOM_EXPONENT * dynamicSensitivity);
 
         cy.zoom({
-          level: Math.min(cy.maxZoom(), Math.max(cy.minZoom(), zoom * factor)),
+          level: zoom * factor,
           renderedPosition: { x: event.clientX, y: event.clientY },
         });
       }, { passive: false });
@@ -492,12 +665,18 @@ export class CytoscapeArtifactWriter {
       };
       const externalToggle = document.getElementById('toggle-external');
       const fitDiagram = document.getElementById('fit-diagram');
+      const autoLayoutButton = document.getElementById('auto-layout');
       const exportDiagramImage = document.getElementById('export-diagram-image');
-      const hideNode = document.getElementById('hide-node');
-      const hideConnection = document.getElementById('hide-connection');
+      const hideAction = document.getElementById('hide-action');
       const hiddenConnectionToggle = document.getElementById('toggle-hidden-connections');
       const collapseGroup = document.getElementById('collapse-group');
       const createFolderDiagram = document.getElementById('create-folder-diagram');
+      const layoutColumns = document.getElementById('layout-columns');
+      const layoutColumnsValue = document.getElementById('layout-columns-value');
+      const horizontalGap = document.getElementById('horizontal-gap');
+      const horizontalGapValue = document.getElementById('horizontal-gap-value');
+      const verticalGap = document.getElementById('vertical-gap');
+      const verticalGapValue = document.getElementById('vertical-gap-value');
       const darkModeToggle = document.getElementById('toggle-dark-mode');
       ${ArchitectureViewerDarkModeScript.render()}
 
@@ -505,6 +684,7 @@ export class CytoscapeArtifactWriter {
         shell.classList.toggle('nav-collapsed');
         fitGraph();
       });
+      excludedToggle.addEventListener('click', () => void exclusionMenu.toggleMenu());
 
 
       function diagramTheme() {
@@ -571,6 +751,7 @@ export class CytoscapeArtifactWriter {
         saveDarkModePreference();
         applyDiagramTheme();
       }
+
       function existingPagePaths() {
         return new Set(
           [...document.querySelectorAll('.navigation-link')].map((link) =>
@@ -775,12 +956,11 @@ export class CytoscapeArtifactWriter {
       }
 
       function updateActionButtons() {
-        hideNode.hidden = !canHideSelectedNode();
-        hideConnection.hidden = !canHideSelectedConnection();
-        collapseGroup.hidden = !canToggleSelectedGroupCollapse();
+        hideAction.disabled = !canHideSelectedNode() && !canHideSelectedConnection();
+        collapseGroup.disabled = !canToggleSelectedGroupCollapse();
         collapseGroup.textContent = selectedNode && isCollapsedProxyNode(selectedNode) ? 'Expand' : 'Collapse';
+        createFolderDiagram.disabled = !canCreateSelectedFolderDiagram();
         hiddenConnectionToggle.classList.toggle('active', hiddenConnectionState.showsHiddenConnections());
-        createFolderDiagram.hidden = !canCreateSelectedFolderDiagram();
       }
 
       function showConfigStatus(message, isError = false) {
@@ -865,6 +1045,40 @@ export class CytoscapeArtifactWriter {
         updateGraph();
       }
 
+      function configureAutoLayout() {
+        autoLayout.configure(
+          Number(layoutColumns.value),
+          Number(horizontalGap.value),
+          Number(verticalGap.value),
+        );
+        layoutColumnsValue.value = layoutColumns.value;
+        layoutColumnsValue.textContent = layoutColumns.value;
+        horizontalGapValue.value = horizontalGap.value;
+        horizontalGapValue.textContent = horizontalGap.value;
+        verticalGapValue.value = verticalGap.value;
+        verticalGapValue.textContent = verticalGap.value;
+      }
+
+      function applyAutoLayout() {
+        configureAutoLayout();
+        const selectedGroup = selectedNode && !isCollapsedProxyNode(selectedNode) && selectedNode.children().length > 0
+          ? selectedNode
+          : null;
+
+        if (selectedGroup) {
+          autoLayout.layoutGroup(selectedGroup);
+        } else {
+          collapsedGroupIds.clear();
+          selectedNode = null;
+          selectedEdgeId = null;
+          autoLayout.layout();
+        }
+
+        layoutStore.saveSoon();
+        updateGraph();
+        requestAnimationFrame(fitGraph);
+      }
+
       async function hideSelectedNode() {
         if (!canHideSelectedNode()) {
           return;
@@ -873,14 +1087,20 @@ export class CytoscapeArtifactWriter {
         const nodeId = selectedNode.id();
         try {
           await configClient.write({ action: 'hide-node', nodeId });
-          selectedNode = null;
-          showConfigStatus('Config saved; regenerate diagrams');
-          updateGraph();
+          window.location.reload();
         } catch {
           showConfigStatus('Config update failed', true);
         }
       }
 
+      async function hideSelectedAction() {
+        if (canHideSelectedNode()) {
+          await hideSelectedNode();
+          return;
+        }
+
+        hideSelectedConnection();
+      }
 
       function hideSelectedConnection() {
         if (!canHideSelectedConnection()) {
@@ -915,6 +1135,7 @@ export class CytoscapeArtifactWriter {
         selectedNode = null;
         updateGraph();
       }
+
       async function createSelectedFolderDiagram() {
         if (!canCreateSelectedFolderDiagram()) {
           return;
@@ -925,7 +1146,7 @@ export class CytoscapeArtifactWriter {
         try {
           await configClient.write({ action: 'create-folder-diagram', nodeId });
           locallyCreatedFolderDiagramKeys.add(folderDiagramKey(folder.packageName, folder.folderPath));
-          showConfigStatus('Config saved; regenerate diagrams');
+          showConfigStatus('Diagram and dependency matrix created');
           updateGraph();
         } catch {
           showConfigStatus('Config update failed', true);
@@ -971,14 +1192,18 @@ export class CytoscapeArtifactWriter {
       modeButtons.outbound.addEventListener('click', () => setMode('outbound'));
       modeButtons.none.addEventListener('click', () => setMode('none'));
       externalToggle.addEventListener('click', toggleExternalDependencies);
-      hideNode.addEventListener('click', () => void hideSelectedNode());
-      hideConnection.addEventListener('click', hideSelectedConnection);
+      autoLayoutButton.addEventListener('click', applyAutoLayout);
+      hideAction.addEventListener('click', () => void hideSelectedAction());
       hiddenConnectionToggle.addEventListener('click', toggleHiddenConnections);
       collapseGroup.addEventListener('click', toggleSelectedGroupCollapse);
       createFolderDiagram.addEventListener('click', () => void createSelectedFolderDiagram());
+      layoutColumns.addEventListener('input', configureAutoLayout);
+      horizontalGap.addEventListener('input', configureAutoLayout);
+      verticalGap.addEventListener('input', configureAutoLayout);
       darkModeToggle.addEventListener('click', toggleDarkMode);
       fitDiagram.addEventListener('click', fitGraph);
       exportDiagramImage.addEventListener('click', () => void imageExporter.export());
+      configureAutoLayout();
       loadDarkModePreference();
       applyDiagramTheme();
       cy.on('dragfree', 'node', (event) => {
@@ -992,11 +1217,21 @@ export class CytoscapeArtifactWriter {
 `;
   }
 
-  private renderPageLink(page: {
-    title: string;
-    href: string;
-    isCurrent: boolean;
-  }): string {
-    return `<a class="navigation-link${page.isCurrent ? ' current' : ''}" href="${page.href}">${page.title}</a>`;
+  private renderNavigation(
+    pages: ArchitecturePage[],
+    currentPath: string,
+    basePath: string,
+  ): string {
+    return pages
+      .map((page) => {
+        const children = page.children?.length
+          ? `<div class="navigation-children">${this.renderNavigation(page.children, currentPath, basePath)}</div>`
+          : '';
+        const item = page.htmlPath
+          ? `<a class="navigation-link${page.htmlPath === currentPath ? ' current' : ''}" href="${relative(basePath, page.htmlPath).replaceAll('\\', '/')}">${page.title}</a>`
+          : `<div class="navigation-group-title">${page.title}</div>`;
+        return `<div class="navigation-item">${item}${children}</div>`;
+      })
+      .join('\n          ');
   }
 }

@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
@@ -35,6 +36,7 @@ export class PackageArchitectureArtifactGenerator {
    * @param workspacePackage - Package metadata for the source package to inspect.
    * @param pages - Generated HTML pages to show in the navigation pane.
    * @param exclusionFilter - User-configured dependency and project file exclusion filter.
+   * @param collapseFilter - User-configured external dependency collapse filter.
    * @returns Absolute paths to the generated package artifacts.
    */
   generate(
@@ -43,6 +45,7 @@ export class PackageArchitectureArtifactGenerator {
     workspacePackage: WorkspacePackage,
     pages?: ArchitecturePage[],
     exclusionFilter?: ArchitectureExclusionFilter,
+    collapseFilter?: ArchitectureCollapseFilter,
   ): string[] {
     const packageOutputRoot = join(outputRoot, workspacePackage.name);
     mkdirSync(packageOutputRoot, { recursive: true });
@@ -63,6 +66,7 @@ export class PackageArchitectureArtifactGenerator {
       workspacePackage,
       exclusionFilter,
       {
+        collapseFilter,
         rootParentId: workspacePackage.name,
         rootParentLabel: workspacePackage.name,
       },

@@ -8,6 +8,7 @@ export default tseslint.config(
       'dist/',
       'node_modules/',
       'coverage/',
+      '.tmp/',
       'V0/',
       'src/*/dist/',
       'src/*/architecture/',

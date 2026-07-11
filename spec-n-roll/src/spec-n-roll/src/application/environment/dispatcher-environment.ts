@@ -1,5 +1,5 @@
 /**
- * Reads process and package details needed by dispatcher services.
+ * Supplies process values required to coordinate a dispatcher invocation.
  */
 export interface DispatcherEnvironment {
   /**
@@ -10,8 +10,7 @@ export interface DispatcherEnvironment {
   cwd(): string;
 
   /**
-   * Returns the Node.js executable path used to run delegated JavaScript
-   * entrypoints.
+   * Returns the Node.js executable used to start delegated runtime entrypoints.
    *
    * @returns Absolute path to the Node.js executable.
    */
@@ -20,7 +19,7 @@ export interface DispatcherEnvironment {
   /**
    * Returns the directory containing the built dispatcher entrypoint.
    *
-   * @returns Absolute directory path for the dispatcher install.
+   * @returns Absolute dispatcher install directory.
    */
   dispatcherInstallDirectory(): string;
 }

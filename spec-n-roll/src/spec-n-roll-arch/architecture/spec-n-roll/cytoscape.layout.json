@@ -4,190 +4,253 @@
     "spec-n-roll": {
       "parentId": null,
       "position": {
-        "x": 3059.853476065977,
-        "y": 414.9683127885861
+        "x": -698.2241144414168,
+        "y": 857.0510899182563
       }
     },
     "directory:spec-n-roll:application": {
       "parentId": "spec-n-roll",
       "position": {
-        "x": 2565.976740897684,
-        "y": 447.20643278385563
+        "x": -704.775204359673,
+        "y": 958.6750681198912
       }
     },
     "directory:spec-n-roll:application/dispatch": {
       "parentId": "directory:spec-n-roll:application",
       "position": {
-        "x": 2275.252195701724,
-        "y": 348.9857405576999
+        "x": -1273.1205722070845,
+        "y": 706.1457765667578
+      }
+    },
+    "directory:spec-n-roll:application/environment": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -949.8773841961856,
+        "y": 1278.4754768392372
+      }
+    },
+    "directory:spec-n-roll:application/metadata": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -1353.9509536784744,
+        "y": 956.6771117166215
       }
     },
     "directory:spec-n-roll:application/project": {
       "parentId": "directory:spec-n-roll:application",
       "position": {
-        "x": 3038.745627212613,
-        "y": 615.7130776480178
+        "x": -1155.8896457765663,
+        "y": 1121.931880108992
       }
     },
     "directory:spec-n-roll:application/runtime": {
       "parentId": "directory:spec-n-roll:application",
       "position": {
-        "x": 2545.755278803445,
-        "y": 592.0909193041612
+        "x": -193.0967302452319,
+        "y": 1006.0844686648502
+      }
+    },
+    "directory:spec-n-roll:application/filesystem": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -1356.3460490463217,
+        "y": 1287.1866485013622
       }
     },
     "directory:spec-n-roll:infrastructure": {
       "parentId": "spec-n-roll",
       "position": {
-        "x": 3708.5451737415246,
-        "y": 587.6298197000185
+        "x": -694.3937329700273,
+        "y": 1497.3603542234337
       }
     },
     "directory:spec-n-roll:infrastructure/environment": {
       "parentId": "directory:spec-n-roll:infrastructure",
       "position": {
-        "x": 3485.548426115761,
-        "y": 320.55949151118557
+        "x": -569.555858310627,
+        "y": 1510.8487738419624
       }
     },
-    "directory:spec-n-roll:infrastructure/metadata": {
+    "directory:spec-n-roll:infrastructure/filesystem": {
       "parentId": "directory:spec-n-roll:infrastructure",
       "position": {
-        "x": 3983.9990975491983,
-        "y": 925.1692104832669
+        "x": -1439.8528610354226,
+        "y": 1507.630790190736
+      }
+    },
+    "directory:spec-n-roll:infrastructure/module": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": -48.934604904631954,
+        "y": 1512.589918256131
       }
     },
     "directory:spec-n-roll:infrastructure/runtime": {
       "parentId": "directory:spec-n-roll:infrastructure",
       "position": {
-        "x": 3452.591249933851,
-        "y": 840.9803672715369
+        "x": -1017.3106267029973,
+        "y": 1509.3719346049058
       }
     },
     "directory:spec-n-roll:presentation": {
       "parentId": "spec-n-roll",
       "position": {
-        "x": 2067.660614723878,
-        "y": 46.245887666355145
+        "x": -1441.638964577657,
+        "y": 372.60013623978205
       }
     },
     "directory:spec-n-roll:presentation/cli": {
       "parentId": "directory:spec-n-roll:presentation",
       "position": {
-        "x": 2067.660614723878,
-        "y": 58.995887666355145
+        "x": -1441.638964577657,
+        "y": 385.35013623978205
       }
     },
     "src/spec-n-roll/src/application/dispatch/dispatcher-application.ts": {
       "parentId": "directory:spec-n-roll:application/dispatch",
       "position": {
-        "x": 2447.296536820692,
-        "y": 317.50706974963555
+        "x": -1066.7275204359673,
+        "y": 671.0776566757496
       }
     },
     "src/spec-n-roll/src/application/dispatch/dispatcher-run-request.ts": {
       "parentId": "directory:spec-n-roll:application/dispatch",
       "position": {
-        "x": 2269.613028270226,
-        "y": 406.77169319570635
+        "x": -1285.5504087193463,
+        "y": 769.6280653950956
+      }
+    },
+    "src/spec-n-roll/src/application/environment/dispatcher-environment.ts": {
+      "parentId": "directory:spec-n-roll:application/environment",
+      "position": {
+        "x": -949.8773841961855,
+        "y": 1291.4754768392372
+      }
+    },
+    "src/spec-n-roll/src/application/metadata/dispatcher-metadata-resolver.ts": {
+      "parentId": "directory:spec-n-roll:application/metadata",
+      "position": {
+        "x": -1353.9509536784744,
+        "y": 969.6771117166215
       }
     },
     "src/spec-n-roll/src/application/project/project-root-resolver.ts": {
       "parentId": "directory:spec-n-roll:application/project",
       "position": {
-        "x": 3038.745627212613,
-        "y": 628.7130776480178
+        "x": -1155.8896457765663,
+        "y": 1134.931880108992
       }
     },
     "src/spec-n-roll/src/application/runtime/runtime-process-executor.ts": {
       "parentId": "directory:spec-n-roll:application/runtime",
       "position": {
-        "x": 2442.6746963263136,
-        "y": 589.7096840644739
+        "x": -436.15667574931945,
+        "y": 1013.2520435967303
       }
     },
     "src/spec-n-roll/src/application/runtime/runtime-target-resolver.ts": {
       "parentId": "directory:spec-n-roll:application/runtime",
       "position": {
-        "x": 2664.3358612805764,
-        "y": 620.4721545438483
-      }
-    },
-    "src/spec-n-roll/src/infrastructure/environment/dispatcher-environment.ts": {
-      "parentId": "directory:spec-n-roll:infrastructure/environment",
-      "position": {
-        "x": 3484.2107604880857,
-        "y": 288.5904289167703
-      }
-    },
-    "src/spec-n-roll/src/infrastructure/metadata/dispatcher-metadata-reader.ts": {
-      "parentId": "directory:spec-n-roll:infrastructure/metadata",
-      "position": {
-        "x": 3983.9990975491983,
-        "y": 938.1692104832669
+        "x": -447.12261580381517,
+        "y": 865.2247956403272
       }
     },
     "src/spec-n-roll/src/application/dispatch/dispatcher-command-options.ts": {
       "parentId": "directory:spec-n-roll:application/dispatch",
       "position": {
-        "x": 2142.7078545827558,
-        "y": 317.19978791969345
+        "x": -1440.0136239782016,
+        "y": 668.66348773842
       }
     },
-    "external:fs": {
-      "parentId": null,
+    "src/spec-n-roll/src/application/filesystem/dispatcher-file-system.ts": {
+      "parentId": "directory:spec-n-roll:application/filesystem",
       "position": {
-        "x": 3017.1975389546064,
-        "y": 1082.1151065697486
+        "x": -1356.3460490463217,
+        "y": 1300.1866485013622
       }
     },
     "spec-n-roll-api": {
       "parentId": "spec-n-roll",
       "position": {
-        "x": 3476.123844121271,
-        "y": 977.7089606028329
+        "x": -25.743869209809265,
+        "y": 262.5190735694823
+      }
+    },
+    "src/spec-n-roll/src/application/runtime/runtime-process-request.ts": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": -412.1743869209814,
+        "y": 1166.508174386921
+      }
+    },
+    "src/spec-n-roll/src/application/runtime/runtime-package-manifest-path-resolver.ts": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": -30.036784741144345,
+        "y": 1172.9441416893733
       }
     },
     "src/spec-n-roll/src/infrastructure/environment/process-dispatcher-environment.ts": {
       "parentId": "directory:spec-n-roll:infrastructure/environment",
       "position": {
-        "x": 3485.548426115761,
-        "y": 378.5285541056009
+        "x": -569.555858310627,
+        "y": 1523.8487738419624
+      }
+    },
+    "src/spec-n-roll/src/infrastructure/filesystem/node-dispatcher-file-system.ts": {
+      "parentId": "directory:spec-n-roll:infrastructure/filesystem",
+      "position": {
+        "x": -1439.8528610354226,
+        "y": 1520.630790190736
+      }
+    },
+    "external:fs": {
+      "parentId": null,
+      "position": {
+        "x": -1227.8623978201636,
+        "y": 1681.91689373297
+      }
+    },
+    "src/spec-n-roll/src/infrastructure/module/node-runtime-package-manifest-path-resolver.ts": {
+      "parentId": "directory:spec-n-roll:infrastructure/module",
+      "position": {
+        "x": -48.93460490463194,
+        "y": 1525.589918256131
       }
     },
     "src/spec-n-roll/src/infrastructure/runtime/node-runtime-process-executor.ts": {
       "parentId": "directory:spec-n-roll:infrastructure/runtime",
       "position": {
-        "x": 3452.591249933851,
-        "y": 853.9803672715369
+        "x": -1017.3106267029973,
+        "y": 1522.3719346049058
       }
     },
-    "external:child_process": {
+    "child_process": {
       "parentId": null,
       "position": {
-        "x": 3942.93811357619,
-        "y": 616.8136233717977
+        "x": -1015.9318801089919,
+        "y": 1688.3528610354226
       }
     },
     "src/spec-n-roll/src/presentation/cli/dispatcher-cli.ts": {
       "parentId": "directory:spec-n-roll:presentation/cli",
       "position": {
-        "x": 2067.660614723878,
-        "y": 71.99588766635515
+        "x": -1441.638964577657,
+        "y": 398.35013623978205
       }
     },
     "external:commander": {
       "parentId": null,
       "position": {
-        "x": 1833.1271530417428,
-        "y": 80.22727087132475
+        "x": -1841.5463215258856,
+        "y": 404.3773841961852
       }
     },
     "src/spec-n-roll/src/index.ts": {
       "parentId": "spec-n-roll",
       "position": {
-        "x": 2076.7617296572485,
-        "y": -133.2325849060947
+        "x": -1449.8038147138964,
+        "y": 163.51226158038148
       }
     }
   },

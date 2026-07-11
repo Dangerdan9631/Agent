@@ -1,6 +1,6 @@
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { DispatcherEnvironment } from '#dispatcher/infrastructure/environment/dispatcher-environment.js';
+import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 
 /**
  * Provides process-backed environment values for the dispatcher.

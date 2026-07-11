@@ -8,8 +8,11 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
+import { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
+import { ArchitectureViewerAutoLayoutScript } from '#arch/infrastructure/cytoscape/architecture-viewer-auto-layout-script.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
 import { ArchitectureViewerHttpServer } from '#arch/infrastructure/http/architecture-viewer-http-server.js';
@@ -104,8 +107,20 @@ describe('spec-n-roll-arch', () => {
     );
 
     expect(elements).toEqual([
-      { data: { id: 'alpha', label: 'alpha' } },
-      { data: { id: 'beta', label: 'beta' } },
+      {
+        data: {
+          id: 'alpha',
+          label: 'alpha',
+          workspaceDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'beta',
+          label: 'beta',
+          workspaceDependency: 'true',
+        },
+      },
       {
         data: {
           id: 'directory:beta:contracts',
@@ -187,8 +202,20 @@ describe('spec-n-roll-arch', () => {
     );
 
     expect(elements).toEqual([
-      { data: { id: 'alpha', label: 'alpha' } },
-      { data: { id: 'beta', label: 'beta' } },
+      {
+        data: {
+          id: 'alpha',
+          label: 'alpha',
+          workspaceDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'beta',
+          label: 'beta',
+          workspaceDependency: 'true',
+        },
+      },
       {
         data: {
           id: 'directory:beta:contracts',
@@ -305,7 +332,7 @@ describe('spec-n-roll-arch', () => {
     ]);
   });
 
-  it('excludes configured external dependencies and package files from package graphs', () => {
+  it('collapses configured external dependencies and excludes package files from package graphs', () => {
     const elements = new DependencyCruiserCytoscapeConverter().convert(
       JSON.stringify({
         modules: [
@@ -315,6 +342,11 @@ describe('spec-n-roll-arch', () => {
               {
                 module: 'tslog',
                 resolved: 'node_modules/tslog/cjs/index.js',
+                coreModule: false,
+              },
+              {
+                module: 'commander',
+                resolved: 'node_modules/commander/index.js',
                 coreModule: false,
               },
               {
@@ -341,15 +373,21 @@ describe('spec-n-roll-arch', () => {
       },
       new ArchitectureExclusionFilter({
         exclusions: {
-          externalDependencies: ['tslog'],
           projectFiles: {
-            allPackages: ['src/**/*.test.ts'],
+            allPackages: ['**/*.test'],
             packages: {
-              alpha: ['skip.ts'],
+              alpha: ['skip'],
             },
           },
         },
       }),
+      {
+        collapseFilter: new ArchitectureCollapseFilter({
+          collapsed: {
+            externalDependencies: ['tslog'],
+          },
+        }),
+      },
     );
 
     expect(elements).toEqual([
@@ -357,6 +395,34 @@ describe('spec-n-roll-arch', () => {
         data: {
           id: 'src/alpha/src/keep.ts',
           label: 'keep',
+        },
+      },
+      {
+        data: {
+          id: 'external:tslog',
+          label: 'tslog',
+          externalDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'node_modules/commander/index.js',
+          label: 'node_modules/commander/index.js',
+          externalDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/keep.ts->external:tslog',
+          source: 'src/alpha/src/keep.ts',
+          target: 'external:tslog',
+        },
+      },
+      {
+        data: {
+          id: 'src/alpha/src/keep.ts->node_modules/commander/index.js',
+          source: 'src/alpha/src/keep.ts',
+          target: 'node_modules/commander/index.js',
         },
       },
     ]);
@@ -396,7 +462,13 @@ describe('spec-n-roll-arch', () => {
     );
 
     expect(elements).toEqual([
-      { data: { id: 'alpha', label: 'alpha' } },
+      {
+        data: {
+          id: 'alpha',
+          label: 'alpha',
+          workspaceDependency: 'true',
+        },
+      },
       {
         data: {
           id: 'src/alpha/src/uses-external.ts',
@@ -419,6 +491,42 @@ describe('spec-n-roll-arch', () => {
         },
       },
     ]);
+  });
+
+  it('excludes package external dependencies by their displayed node name', () => {
+    const elements = new DependencyCruiserCytoscapeConverter().convert(
+      JSON.stringify({
+        modules: [
+          {
+            source: 'src/alpha/src/application/use-case.ts',
+            dependencies: [
+              {
+                module: 'tslog',
+                resolved: 'node_modules/tslog/cjs/index.js',
+                coreModule: false,
+              },
+            ],
+          },
+        ],
+      }),
+      {
+        name: 'alpha',
+        root: 'D:/repo/src/alpha',
+        dependencies: {},
+      },
+      new ArchitectureExclusionFilter({
+        exclusions: {
+          projectFiles: { packages: { alpha: ['tslog'] } },
+        },
+      }),
+    );
+
+    expect(
+      elements.some((element) => element.data.id === 'external:tslog'),
+    ).toBe(false);
+    expect(
+      elements.some((element) => element.data.id.includes('->external:tslog')),
+    ).toBe(false);
   });
 
   it('excludes configured external dependencies from project dependency graphs', () => {
@@ -454,12 +562,12 @@ describe('spec-n-roll-arch', () => {
       reports,
       new ArchitectureExclusionFilter({
         exclusions: {
-          externalDependencies: ['tslog'],
+          landscape: ['tslog'],
         },
       }),
     );
 
-    expect(elements).toEqual([{ data: { id: 'alpha', label: 'alpha' } }]);
+    expect(elements).toEqual([]);
   });
 
   it('excludes configured project files from project dependency graphs', () => {
@@ -501,7 +609,7 @@ describe('spec-n-roll-arch', () => {
         exclusions: {
           projectFiles: {
             packages: {
-              alpha: ['skip.ts'],
+              alpha: ['skip'],
             },
           },
         },
@@ -520,8 +628,20 @@ describe('spec-n-roll-arch', () => {
     );
 
     expect(elements).toEqual([
-      { data: { id: 'alpha', label: 'alpha' } },
-      { data: { id: 'beta', label: 'beta' } },
+      {
+        data: {
+          id: 'alpha',
+          label: 'alpha',
+          workspaceDependency: 'true',
+        },
+      },
+      {
+        data: {
+          id: 'beta',
+          label: 'beta',
+          workspaceDependency: 'true',
+        },
+      },
       {
         data: {
           id: 'directory:beta:contracts',
@@ -576,7 +696,13 @@ describe('spec-n-roll-arch', () => {
     );
 
     expect(elements).toEqual([
-      { data: { id: 'alpha', label: 'alpha' } },
+      {
+        data: {
+          id: 'alpha',
+          label: 'alpha',
+          workspaceDependency: 'true',
+        },
+      },
       {
         data: {
           id: 'directory:alpha:application',
@@ -743,6 +869,7 @@ describe('spec-n-roll-arch', () => {
         id: 'external:beta',
         label: 'beta',
         externalDependency: 'true',
+        workspaceDependency: 'true',
       },
     });
     expect(elements).toContainEqual({
@@ -753,26 +880,30 @@ describe('spec-n-roll-arch', () => {
       },
     });
   });
-  it('uses package exclusions as folder diagram defaults', () => {
+  it('uses workspace collapse and exclusion settings as folder diagram defaults', () => {
     const filter = new ArchitectureExclusionFilter({
       exclusions: {
-        externalDependencies: ['tslog'],
         projectFiles: {
-          allPackages: ['src/**/*.test.ts'],
+          allPackages: ['**/*.test'],
           packages: {
-            alpha: ['ignored.ts'],
+            alpha: ['application/ignored'],
           },
         },
       },
     }).forFolderDiagram('alpha', { path: 'src/application' });
+    const collapseFilter = new ArchitectureCollapseFilter({
+      collapsed: {
+        externalDependencies: ['tslog'],
+      },
+    }).forFolderDiagram({ path: 'src/application' });
 
-    expect(filter.excludesExternalDependency('tslog')).toBe(true);
-    expect(
-      filter.excludesProjectFile('alpha', 'src/application/ignored.ts'),
-    ).toBe(true);
-    expect(
-      filter.excludesProjectFile('alpha', 'src/application/model.test.ts'),
-    ).toBe(true);
+    expect(collapseFilter.collapsesExternalDependency('tslog')).toBe(true);
+    expect(filter.excludesProjectNode('alpha', 'application/ignored')).toBe(
+      true,
+    );
+    expect(filter.excludesProjectNode('alpha', 'application/model.test')).toBe(
+      true,
+    );
   });
   it('generates configured folder diagram artifacts without seeding layout files', () => {
     const outputRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-folder-'));
@@ -807,6 +938,15 @@ describe('spec-n-roll-arch', () => {
         join(packageOutputRoot, 'folder-src-application.cytoscape.layout.json'),
       ),
     ).toBe(false);
+    expect(
+      existsSync(join(packageOutputRoot, 'folder-src-application.matrix.html')),
+    ).toBe(true);
+    expect(
+      readFileSync(
+        join(packageOutputRoot, 'folder-src-application.matrix.html'),
+        'utf8',
+      ),
+    ).toContain('Dependency graph metrics');
   });
 
   it('builds sorted dependency matrices with graph complexity metrics', () => {
@@ -880,17 +1020,58 @@ describe('spec-n-roll-arch', () => {
     ]);
 
     const html = readFileSync(cytoscapeHtmlPath, 'utf8');
+    const inlineScript = /<script>([\s\S]*)<\/script>/u.exec(html)?.[1];
 
+    expect(inlineScript).toBeDefined();
+    expect(() => new Script(inlineScript ?? '')).not.toThrow();
     expect(html).toContain("'font-size': 25");
+    expect(html).toContain('const MINIMUM_WHEEL_SENSITIVITY = 0.15');
+    expect(html).toContain('const MAXIMUM_WHEEL_SENSITIVITY = 1');
+    expect(html).toContain(
+      'Math.max(MINIMUM_WHEEL_SENSITIVITY, BASE_WHEEL_SENSITIVITY / zoom)',
+    );
     expect(html).toContain('#cy { background: #ffffff; height: 100%;');
-    expect(html).toContain('cytoscape-fcose@2.2.0');
-    expect(html).toContain("const preferredLayout = { name: 'fcose'");
-    expect(html).toContain("const fallbackLayout = { name: 'cose'");
+    expect(html).toContain('id="auto-layout"');
+    expect(html).toContain('class DiagramLayoutGroup');
+    expect(html).toContain('class DiagramAutoLayout');
+    expect(html).toContain('dependencyLayers(groups, scopeElement)');
+    expect(html).toContain('groupForNode(node, groupsById, scopeElement)');
+    expect(html).toContain('this.graph.batch(() => {');
+    expect(html).toContain('const autoLayout = new DiagramAutoLayout(cy)');
+    expect(html).toContain('layoutGroup(node)');
+    expect(html).toContain('autoLayout.layoutGroup(selectedGroup)');
+    expect(html).toContain('void initializeDiagramLayout()');
+    expect(html).toContain('autoLayoutButton.addEventListener');
+    expect(html).not.toContain('cytoscape-fcose@2.2.0');
+    expect(html).not.toContain("const preferredLayout = { name: 'fcose'");
     expect(html).toContain('id="fit-diagram"');
     expect(html).toContain('id="export-diagram-image"');
-    expect(html).toContain('id="hide-connection"');
+    expect(html).toContain(
+      'id="create-folder-diagram" type="button" disabled>Create Diagram</button>',
+    );
+    expect(html).toContain('>Export Image</button>');
+    expect(html).toContain('id="hide-action"');
+    expect(html).not.toContain('id="hide-node"');
+    expect(html).not.toContain('id="hide-connection"');
     expect(html).toContain('id="toggle-hidden-connections"');
+    expect(html).toContain('>Hidden</button>');
     expect(html).toContain('id="collapse-group"');
+    expect(html).toContain('class="toolbar-row toolbar-row-primary"');
+    expect(html).toContain('class="toolbar-row toolbar-row-secondary"');
+    expect(html).toContain(
+      '<span class="toolbar-separator" aria-hidden="true">|</span>',
+    );
+    expect(html).toContain(
+      'id="layout-columns" type="range" min="3" max="8" value="5"',
+    );
+    expect(html).toContain(
+      'id="horizontal-gap" type="range" min="80" max="200" step="5" value="120"',
+    );
+    expect(html).toContain(
+      'id="vertical-gap" type="range" min="80" max="200" step="5" value="120"',
+    );
+    expect(html).toContain('autoLayout.configure(');
+    expect(html).toContain('this.maxColumns = 5');
     expect(html).toContain('class HiddenConnectionState');
     expect(html).toContain('selectedEdgeId');
     expect(html).toContain('edge.selected-connection');
@@ -915,7 +1096,7 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain("method: 'PUT'");
     expect(html).toContain("'/__spec-n-roll/layout?diagram='");
     expect(html).toContain(
-      "window.location.pathname === '/' ? '/project-dependencies.cytoscape.html'",
+      "window.location.pathname === '/' ? '/landscape.cytoscape.html'",
     );
     expect(html).toContain('Layout autosave unavailable');
     expect(html).toContain('layoutStore.applySavedLayout()');
@@ -930,6 +1111,241 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('loadDarkModePreference()');
     expect(html).toContain('saveDarkModePreference()');
     expect(html).not.toContain('REPO_LAYOUT');
+  });
+
+  it('places nested layout groups below the groups that depend on them', () => {
+    class LayoutTestCollection<Element> {
+      constructor(private readonly elements: Element[]) {}
+
+      not(): LayoutTestCollection<Element> {
+        return this;
+      }
+
+      filter(
+        predicate: (element: Element) => boolean,
+      ): LayoutTestCollection<Element> {
+        return new LayoutTestCollection(this.elements.filter(predicate));
+      }
+
+      toArray(): Element[] {
+        return [...this.elements];
+      }
+
+      first(): Element {
+        return this.elements[0];
+      }
+
+      forEach(callback: (element: Element) => void): void {
+        this.elements.forEach(callback);
+      }
+
+      empty(): boolean {
+        return this.elements.length === 0;
+      }
+    }
+
+    class LayoutTestNode {
+      private readonly childNodes: LayoutTestNode[] = [];
+
+      private currentPosition = { x: 0, y: 0 };
+
+      constructor(
+        private readonly nodeId: string,
+        private readonly label: string,
+        private readonly parentNode?: LayoutTestNode,
+        private readonly padding = 0,
+      ) {
+        parentNode?.addChild(this);
+      }
+
+      addChild(child: LayoutTestNode): void {
+        this.childNodes.push(child);
+      }
+
+      children(): LayoutTestCollection<LayoutTestNode> {
+        return new LayoutTestCollection(this.childNodes);
+      }
+
+      parent(): LayoutTestCollection<LayoutTestNode> {
+        return new LayoutTestCollection(
+          this.parentNode ? [this.parentNode] : [],
+        );
+      }
+
+      id(): string {
+        return this.nodeId;
+      }
+
+      data(name: string): string {
+        return name === 'label' ? this.label : '';
+      }
+
+      boundingBox(): { w: number; h: number; x1: number; y1: number } {
+        return { w: 100, h: 50, ...this.currentPosition };
+      }
+
+      pstyle(name: string): { pfValue: number } | undefined {
+        return name === 'padding' ? { pfValue: this.padding } : undefined;
+      }
+
+      position(nextPosition: { x: number; y: number }): void {
+        this.currentPosition = nextPosition;
+      }
+
+      currentLayoutPosition(): { x: number; y: number } {
+        return this.currentPosition;
+      }
+    }
+
+    class LayoutTestEdge {
+      constructor(
+        private readonly sourceNode: LayoutTestNode,
+        private readonly targetNode: LayoutTestNode,
+      ) {}
+
+      source(): LayoutTestNode {
+        return this.sourceNode;
+      }
+
+      target(): LayoutTestNode {
+        return this.targetNode;
+      }
+    }
+
+    class LayoutTestGraph {
+      constructor(
+        private readonly graphNodes: LayoutTestNode[],
+        private readonly graphEdges: LayoutTestEdge[],
+      ) {}
+
+      nodes(): LayoutTestCollection<LayoutTestNode> {
+        return new LayoutTestCollection(this.graphNodes);
+      }
+
+      edges(): LayoutTestCollection<LayoutTestEdge> {
+        return new LayoutTestCollection(this.graphEdges);
+      }
+
+      batch(callback: () => void): void {
+        callback();
+      }
+    }
+
+    const app = new LayoutTestNode('app', 'app');
+    const alpha = new LayoutTestNode('app:alpha', 'alpha', app);
+    const beta = new LayoutTestNode('app:beta', 'beta', app);
+    const charlie = new LayoutTestNode('app:charlie', 'charlie', app);
+    const delta = new LayoutTestNode('app:delta', 'delta', app);
+    const epsilon = new LayoutTestNode('app:epsilon', 'epsilon', app);
+    const foxtrot = new LayoutTestNode('app:foxtrot', 'foxtrot', app);
+    const library = new LayoutTestNode('library', 'library');
+    const libraryIndex = new LayoutTestNode('library:index', 'index', library);
+    const module = new LayoutTestNode(
+      'library:application',
+      'application',
+      library,
+      24,
+    );
+    const libraryFile = new LayoutTestNode(
+      'library:application:alpha',
+      'alpha',
+      module,
+    );
+    const libraryBeta = new LayoutTestNode(
+      'library:application:beta',
+      'beta',
+      module,
+    );
+    const libraryCharlie = new LayoutTestNode(
+      'library:application:charlie',
+      'charlie',
+      module,
+    );
+    const libraryDelta = new LayoutTestNode(
+      'library:application:delta',
+      'delta',
+      module,
+    );
+    const graph = new LayoutTestGraph(
+      [
+        app,
+        alpha,
+        beta,
+        charlie,
+        delta,
+        epsilon,
+        foxtrot,
+        library,
+        libraryIndex,
+        module,
+        libraryFile,
+        libraryBeta,
+        libraryCharlie,
+        libraryDelta,
+      ],
+      [
+        new LayoutTestEdge(beta, libraryFile),
+        new LayoutTestEdge(libraryDelta, libraryFile),
+      ],
+    );
+    const DiagramAutoLayout = new Script(
+      `${ArchitectureViewerAutoLayoutScript.render()}\nDiagramAutoLayout`,
+    ).runInNewContext() as new (layoutGraph: LayoutTestGraph) => {
+      configure(
+        maxColumns: number,
+        horizontalGap: number,
+        verticalGap: number,
+      ): void;
+      layout(): void;
+      layoutGroup(node: LayoutTestNode): boolean;
+    };
+
+    new DiagramAutoLayout(graph).layout();
+
+    expect(alpha.currentLayoutPosition().x).toBeLessThan(
+      beta.currentLayoutPosition().x,
+    );
+    expect(alpha.currentLayoutPosition().y).toBe(
+      charlie.currentLayoutPosition().y,
+    );
+    expect(delta.currentLayoutPosition().y).toBeGreaterThan(
+      alpha.currentLayoutPosition().y,
+    );
+    expect(
+      libraryIndex.currentLayoutPosition().x -
+        50 -
+        (libraryDelta.currentLayoutPosition().x + 50 + 24),
+    ).toBe(120);
+    expect(libraryDelta.currentLayoutPosition().y).toBeLessThan(
+      libraryFile.currentLayoutPosition().y,
+    );
+    expect(beta.currentLayoutPosition().y).toBeLessThan(
+      libraryFile.currentLayoutPosition().y,
+    );
+
+    const appPositionBeforeGroupLayout = alpha.currentLayoutPosition();
+    const indexPositionBeforeGroupLayout = libraryIndex.currentLayoutPosition();
+
+    new DiagramAutoLayout(graph).layoutGroup(module);
+
+    expect(alpha.currentLayoutPosition()).toEqual(appPositionBeforeGroupLayout);
+    expect(libraryIndex.currentLayoutPosition()).toEqual(
+      indexPositionBeforeGroupLayout,
+    );
+
+    const configuredLayout = new DiagramAutoLayout(graph);
+    configuredLayout.configure(8, 80, 200);
+    configuredLayout.layout();
+
+    expect(alpha.currentLayoutPosition().y).toBe(
+      foxtrot.currentLayoutPosition().y,
+    );
+    expect(
+      beta.currentLayoutPosition().x - alpha.currentLayoutPosition().x,
+    ).toBe(180);
+    expect(libraryFile.currentLayoutPosition().y).toBe(
+      libraryDelta.currentLayoutPosition().y + 250,
+    );
   });
 
   it('renders dependency matrix navigation and metrics', () => {
@@ -957,14 +1373,24 @@ describe('spec-n-roll-arch', () => {
         },
       ],
       [
-        { title: 'alpha', htmlPath: join(artifactRoot, 'cytoscape.html') },
-        { title: 'alpha matrix', htmlPath: matrixHtmlPath },
+        {
+          title: 'alpha',
+          children: [
+            {
+              title: 'Diagram',
+              htmlPath: join(artifactRoot, 'cytoscape.html'),
+            },
+            { title: 'Dependency matrix', htmlPath: matrixHtmlPath },
+          ],
+        },
       ],
     );
 
     const html = readFileSync(matrixHtmlPath, 'utf8');
 
-    expect(html).toContain('alpha matrix');
+    expect(html).toContain('class="navigation-group-title">alpha</div>');
+    expect(html).toContain('>Dependency matrix</a>');
+    expect(html).toContain('navigation-children');
     expect(html).toContain('class="navigation-link current"');
     expect(html).toContain('Dependency graph metrics');
     expect(html).not.toContain('id="export-diagram-image"');
@@ -1007,7 +1433,7 @@ describe('spec-n-roll-arch', () => {
       [
         'module.exports = {',
         '  exclusions: {',
-        '    projectFiles: { packages: { alpha: ["src/keep.ts"] } }',
+        '    projectFiles: { packages: { alpha: ["keep"] } }',
         '  },',
         '  folderDiagrams: {',
         '    packages: { alpha: [{ path: "src/application" }] }',
@@ -1047,6 +1473,30 @@ describe('spec-n-roll-arch', () => {
     });
 
     try {
+      const exclusionsResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/config?diagram=alpha/cytoscape.html`,
+      );
+      expect(exclusionsResponse.status).toBe(200);
+      await expect(exclusionsResponse.json()).resolves.toEqual({
+        allPackages: [],
+        diagram: ['keep'],
+        diagramLabel: 'alpha',
+      });
+
+      const addExclusionResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/config?diagram=alpha/cytoscape.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'add-exclusion',
+            scope: 'all-packages',
+            exclusion: 'composition/dispatcher/dispatcher-container-factory',
+          }),
+        },
+      );
+      expect(addExclusionResponse.status).toBe(200);
+
       const folderHideResponse = await fetch(
         `${runningServer.url}__spec-n-roll/config?diagram=alpha/folder-src-application.cytoscape.html`,
         {
@@ -1077,9 +1527,12 @@ describe('spec-n-roll-arch', () => {
         join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
         'utf8',
       );
-      expect(configText).toContain('"src/application/use-case.ts"');
-      expect(configText).toContain('"src/keep.ts"');
-      expect(configText).toContain('"src/cli.ts"');
+      expect(configText).toContain('"application/use-case"');
+      expect(configText).toContain('"keep"');
+      expect(configText).toContain('"cli"');
+      expect(configText).toContain(
+        '"composition/dispatcher/dispatcher-container-factory"',
+      );
     } finally {
       await runningServer.close();
     }
@@ -1093,7 +1546,7 @@ describe('spec-n-roll-arch', () => {
       '<!doctype html><html></html>',
     );
     writeFileSync(
-      join(artifactRoot, 'project-dependencies.cytoscape.html'),
+      join(artifactRoot, 'landscape.cytoscape.html'),
       '<!doctype html><html></html>',
     );
     writeFileSync(
@@ -1105,7 +1558,7 @@ describe('spec-n-roll-arch', () => {
       ]),
     );
     writeFileSync(
-      join(artifactRoot, 'project-dependencies.cytoscape.json'),
+      join(artifactRoot, 'landscape.cytoscape.json'),
       JSON.stringify([{ data: { id: 'project', label: 'project' } }]),
     );
     const runningServer = await new ArchitectureViewerHttpServer().start({
@@ -1192,7 +1645,7 @@ describe('spec-n-roll-arch', () => {
       expect(traversalResponse.status).toBe(400);
 
       const rootDiagramResponse = await fetch(
-        `${runningServer.url}__spec-n-roll/layout?diagram=project-dependencies.cytoscape.html`,
+        `${runningServer.url}__spec-n-roll/layout?diagram=landscape.cytoscape.html`,
         {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
@@ -1208,7 +1661,7 @@ describe('spec-n-roll-arch', () => {
       expect(rootDiagramResponse.status).toBe(200);
       expect(
         readFileSync(
-          join(artifactRoot, 'project-dependencies.cytoscape.layout.json'),
+          join(artifactRoot, 'landscape.cytoscape.layout.json'),
           'utf8',
         ),
       ).toContain('"project"');

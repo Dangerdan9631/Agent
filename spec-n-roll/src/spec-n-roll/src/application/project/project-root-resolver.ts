@@ -1,15 +1,22 @@
-import { existsSync } from 'node:fs';
 import { dirname, join, parse, resolve, type ParsedPath } from 'node:path';
 import {
   SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
   type PathResolutionContext,
   type ProjectRootResolution,
 } from 'spec-n-roll-api';
+import type { DispatcherFileSystem } from '#dispatcher/application/filesystem/dispatcher-file-system.js';
 
 /**
  * Resolves Spec-N-Roll project roots from explicit roots or parent discovery.
  */
 export class ProjectRootResolver {
+  /**
+   * Creates a project root resolver.
+   *
+   * @param fileSystem - Raw filesystem access used to detect project configuration.
+   */
+  constructor(private readonly fileSystem: DispatcherFileSystem) {}
+
   /**
    * Resolves the project root for one dispatcher invocation.
    *
@@ -42,7 +49,9 @@ export class ProjectRootResolver {
    * @returns true when `.spec-n-roll` exists under the directory.
    */
   hasProjectConfigDirectory(directory: string): boolean {
-    return existsSync(join(directory, SPEC_N_ROLL_CONFIG_DIRECTORY_NAME));
+    return this.fileSystem.pathExists(
+      join(directory, SPEC_N_ROLL_CONFIG_DIRECTORY_NAME),
+    );
   }
 
   /**

@@ -43,23 +43,12 @@ export class ExternalDependencyIdentifier {
    * Strips the `external:` prefix from an external dependency node id.
    *
    * @param externalId - External node id produced by {@link identify}.
-   * @returns Display and exclusion-list name, such as "tslog" or "node:path".
+   * @returns Display and configuration-list name, such as "tslog" or "node:path".
    */
   label(externalId: string): string {
     return externalId.startsWith('external:')
       ? externalId.slice('external:'.length)
       : externalId;
-  }
-
-  /**
-   * True when an id or dependency-cruiser flag marks a Node.js core module.
-   *
-   * @param id - Normalized dependency id.
-   * @param coreModule - Optional dependency-cruiser core-module flag.
-   * @returns true when the dependency should render as an external core module.
-   */
-  isExternalDependency(id: string, coreModule = false): boolean {
-    return coreModule || id.startsWith('external:');
   }
 
   private nodeModulesPackageName(filePath: string): string | undefined {

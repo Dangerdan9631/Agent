@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+import type { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 import { DirectoryCytoscapeGroupBuilder } from '#arch/application/graph/directory-cytoscape-group-builder.js';
@@ -28,6 +29,7 @@ export class PackageFolderDependencyCytoscapeConverter {
    * @param folderPath - Package-root-relative folder path that scopes source files.
    * @param packages - Runtime package metadata used to consolidate external workspace packages.
    * @param exclusionFilter - User-configured dependency and project file exclusion filter.
+   * @param collapseFilter - User-configured external dependency collapse filter.
    * @returns Cytoscape elements for files in the folder and consolidated external package dependencies.
    */
   convert(
@@ -36,6 +38,7 @@ export class PackageFolderDependencyCytoscapeConverter {
     folderPath: string,
     packages: WorkspacePackage[] = [workspacePackage],
     exclusionFilter?: ArchitectureExclusionFilter,
+    collapseFilter?: ArchitectureCollapseFilter,
   ): CytoscapeElement[] {
     const report = JSON.parse(dependencyCruiserJson) as {
       modules?: Array<{
@@ -64,7 +67,7 @@ export class PackageFolderDependencyCytoscapeConverter {
           workspacePackage,
           normalizedFolderPath,
         ) ||
-        this.excludesProjectFile(
+        this.excludesProjectNode(
           module.source,
           workspacePackage,
           exclusionFilter,
@@ -89,6 +92,7 @@ export class PackageFolderDependencyCytoscapeConverter {
           normalizedFolderPath,
           packages,
           exclusionFilter,
+          collapseFilter,
         );
         if (!dependencyNode) {
           continue;
@@ -142,16 +146,30 @@ export class PackageFolderDependencyCytoscapeConverter {
     folderPath: string,
     packages: WorkspacePackage[],
     exclusionFilter?: ArchitectureExclusionFilter,
+    collapseFilter?: ArchitectureCollapseFilter,
   ):
     | { kind: 'file'; id: string }
-    | { kind: 'external'; id: string; label: string; workspaceDependency?: boolean }
+    | {
+        kind: 'external';
+        id: string;
+        label: string;
+        workspaceDependency?: boolean;
+      }
     | undefined {
     const externalId = this.externalDependencyIdentifier.identify(dependency);
     if (externalId) {
       const label = this.externalDependencyIdentifier.label(externalId);
-      return exclusionFilter?.excludesExternalDependency(label)
-        ? undefined
-        : { kind: 'external', id: externalId, label };
+      if (this.excludesExternalNode(label, workspacePackage, exclusionFilter)) {
+        return undefined;
+      }
+      return !collapseFilter ||
+        collapseFilter.collapsesExternalDependency(label)
+        ? { kind: 'external', id: externalId, label }
+        : {
+            kind: 'external',
+            id: dependency.resolved,
+            label: dependency.resolved,
+          };
     }
 
     const dependencyPackage = this.findPackage(
@@ -160,14 +178,21 @@ export class PackageFolderDependencyCytoscapeConverter {
       workspacePackage,
     );
     if (dependencyPackage && dependencyPackage.name !== workspacePackage.name) {
-      return exclusionFilter?.excludesExternalDependency(dependencyPackage.name)
-        ? undefined
-        : {
-            kind: 'external',
-            id: `external:${dependencyPackage.name}`,
-            label: dependencyPackage.name,
-            workspaceDependency: true,
-          };
+      if (
+        this.excludesExternalNode(
+          dependencyPackage.name,
+          workspacePackage,
+          exclusionFilter,
+        )
+      ) {
+        return undefined;
+      }
+      return {
+        kind: 'external',
+        id: `external:${dependencyPackage.name}`,
+        label: dependencyPackage.name,
+        workspaceDependency: true,
+      };
     }
 
     if (!this.belongsToPackage(dependency.resolved, workspacePackage)) {
@@ -176,7 +201,11 @@ export class PackageFolderDependencyCytoscapeConverter {
         workspacePackage,
       );
       return packageName &&
-        !exclusionFilter?.excludesExternalDependency(packageName)
+        !this.excludesExternalNode(
+          packageName,
+          workspacePackage,
+          exclusionFilter,
+        )
         ? {
             kind: 'external',
             id: `external:${packageName}`,
@@ -186,7 +215,7 @@ export class PackageFolderDependencyCytoscapeConverter {
     }
 
     if (
-      this.excludesProjectFile(
+      this.excludesProjectNode(
         dependency.resolved,
         workspacePackage,
         exclusionFilter,
@@ -201,14 +230,20 @@ export class PackageFolderDependencyCytoscapeConverter {
       folderPath,
     )
       ? { kind: 'file', id: dependency.resolved }
-      : {
-          kind: 'external',
-          id: `external:${workspacePackage.name}:${this.topLevelPackagePath(dependency.resolved, workspacePackage)}`,
-          label: this.topLevelPackagePath(
-            dependency.resolved,
+      : this.excludesExternalNode(
+            this.topLevelPackagePath(dependency.resolved, workspacePackage),
             workspacePackage,
-          ),
-        };
+            exclusionFilter,
+          )
+        ? undefined
+        : {
+            kind: 'external',
+            id: `external:${workspacePackage.name}:${this.topLevelPackagePath(dependency.resolved, workspacePackage)}`,
+            label: this.topLevelPackagePath(
+              dependency.resolved,
+              workspacePackage,
+            ),
+          };
   }
 
   private addFileNode(
@@ -261,17 +296,37 @@ export class PackageFolderDependencyCytoscapeConverter {
     });
   }
 
-  private excludesProjectFile(
+  private excludesProjectNode(
     filePath: string,
     workspacePackage: WorkspacePackage,
     exclusionFilter?: ArchitectureExclusionFilter,
   ): boolean {
     return (
-      exclusionFilter?.excludesProjectFile(
+      exclusionFilter?.excludesProjectNode(
         workspacePackage.name,
-        this.packageRelativePath(filePath, workspacePackage),
+        this.nodeName(filePath, workspacePackage),
       ) ?? false
     );
+  }
+
+  private excludesExternalNode(
+    nodeName: string,
+    workspacePackage: WorkspacePackage,
+    exclusionFilter?: ArchitectureExclusionFilter,
+  ): boolean {
+    return (
+      exclusionFilter?.excludesProjectNode(workspacePackage.name, nodeName) ??
+      false
+    );
+  }
+
+  private nodeName(
+    filePath: string,
+    workspacePackage: WorkspacePackage,
+  ): string {
+    return this.packageRelativePath(filePath, workspacePackage)
+      .replace(/^src\//u, '')
+      .replace(/\.[^./]+$/u, '');
   }
 
   private belongsToFolder(

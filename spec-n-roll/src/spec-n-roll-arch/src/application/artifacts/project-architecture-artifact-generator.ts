@@ -56,15 +56,9 @@ export class ProjectArchitectureArtifactGenerator {
       this.sourceTexts(packages, packageReports),
       this.publicApiExportIndex(packages),
     );
-    const cytoscapeJsonPath = join(
-      outputRoot,
-      'project-dependencies.cytoscape.json',
-    );
-    const cytoscapeHtmlPath = join(
-      outputRoot,
-      'project-dependencies.cytoscape.html',
-    );
-    const matrixHtmlPath = join(outputRoot, 'project-dependencies.matrix.html');
+    const cytoscapeJsonPath = join(outputRoot, 'landscape.cytoscape.json');
+    const cytoscapeHtmlPath = join(outputRoot, 'landscape.cytoscape.html');
+    const matrixHtmlPath = join(outputRoot, 'landscape.matrix.html');
 
     this.writer.write(cytoscapeJsonPath, cytoscapeHtmlPath, elements, pages);
     this.matrixWriter.write(matrixHtmlPath, elements, pages);

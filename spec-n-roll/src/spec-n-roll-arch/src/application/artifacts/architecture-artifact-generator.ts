@@ -8,6 +8,7 @@ import type {
 } from '#arch/application/config/architecture-config.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { ArchitectureConfigReader } from '#arch/application/config/architecture-config-reader.js';
+import { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import { PackageArchitectureArtifactGenerator } from '#arch/application/artifacts/package-architecture-artifact-generator.js';
 import { PackageFolderArchitectureArtifactGenerator } from '#arch/application/artifacts/package-folder-architecture-artifact-generator.js';
@@ -54,6 +55,7 @@ export class ArchitectureArtifactGenerator {
     this.logger.debug('Resolved workspace root.', { workspaceRoot });
     const config = this.configReader.read(workspaceRoot);
     const exclusionFilter = new ArchitectureExclusionFilter(config);
+    const collapseFilter = new ArchitectureCollapseFilter(config);
     this.logger.debug('Loaded architecture configuration.', { config });
     const packages = this.packageDiscoverer.discover(workspaceRoot);
     this.logger.debug('Discovered runtime workspace packages.', {
@@ -79,6 +81,7 @@ export class ArchitectureArtifactGenerator {
         workspacePackage,
         pages,
         exclusionFilter,
+        collapseFilter,
       ),
     );
     const folderFiles = folderDiagramEntries.flatMap((entry) =>
@@ -92,6 +95,7 @@ export class ArchitectureArtifactGenerator {
           entry.workspacePackage.name,
           entry.folderDiagram,
         ),
+        collapseFilter.forFolderDiagram(entry.folderDiagram),
       ),
     );
     const generatedFiles = [
@@ -134,33 +138,47 @@ export class ArchitectureArtifactGenerator {
       folderDiagram: ArchitectureFolderDiagramConfig;
     }>,
   ): ArchitecturePage[] {
+    const page = (title: string, htmlPath: string): ArchitecturePage => ({
+      title,
+      htmlPath,
+    });
+    const landscapeDiagram = join(outputRoot, 'landscape.cytoscape.html');
+    const landscapeMatrix = join(outputRoot, 'landscape.matrix.html');
+
     return [
       {
-        title: 'Project dependencies',
-        htmlPath: join(outputRoot, 'project-dependencies.cytoscape.html'),
+        title: 'Landscape',
+        children: [
+          page('Diagram', landscapeDiagram),
+          page('Dependency matrix', landscapeMatrix),
+        ],
       },
-      {
-        title: 'Project dependency matrix',
-        htmlPath: join(outputRoot, 'project-dependencies.matrix.html'),
-      },
-      ...packages.map((workspacePackage) => ({
-        title: workspacePackage.name,
-        htmlPath: join(outputRoot, workspacePackage.name, 'cytoscape.html'),
-      })),
-      ...packages.map((workspacePackage) => ({
-        title: `${workspacePackage.name} matrix`,
-        htmlPath: join(outputRoot, workspacePackage.name, 'matrix.html'),
-      })),
-      ...folderDiagramEntries.map((entry) => ({
-        title:
-          entry.folderDiagram.title ??
-          `${entry.workspacePackage.name} ${entry.folderDiagram.path}`,
-        htmlPath: join(
-          outputRoot,
-          entry.workspacePackage.name,
-          `${this.diagramSlug(entry.folderDiagram.path)}.cytoscape.html`,
-        ),
-      })),
+      ...packages.map((workspacePackage) => {
+        const packageRoot = join(outputRoot, workspacePackage.name);
+        const folderEntries = folderDiagramEntries.filter(
+          (entry) => entry.workspacePackage.name === workspacePackage.name,
+        );
+        return {
+          title: workspacePackage.name,
+          children: [
+            page('Diagram', join(packageRoot, 'cytoscape.html')),
+            page('Dependency matrix', join(packageRoot, 'matrix.html')),
+            ...folderEntries.map((entry) => {
+              const title =
+                entry.folderDiagram.title ??
+                `${workspacePackage.name} ${entry.folderDiagram.path}`;
+              const slug = this.diagramSlug(entry.folderDiagram.path);
+              return {
+                title,
+                children: [
+                  page('Diagram', join(packageRoot, `${slug}.cytoscape.html`)),
+                  page('Dependency matrix', join(packageRoot, `${slug}.matrix.html`)),
+                ],
+              };
+            }),
+          ],
+        };
+      }),
     ];
   }
 

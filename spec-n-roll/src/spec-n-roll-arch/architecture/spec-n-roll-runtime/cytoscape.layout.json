@@ -4,162 +4,162 @@
     "spec-n-roll-runtime": {
       "parentId": null,
       "position": {
-        "x": 397.96584659526184,
-        "y": 358.33983030166337
+        "x": 0,
+        "y": 539.5
       }
     },
     "directory:spec-n-roll-runtime:application": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 415.2264957773783,
-        "y": 340.7672973746244
+        "x": -510,
+        "y": 739.25
       }
     },
     "directory:spec-n-roll-runtime:application/invocation": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": 409.3282614161333,
-        "y": 353.5953184168725
+        "x": -712.5,
+        "y": 865.5
       }
     },
     "directory:spec-n-roll-runtime:application/output": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": 449.18711104510976,
-        "y": 337.8932202011092
+        "x": -75.5,
+        "y": 865.5
       }
     },
     "directory:spec-n-roll-runtime:application/runtime": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": 438.23290746751513,
-        "y": 369.14137454813954
+        "x": -510,
+        "y": 638.5
       }
     },
     "directory:spec-n-roll-runtime:composition": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 412.37288115551246,
-        "y": 386.0992691967999
+        "x": 0,
+        "y": 350.75
       }
     },
     "directory:spec-n-roll-runtime:composition/runtime": {
       "parentId": "directory:spec-n-roll-runtime:composition",
       "position": {
-        "x": 412.37288115551246,
-        "y": 398.8492691967999
+        "x": 0,
+        "y": 363.5
       }
     },
     "directory:spec-n-roll-runtime:infrastructure": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 397.96584659526184,
-        "y": 356.34658963576885
+        "x": 661,
+        "y": 739.25
       }
     },
     "directory:spec-n-roll-runtime:infrastructure/process": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure",
       "position": {
-        "x": 397.96584659526184,
-        "y": 369.09658963576885
+        "x": 661,
+        "y": 752
       }
     },
     "directory:spec-n-roll-runtime:presentation": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 388.47346453349155,
-        "y": 417.0364404022175
+        "x": 0,
+        "y": 75.75
       }
     },
     "directory:spec-n-roll-runtime:presentation/cli": {
       "parentId": "directory:spec-n-roll-runtime:presentation",
       "position": {
-        "x": 388.47346453349155,
-        "y": 429.7864404022175
+        "x": 0,
+        "y": 88.5
       }
     },
     "src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-parser.ts": {
       "parentId": "directory:spec-n-roll-runtime:application/invocation",
       "position": {
-        "x": 407.7658805096469,
-        "y": 381.5192598111089
+        "x": -918,
+        "y": 878.5
       }
     },
     "spec-n-roll-api": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 406.16164837185397,
-        "y": 352.00266194270716
+        "x": 0,
+        "y": 1105.5
       }
     },
     "src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-reader.ts": {
       "parentId": "directory:spec-n-roll-runtime:application/invocation",
       "position": {
-        "x": 410.39064232261967,
-        "y": 351.6713770226361
+        "x": -507.5,
+        "y": 878.5
       }
     },
     "src/spec-n-roll-runtime/src/application/output/runtime-output-writer.ts": {
       "parentId": "directory:spec-n-roll-runtime:application/output",
       "position": {
-        "x": 449.18711104510976,
-        "y": 350.8932202011092
+        "x": -75.5,
+        "y": 878.5
       }
     },
     "src/spec-n-roll-runtime/src/application/runtime/runtime-application.ts": {
       "parentId": "directory:spec-n-roll-runtime:application/runtime",
       "position": {
-        "x": 438.23290746751513,
-        "y": 382.14137454813954
+        "x": -510,
+        "y": 651.5
       }
     },
     "src/spec-n-roll-runtime/src/composition/runtime/runtime-composition-root.ts": {
       "parentId": "directory:spec-n-roll-runtime:composition/runtime",
       "position": {
-        "x": 410.07687229498515,
-        "y": 411.72071463996963
+        "x": -197.5,
+        "y": 376.5
       }
     },
     "src/spec-n-roll-runtime/src/infrastructure/process/console-runtime-output-writer.ts": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
       "position": {
-        "x": 425.8311083461024,
-        "y": 382.0471669193903
+        "x": 425,
+        "y": 765
       }
     },
     "src/spec-n-roll-runtime/src/infrastructure/process/stdin-runtime-invocation-reader.ts": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
       "position": {
-        "x": 380.1005848444213,
-        "y": 382.1460123521474
+        "x": 887,
+        "y": 765
       }
     },
     "external:fs": {
       "parentId": null,
       "position": {
-        "x": 359.3552853146539,
-        "y": 412.33946242013917
+        "x": 129,
+        "y": 1308.5
       }
     },
     "src/spec-n-roll-runtime/src/composition/runtime/runtime-program-factory.ts": {
       "parentId": "directory:spec-n-roll-runtime:composition/runtime",
       "position": {
-        "x": 418.66889001603977,
-        "y": 411.9778237536302
+        "x": 201.5,
+        "y": 376.5
       }
     },
     "external:commander": {
       "parentId": null,
       "position": {
-        "x": 441.03200094154295,
-        "y": 442.31084053011
+        "x": -76,
+        "y": 1308.5
       }
     },
     "src/spec-n-roll-runtime/src/presentation/cli/runtime-cli.ts": {
       "parentId": "directory:spec-n-roll-runtime:presentation/cli",
       "position": {
-        "x": 388.47346453349155,
-        "y": 442.7864404022175
+        "x": 0,
+        "y": 101.5
       }
     }
   },

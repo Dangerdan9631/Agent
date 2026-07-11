@@ -157,14 +157,14 @@ src/spec-n-roll-arch/architecture/
 
 Important generated views include:
 
-| Artifact                              | Description                                        |
-| ------------------------------------- | -------------------------------------------------- |
-| `project-dependencies.cytoscape.html` | Workspace package dependency graph.                |
-| `<package>/cytoscape.html`            | Package-level source dependency graph.             |
-| `<package>/dependency-cruiser.json`   | Raw dependency-cruiser report for the package.     |
-| `<package>/cytoscape.json`            | Cytoscape JSON data for the package graph.         |
-| `<package>/folder-*.cytoscape.html`   | Optional configured folder-level diagrams.         |
-| `*.cytoscape.layout.json`             | Checked-in node and group positions for a diagram. |
+| Artifact                            | Description                                        |
+| ----------------------------------- | -------------------------------------------------- |
+| `landscape.cytoscape.html`          | Workspace package dependency graph.                |
+| `<package>/cytoscape.html`          | Package-level source dependency graph.             |
+| `<package>/dependency-cruiser.json` | Raw dependency-cruiser report for the package.     |
+| `<package>/cytoscape.json`          | Cytoscape JSON data for the package graph.         |
+| `<package>/folder-*.cytoscape.html` | Optional configured folder-level diagrams.         |
+| `*.cytoscape.layout.json`           | Checked-in node and group positions for a diagram. |
 
 Inspect diagrams through the local architecture viewer after generating them:
 
@@ -187,12 +187,13 @@ spec-n-roll.architecture.config.cjs
 
 Use it to:
 
-| Setting                               | Purpose                                                           |
-| ------------------------------------- | ----------------------------------------------------------------- |
-| `exclusions.externalDependencies`     | Hide external dependency nodes such as framework or Node modules. |
-| `exclusions.projectFiles.allPackages` | Hide matching project files from every package diagram.           |
-| `exclusions.projectFiles.packages`    | Hide matching files for specific packages.                        |
-| `folderDiagrams.packages`             | Opt packages into additional folder-scoped diagrams.              |
+| Setting                               | Purpose                                                      |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `collapsed.externalDependencies`      | Collapse selected external modules into one dependency node. |
+| `exclusions.landscape`                | Hide selected external modules from the landscape diagram.   |
+| `exclusions.projectFiles.allPackages` | Hide matching project files from every package diagram.      |
+| `exclusions.projectFiles.packages`    | Hide matching files for specific packages.                   |
+| `folderDiagrams.packages`             | Opt packages into additional folder-scoped diagrams.         |
 
 Folder diagrams are configured per package. Paths are relative to the package
 root:

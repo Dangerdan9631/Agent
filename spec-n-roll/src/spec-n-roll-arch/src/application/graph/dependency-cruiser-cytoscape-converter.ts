@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+import type { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 import { DirectoryCytoscapeGroupBuilder } from '#arch/application/graph/directory-cytoscape-group-builder.js';
@@ -9,6 +10,11 @@ import type { WorkspacePackage } from '#arch/application/packages/workspace-pack
  * Describes optional dependency-cruiser conversion settings.
  */
 export interface DependencyCruiserCytoscapeConversionOptions {
+  /**
+   * User-configured policy selecting external modules represented by one node.
+   */
+  collapseFilter?: ArchitectureCollapseFilter;
+
   /**
    * Parent graph node used to contain package file and directory nodes.
    */
@@ -66,34 +72,52 @@ export class DependencyCruiserCytoscapeConverter {
     const edges = new Map<string, CytoscapeElement>();
 
     for (const module of report.modules ?? []) {
-      const sourceId = this.normalizeDependencyId({
+      const sourceReference = {
         module: module.source,
         resolved: module.source,
         coreModule: module.coreModule,
-      });
+      };
+      const sourceId = this.normalizeDependencyId(
+        sourceReference,
+        options.collapseFilter,
+      );
+      const sourceExternalId =
+        this.externalDependencyIdentifier.identify(sourceReference);
       if (
-        this.externalDependencyIdentifier.isExternalDependency(
-          sourceId,
-          module.coreModule,
+        sourceExternalId &&
+        this.collapsesExternalDependency(
+          sourceExternalId,
+          options.collapseFilter,
         )
       ) {
         externalNodeIds.add(sourceId);
         continue;
       }
       if (
-        this.excludesProjectFile(sourceId, workspacePackage, exclusionFilter)
+        this.excludesNode(
+          sourceId,
+          sourceExternalId,
+          workspacePackage,
+          exclusionFilter,
+        )
       ) {
         continue;
       }
 
       nodeIds.add(sourceId);
+      if (sourceExternalId) {
+        externalNodeIds.add(sourceId);
+      }
 
       for (const dependency of module.dependencies ?? []) {
-        const dependencyId = this.normalizeDependencyId(dependency);
+        const dependencyId = this.normalizeDependencyId(
+          dependency,
+          options.collapseFilter,
+        );
         if (
           this.excludesDependency(
+            dependency,
             dependencyId,
-            dependency.coreModule,
             workspacePackage,
             exclusionFilter,
           )
@@ -102,12 +126,7 @@ export class DependencyCruiserCytoscapeConverter {
         }
 
         nodeIds.add(dependencyId);
-        if (
-          this.externalDependencyIdentifier.isExternalDependency(
-            dependencyId,
-            dependency.coreModule,
-          )
-        ) {
+        if (this.externalDependencyIdentifier.identify(dependency)) {
           externalNodeIds.add(dependencyId);
         }
         edges.set(`${sourceId}->${dependencyId}`, {
@@ -174,32 +193,40 @@ export class DependencyCruiserCytoscapeConverter {
   }
 
   private excludesDependency(
+    dependency: {
+      module: string;
+      resolved: string;
+      coreModule?: boolean;
+    },
     dependencyId: string,
-    coreModule = false,
     workspacePackage?: WorkspacePackage,
     exclusionFilter?: ArchitectureExclusionFilter,
   ): boolean {
-    if (
-      this.externalDependencyIdentifier.isExternalDependency(
-        dependencyId,
-        coreModule,
-      )
-    ) {
-      return (
-        exclusionFilter?.excludesExternalDependency(
-          this.externalDependencyIdentifier.label(dependencyId),
-        ) ?? false
-      );
-    }
-
-    return this.excludesProjectFile(
+    return this.excludesNode(
       dependencyId,
+      this.externalDependencyIdentifier.identify(dependency),
       workspacePackage,
       exclusionFilter,
     );
   }
 
-  private excludesProjectFile(
+  private excludesNode(
+    nodeId: string,
+    externalId: string | undefined,
+    workspacePackage?: WorkspacePackage,
+    exclusionFilter?: ArchitectureExclusionFilter,
+  ): boolean {
+    if (externalId && workspacePackage && exclusionFilter) {
+      return exclusionFilter.excludesProjectNode(
+        workspacePackage.name,
+        this.externalDependencyIdentifier.label(externalId),
+      );
+    }
+
+    return this.excludesProjectNode(nodeId, workspacePackage, exclusionFilter);
+  }
+
+  private excludesProjectNode(
     filePath: string,
     workspacePackage?: WorkspacePackage,
     exclusionFilter?: ArchitectureExclusionFilter,
@@ -208,13 +235,13 @@ export class DependencyCruiserCytoscapeConverter {
       return false;
     }
 
-    return exclusionFilter.excludesProjectFile(
+    return exclusionFilter.excludesProjectNode(
       workspacePackage.name,
-      this.packageRelativePath(filePath, workspacePackage),
+      this.nodeName(filePath, workspacePackage),
     );
   }
 
-  private packageRelativePath(
+  private nodeName(
     filePath: string,
     workspacePackage: WorkspacePackage,
   ): string {
@@ -224,19 +251,36 @@ export class DependencyCruiserCytoscapeConverter {
     );
     const relativeRoot = `src/${packageDirectory}/`;
 
-    return normalizedFilePath.startsWith(relativeRoot)
+    const packageRelativePath = normalizedFilePath.startsWith(relativeRoot)
       ? normalizedFilePath.slice(relativeRoot.length)
       : normalizedFilePath;
+    return packageRelativePath.replace(/^src\//u, '').replace(/\.[^./]+$/u, '');
   }
 
-  private normalizeDependencyId(dependency: {
-    module: string;
-    resolved: string;
-    coreModule?: boolean;
-  }): string {
+  private normalizeDependencyId(
+    dependency: {
+      module: string;
+      resolved: string;
+      coreModule?: boolean;
+    },
+    collapseFilter?: ArchitectureCollapseFilter,
+  ): string {
+    const externalId = this.externalDependencyIdentifier.identify(dependency);
+    return externalId &&
+      this.collapsesExternalDependency(externalId, collapseFilter)
+      ? externalId
+      : dependency.resolved;
+  }
+
+  private collapsesExternalDependency(
+    externalId: string,
+    collapseFilter?: ArchitectureCollapseFilter,
+  ): boolean {
     return (
-      this.externalDependencyIdentifier.identify(dependency) ??
-      dependency.resolved
+      !collapseFilter ||
+      collapseFilter.collapsesExternalDependency(
+        this.externalDependencyIdentifier.label(externalId),
+      )
     );
   }
 

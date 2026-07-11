@@ -1,4 +1,3 @@
-import { basename } from 'node:path';
 import type {
   ArchitectureConfig,
   ArchitectureFolderDiagramConfig,
@@ -28,9 +27,7 @@ export class ArchitectureExclusionFilter {
   ): ArchitectureExclusionFilter {
     return new ArchitectureExclusionFilter({
       exclusions: {
-        externalDependencies:
-          folderDiagram.exclusions?.externalDependencies ??
-          this.config.exclusions?.externalDependencies,
+        landscape: this.config.exclusions?.landscape,
         projectFiles: {
           allPackages: this.config.exclusions?.projectFiles?.allPackages,
           packages: {
@@ -45,54 +42,44 @@ export class ArchitectureExclusionFilter {
   }
 
   /**
-   * Checks whether an external dependency should be excluded.
+   * Checks whether an external dependency should be excluded from the landscape diagram.
    *
    * @param dependencyName - Displayed external dependency name, such as "tslog" or "fs".
-   * @returns true when the external dependency is configured for exclusion.
+   * @returns true when the external dependency is configured for project exclusion.
    */
-  excludesExternalDependency(dependencyName: string): boolean {
-    return new Set(this.config.exclusions?.externalDependencies ?? []).has(
-      dependencyName,
-    );
+  excludesLandscapeDependency(dependencyName: string): boolean {
+    return new Set(this.config.exclusions?.landscape ?? []).has(dependencyName);
   }
 
   /**
-   * Checks whether a project file should be excluded from a package graph.
+   * Checks whether a project node should be excluded from a package graph.
    *
    * @param packageName - Workspace package name containing the file.
-   * @param packageRelativePath - File path relative to the package root, using slash separators.
-   * @returns true when a global or package-specific project file pattern excludes the file.
+   * @param nodeName - Node name relative to the package source root, without a file extension.
+   * @returns true when a global or package-specific project node pattern excludes the node.
    */
-  excludesProjectFile(
-    packageName: string,
-    packageRelativePath: string,
-  ): boolean {
+  excludesProjectNode(packageName: string, nodeName: string): boolean {
     const patterns = [
       ...(this.config.exclusions?.projectFiles?.allPackages ?? []),
       ...(this.config.exclusions?.projectFiles?.packages?.[packageName] ?? []),
     ];
-    const normalizedPath = packageRelativePath.replaceAll('\\', '/');
-    const fileName = basename(normalizedPath);
+    const normalizedNodeName = nodeName.replaceAll('\\', '/');
 
     return patterns.some((pattern) =>
-      this.matchesProjectFilePattern(pattern, normalizedPath, fileName),
+      this.matchesProjectNodePattern(pattern, normalizedNodeName),
     );
   }
 
-  private matchesProjectFilePattern(
+  private matchesProjectNodePattern(
     pattern: string,
-    packageRelativePath: string,
-    fileName: string,
+    nodeName: string,
   ): boolean {
     const normalizedPattern = pattern.replaceAll('\\', '/');
     if (!this.isGlobPattern(normalizedPattern)) {
-      return (
-        normalizedPattern === fileName ||
-        normalizedPattern === packageRelativePath
-      );
+      return normalizedPattern === nodeName;
     }
 
-    return this.globExpression(normalizedPattern).test(packageRelativePath);
+    return this.globExpression(normalizedPattern).test(nodeName);
   }
 
   private isGlobPattern(pattern: string): boolean {

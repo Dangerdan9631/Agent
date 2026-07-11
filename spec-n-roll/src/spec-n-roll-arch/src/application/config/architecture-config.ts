@@ -3,25 +3,35 @@
  */
 export interface ArchitectureConfig {
   /**
+   * Diagram collapse settings. Omitted sections use each diagram's default node detail.
+   */
+  collapsed?: {
+    /**
+     * External package or runtime module names represented by one package-level node.
+     */
+    externalDependencies?: string[];
+  };
+
+  /**
    * Diagram exclusion settings. Omitted sections behave as empty exclusion lists.
    */
   exclusions?: {
     /**
-     * External package or runtime module names to exclude from package diagrams.
+     * External package or runtime module names to exclude from the landscape diagram.
      */
-    externalDependencies?: string[];
+    landscape?: string[];
 
     /**
-     * Project file exclusions matched by basename, package-root-relative path, or package-root-relative glob.
+     * Project node exclusions matched by node name or node-name glob.
      */
     projectFiles?: {
       /**
-       * Project file exclusions applied to every workspace package.
+       * Project node exclusions applied to every workspace package.
        */
       allPackages?: string[];
 
       /**
-       * Project file exclusions applied only to the package named by each property.
+       * Project node exclusions applied only to the package named by each property.
        */
       packages?: Record<string, string[]>;
     };
@@ -53,16 +63,21 @@ export interface ArchitectureFolderDiagramConfig {
   title?: string;
 
   /**
+   * Diagram collapse overrides. Omitted values inherit the workspace configuration.
+   */
+  collapsed?: {
+    /**
+     * External package or runtime module names represented by one node in this folder diagram.
+     */
+    externalDependencies?: string[];
+  };
+
+  /**
    * Diagram exclusion overrides. Omitted values inherit the containing package configuration.
    */
   exclusions?: {
     /**
-     * External package or runtime module names to exclude from this folder diagram.
-     */
-    externalDependencies?: string[];
-
-    /**
-     * Project file exclusions matched by basename, package-root-relative path, or package-root-relative glob.
+     * Project node exclusions matched by node name or node-name glob.
      */
     projectFiles?: string[];
   };
