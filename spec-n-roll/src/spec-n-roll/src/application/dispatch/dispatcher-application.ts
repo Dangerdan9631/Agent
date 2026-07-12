@@ -1,4 +1,5 @@
 import { Logger } from 'tslog';
+import { RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE } from 'spec-n-roll-api';
 import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 import type { DispatcherRunRequest } from '#dispatcher/application/dispatch/dispatcher-run-request.js';
 import { DispatcherMetadataResolver } from '#dispatcher/application/dispatcher/dispatcher-metadata-resolver.js';
@@ -73,7 +74,8 @@ export class DispatcherApplication {
       executablePath: target.executablePath,
       argv: invocation.argv,
       cwd: invocation.cwd,
-      stdin: `${JSON.stringify(invocation)}\n`,
+      invocation: JSON.stringify(invocation),
+      invocationEnvironmentVariable: RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE,
     });
   }
 }

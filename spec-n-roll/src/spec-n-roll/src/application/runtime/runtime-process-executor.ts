@@ -5,7 +5,7 @@ import type { RuntimeProcessRequest } from '#dispatcher/application/runtime/runt
  */
 export interface RuntimeProcessExecutor {
   /**
-   * Executes the selected runtime with the invocation payload on stdin.
+   * Executes the selected runtime with native access to the current terminal.
    *
    * @param request - Raw process launch data prepared by dispatcher application behavior.
    * @returns Runtime process exit code.

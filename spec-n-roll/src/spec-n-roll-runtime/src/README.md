@@ -9,7 +9,7 @@ flowchart TD
     Entry["entry point"]
     Cli["CLI adapter"]
     Composition["composition root"]
-    Reader["invocation reader"]
+    Reader["environment invocation reader"]
     Parser["invocation parser"]
     Application["runtime application"]
     Output["output writer"]
@@ -26,7 +26,7 @@ flowchart TD
 
 ### Process I/O
 
-Keep stdin, stdout, and stderr access inside adapter classes. Application code should depend on invocation-reader and output-writer interfaces rather than Node process globals.
+Keep process environment and terminal access inside adapter classes. Application code should depend on invocation-reader and UI-renderer interfaces rather than Node process globals. Standard input remains attached to the terminal for Ink keyboard handling.
 
 ### Payload handling
 

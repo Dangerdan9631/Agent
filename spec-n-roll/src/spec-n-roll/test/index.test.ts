@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import 'reflect-metadata';
 import { Logger } from 'tslog';
+import { RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE } from 'spec-n-roll-api';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DispatcherApplication } from '#dispatcher/application/dispatch/dispatcher-application.js';
 import { DispatcherCli } from '#dispatcher/presentation/cli/dispatcher-cli.js';
@@ -462,7 +463,7 @@ describe('DispatcherApplication', () => {
     });
 
     expect(exitCode).toBe(17);
-    expect(JSON.parse(executor.request?.stdin ?? '')).toEqual({
+    expect(JSON.parse(executor.request?.invocation ?? '')).toEqual({
       argv: ['--global', '--root', projectRoot, 'version'],
       dispatcher: {
         installSource: 'local',
@@ -479,7 +480,7 @@ describe('DispatcherApplication', () => {
 });
 
 describe('NodeRuntimeProcessExecutor', () => {
-  it('spawns Node without shell interpolation and sends the invocation on stdin', () => {
+  it('spawns Node natively in the terminal and sends invocation metadata through the environment', () => {
     const fixtureFactory = new DispatcherFixtureFactory();
     const executablePath = join(
       fixtureFactory.createTempDir('spawn'),
@@ -497,7 +498,8 @@ describe('NodeRuntimeProcessExecutor', () => {
       executablePath,
       argv: ['--root', 'my project', 'version'],
       cwd: 'C:\\workspace\\my project',
-      stdin: '{"example":true}\n',
+      invocation: '{"example":true}',
+      invocationEnvironmentVariable: RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE,
     };
 
     expect(executor.execute(request)).toBe(0);
@@ -507,9 +509,10 @@ describe('NodeRuntimeProcessExecutor', () => {
       [executablePath, '--root', 'my project', 'version'],
       {
         cwd: 'C:\\workspace\\my project',
-        encoding: 'utf8',
-        input: '{"example":true}\n',
-        stdio: ['pipe', 'inherit', 'inherit'],
+        env: expect.objectContaining({
+          [RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE]: '{"example":true}',
+        }),
+        stdio: 'inherit',
       },
     );
   });

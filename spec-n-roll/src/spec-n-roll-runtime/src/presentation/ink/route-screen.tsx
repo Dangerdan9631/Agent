@@ -42,7 +42,11 @@ const PLACEHOLDER_LINES = Array.from(
 export function RouteScreen(props: RouteScreenProps): React.ReactElement {
   const home = props.route === 'global-home' || props.route === 'local-home';
   const menuRows = home ? HOME_MENU.length : 1;
-  const contentRows = Math.max(1, props.rows - menuRows);
+  const separatorRows = 1;
+  const contentRows = Math.max(
+    1,
+    props.rows - menuRows - separatorRows,
+  );
   const title = home ? (props.route === 'global-home' ? 'global' : 'local') : props.route === 'placeholder-one' ? 'placeholder one' : 'placeholder two';
 
   const onSelect = (item: MenuItem): void => {
@@ -57,6 +61,14 @@ export function RouteScreen(props: RouteScreenProps): React.ReactElement {
         <Text bold>{title}</Text>
         <ScrollableContent rows={Math.max(0, contentRows - 1)} lines={PLACEHOLDER_LINES} />
       </Box>
+      <Box
+        borderStyle="single"
+        borderBottom={false}
+        borderLeft={false}
+        borderRight={false}
+        height={separatorRows}
+        width="100%"
+      />
       <MenuList items={home ? HOME_MENU : [{ id: 'back', label: 'Back' }]} onSelect={onSelect} />
     </Box>
   );

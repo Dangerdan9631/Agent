@@ -8,4 +8,5 @@ export {
 export type { PathResolutionContext } from '#api/contracts/project/path-resolution-context.js';
 export type { ProjectRootResolution } from '#api/contracts/project/project-root-resolution.js';
 export type { RuntimeInvocation } from '#api/contracts/runtime/runtime-invocation.js';
+export { RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE } from '#api/contracts/runtime/runtime-invocation-environment.js';
 export type { RuntimeTarget } from '#api/contracts/runtime/runtime-target.js';

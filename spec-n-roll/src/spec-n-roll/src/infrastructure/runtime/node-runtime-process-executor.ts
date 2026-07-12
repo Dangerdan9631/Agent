@@ -1,4 +1,4 @@
-import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';
@@ -16,7 +16,7 @@ export class NodeRuntimeProcessExecutor implements RuntimeProcessExecutor {
   constructor(private readonly environment: DispatcherEnvironment) {}
 
   /**
-   * Executes the selected runtime with the invocation payload on stdin.
+   * Executes the selected runtime natively in the current terminal.
    *
    * @param request - Raw process launch data prepared by application behavior.
    * @returns Runtime process exit code.
@@ -28,9 +28,11 @@ export class NodeRuntimeProcessExecutor implements RuntimeProcessExecutor {
       [request.executablePath, ...request.argv],
       {
         cwd: request.cwd,
-        encoding: 'utf8',
-        input: request.stdin,
-        stdio: ['pipe', 'inherit', 'inherit'],
+        env: {
+          ...process.env,
+          [request.invocationEnvironmentVariable]: request.invocation,
+        },
+        stdio: 'inherit',
       },
     );
 
@@ -62,7 +64,7 @@ export class NodeRuntimeProcessExecutor implements RuntimeProcessExecutor {
    */
   private throwIfSpawnFailed(
     executablePath: string,
-    result: SpawnSyncReturns<string>,
+    result: { readonly error?: Error },
   ): void {
     if (result.error != null) {
       throw new Error(

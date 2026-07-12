@@ -30,7 +30,7 @@ export function ScrollableContent(props: ScrollableContentProps): React.ReactEle
 
   useEffect(() => setOffset((value) => Math.min(value, maxOffset)), [maxOffset]);
   useInput((_input, key) => {
-    const step = Math.max(1, textRows - 1);
+    const step = 3;
     if (key.pageDown) setOffset((value) => Math.min(maxOffset, value + step));
     if (key.pageUp) setOffset((value) => Math.max(0, value - step));
   });

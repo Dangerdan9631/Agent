@@ -99,7 +99,7 @@ describe('spec-n-roll-runtime executable', () => {
         new RuntimeInvocationParser(),
         renderer,
       ).run(),
-    ).rejects.toThrow('Runtime invocation stdin was empty.');
+    ).rejects.toThrow('Runtime invocation payload was empty.');
     expect(renderer.modes).toEqual([]);
   });
 
@@ -119,7 +119,7 @@ describe('spec-n-roll-runtime executable', () => {
           renderer,
         ).run(),
       ).rejects.toThrow(
-        'Runtime invocation stdin did not match the dispatcher schema.',
+        'Runtime invocation payload did not match the dispatcher schema.',
       );
     } finally {
       errorSpy.mockRestore();

@@ -18,7 +18,12 @@ export interface RuntimeProcessRequest {
   readonly cwd: string;
 
   /**
-   * Newline-terminated JSON payload written to the child process standard input.
+   * JSON payload transferred privately to the runtime process environment.
    */
-  readonly stdin: string;
+  readonly invocation: string;
+
+  /**
+   * Environment variable name understood by the selected runtime package.
+   */
+  readonly invocationEnvironmentVariable: string;
 }

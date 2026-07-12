@@ -29,44 +29,193 @@ import { RuntimePackageDiscoverer } from '#arch/index.js';
 
 describe('spec-n-roll-arch', () => {
   it('creates declaration and module nodes with reference and inheritance relationships', () => {
-    const workspaceRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-types-'));
+    const workspaceRoot = mkdtempSync(
+      join(tmpdir(), 'spec-n-roll-arch-types-'),
+    );
     const packageRoot = join(workspaceRoot, 'src', 'alpha');
     const sourceRoot = join(packageRoot, 'src');
     mkdirSync(sourceRoot, { recursive: true });
-    writeFileSync(join(sourceRoot, 'contract.ts'), 'export interface Contract {}\nexport type Alias = Contract;\nexport enum State { Ready }\n');
-    writeFileSync(join(sourceRoot, 'service.ts'), "import { Contract, Alias } from './contract.js';\nexport class Service implements Contract { value!: Alias; contract!: Contract; }\nexport class PlainService implements Contract {}\nexport const create = (): Contract => new Service();\n");
+    writeFileSync(
+      join(sourceRoot, 'contract.ts'),
+      'export interface Contract {}\nexport type Alias = Contract;\nexport enum State { Ready }\n',
+    );
+    writeFileSync(
+      join(sourceRoot, 'service.ts'),
+      "import { Contract, Alias } from './contract.js';\nexport class Service implements Contract { value!: Alias; contract!: Contract; }\nexport class PlainService implements Contract {}\nexport const create = (): Contract => new Service();\n",
+    );
 
-    const graph = new TypeScriptArchitectureTypeGraphReader().read(workspaceRoot, [{ name: 'alpha', root: packageRoot, dependencies: {} }]);
+    const graph = new TypeScriptArchitectureTypeGraphReader().read(
+      workspaceRoot,
+      [{ name: 'alpha', root: packageRoot, dependencies: {} }],
+    );
     const service = graph.nodes.find((node) => node.label === 'Service');
-    const plainService = graph.nodes.find((node) => node.label === 'PlainService');
+    const plainService = graph.nodes.find(
+      (node) => node.label === 'PlainService',
+    );
     const contract = graph.nodes.find((node) => node.label === 'Contract');
     const moduleNode = graph.nodes.find((node) => node.moduleNode);
 
     expect(service?.nodeKind).toBe('class');
     expect(contract?.nodeKind).toBe('interface');
-    expect(graph.nodes.find((node) => node.label === 'Alias')?.nodeKind).toBe('other');
+    expect(graph.nodes.find((node) => node.label === 'Alias')?.nodeKind).toBe(
+      'other',
+    );
     expect(moduleNode?.label).toBe('service module');
-    expect(graph.relationships).toContainEqual({ sourceId: service?.id, targetId: contract?.id, relationshipType: 'inheritance' });
-    expect(graph.relationships).toContainEqual({ sourceId: service?.id, targetId: contract?.id, relationshipType: 'reference' });
-    expect(graph.relationships).toContainEqual({ sourceId: plainService?.id, targetId: contract?.id, relationshipType: 'inheritance' });
-    expect(graph.relationships).not.toContainEqual({ sourceId: plainService?.id, targetId: contract?.id, relationshipType: 'reference' });
-    expect(graph.relationships).toContainEqual({ sourceId: moduleNode?.id, targetId: contract?.id, relationshipType: 'reference' });
+    expect(graph.relationships).toContainEqual({
+      sourceId: service?.id,
+      targetId: contract?.id,
+      relationshipType: 'inheritance',
+    });
+    expect(graph.relationships).toContainEqual({
+      sourceId: service?.id,
+      targetId: contract?.id,
+      relationshipType: 'reference',
+    });
+    expect(graph.relationships).toContainEqual({
+      sourceId: plainService?.id,
+      targetId: contract?.id,
+      relationshipType: 'inheritance',
+    });
+    expect(graph.relationships).not.toContainEqual({
+      sourceId: plainService?.id,
+      targetId: contract?.id,
+      relationshipType: 'reference',
+    });
+    expect(graph.relationships).toContainEqual({
+      sourceId: moduleNode?.id,
+      targetId: contract?.id,
+      relationshipType: 'reference',
+    });
   });
   it('excludes external declaration relationships by their displayed package dependency name', () => {
     const elements = new ArchitectureTypeCytoscapeConverter().packageElements(
       {
-        nodes: [{ id: 'type:src/alpha/src/runtime.ts:Runtime', label: 'Runtime', nodeKind: 'class', packageName: 'alpha', sourceFile: 'src/alpha/src/runtime.ts', moduleNode: false }],
+        nodes: [
+          {
+            id: 'type:src/alpha/src/runtime.ts:Runtime',
+            label: 'Runtime',
+            nodeKind: 'class',
+            packageName: 'alpha',
+            sourceFile: 'src/alpha/src/runtime.ts',
+            moduleNode: false,
+          },
+        ],
         relationships: [
-          { sourceId: 'type:src/alpha/src/runtime.ts:Runtime', targetId: 'external:node:path', relationshipType: 'reference' },
-          { sourceId: 'type:src/alpha/src/runtime.ts:Runtime', targetId: 'external:node:url', relationshipType: 'reference' },
+          {
+            sourceId: 'type:src/alpha/src/runtime.ts:Runtime',
+            targetId: 'external:node:path',
+            relationshipType: 'reference',
+          },
+          {
+            sourceId: 'type:src/alpha/src/runtime.ts:Runtime',
+            targetId: 'external:node:url',
+            relationshipType: 'reference',
+          },
         ],
       },
       { name: 'alpha', root: 'D:/repo/src/alpha', dependencies: {} },
-      new ArchitectureExclusionFilter({ exclusions: { projectFiles: { packages: { alpha: ['node:path', 'node:url'] } } } }),
+      new ArchitectureExclusionFilter({
+        exclusions: {
+          projectFiles: { packages: { alpha: ['node:path', 'node:url'] } },
+        },
+      }),
     );
 
-    expect(elements.some((element) => element.data.id === 'external:node:path')).toBe(false);
-    expect(elements.some((element) => element.data.id === 'external:node:url')).toBe(false);
+    expect(
+      elements.some((element) => element.data.id === 'external:node:path'),
+    ).toBe(false);
+    expect(
+      elements.some((element) => element.data.id === 'external:node:url'),
+    ).toBe(false);
+  });
+  it('groups directly referenced workspace types outside the package root', () => {
+    const elements = new ArchitectureTypeCytoscapeConverter().packageElements(
+      {
+        nodes: [
+          {
+            id: 'type:src/alpha/src/service.ts:Service',
+            label: 'Service',
+            nodeKind: 'class',
+            packageName: 'alpha',
+            sourceFile: 'src/alpha/src/service.ts',
+            moduleNode: false,
+          },
+          {
+            id: 'type:src/beta/src/contracts.ts:Contract',
+            label: 'Contract',
+            nodeKind: 'interface',
+            packageName: 'beta',
+            sourceFile: 'src/beta/src/contracts.ts',
+            moduleNode: false,
+          },
+          {
+            id: 'type:src/beta/src/contracts.ts:Unused',
+            label: 'Unused',
+            nodeKind: 'class',
+            packageName: 'beta',
+            sourceFile: 'src/beta/src/contracts.ts',
+            moduleNode: false,
+          },
+          {
+            id: 'type:src/gamma/src/transitive.ts:Transitive',
+            label: 'Transitive',
+            nodeKind: 'class',
+            packageName: 'gamma',
+            sourceFile: 'src/gamma/src/transitive.ts',
+            moduleNode: false,
+          },
+        ],
+        relationships: [
+          {
+            sourceId: 'type:src/alpha/src/service.ts:Service',
+            targetId: 'type:src/beta/src/contracts.ts:Contract',
+            relationshipType: 'reference',
+          },
+          {
+            sourceId: 'type:src/beta/src/contracts.ts:Contract',
+            targetId: 'type:src/gamma/src/transitive.ts:Transitive',
+            relationshipType: 'reference',
+          },
+        ],
+      },
+      {
+        name: 'alpha',
+        root: 'D:/repo/src/alpha',
+        dependencies: { beta: '0.1.0' },
+      },
+    );
+
+    expect(elements).toContainEqual({
+      data: {
+        id: 'external-package:beta',
+        label: 'beta',
+        workspaceDependency: 'true',
+      },
+    });
+    expect(elements).toContainEqual({
+      data: {
+        id: 'type:src/beta/src/contracts.ts:Contract',
+        label: 'Contract',
+        parent: 'external-package:beta',
+        nodeKind: 'interface',
+        sourceFile: 'src/beta/src/contracts.ts',
+        packageName: 'beta',
+      },
+    });
+    expect(elements).toContainEqual({
+      data: {
+        id: 'type:src/alpha/src/service.ts:Service->type:src/beta/src/contracts.ts:Contract:reference',
+        source: 'type:src/alpha/src/service.ts:Service',
+        target: 'type:src/beta/src/contracts.ts:Contract',
+        relationshipType: 'reference',
+      },
+    });
+    expect(
+      elements.some((element) => element.data.id.endsWith(':Unused')),
+    ).toBe(false);
+    expect(
+      elements.some((element) => element.data.id.endsWith(':Transitive')),
+    ).toBe(false);
   });
   it('discovers runtime packages and excludes arch and test packages', () => {
     const workspaceRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-'));
@@ -1239,7 +1388,9 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('Math.round(position.x / gridSize) * gridSize');
     expect(html).toContain('Math.round(position.y / gridSize) * gridSize');
     expect(html).toContain('node.children().length === 0');
-    expect(html).toContain('gridSnapper.snap(Number(snapGrid.value), selectedNode)');
+    expect(html).toContain(
+      'gridSnapper.snap(Number(snapGrid.value), selectedNode)',
+    );
     expect(html).toContain('autoLayout.configure(');
     expect(html).toContain('this.maxRows = 5');
     expect(html).toContain('this.verticalMode = false');

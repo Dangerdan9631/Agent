@@ -13,6 +13,6 @@ export type { RuntimeInvocationReader } from '#runtime/application/invocation/ru
 export { RuntimeInvocationParser } from '#runtime/application/invocation/runtime-invocation-parser.js';
 export type { RuntimeOutputWriter } from '#runtime/application/output/runtime-output-writer.js';
 export { RuntimeProgramFactory } from '#runtime/composition/runtime/runtime-program-factory.js';
-export { StdinRuntimeInvocationReader } from '#runtime/infrastructure/process/stdin-runtime-invocation-reader.js';
+export { EnvironmentRuntimeInvocationReader } from '#runtime/infrastructure/process/environment-runtime-invocation-reader.js';
 
 await new RuntimeCli().runIfMain(import.meta.url);

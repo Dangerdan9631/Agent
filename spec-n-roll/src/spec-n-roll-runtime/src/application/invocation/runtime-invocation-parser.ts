@@ -12,14 +12,14 @@ export class RuntimeInvocationParser {
    */
   parse(input: string): RuntimeInvocation {
     if (input.trim() === '') {
-      throw new Error('Runtime invocation stdin was empty.');
+      throw new Error('Runtime invocation payload was empty.');
     }
 
     const parsed = JSON.parse(input) as unknown;
 
     if (!this.isRuntimeInvocation(parsed)) {
       throw new Error(
-        'Runtime invocation stdin did not match the dispatcher schema.',
+        'Runtime invocation payload did not match the dispatcher schema.',
       );
     }
 

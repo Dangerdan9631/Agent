@@ -1,3 +1,3 @@
 # Ink infrastructure
 
-This directory contains the process-facing Ink renderer adapter. It translates the application UI boundary into a mounted React terminal session and waits for that session to end.
+This directory contains the process-facing Ink renderer adapter. The dispatcher launches it with inherited terminal streams, allowing Ink to use native raw keyboard input while the adapter waits for the mounted React session to end.

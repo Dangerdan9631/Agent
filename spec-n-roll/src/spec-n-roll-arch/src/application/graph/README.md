@@ -22,6 +22,8 @@ Use `ExternalDependencyIdentifier` to classify npm and Node.js core modules cons
 
 Apply project dependency exclusions before pruning disconnected nodes. Retain connected node parent hierarchies so package and directory grouping remains intact.
 
+Package diagrams place directly referenced declarations from another workspace package in a sibling compound group named for that package. Only those direct declaration targets are included; transitive and unrelated declarations remain outside the package diagram.
+
 ### Viewer navigation
 
 `ArchitecturePage` models the always-expanded navigation tree shared by graph and matrix artifacts. Group entries describe structure while leaf entries link to generated diagram or dependency-matrix pages.
