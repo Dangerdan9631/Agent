@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "spec-n-roll": {
+      "command": "node",
+      "args": [
+        ".spec-n-roll/cli/bin/spec-n-roll-mcp"
+      ]
+    }
+  }
+}

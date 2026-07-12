@@ -317,7 +317,7 @@ describe('dispatcher architecture', () => {
   it('keeps filesystem imports in infrastructure and API contracts above it', () => {
     expect(
       new DispatcherSourceArchitecturePolicy().boundaryViolations(
-        'src/spec-n-roll/src',
+        'src',
       ),
     ).toEqual([]);
   });
@@ -404,7 +404,7 @@ describe('RuntimeTargetResolver', () => {
       '.spec-n-roll',
       'cli',
       'bin',
-      'spec-n-roll',
+      'spec-n-roll-runtime.js',
     );
     new DispatcherFixtureFactory().writeNodeLauncher(localExecutable);
 

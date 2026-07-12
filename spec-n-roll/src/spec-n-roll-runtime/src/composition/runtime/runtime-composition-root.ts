@@ -2,6 +2,7 @@ import { InkRuntimeUiRenderer } from '#runtime/infrastructure/ink/ink-runtime-ui
 import { RuntimeApplication } from '#runtime/application/runtime/runtime-application.js';
 import { RuntimeInvocationParser } from '#runtime/application/invocation/runtime-invocation-parser.js';
 import { EnvironmentRuntimeInvocationReader } from '#runtime/infrastructure/process/environment-runtime-invocation-reader.js';
+import { NodeProjectInitializer } from '#runtime/infrastructure/filesystem/node-project-initializer.js';
 
 /**
  * Wires process-backed runtime dependencies.
@@ -17,6 +18,7 @@ export class RuntimeCompositionRoot {
       new EnvironmentRuntimeInvocationReader(),
       new RuntimeInvocationParser(),
       new InkRuntimeUiRenderer(),
+      new NodeProjectInitializer(),
     );
   }
 }

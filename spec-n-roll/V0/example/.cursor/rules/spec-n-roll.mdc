@@ -1,0 +1,7 @@
+---
+description: Spec-n-Roll workflow rules pointer
+globs: *
+alwaysApply: true
+---
+
+Canonical Spec-N-Roll workflow rules live in [.spec-n-roll/AGENTS.md](../../.spec-n-roll/AGENTS.md).

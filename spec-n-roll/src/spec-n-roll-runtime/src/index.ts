@@ -6,6 +6,12 @@ export { RuntimeApplication } from '#runtime/application/runtime/runtime-applica
 export { RuntimeUiModeResolver } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
 export type { RuntimeUiMode } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
 export type { RuntimeUiRenderer } from '#runtime/application/ui/runtime-ui-renderer.js';
+export type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
+export type { ProjectInitializer } from '#runtime/application/init/project-initializer.js';
+export type { ExtensionDiscoverer } from '#runtime/application/extensions/extension-discoverer.js';
+export { InitCommandResolver } from '#runtime/application/init/init-command-resolver.js';
+export { NodeProjectInitializer } from '#runtime/infrastructure/filesystem/node-project-initializer.js';
+export { NodeExtensionDiscoverer } from '#runtime/infrastructure/extensions/node-extension-discoverer.js';
 export { TerminalLayoutAllocator } from '#runtime/application/ui/terminal-layout-allocator.js';
 export { RuntimeCli } from '#runtime/presentation/cli/runtime-cli.js';
 export { RuntimeCompositionRoot } from '#runtime/composition/runtime/runtime-composition-root.js';

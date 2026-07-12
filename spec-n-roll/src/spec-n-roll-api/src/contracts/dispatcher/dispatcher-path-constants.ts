@@ -16,5 +16,15 @@ export const LOCAL_CLI_RELATIVE_PATH_SEGMENTS = [
   SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
   'cli',
   'bin',
-  'spec-n-roll',
+  'spec-n-roll-runtime.js',
+] as const;
+
+/**
+ * Defines the project-local MCP server path components below a project root.
+ */
+export const LOCAL_MCP_RELATIVE_PATH_SEGMENTS = [
+  SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
+  'cli',
+  'bin',
+  'spec-n-roll-mcp.js',
 ] as const;

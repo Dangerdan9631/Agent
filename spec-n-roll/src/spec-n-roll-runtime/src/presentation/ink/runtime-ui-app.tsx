@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
-import type { RuntimeUiMode } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
+import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 import { TerminalLayoutAllocator } from '#runtime/application/ui/terminal-layout-allocator.js';
-import { NavigationStack, type RouteId } from '#runtime/presentation/ink/navigation-stack.js';
+import {
+  NavigationStack,
+  type RouteId,
+} from '#runtime/presentation/ink/navigation-stack.js';
 import { RouteScreen } from '#runtime/presentation/ink/route-screen.jsx';
 import { useStdoutSize } from '#runtime/presentation/ink/use-stdout-size.js';
 
@@ -11,7 +14,7 @@ import { useStdoutSize } from '#runtime/presentation/ink/use-stdout-size.js';
  */
 export interface RuntimeUiAppProps {
   /** Invocation mode that selects the initial home route. */
-  readonly mode: RuntimeUiMode;
+  readonly session: RuntimeUiSession;
 }
 
 /** Milliseconds before an unconfirmed exit dialog closes automatically. */
@@ -26,10 +29,16 @@ const EXIT_DIALOG_TIMEOUT_MS = 3000;
 export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
   const app = useApp();
   const size = useStdoutSize();
-  const layout = useMemo(() => new TerminalLayoutAllocator().allocate(size.rows), [size.rows]);
+  const layout = useMemo(
+    () => new TerminalLayoutAllocator().allocate(size.rows),
+    [size.rows],
+  );
   const navigation = useMemo(
-    () => new NavigationStack(props.mode === 'local' ? 'local-home' : 'global-home'),
-    [props.mode],
+    () =>
+      new NavigationStack(
+        props.session.mode === 'local' ? 'local-home' : 'global-home',
+      ),
+    [props.session.mode],
   );
   const [route, setRoute] = useState<RouteId>(navigation.current());
   const [exitPending, setExitPending] = useState(false);
@@ -37,7 +46,10 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
   const requestExit = useCallback((): void => setExitPending(true), []);
   useEffect(() => {
     if (!exitPending) return;
-    const timeout = setTimeout(() => setExitPending(false), EXIT_DIALOG_TIMEOUT_MS);
+    const timeout = setTimeout(
+      () => setExitPending(false),
+      EXIT_DIALOG_TIMEOUT_MS,
+    );
     return () => clearTimeout(timeout);
   }, [exitPending]);
 
@@ -56,36 +68,79 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
 
   if (layout.requiresResize) {
     return (
-      <Box height={layout.terminalRows} flexDirection="column" justifyContent="center" alignItems="center">
-        <Text bold color="yellow">Terminal is too small</Text>
+      <Box
+        height={layout.terminalRows}
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Text bold color="yellow">
+          Terminal is too small
+        </Text>
         <Text>Resize to at least {layout.minimumRows} rows.</Text>
       </Box>
     );
   }
 
   return (
-    <Box height={layout.terminalRows} width={size.columns} flexDirection="column">
-      <Box height={layout.statusRows} flexShrink={0} borderStyle="single" paddingX={1}>
+    <Box
+      height={layout.terminalRows}
+      width={size.columns}
+      flexDirection="column"
+    >
+      <Box
+        height={layout.statusRows}
+        flexShrink={0}
+        borderStyle="single"
+        paddingX={1}
+      >
         <Text bold>Spec N' Roll · {route}</Text>
       </Box>
       <Box height={layout.contentRows} flexDirection="column">
         <RouteScreen
           route={route}
           rows={layout.contentRows}
-          onNavigate={(next) => { navigation.push(next); setRoute(navigation.current()); }}
-          onBack={() => { navigation.pop(); setRoute(navigation.current()); }}
+          onNavigate={(next) => {
+            navigation.push(next);
+            setRoute(navigation.current());
+          }}
+          onBack={() => {
+            navigation.pop();
+            setRoute(navigation.current());
+          }}
           onExitRequest={requestExit}
+          session={props.session}
         />
         {exitPending ? (
-          <Box position="absolute" height={layout.contentRows} width="100%" alignItems="center" justifyContent="center">
-            <Box borderStyle="round" paddingX={2} paddingY={1} backgroundColor="black">
-              <Text bold color="yellow">Press esc/q to exit</Text>
+          <Box
+            position="absolute"
+            height={layout.contentRows}
+            width="100%"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Box
+              borderStyle="round"
+              paddingX={2}
+              paddingY={1}
+              backgroundColor="black"
+            >
+              <Text bold color="yellow">
+                Press esc/q to exit
+              </Text>
             </Box>
           </Box>
         ) : null}
       </Box>
-      <Box height={layout.hintRows} flexShrink={0} borderStyle="single" paddingX={1}>
-        <Text color="gray">↑/↓ select · Enter open · Esc back · PgUp/PgDn scroll</Text>
+      <Box
+        height={layout.hintRows}
+        flexShrink={0}
+        borderStyle="single"
+        paddingX={1}
+      >
+        <Text color="gray">
+          ↑/↓ select · Enter open · Esc back · PgUp/PgDn scroll
+        </Text>
       </Box>
     </Box>
   );

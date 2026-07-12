@@ -1,6 +1,6 @@
 # Runtime orchestration domain - src/spec-n-roll-runtime/src/application/runtime
 
-This directory contains runtime application orchestration. It coordinates invocation parsing and output boundaries to execute runtime behavior.
+This directory contains runtime application orchestration. It coordinates invocation parsing, direct commands, project state, and output boundaries to execute runtime behavior.
 
 ## Conventions
 

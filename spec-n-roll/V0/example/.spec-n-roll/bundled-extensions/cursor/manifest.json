@@ -1,0 +1,24 @@
+{
+  "manifestVersion": "1",
+  "id": "cursor",
+  "name": "Cursor",
+  "description": "Cursor agent integration for Spec-N-Roll workflow commands and MCP tools.",
+  "targetToolkitVersion": "0.1.0",
+  "agentSetup": {
+    "mcpConfig": {
+      "serverId": "spec-n-roll",
+      "format": "cursor-mcp-json",
+      "targets": [
+        {
+          "path": ".cursor/mcp.json"
+        }
+      ]
+    },
+    "ruleTargets": [
+      ".cursor/rules/spec-n-roll.mdc"
+    ],
+    "skillTargets": [
+      ".agents/skills"
+    ]
+  }
+}

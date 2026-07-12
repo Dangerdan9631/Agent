@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, type Instance } from 'ink';
-import type { RuntimeUiMode } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
+import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 import { RuntimeUiApp } from '#runtime/presentation/ink/runtime-ui-app.jsx';
 
 /**
@@ -10,11 +10,12 @@ export class InkRuntimeUiRenderer {
   /**
    * Renders the interactive application and waits until it exits.
    *
-   * @param mode - Resolved invocation mode that selects the home route.
+   * @param session - Resolved mode, project state, and available commands.
    * @returns Promise fulfilled when Ink unmounts after user exit.
    */
-  async render(mode: RuntimeUiMode): Promise<void> {
-    const instance: Instance = render(<RuntimeUiApp mode={mode} />);
+  async render(session: RuntimeUiSession): Promise<void> {
+    const instance: Instance = render(<RuntimeUiApp session={session} />);
     await instance.waitUntilExit();
+    if (process.stdout.isTTY) process.stdout.write('\u001B[2J\u001B[H');
   }
 }

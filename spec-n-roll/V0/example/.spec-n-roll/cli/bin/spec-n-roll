@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const binDir = path.dirname(fileURLToPath(import.meta.url));
+const runtimeMode = process.argv.slice(2).length === 0 ? 'ink' : 'cli';
+const bundleEntry = path.join(binDir, '..', 'dist', runtimeMode, 'index.js');
+if (!existsSync(bundleEntry)) {
+  console.error(`Local Spec-N-Roll CLI bundle is missing at ${bundleEntry}. Run \`spec-n-roll update\` to repair.`);
+  process.exit(1);
+}
+const result = spawnSync(process.execPath, [bundleEntry, ...process.argv.slice(2)], {
+  cwd: process.cwd(),
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    SPEC_N_ROLL_LOCAL_PIN: '1',
+  },
+});
+process.exit(result.status ?? 1);

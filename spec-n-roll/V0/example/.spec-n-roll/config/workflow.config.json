@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "2",
+  "toolkitVersion": "0.1.2",
+  "agents": [
+    {
+      "id": "cursor",
+      "displayName": "Cursor",
+      "enabled": true,
+      "commandPrefix": "spec-n-",
+      "ruleTargets": [
+        ".cursor/rules/spec-n-roll.mdc"
+      ],
+      "skillTargets": [
+        ".agents/skills"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "specify",
+      "kind": "built-in",
+      "command": "spec-n-specify",
+      "enabled": true,
+      "outputs": [
+        "spec.md"
+      ]
+    },
+    {
+      "id": "plan",
+      "kind": "built-in",
+      "command": "spec-n-plan",
+      "enabled": true,
+      "outputs": [
+        "plan.md"
+      ]
+    },
+    {
+      "id": "tasks",
+      "kind": "built-in",
+      "command": "spec-n-tasks",
+      "enabled": true,
+      "outputs": [
+        "tasks.md"
+      ]
+    },
+    {
+      "id": "implement",
+      "kind": "built-in",
+      "command": "spec-n-implement",
+      "enabled": true
+    }
+  ],
+  "workflows": [
+    {
+      "id": "papercut",
+      "name": "Papercut",
+      "description": "Single-file or trivial changes",
+      "steps": [
+        "specify",
+        "implement"
+      ]
+    },
+    {
+      "id": "quick",
+      "name": "Quick",
+      "description": "New behavior without architecture changes",
+      "steps": [
+        "specify",
+        "tasks",
+        "implement"
+      ],
+      "default": true
+    },
+    {
+      "id": "full",
+      "name": "Full",
+      "description": "Cross-cutting or architectural work",
+      "steps": [
+        "specify",
+        "plan",
+        "tasks",
+        "implement"
+      ]
+    }
+  ],
+  "defaultWorkflowId": "quick",
+  "extensions": [
+    {
+      "id": "cursor",
+      "manifestPath": ".spec-n-roll/bundled-extensions/cursor/manifest.json",
+      "enabled": true
+    }
+  ]
+}
