@@ -9,6 +9,12 @@ export interface RuntimeTarget {
   readonly executablePath: string;
 
   /**
+   * Runtime package version associated with the selected executable. This is
+   * the version from the dispatcher-resolved runtime package manifest.
+   */
+  readonly packageVersion: string;
+
+  /**
    * True when the target came from a project-local installation, otherwise
    * false for the global runtime package.
    */

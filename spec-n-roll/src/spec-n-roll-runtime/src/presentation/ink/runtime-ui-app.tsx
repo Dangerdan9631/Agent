@@ -21,6 +21,11 @@ export interface RuntimeUiAppProps {
 const EXIT_DIALOG_TIMEOUT_MS = 3000;
 
 /**
+ * Identifies the key required to confirm a pending exit request.
+ */
+type ExitConfirmationKey = 'enter' | 'escape';
+
+/**
  * Renders the stable status, route content, and key hint regions for the runtime UI.
  *
  * @param props - Resolved invocation mode used to choose the home route.
@@ -41,25 +46,37 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
     [props.session.mode],
   );
   const [route, setRoute] = useState<RouteId>(navigation.current());
-  const [exitPending, setExitPending] = useState(false);
+  const routeTitle =
+    route === 'global-home' || route === 'local-home' ? 'Home' : route;
+  const [exitConfirmationKey, setExitConfirmationKey] =
+    useState<ExitConfirmationKey>();
 
-  const requestExit = useCallback((): void => setExitPending(true), []);
+  const requestExit = useCallback(
+    (confirmationKey: ExitConfirmationKey): void =>
+      setExitConfirmationKey(confirmationKey),
+    [],
+  );
   useEffect(() => {
-    if (!exitPending) return;
+    if (exitConfirmationKey == null) return;
     const timeout = setTimeout(
-      () => setExitPending(false),
+      () => setExitConfirmationKey(undefined),
       EXIT_DIALOG_TIMEOUT_MS,
     );
     return () => clearTimeout(timeout);
-  }, [exitPending]);
+  }, [exitConfirmationKey]);
 
-  useInput((input, key) => {
-    if (exitPending) {
-      if (key.escape || input.toLowerCase() === 'q') app.exit();
+  useInput((_input, key) => {
+    if (exitConfirmationKey === 'escape' && key.escape) {
+      app.exit();
       return;
     }
+    if (exitConfirmationKey === 'enter' && key.return) {
+      app.exit();
+      return;
+    }
+    if (exitConfirmationKey != null) return;
     if (!key.escape) return;
-    if (navigation.isHome()) requestExit();
+    if (navigation.isHome()) requestExit('escape');
     else {
       navigation.pop();
       setRoute(navigation.current());
@@ -94,7 +111,7 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
         borderStyle="single"
         paddingX={1}
       >
-        <Text bold>Spec N' Roll · {route}</Text>
+        <Text bold>Spec N' Roll · {routeTitle}</Text>
       </Box>
       <Box height={layout.contentRows} flexDirection="column">
         <RouteScreen
@@ -104,14 +121,10 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
             navigation.push(next);
             setRoute(navigation.current());
           }}
-          onBack={() => {
-            navigation.pop();
-            setRoute(navigation.current());
-          }}
-          onExitRequest={requestExit}
+          onExitRequest={() => requestExit('enter')}
           session={props.session}
         />
-        {exitPending ? (
+        {exitConfirmationKey != null ? (
           <Box
             position="absolute"
             height={layout.contentRows}
@@ -126,7 +139,7 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
               backgroundColor="black"
             >
               <Text bold color="yellow">
-                Press esc/q to exit
+                Press {exitConfirmationKey} to exit
               </Text>
             </Box>
           </Box>
@@ -138,9 +151,7 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
         borderStyle="single"
         paddingX={1}
       >
-        <Text color="gray">
-          ↑/↓ select · Enter open · Esc back · PgUp/PgDn scroll
-        </Text>
+        <Text color="gray">↑/↓ select · Enter open · Esc back</Text>
       </Box>
     </Box>
   );

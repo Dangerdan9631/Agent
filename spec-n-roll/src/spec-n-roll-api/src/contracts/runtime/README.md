@@ -6,4 +6,6 @@ This directory contains shared runtime target and invocation payload contracts. 
 
 ### Runtime vocabulary
 
-Keep payload fields stable and documented. Runtime parsing and command behavior belong in runtime package application code.
+Keep payload fields stable and documented. Invocation payloads identify both the
+dispatcher and the resolved runtime so presentation can accurately show the
+active installation without re-resolving package state.

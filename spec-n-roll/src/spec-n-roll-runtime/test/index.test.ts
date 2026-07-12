@@ -50,12 +50,18 @@ class RecordingRuntimeUiRenderer implements RuntimeUiRenderer {
   readonly modes: RuntimeUiMode[] = [];
 
   /**
+   * UI sessions received by the renderer.
+   */
+  readonly sessions: RuntimeUiSession[] = [];
+
+  /**
    * Records one requested interactive mode.
    *
    * @param mode - Global or local mode selected by the application.
    */
   async render(session: RuntimeUiSession): Promise<void> {
     this.modes.push(session.mode);
+    this.sessions.push(session);
   }
 }
 
@@ -64,18 +70,25 @@ class RecordingRuntimeUiRenderer implements RuntimeUiRenderer {
  */
 class RecordingProjectInitializer implements ProjectInitializer {
   /**
+   * Creates a fixture with a fixed project detection result.
+   *
+   * @param projectExistsResult - Result returned for every project detection request.
+   */
+  constructor(private readonly projectExistsResult = false) {}
+
+  /**
    * Recorded project initialization requests.
    */
   readonly requests: string[] = [];
 
   /**
-   * Reports that fixture roots are not initialized.
+   * Reports the configured fixture project detection result.
    *
-   * @returns false for fixture project roots.
+   * @returns Configured project detection result for fixture roots.
    */
   projectExists(projectRoot: string): boolean {
     void projectRoot;
-    return false;
+    return this.projectExistsResult;
   }
 
   /**
@@ -311,6 +324,11 @@ describe('spec-n-roll-runtime executable', () => {
         installDirectory: '/dispatcher/dist',
         packageVersion: '0.1.0',
       },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
       projectRoot: '/workspace/project',
       cwd: '/workspace/project',
     };
@@ -320,11 +338,77 @@ describe('spec-n-roll-runtime executable', () => {
       new StringRuntimeInvocationReader(JSON.stringify(invocation)),
       new RuntimeInvocationParser(),
       renderer,
-      new RecordingProjectInitializer(),
+      new RecordingProjectInitializer(true),
     ).run();
 
     await expect(result).resolves.toBeUndefined();
     expect(renderer.modes).toEqual(['local']);
+    expect(renderer.sessions).toMatchObject([
+      {
+        dispatcher: invocation.dispatcher,
+        runtime: invocation.runtime,
+        cwd: '/workspace/project',
+        projectRoot: '/workspace/project',
+      },
+    ]);
+  });
+
+  it('keeps global initialization enabled when a specified root has no project configuration', async () => {
+    const invocation: RuntimeInvocation = {
+      argv: ['--root', '/workspace/new-project', 'version'],
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      projectRoot: '/workspace/new-project',
+      cwd: '/workspace/new-project',
+    };
+    const renderer = new RecordingRuntimeUiRenderer();
+
+    await new RuntimeApplication(
+      new StringRuntimeInvocationReader(JSON.stringify(invocation)),
+      new RuntimeInvocationParser(),
+      renderer,
+      new RecordingProjectInitializer(false),
+    ).run();
+
+    expect(renderer.sessions).toMatchObject([
+      { mode: 'global', projectFound: false },
+    ]);
+    expect(renderer.sessions[0]?.projectRoot).toBe('/workspace/new-project');
+  });
+
+  it('keeps global initialization enabled when only the working directory contains a project', async () => {
+    const invocation: RuntimeInvocation = {
+      argv: ['version'],
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      cwd: '/workspace/project',
+    };
+    const renderer = new RecordingRuntimeUiRenderer();
+
+    await new RuntimeApplication(
+      new StringRuntimeInvocationReader(JSON.stringify(invocation)),
+      new RuntimeInvocationParser(),
+      renderer,
+      new RecordingProjectInitializer(true),
+    ).run();
+
+    expect(renderer.sessions[0]?.projectFound).toBe(false);
   });
 
   it('initializes the current working directory when init has no root', async () => {
@@ -335,6 +419,11 @@ describe('spec-n-roll-runtime executable', () => {
         installSource: 'remote',
         installDirectory: '/global/spec-n-roll',
         packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
       },
       cwd: '/workspace/project',
     };
@@ -357,6 +446,11 @@ describe('spec-n-roll-runtime executable', () => {
         installSource: 'remote',
         installDirectory: '/global/spec-n-roll',
         packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
       },
       projectRoot: '/workspace/project',
       cwd: '/workspace/project',

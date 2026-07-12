@@ -316,9 +316,7 @@ describe('spec-n-roll dispatcher executable', () => {
 describe('dispatcher architecture', () => {
   it('keeps filesystem imports in infrastructure and API contracts above it', () => {
     expect(
-      new DispatcherSourceArchitecturePolicy().boundaryViolations(
-        'src',
-      ),
+      new DispatcherSourceArchitecturePolicy().boundaryViolations('src'),
     ).toEqual([]);
   });
 });
@@ -415,6 +413,7 @@ describe('RuntimeTargetResolver', () => {
       ).resolve(projectRoot, false, import.meta.dirname),
     ).toEqual({
       executablePath: localExecutable,
+      packageVersion: '0.1.0',
       projectLocal: true,
     });
   });
@@ -469,6 +468,13 @@ describe('DispatcherApplication', () => {
         installSource: 'local',
         installDirectory: dirname(installDirectory),
         packageVersion: '9.8.7',
+      },
+      runtime: {
+        executablePath: expect.stringMatching(
+          /spec-n-roll-runtime[\\/]dist[\\/]index\.js/u,
+        ),
+        packageVersion: '9.8.7',
+        projectLocal: false,
       },
       projectRoot,
       cwd: projectRoot,

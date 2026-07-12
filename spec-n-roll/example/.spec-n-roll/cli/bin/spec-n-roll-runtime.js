@@ -10,8 +10,8 @@ import { Logger as Logger2 } from "tslog";
 import { render } from "ink";
 
 // src/presentation/ink/runtime-ui-app.tsx
-import { useCallback, useEffect as useEffect4, useMemo as useMemo3, useState as useState5 } from "react";
-import { Box as Box4, Text as Text4, useApp, useInput as useInput3 } from "ink";
+import { useCallback, useEffect as useEffect3, useMemo as useMemo2, useState as useState4 } from "react";
+import { Box as Box3, Text as Text3, useApp, useInput as useInput2 } from "ink";
 
 // src/application/ui/terminal-layout-allocator.ts
 var TerminalLayoutAllocator = class _TerminalLayoutAllocator {
@@ -20,7 +20,7 @@ var TerminalLayoutAllocator = class _TerminalLayoutAllocator {
   /** Fixed key hint overlay height in rows. */
   static HINT_ROWS = 3;
   /** Smallest useful route content height in rows. */
-  static MINIMUM_CONTENT_ROWS = 8;
+  static MINIMUM_CONTENT_ROWS = 11;
   /**
    * Allocates terminal rows without allowing shell regions to overlap.
    *
@@ -68,8 +68,8 @@ var NavigationStack = class {
 };
 
 // src/presentation/ink/route-screen.tsx
-import { useEffect as useEffect2, useState as useState3 } from "react";
-import { Box as Box3, Text as Text3 } from "ink";
+import { useEffect, useState as useState2 } from "react";
+import { Box as Box2, Text as Text2 } from "ink";
 
 // src/presentation/ink/menu-list.tsx
 import { useMemo, useState } from "react";
@@ -92,102 +92,51 @@ function MenuList(props) {
   ] }, item.id)) });
 }
 
-// src/presentation/ink/scrollable-content.tsx
-import { useEffect, useMemo as useMemo2, useState as useState2 } from "react";
-import { Box as Box2, Text as Text2, useInput as useInput2 } from "ink";
-import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
-function ScrollableContent(props) {
-  const [offset, setOffset] = useState2(0);
-  const viewportRows = Math.max(0, Math.floor(props.rows));
-  const hasOverflow = props.lines.length > viewportRows;
-  const textRows = Math.max(0, viewportRows - (hasOverflow ? 1 : 0));
-  const maxOffset = Math.max(0, props.lines.length - textRows);
-  const visible = useMemo2(
-    () => props.lines.slice(offset, offset + textRows),
-    [offset, props.lines, textRows]
-  );
-  useEffect(() => setOffset((value) => Math.min(value, maxOffset)), [maxOffset]);
-  useInput2((_input, key) => {
-    const step = 3;
-    if (key.pageDown) setOffset((value) => Math.min(maxOffset, value + step));
-    if (key.pageUp) setOffset((value) => Math.max(0, value - step));
-  });
-  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", height: viewportRows, overflow: "hidden", children: [
-    visible.map((line, index) => /* @__PURE__ */ jsx2(Text2, { children: line }, `${offset + index}-${line}`)),
-    hasOverflow ? /* @__PURE__ */ jsxs2(Text2, { color: "gray", children: [
-      "[",
-      offset + 1,
-      "-",
-      Math.min(offset + textRows, props.lines.length),
-      " of ",
-      props.lines.length,
-      "] PgUp/PgDn"
-    ] }) : null
-  ] });
-}
-
 // src/presentation/ink/route-screen.tsx
-import { jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
-var SECONDARY_HOME_MENU = [
-  { id: "one", label: "Placeholder page one" },
-  { id: "disabled-one", label: "Unavailable placeholder", disabled: true },
-  { id: "two", label: "Placeholder page two" },
-  {
-    id: "disabled-two",
-    label: "Another unavailable placeholder",
-    disabled: true
-  },
-  { id: "exit", label: "Exit" }
-];
-var PLACEHOLDER_LINES = Array.from(
-  { length: 24 },
-  (_, index) => `Placeholder scrolling content line ${index + 1}.`
-);
+import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 function RouteScreen(props) {
   if (props.route === "init") {
-    return /* @__PURE__ */ jsx3(
+    return /* @__PURE__ */ jsx2(
       InitRoute,
       {
-        rows: props.rows,
-        initializeProject: props.session.initializeProject
+        initializeProject: props.session.initializeProject,
+        rows: props.rows
       }
     );
   }
-  const home = props.route === "global-home" || props.route === "local-home";
-  const homeMenu = props.route === "global-home" ? [
+  return /* @__PURE__ */ jsx2(
+    HomeRoute,
+    {
+      onExitRequest: props.onExitRequest,
+      onNavigate: props.onNavigate,
+      rows: props.rows,
+      session: props.session
+    }
+  );
+}
+function HomeRoute(props) {
+  const [projectFound, setProjectFound] = useState2(props.session.projectFound);
+  useEffect(() => {
+    setProjectFound(props.session.projectExists());
+  }, [props.session]);
+  const initializationItem = props.session.mode === "global" ? [
     {
       id: "init",
       label: "Initialize Project",
-      disabled: props.session.projectFound
-    },
-    ...SECONDARY_HOME_MENU
-  ] : SECONDARY_HOME_MENU;
-  const menuRows = home ? homeMenu.length : 1;
+      disabled: projectFound
+    }
+  ] : [];
+  const homeMenu = [
+    ...initializationItem,
+    { id: "exit", label: "Exit" }
+  ];
+  const menuRows = homeMenu.length;
   const separatorRows = 1;
   const contentRows = Math.max(1, props.rows - menuRows - separatorRows);
-  const title = home ? props.route === "global-home" ? "global" : "local" : props.route === "placeholder-one" ? "placeholder one" : "placeholder two";
-  const onSelect = (item) => {
-    if (item.id === "exit") props.onExitRequest();
-    else if (item.id === "init") props.onNavigate("init");
-    else if (item.id === "back") props.onBack();
-    else if (item.id === "one" || item.id === "two")
-      props.onNavigate(
-        item.id === "one" ? "placeholder-one" : "placeholder-two"
-      );
-  };
-  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", height: props.rows, children: [
-    /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", height: contentRows, paddingX: 2, children: [
-      /* @__PURE__ */ jsx3(Text3, { bold: true, children: title }),
-      /* @__PURE__ */ jsx3(
-        ScrollableContent,
-        {
-          rows: Math.max(0, contentRows - 1),
-          lines: PLACEHOLDER_LINES
-        }
-      )
-    ] }),
-    /* @__PURE__ */ jsx3(
-      Box3,
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", height: props.rows, children: [
+    /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", height: contentRows, paddingX: 2, children: /* @__PURE__ */ jsx2(HomeContent, { session: props.session }) }),
+    /* @__PURE__ */ jsx2(
+      Box2,
       {
         borderStyle: "single",
         borderBottom: false,
@@ -197,18 +146,65 @@ function RouteScreen(props) {
         width: "100%"
       }
     ),
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx2(
       MenuList,
       {
-        items: home ? homeMenu : [{ id: "back", label: "Back" }],
-        onSelect
+        items: homeMenu,
+        onSelect: (item) => {
+          if (item.id === "init") props.onNavigate("init");
+          if (item.id === "exit") props.onExitRequest();
+        }
       }
     )
   ] });
 }
+function HomeContent(props) {
+  const dispatcherSource = props.session.dispatcher.installSource === "local" ? "Local" : "Remote";
+  const runtimeSource = props.session.runtime.projectLocal ? "Local" : "Global";
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", children: [
+    /* @__PURE__ */ jsxs2(Text2, { children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Dispatcher:" }),
+      " ",
+      "(",
+      dispatcherSource,
+      ") ",
+      props.session.dispatcher.installDirectory
+    ] }),
+    /* @__PURE__ */ jsxs2(Text2, { children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Version:" }),
+      " ",
+      props.session.dispatcher.packageVersion
+    ] }),
+    /* @__PURE__ */ jsx2(Box2, { height: 1 }),
+    /* @__PURE__ */ jsxs2(Text2, { children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Runtime:" }),
+      " ",
+      "(",
+      runtimeSource,
+      ") ",
+      props.session.runtime.executablePath
+    ] }),
+    /* @__PURE__ */ jsxs2(Text2, { children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Version:" }),
+      " ",
+      props.session.runtime.packageVersion
+    ] }),
+    /* @__PURE__ */ jsxs2(Text2, { children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Working Directory:" }),
+      " ",
+      props.session.cwd
+    ] }),
+    /* @__PURE__ */ jsx2(Box2, { height: 1 }),
+    /* @__PURE__ */ jsxs2(Text2, { children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Project Root:" }),
+      " ",
+      props.session.projectRoot ?? "None"
+    ] })
+  ] });
+}
 function InitRoute(props) {
-  const [result, setResult] = useState3("Initializing project\u2026");
-  useEffect2(() => {
+  const [result, setResult] = useState2("Initializing project\u2026");
+  useEffect(() => {
     try {
       props.initializeProject();
       setResult("Project initialized successfully.");
@@ -218,17 +214,17 @@ function InitRoute(props) {
       );
     }
   }, [props.initializeProject]);
-  return /* @__PURE__ */ jsx3(Box3, { height: props.rows, paddingX: 2, children: /* @__PURE__ */ jsx3(Text3, { children: result }) });
+  return /* @__PURE__ */ jsx2(Box2, { height: props.rows, paddingX: 2, children: /* @__PURE__ */ jsx2(Text2, { children: result }) });
 }
 
 // src/presentation/ink/use-stdout-size.ts
-import { useEffect as useEffect3, useState as useState4 } from "react";
+import { useEffect as useEffect2, useState as useState3 } from "react";
 import { useStdout } from "ink";
 function useStdoutSize() {
   const { stdout } = useStdout();
   const read = () => ({ columns: stdout.columns ?? 80, rows: stdout.rows ?? 24 });
-  const [size, setSize] = useState4(read);
-  useEffect3(() => {
+  const [size, setSize] = useState3(read);
+  useEffect2(() => {
     const onResize = () => setSize(read());
     stdout.on("resize", onResize);
     return () => {
@@ -239,55 +235,64 @@ function useStdoutSize() {
 }
 
 // src/presentation/ink/runtime-ui-app.tsx
-import { jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
+import { jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
 var EXIT_DIALOG_TIMEOUT_MS = 3e3;
 function RuntimeUiApp(props) {
   const app = useApp();
   const size = useStdoutSize();
-  const layout = useMemo3(
+  const layout = useMemo2(
     () => new TerminalLayoutAllocator().allocate(size.rows),
     [size.rows]
   );
-  const navigation = useMemo3(
+  const navigation = useMemo2(
     () => new NavigationStack(
       props.session.mode === "local" ? "local-home" : "global-home"
     ),
     [props.session.mode]
   );
-  const [route, setRoute] = useState5(navigation.current());
-  const [exitPending, setExitPending] = useState5(false);
-  const requestExit = useCallback(() => setExitPending(true), []);
-  useEffect4(() => {
-    if (!exitPending) return;
+  const [route, setRoute] = useState4(navigation.current());
+  const routeTitle = route === "global-home" || route === "local-home" ? "Home" : route;
+  const [exitConfirmationKey, setExitConfirmationKey] = useState4();
+  const requestExit = useCallback(
+    (confirmationKey) => setExitConfirmationKey(confirmationKey),
+    []
+  );
+  useEffect3(() => {
+    if (exitConfirmationKey == null) return;
     const timeout = setTimeout(
-      () => setExitPending(false),
+      () => setExitConfirmationKey(void 0),
       EXIT_DIALOG_TIMEOUT_MS
     );
     return () => clearTimeout(timeout);
-  }, [exitPending]);
-  useInput3((input, key) => {
-    if (exitPending) {
-      if (key.escape || input.toLowerCase() === "q") app.exit();
+  }, [exitConfirmationKey]);
+  useInput2((_input, key) => {
+    if (exitConfirmationKey === "escape" && key.escape) {
+      app.exit();
       return;
     }
+    if (exitConfirmationKey === "enter" && key.return) {
+      app.exit();
+      return;
+    }
+    if (exitConfirmationKey != null) return;
     if (!key.escape) return;
-    if (navigation.isHome()) requestExit();
+    if (navigation.isHome()) requestExit("escape");
     else {
       navigation.pop();
       setRoute(navigation.current());
     }
   });
   if (layout.requiresResize) {
-    return /* @__PURE__ */ jsxs4(
-      Box4,
+    return /* @__PURE__ */ jsxs3(
+      Box3,
       {
         height: layout.terminalRows,
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         children: [
-          /* @__PURE__ */ jsx4(Text4, { bold: true, color: "yellow", children: "Terminal is too small" }),
-          /* @__PURE__ */ jsxs4(Text4, { children: [
+          /* @__PURE__ */ jsx3(Text3, { bold: true, color: "yellow", children: "Terminal is too small" }),
+          /* @__PURE__ */ jsxs3(Text3, { children: [
             "Resize to at least ",
             layout.minimumRows,
             " rows."
@@ -296,28 +301,28 @@ function RuntimeUiApp(props) {
       }
     );
   }
-  return /* @__PURE__ */ jsxs4(
-    Box4,
+  return /* @__PURE__ */ jsxs3(
+    Box3,
     {
       height: layout.terminalRows,
       width: size.columns,
       flexDirection: "column",
       children: [
-        /* @__PURE__ */ jsx4(
-          Box4,
+        /* @__PURE__ */ jsx3(
+          Box3,
           {
             height: layout.statusRows,
             flexShrink: 0,
             borderStyle: "single",
             paddingX: 1,
-            children: /* @__PURE__ */ jsxs4(Text4, { bold: true, children: [
+            children: /* @__PURE__ */ jsxs3(Text3, { bold: true, children: [
               "Spec N' Roll \xB7 ",
-              route
+              routeTitle
             ] })
           }
         ),
-        /* @__PURE__ */ jsxs4(Box4, { height: layout.contentRows, flexDirection: "column", children: [
-          /* @__PURE__ */ jsx4(
+        /* @__PURE__ */ jsxs3(Box3, { height: layout.contentRows, flexDirection: "column", children: [
+          /* @__PURE__ */ jsx3(
             RouteScreen,
             {
               route,
@@ -326,43 +331,43 @@ function RuntimeUiApp(props) {
                 navigation.push(next);
                 setRoute(navigation.current());
               },
-              onBack: () => {
-                navigation.pop();
-                setRoute(navigation.current());
-              },
-              onExitRequest: requestExit,
+              onExitRequest: () => requestExit("enter"),
               session: props.session
             }
           ),
-          exitPending ? /* @__PURE__ */ jsx4(
-            Box4,
+          exitConfirmationKey != null ? /* @__PURE__ */ jsx3(
+            Box3,
             {
               position: "absolute",
               height: layout.contentRows,
               width: "100%",
               alignItems: "center",
               justifyContent: "center",
-              children: /* @__PURE__ */ jsx4(
-                Box4,
+              children: /* @__PURE__ */ jsx3(
+                Box3,
                 {
                   borderStyle: "round",
                   paddingX: 2,
                   paddingY: 1,
                   backgroundColor: "black",
-                  children: /* @__PURE__ */ jsx4(Text4, { bold: true, color: "yellow", children: "Press esc/q to exit" })
+                  children: /* @__PURE__ */ jsxs3(Text3, { bold: true, color: "yellow", children: [
+                    "Press ",
+                    exitConfirmationKey,
+                    " to exit"
+                  ] })
                 }
               )
             }
           ) : null
         ] }),
-        /* @__PURE__ */ jsx4(
-          Box4,
+        /* @__PURE__ */ jsx3(
+          Box3,
           {
             height: layout.hintRows,
             flexShrink: 0,
             borderStyle: "single",
             paddingX: 1,
-            children: /* @__PURE__ */ jsx4(Text4, { color: "gray", children: "\u2191/\u2193 select \xB7 Enter open \xB7 Esc back \xB7 PgUp/PgDn scroll" })
+            children: /* @__PURE__ */ jsx3(Text3, { color: "gray", children: "\u2191/\u2193 select \xB7 Enter open \xB7 Esc back" })
           }
         )
       ]
@@ -371,7 +376,7 @@ function RuntimeUiApp(props) {
 }
 
 // src/infrastructure/ink/ink-runtime-ui-renderer.tsx
-import { jsx as jsx5 } from "react/jsx-runtime";
+import { jsx as jsx4 } from "react/jsx-runtime";
 var InkRuntimeUiRenderer = class {
   /**
    * Renders the interactive application and waits until it exits.
@@ -380,8 +385,9 @@ var InkRuntimeUiRenderer = class {
    * @returns Promise fulfilled when Ink unmounts after user exit.
    */
   async render(session) {
-    const instance = render(/* @__PURE__ */ jsx5(RuntimeUiApp, { session }));
+    const instance = render(/* @__PURE__ */ jsx4(RuntimeUiApp, { session }));
     await instance.waitUntilExit();
+    if (process.stdout.isTTY) process.stdout.write("\x1B[2J\x1B[H");
   }
 };
 
@@ -489,19 +495,26 @@ var RuntimeApplication = class {
       this.logger.info("Initializing Spec-N-Roll project.", {
         projectRoot: initRequest.projectRoot
       });
-      this.projectInitializer.initialize(
-        initRequest.projectRoot
-      );
+      this.projectInitializer.initialize(initRequest.projectRoot);
       return;
     }
-    const mode = this.modeResolver.resolve(invocation);
-    const projectRoot = invocation.projectRoot ?? invocation.cwd;
-    this.logger.debug("Launching interactive runtime UI.", { mode });
+    const projectOperationRoot = invocation.projectRoot ?? invocation.cwd;
+    const projectFound = invocation.projectRoot != null && this.projectInitializer.projectExists(invocation.projectRoot);
+    const mode = projectFound ? this.modeResolver.resolve(invocation) : "global";
+    this.logger.debug("Launching interactive runtime UI.", {
+      mode,
+      projectRoot: invocation.projectRoot,
+      projectFound
+    });
     await this.renderer.render({
       mode,
-      projectRoot,
-      projectFound: this.projectInitializer.projectExists(projectRoot),
-      initializeProject: () => this.projectInitializer.initialize(projectRoot)
+      dispatcher: invocation.dispatcher,
+      runtime: invocation.runtime,
+      cwd: invocation.cwd,
+      ...invocation.projectRoot == null ? {} : { projectRoot: invocation.projectRoot },
+      projectFound,
+      projectExists: () => this.projectInitializer.projectExists(projectOperationRoot),
+      initializeProject: () => this.projectInitializer.initialize(projectOperationRoot)
     });
   }
 };
@@ -537,7 +550,7 @@ var RuntimeInvocationParser = class {
       return false;
     }
     const candidate = value;
-    return Array.isArray(candidate.argv) && candidate.argv.every((argument) => typeof argument === "string") && this.isDispatcherMetadata(candidate.dispatcher) && typeof candidate.cwd === "string" && (candidate.projectRoot == null || typeof candidate.projectRoot === "string");
+    return Array.isArray(candidate.argv) && candidate.argv.every((argument) => typeof argument === "string") && this.isDispatcherMetadata(candidate.dispatcher) && this.isRuntimeTarget(candidate.runtime) && typeof candidate.cwd === "string" && (candidate.projectRoot == null || typeof candidate.projectRoot === "string");
   }
   /**
    * Checks whether an unknown value has dispatcher metadata fields.
@@ -551,6 +564,19 @@ var RuntimeInvocationParser = class {
     }
     const candidate = value;
     return (candidate.installSource === "remote" || candidate.installSource === "local") && typeof candidate.installDirectory === "string" && typeof candidate.packageVersion === "string";
+  }
+  /**
+   * Checks whether an unknown value has selected runtime metadata fields.
+   *
+   * @param value - Unknown parsed JSON value to inspect.
+   * @returns true when the value satisfies the required runtime fields.
+   */
+  isRuntimeTarget(value) {
+    if (value == null || typeof value !== "object") {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.executablePath === "string" && typeof candidate.packageVersion === "string" && typeof candidate.projectLocal === "boolean";
   }
 };
 
@@ -575,9 +601,11 @@ import {
   mkdirSync,
   writeFileSync
 } from "fs";
+import { createRequire } from "module";
 import { dirname, join } from "path";
 import {
   LOCAL_CLI_RELATIVE_PATH_SEGMENTS,
+  LOCAL_MCP_RELATIVE_PATH_SEGMENTS,
   SPEC_N_ROLL_CONFIG_DIRECTORY_NAME
 } from "spec-n-roll-api";
 
@@ -589,21 +617,88 @@ var CodexAgentExtensionSource = class {
    * @returns ECMAScript module text for the Codex agent extension.
    */
   source() {
-    return `export default class CodexAgentExtension {
+    return `import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+
+/**
+ * Installs Spec-N-Roll skills and MCP configuration for Codex.
+ */
+export default class CodexAgentExtension {
   static defaultSkillMetadata = Object.freeze({
     author: 'spec-n-roll',
     version: '0.1.0',
   });
 
+  /**
+   * Creates Codex-native skill files for the supplied skill configurations.
+   *
+   * @param skills - Ordered skill configurations to write.
+   * @returns A promise that resolves after all skill files are written.
+   */
   async createSkills(skills) {
-    const skillsWithMetadata = skills.map((skill) => ({
-      ...skill,
-      metadata: skill.metadata ?? CodexAgentExtension.defaultSkillMetadata,
-    }));
-    void skillsWithMetadata;
+    for (const skill of skills) {
+      const metadata = skill.metadata ?? CodexAgentExtension.defaultSkillMetadata;
+      const skillPath = join(process.cwd(), '.codex', 'skills', skill.name, 'SKILL.md');
+      const content = [
+        '---',
+        \`name: \${JSON.stringify(skill.name)}\`,
+        \`description: \${JSON.stringify(skill.description)}\`,
+        'metadata:',
+        \`  author: \${JSON.stringify(metadata.author)}\`,
+        \`  version: \${JSON.stringify(metadata.version)}\`,
+        '---',
+        '',
+        ...skill.instructions.map((instruction) => instruction.content),
+        '',
+      ].join('\\n');
+      await mkdir(dirname(skillPath), { recursive: true });
+      await writeFile(skillPath, content, 'utf8');
+    }
   }
 
-  async configureMcp() {}
+  /**
+   * Upserts the project-local Spec-N-Roll MCP server in Codex configuration.
+   *
+   * @returns A promise that resolves after the MCP configuration is written.
+   */
+  async configureMcp() {
+    const configurationPath = join(process.cwd(), '.codex', 'mcp.json');
+    const configuration = await CodexAgentExtension.readMcpConfiguration(configurationPath);
+    await mkdir(dirname(configurationPath), { recursive: true });
+    await writeFile(
+      configurationPath,
+      \`\${JSON.stringify({
+        ...configuration,
+        mcpServers: {
+          ...configuration.mcpServers,
+          'spec-n-roll': {
+            command: 'node',
+            args: ['./.spec-n-roll/cli/bin/spec-n-roll-mcp.js'],
+          },
+        },
+      }, null, 2)}\\n\`,
+      'utf8',
+    );
+  }
+
+  /**
+   * Reads the existing Codex MCP configuration or creates an empty server map.
+   *
+   * @param configurationPath - Absolute path to the Codex MCP configuration file.
+   * @returns Parsed configuration with an MCP server map.
+   */
+  static async readMcpConfiguration(configurationPath) {
+    try {
+      const configuration = JSON.parse(await readFile(configurationPath, 'utf8'));
+      return {
+        ...configuration,
+        mcpServers: configuration.mcpServers ?? {},
+      };
+    } catch (error) {
+      if (error && error.code === 'ENOENT') return { mcpServers: {} };
+      throw error;
+    }
+  }
 }
 `;
   }
@@ -617,21 +712,88 @@ var CursorAgentExtensionSource = class {
    * @returns ECMAScript module text for the Cursor agent extension.
    */
   source() {
-    return `export default class CursorAgentExtension {
+    return `import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+
+/**
+ * Installs Spec-N-Roll skills and MCP configuration for Cursor.
+ */
+export default class CursorAgentExtension {
   static defaultSkillMetadata = Object.freeze({
     author: 'spec-n-roll',
     version: '0.1.0',
   });
 
+  /**
+   * Creates Cursor-native skill files for the supplied skill configurations.
+   *
+   * @param skills - Ordered skill configurations to write.
+   * @returns A promise that resolves after all skill files are written.
+   */
   async createSkills(skills) {
-    const skillsWithMetadata = skills.map((skill) => ({
-      ...skill,
-      metadata: skill.metadata ?? CursorAgentExtension.defaultSkillMetadata,
-    }));
-    void skillsWithMetadata;
+    for (const skill of skills) {
+      const metadata = skill.metadata ?? CursorAgentExtension.defaultSkillMetadata;
+      const skillPath = join(process.cwd(), '.cursor', 'skills', skill.name, 'SKILL.md');
+      const content = [
+        '---',
+        \`name: \${JSON.stringify(skill.name)}\`,
+        \`description: \${JSON.stringify(skill.description)}\`,
+        'metadata:',
+        \`  author: \${JSON.stringify(metadata.author)}\`,
+        \`  version: \${JSON.stringify(metadata.version)}\`,
+        '---',
+        '',
+        ...skill.instructions.map((instruction) => instruction.content),
+        '',
+      ].join('\\n');
+      await mkdir(dirname(skillPath), { recursive: true });
+      await writeFile(skillPath, content, 'utf8');
+    }
   }
 
-  async configureMcp() {}
+  /**
+   * Upserts the project-local Spec-N-Roll MCP server in Cursor configuration.
+   *
+   * @returns A promise that resolves after the MCP configuration is written.
+   */
+  async configureMcp() {
+    const configurationPath = join(process.cwd(), '.cursor', 'mcp.json');
+    const configuration = await CursorAgentExtension.readMcpConfiguration(configurationPath);
+    await mkdir(dirname(configurationPath), { recursive: true });
+    await writeFile(
+      configurationPath,
+      \`\${JSON.stringify({
+        ...configuration,
+        mcpServers: {
+          ...configuration.mcpServers,
+          'spec-n-roll': {
+            command: 'node',
+            args: ['./.spec-n-roll/cli/bin/spec-n-roll-mcp.js'],
+          },
+        },
+      }, null, 2)}\\n\`,
+      'utf8',
+    );
+  }
+
+  /**
+   * Reads the existing Cursor MCP configuration or creates an empty server map.
+   *
+   * @param configurationPath - Absolute path to the Cursor MCP configuration file.
+   * @returns Parsed configuration with an MCP server map.
+   */
+  static async readMcpConfiguration(configurationPath) {
+    try {
+      const configuration = JSON.parse(await readFile(configurationPath, 'utf8'));
+      return {
+        ...configuration,
+        mcpServers: configuration.mcpServers ?? {},
+      };
+    } catch (error) {
+      if (error && error.code === 'ENOENT') return { mcpServers: {} };
+      throw error;
+    }
+  }
 }
 `;
   }
@@ -643,15 +805,20 @@ var NodeProjectInitializer = class {
    * Creates a Node-backed project initializer.
    *
    * @param runtimeBinaryPath - Absolute path to the running runtime binary to copy.
+   * @param mcpBinaryPath - Absolute path to the bundled MCP server binary to copy.
    * @param codexAgentExtensionSource - Source provider for the bundled Codex extension module.
    * @param cursorAgentExtensionSource - Source provider for the bundled Cursor extension module.
    */
-  constructor(runtimeBinaryPath = process.argv[1], codexAgentExtensionSource = new CodexAgentExtensionSource(), cursorAgentExtensionSource = new CursorAgentExtensionSource()) {
+  constructor(runtimeBinaryPath = process.argv[1], mcpBinaryPath = createRequire(import.meta.url).resolve(
+    "spec-n-roll-mcp/dist/index.js"
+  ), codexAgentExtensionSource = new CodexAgentExtensionSource(), cursorAgentExtensionSource = new CursorAgentExtensionSource()) {
     this.runtimeBinaryPath = runtimeBinaryPath;
+    this.mcpBinaryPath = mcpBinaryPath;
     this.codexAgentExtensionSource = codexAgentExtensionSource;
     this.cursorAgentExtensionSource = cursorAgentExtensionSource;
   }
   runtimeBinaryPath;
+  mcpBinaryPath;
   codexAgentExtensionSource;
   cursorAgentExtensionSource;
   /**
@@ -676,7 +843,22 @@ var NodeProjectInitializer = class {
     mkdirSync(dirname(runtimeBinaryPath), { recursive: true });
     cpSync(this.runtimeBinaryPath, runtimeBinaryPath);
     if (process.platform !== "win32") chmodSync(runtimeBinaryPath, 493);
+    this.copyMcpServer(projectRoot);
     this.writeExtensions(projectRoot);
+  }
+  /**
+   * Copies the bundled MCP server into the project's local CLI directory.
+   *
+   * @param projectRoot - Absolute project root receiving the MCP server binary.
+   */
+  copyMcpServer(projectRoot) {
+    const mcpBinaryPath = join(
+      projectRoot,
+      ...LOCAL_MCP_RELATIVE_PATH_SEGMENTS
+    );
+    mkdirSync(dirname(mcpBinaryPath), { recursive: true });
+    cpSync(this.mcpBinaryPath, mcpBinaryPath);
+    if (process.platform !== "win32") chmodSync(mcpBinaryPath, 493);
   }
   /**
    * Creates bundled agent extension folders and their enabled-state configuration.

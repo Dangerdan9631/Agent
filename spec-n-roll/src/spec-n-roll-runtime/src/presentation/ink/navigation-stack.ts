@@ -1,8 +1,7 @@
 /**
- * Identifies the placeholder routes available in the interactive runtime.
+ * Identifies routes available in the interactive runtime.
  */
-export type RouteId =
-  'global-home' | 'local-home' | 'init' | 'placeholder-one' | 'placeholder-two';
+export type RouteId = 'global-home' | 'local-home' | 'init';
 
 /**
  * Maintains route history while preserving the selected home route as its root.

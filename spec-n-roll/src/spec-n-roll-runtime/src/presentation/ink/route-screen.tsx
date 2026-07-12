@@ -5,24 +5,27 @@ import {
   MenuList,
   type MenuItem,
 } from '#runtime/presentation/ink/menu-list.jsx';
-import { ScrollableContent } from '#runtime/presentation/ink/scrollable-content.jsx';
 import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 
 /**
  * Describes the route-owned interior of the shell content slot.
  */
 export interface RouteScreenProps {
-  /** Active route to render. */
+  /**
+   * Active route to render.
+   */
   readonly route: RouteId;
-  /** Rows allocated by the application shell. */
+  /**
+   * Rows allocated by the application shell.
+   */
   readonly rows: number;
-  /** Opens a placeholder child route. */
-  readonly onNavigate: (
-    route: 'init' | 'placeholder-one' | 'placeholder-two',
-  ) => void;
-  /** Returns from a placeholder route to its parent. */
-  readonly onBack: () => void;
-  /** Starts the timed exit confirmation dialog. */
+  /**
+   * Opens an application command route.
+   */
+  readonly onNavigate: (route: 'init') => void;
+  /**
+   * Starts the shell exit confirmation dialog.
+   */
   readonly onExitRequest: () => void;
   /**
    * Project state and commands configured for this session.
@@ -30,25 +33,8 @@ export interface RouteScreenProps {
   readonly session: RuntimeUiSession;
 }
 
-const SECONDARY_HOME_MENU: readonly MenuItem[] = [
-  { id: 'one', label: 'Placeholder page one' },
-  { id: 'disabled-one', label: 'Unavailable placeholder', disabled: true },
-  { id: 'two', label: 'Placeholder page two' },
-  {
-    id: 'disabled-two',
-    label: 'Another unavailable placeholder',
-    disabled: true,
-  },
-  { id: 'exit', label: 'Exit' },
-];
-
-const PLACEHOLDER_LINES = Array.from(
-  { length: 24 },
-  (_, index) => `Placeholder scrolling content line ${index + 1}.`,
-);
-
 /**
- * Renders home and placeholder routes inside the route content slot.
+ * Renders home and application command routes inside the route content slot.
  *
  * @param props - Active route, row budget, and navigation callbacks.
  * @returns Route-owned content and selection regions.
@@ -57,52 +43,62 @@ export function RouteScreen(props: RouteScreenProps): React.ReactElement {
   if (props.route === 'init') {
     return (
       <InitRoute
-        rows={props.rows}
         initializeProject={props.session.initializeProject}
+        rows={props.rows}
       />
     );
   }
-  const home = props.route === 'global-home' || props.route === 'local-home';
-  const homeMenu: readonly MenuItem[] =
-    props.route === 'global-home'
+
+  return (
+    <HomeRoute
+      onExitRequest={props.onExitRequest}
+      onNavigate={props.onNavigate}
+      rows={props.rows}
+      session={props.session}
+    />
+  );
+}
+
+/**
+ * Renders one home page and refreshes project state when the route loads.
+ *
+ * @param props - Route dimensions, session context, and navigation callbacks.
+ * @returns Home content and home-specific commands.
+ */
+function HomeRoute(props: {
+  readonly onExitRequest: () => void;
+  readonly onNavigate: (route: 'init') => void;
+  readonly rows: number;
+  readonly session: RuntimeUiSession;
+}): React.ReactElement {
+  const [projectFound, setProjectFound] = useState(props.session.projectFound);
+
+  useEffect(() => {
+    setProjectFound(props.session.projectExists());
+  }, [props.session]);
+
+  const initializationItem: readonly MenuItem[] =
+    props.session.mode === 'global'
       ? [
           {
             id: 'init',
             label: 'Initialize Project',
-            disabled: props.session.projectFound,
+            disabled: projectFound,
           },
-          ...SECONDARY_HOME_MENU,
         ]
-      : SECONDARY_HOME_MENU;
-  const menuRows = home ? homeMenu.length : 1;
+      : [];
+  const homeMenu: readonly MenuItem[] = [
+    ...initializationItem,
+    { id: 'exit', label: 'Exit' },
+  ];
+  const menuRows = homeMenu.length;
   const separatorRows = 1;
   const contentRows = Math.max(1, props.rows - menuRows - separatorRows);
-  const title = home
-    ? props.route === 'global-home'
-      ? 'global'
-      : 'local'
-    : props.route === 'placeholder-one'
-      ? 'placeholder one'
-      : 'placeholder two';
-
-  const onSelect = (item: MenuItem): void => {
-    if (item.id === 'exit') props.onExitRequest();
-    else if (item.id === 'init') props.onNavigate('init');
-    else if (item.id === 'back') props.onBack();
-    else if (item.id === 'one' || item.id === 'two')
-      props.onNavigate(
-        item.id === 'one' ? 'placeholder-one' : 'placeholder-two',
-      );
-  };
 
   return (
     <Box flexDirection="column" height={props.rows}>
       <Box flexDirection="column" height={contentRows} paddingX={2}>
-        <Text bold>{title}</Text>
-        <ScrollableContent
-          rows={Math.max(0, contentRows - 1)}
-          lines={PLACEHOLDER_LINES}
-        />
+        <HomeContent session={props.session} />
       </Box>
       <Box
         borderStyle="single"
@@ -113,9 +109,69 @@ export function RouteScreen(props: RouteScreenProps): React.ReactElement {
         width="100%"
       />
       <MenuList
-        items={home ? homeMenu : [{ id: 'back', label: 'Back' }]}
-        onSelect={onSelect}
+        items={homeMenu}
+        onSelect={(item) => {
+          if (item.id === 'init') props.onNavigate('init');
+          if (item.id === 'exit') props.onExitRequest();
+        }}
       />
+    </Box>
+  );
+}
+
+/**
+ * Renders the installation and project context for a runtime home page.
+ *
+ * @param props - Session metadata selected for the active runtime.
+ * @returns Installation and project context display.
+ */
+function HomeContent(props: {
+  readonly session: RuntimeUiSession;
+}): React.ReactElement {
+  const dispatcherSource =
+    props.session.dispatcher.installSource === 'local' ? 'Local' : 'Remote';
+  const runtimeSource = props.session.runtime.projectLocal ? 'Local' : 'Global';
+
+  return (
+    <Box flexDirection="column">
+      <Text>
+        <Text bold color="cyan">
+          Dispatcher:
+        </Text>{' '}
+        ({dispatcherSource}) {props.session.dispatcher.installDirectory}
+      </Text>
+      <Text>
+        <Text bold color="cyan">
+          Version:
+        </Text>{' '}
+        {props.session.dispatcher.packageVersion}
+      </Text>
+      <Box height={1} />
+      <Text>
+        <Text bold color="cyan">
+          Runtime:
+        </Text>{' '}
+        ({runtimeSource}) {props.session.runtime.executablePath}
+      </Text>
+      <Text>
+        <Text bold color="cyan">
+          Version:
+        </Text>{' '}
+        {props.session.runtime.packageVersion}
+      </Text>
+      <Text>
+        <Text bold color="cyan">
+          Working Directory:
+        </Text>{' '}
+        {props.session.cwd}
+      </Text>
+      <Box height={1} />
+      <Text>
+        <Text bold color="cyan">
+          Project Root:
+        </Text>{' '}
+        {props.session.projectRoot ?? 'None'}
+      </Text>
     </Box>
   );
 }

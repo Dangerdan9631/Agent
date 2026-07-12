@@ -6,4 +6,4 @@ This directory contains UI-neutral contracts and policies for selecting an inter
 
 ### Layout policy
 
-Keep row allocation and session configuration deterministic and independent of React. Fixed chrome, minimum-size policy, project state, and command boundaries are centralized here so every routed screen receives one authoritative context.
+Keep row allocation and session configuration deterministic and independent of React. Fixed chrome, minimum-size policy, active dispatcher/runtime metadata, project state, and command boundaries are centralized here so every routed screen receives one authoritative context.

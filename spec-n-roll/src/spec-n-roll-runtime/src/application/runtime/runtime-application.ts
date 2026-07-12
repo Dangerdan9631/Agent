@@ -54,21 +54,35 @@ export class RuntimeApplication {
       this.logger.info('Initializing Spec-N-Roll project.', {
         projectRoot: initRequest.projectRoot,
       });
-      this.projectInitializer.initialize(
-        initRequest.projectRoot,
-      );
+      this.projectInitializer.initialize(initRequest.projectRoot);
       return;
     }
 
-    const mode = this.modeResolver.resolve(invocation);
-    const projectRoot = invocation.projectRoot ?? invocation.cwd;
-    this.logger.debug('Launching interactive runtime UI.', { mode });
+    const projectOperationRoot = invocation.projectRoot ?? invocation.cwd;
+    const projectFound =
+      invocation.projectRoot != null &&
+      this.projectInitializer.projectExists(invocation.projectRoot);
+    const mode = projectFound
+      ? this.modeResolver.resolve(invocation)
+      : 'global';
+    this.logger.debug('Launching interactive runtime UI.', {
+      mode,
+      projectRoot: invocation.projectRoot,
+      projectFound,
+    });
     await this.renderer.render({
       mode,
-      projectRoot,
-      projectFound: this.projectInitializer.projectExists(projectRoot),
+      dispatcher: invocation.dispatcher,
+      runtime: invocation.runtime,
+      cwd: invocation.cwd,
+      ...(invocation.projectRoot == null
+        ? {}
+        : { projectRoot: invocation.projectRoot }),
+      projectFound,
+      projectExists: () =>
+        this.projectInitializer.projectExists(projectOperationRoot),
       initializeProject: () =>
-        this.projectInitializer.initialize(projectRoot),
+        this.projectInitializer.initialize(projectOperationRoot),
     });
   }
 }

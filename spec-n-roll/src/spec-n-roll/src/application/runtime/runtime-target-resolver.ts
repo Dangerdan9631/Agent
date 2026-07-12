@@ -7,6 +7,20 @@ import type { DispatcherFileSystem } from '#dispatcher/application/filesystem/di
 import type { RuntimePackageManifestPathResolver } from '#dispatcher/application/runtime/runtime-package-manifest-path-resolver.js';
 
 /**
+ * Describes the globally installed runtime metadata used to identify a selected target.
+ */
+interface GlobalRuntimeMetadata {
+  /**
+   * Absolute runtime executable path from the package manifest.
+   */
+  readonly executablePath: string;
+  /**
+   * Runtime package version from the package manifest.
+   */
+  readonly packageVersion: string;
+}
+
+/**
  * Resolves the runtime executable selected for a dispatcher invocation.
  */
 export class RuntimeTargetResolver {
@@ -34,6 +48,7 @@ export class RuntimeTargetResolver {
     forceGlobal: boolean,
     installDirectory: string,
   ): RuntimeTarget {
+    const globalRuntime = this.resolveGlobalRuntime(installDirectory);
     const localExecutable =
       projectRoot == null
         ? undefined
@@ -42,12 +57,14 @@ export class RuntimeTargetResolver {
     if (!forceGlobal && localExecutable != null) {
       return {
         executablePath: localExecutable,
+        packageVersion: globalRuntime.packageVersion,
         projectLocal: true,
       };
     }
 
     return {
-      executablePath: this.resolveGlobalRuntimeExecutable(installDirectory),
+      executablePath: globalRuntime.executablePath,
+      packageVersion: globalRuntime.packageVersion,
       projectLocal: false,
     };
   }
@@ -71,9 +88,11 @@ export class RuntimeTargetResolver {
   /**
    * Resolves the globally installed runtime package executable.
    *
-   * @returns Absolute path to the `spec-n-roll-runtime` binary entrypoint.
+   * @returns Executable path and package version for the globally installed runtime.
    */
-  private resolveGlobalRuntimeExecutable(installDirectory: string): string {
+  private resolveGlobalRuntime(
+    installDirectory: string,
+  ): GlobalRuntimeMetadata {
     const packageJsonPath = this.manifestPathResolver.resolve(installDirectory);
     const packageText = this.fileSystem.readText(packageJsonPath);
     const packageJson = this.parseRuntimePackageJson(packageText);
@@ -85,11 +104,18 @@ export class RuntimeTargetResolver {
       );
     }
 
-    return resolve(dirname(packageJsonPath), executableRelativePath);
+    return {
+      executablePath: resolve(dirname(packageJsonPath), executableRelativePath),
+      packageVersion:
+        typeof packageJson.version === 'string' && packageJson.version !== ''
+          ? packageJson.version
+          : '0.0.0',
+    };
   }
 
   private parseRuntimePackageJson(packageText: string | undefined): {
     bin?: Record<string, string>;
+    version?: string;
   } {
     if (packageText == null) {
       throw new Error('Unable to read spec-n-roll-runtime package metadata.');
@@ -98,6 +124,7 @@ export class RuntimeTargetResolver {
     try {
       return JSON.parse(packageText) as {
         bin?: Record<string, string>;
+        version?: string;
       };
     } catch {
       throw new Error(

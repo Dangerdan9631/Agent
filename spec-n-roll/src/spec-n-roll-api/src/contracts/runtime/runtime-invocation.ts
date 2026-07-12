@@ -1,4 +1,5 @@
 import type { DispatcherMetadata } from '#api/contracts/dispatcher/dispatcher-metadata.js';
+import type { RuntimeTarget } from '#api/contracts/runtime/runtime-target.js';
 
 /**
  * Describes the argument payload passed across the dispatcher/runtime boundary.
@@ -15,6 +16,12 @@ export interface RuntimeInvocation {
    * delegation.
    */
   readonly dispatcher: DispatcherMetadata;
+
+  /**
+   * Runtime executable and package metadata selected by the dispatcher for
+   * this invocation.
+   */
+  readonly runtime: RuntimeTarget;
 
   /**
    * Absolute project root resolved for the invocation. Omitted when discovery

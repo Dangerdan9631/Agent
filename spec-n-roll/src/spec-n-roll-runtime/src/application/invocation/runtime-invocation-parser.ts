@@ -40,6 +40,7 @@ export class RuntimeInvocationParser {
     const candidate = value as {
       argv?: unknown;
       dispatcher?: unknown;
+      runtime?: unknown;
       cwd?: unknown;
       projectRoot?: unknown;
     };
@@ -48,6 +49,7 @@ export class RuntimeInvocationParser {
       Array.isArray(candidate.argv) &&
       candidate.argv.every((argument) => typeof argument === 'string') &&
       this.isDispatcherMetadata(candidate.dispatcher) &&
+      this.isRuntimeTarget(candidate.runtime) &&
       typeof candidate.cwd === 'string' &&
       (candidate.projectRoot == null ||
         typeof candidate.projectRoot === 'string')
@@ -76,6 +78,30 @@ export class RuntimeInvocationParser {
         candidate.installSource === 'local') &&
       typeof candidate.installDirectory === 'string' &&
       typeof candidate.packageVersion === 'string'
+    );
+  }
+
+  /**
+   * Checks whether an unknown value has selected runtime metadata fields.
+   *
+   * @param value - Unknown parsed JSON value to inspect.
+   * @returns true when the value satisfies the required runtime fields.
+   */
+  private isRuntimeTarget(value: unknown): boolean {
+    if (value == null || typeof value !== 'object') {
+      return false;
+    }
+
+    const candidate = value as {
+      executablePath?: unknown;
+      packageVersion?: unknown;
+      projectLocal?: unknown;
+    };
+
+    return (
+      typeof candidate.executablePath === 'string' &&
+      typeof candidate.packageVersion === 'string' &&
+      typeof candidate.projectLocal === 'boolean'
     );
   }
 }

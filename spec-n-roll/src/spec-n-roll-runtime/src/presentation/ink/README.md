@@ -1,6 +1,6 @@
 # Ink presentation
 
-This directory contains the interactive React and Ink shell, navigation, routed commands, keyboard menus, scrolling viewport, and stdout resize hook.
+This directory contains the interactive React and Ink shell, home installation context, navigation, routed commands, keyboard menus, and stdout resize hook.
 
 ## Conventions
 
@@ -14,4 +14,7 @@ Shell-level navigation and exit behavior remain in the shell. Screen components 
 
 ### Routed commands
 
-Command routes execute application-provided callbacks when loaded. The global home exposes initialization first and disables it when the configured root already contains a project.
+Command routes execute application-provided callbacks when loaded. Home pages show
+the dispatcher, selected runtime, working directory, and discovered project root;
+the global home exposes initialization and disables it when the configured root
+already contains a project.

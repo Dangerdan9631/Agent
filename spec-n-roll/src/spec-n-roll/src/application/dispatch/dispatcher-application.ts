@@ -66,6 +66,7 @@ export class DispatcherApplication {
     const invocation = {
       argv: request.argv,
       dispatcher: metadata,
+      runtime: target,
       ...(projectRoot == null ? {} : { projectRoot }),
       cwd,
     };
