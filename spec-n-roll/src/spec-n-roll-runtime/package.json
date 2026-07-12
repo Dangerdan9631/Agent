@@ -4,6 +4,7 @@
   "type": "module",
   "imports": {
     "#runtime/*.js": "./src/*.ts",
+    "#runtime/*.jsx": "./src/*.tsx",
     "#runtime/*": "./src/*.ts"
   },
   "bin": {

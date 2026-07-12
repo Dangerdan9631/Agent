@@ -4,113 +4,113 @@
     "spec-n-roll-mcp": {
       "parentId": null,
       "position": {
-        "x": 0,
-        "y": 427.5
+        "x": 1.75,
+        "y": 431.5
       }
     },
     "directory:spec-n-roll-mcp:application": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": -233.5,
-        "y": 804.75
+        "x": -240,
+        "y": 814.25
       }
     },
     "directory:spec-n-roll-mcp:application/commands": {
       "parentId": "directory:spec-n-roll-mcp:application",
       "position": {
-        "x": -233.5,
-        "y": 817.5
+        "x": -240,
+        "y": 827
       }
     },
     "type:src/spec-n-roll-mcp/src/application/commands/command-runner.ts:CommandRunner": {
       "parentId": "directory:spec-n-roll-mcp:application/commands",
       "position": {
-        "x": -233.5,
-        "y": 830.5
+        "x": -240,
+        "y": 840
       }
     },
     "directory:spec-n-roll-mcp:composition": {
       "parentId": "spec-n-roll-mcp",
       "position": {
         "x": 0,
-        "y": 440.25
+        "y": 444.25
       }
     },
     "directory:spec-n-roll-mcp:composition/mcp": {
       "parentId": "directory:spec-n-roll-mcp:composition",
       "position": {
         "x": 0,
-        "y": 453
+        "y": 457
       }
     },
     "type:src/spec-n-roll-mcp/src/composition/mcp/mcp-container-factory.ts:McpContainerFactory": {
       "parentId": "directory:spec-n-roll-mcp:composition/mcp",
       "position": {
         "x": 0,
-        "y": 555.5
+        "y": 560
       }
     },
     "type:src/spec-n-roll-mcp/src/composition/mcp/mcp-program-factory.ts:McpProgramFactory": {
       "parentId": "directory:spec-n-roll-mcp:composition/mcp",
       "position": {
         "x": 0,
-        "y": 376.5
+        "y": 380
       }
     },
     "directory:spec-n-roll-mcp:infrastructure": {
       "parentId": "spec-n-roll-mcp",
       "position": {
-        "x": 210,
-        "y": 804.75
+        "x": 220,
+        "y": 814.25
       }
     },
     "directory:spec-n-roll-mcp:infrastructure/commands": {
       "parentId": "directory:spec-n-roll-mcp:infrastructure",
       "position": {
-        "x": 210,
-        "y": 817.5
+        "x": 220,
+        "y": 827
       }
     },
     "type:src/spec-n-roll-mcp/src/infrastructure/commands/mcp-command-runner.ts:McpCommandRunner": {
       "parentId": "directory:spec-n-roll-mcp:infrastructure/commands",
       "position": {
-        "x": 210,
-        "y": 830.5
+        "x": 220,
+        "y": 840
       }
     },
     "directory:spec-n-roll-mcp:presentation": {
       "parentId": "spec-n-roll-mcp",
       "position": {
         "x": 0,
-        "y": 75.75
+        "y": 74.25
       }
     },
     "directory:spec-n-roll-mcp:presentation/cli": {
       "parentId": "directory:spec-n-roll-mcp:presentation",
       "position": {
         "x": 0,
-        "y": 88.5
+        "y": 87
       }
     },
     "type:src/spec-n-roll-mcp/src/presentation/cli/mcp-cli.ts:McpCli": {
       "parentId": "directory:spec-n-roll-mcp:presentation/cli",
       "position": {
         "x": 0,
-        "y": 101.5
+        "y": 100
       }
     },
     "external:commander": {
       "parentId": null,
       "position": {
-        "x": -501.8760217983651,
-        "y": 388.06130790190736
+        "x": -500,
+        "y": 380
       }
     },
     "external:chalk": {
       "parentId": null,
       "position": {
-        "x": 226.65122615803816,
-        "y": 1019.7888283378745
+        "x": 220,
+        "y": 1020
       }
     }
   },

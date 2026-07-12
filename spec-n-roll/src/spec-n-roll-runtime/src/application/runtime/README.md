@@ -6,4 +6,4 @@ This directory contains runtime application orchestration. It coordinates invoca
 
 ### Runtime behavior
 
-Keep runtime decisions here and inject readers, parsers, and writers. Avoid direct process global access in application classes.
+Keep runtime decisions here and inject readers, parsers, and UI renderers. Avoid direct process global access in application classes.

@@ -1124,9 +1124,44 @@ describe('spec-n-roll-arch', () => {
     const cytoscapeJsonPath = join(artifactRoot, 'graph.json');
     const cytoscapeHtmlPath = join(artifactRoot, 'graph.html');
 
-    new CytoscapeArtifactWriter().write(cytoscapeJsonPath, cytoscapeHtmlPath, [
-      { data: { id: 'alpha', label: 'alpha' } },
-    ]);
+    new CytoscapeArtifactWriter().write(
+      cytoscapeJsonPath,
+      cytoscapeHtmlPath,
+      [{ data: { id: 'alpha', label: 'alpha' } }],
+      [
+        {
+          title: 'Landscape',
+          children: [
+            {
+              title: 'Diagram',
+              htmlPath: join(artifactRoot, 'landscape.cytoscape.html'),
+            },
+          ],
+        },
+        {
+          title: 'alpha',
+          children: [
+            {
+              title: 'Diagram',
+              htmlPath: join(artifactRoot, 'alpha', 'cytoscape.html'),
+            },
+            {
+              title: 'Dependency matrix',
+              htmlPath: join(artifactRoot, 'alpha', 'matrix.html'),
+            },
+          ],
+        },
+        {
+          title: 'beta',
+          children: [
+            {
+              title: 'Diagram',
+              htmlPath: join(artifactRoot, 'beta', 'cytoscape.html'),
+            },
+          ],
+        },
+      ],
+    );
 
     const html = readFileSync(cytoscapeHtmlPath, 'utf8');
     const inlineScript = /<script>([\s\S]*)<\/script>/u.exec(html)?.[1];
@@ -1222,6 +1257,12 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('class AllDiagramImagesExporter');
     expect(html).toContain('window.exportDiagramImage = async () => {');
     expect(html).toContain('All images exported: ');
+    expect(html).toContain(
+      '["landscape.cytoscape.html","alpha/cytoscape.html","beta/cytoscape.html"]',
+    );
+    expect(html).not.toContain(
+      '["landscape.cytoscape.html","alpha/matrix.html"',
+    );
     expect(html).toContain("'/__spec-n-roll/image?diagram='");
     expect(html).toContain("'content-type': 'image/png'");
     expect(html).toContain("output: 'blob'");

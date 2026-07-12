@@ -1409,7 +1409,7 @@ export class CytoscapeArtifactWriter {
     basePath: string,
   ): string[] {
     return pages.flatMap((page) => {
-      const pagePath = page.htmlPath?.endsWith('.cytoscape.html')
+      const pagePath = page.htmlPath?.endsWith('cytoscape.html')
         ? [relative(basePath, page.htmlPath).replaceAll('\\', '/')]
         : [];
       return [...pagePath, ...this.diagramPagePaths(page.children ?? [], basePath)];

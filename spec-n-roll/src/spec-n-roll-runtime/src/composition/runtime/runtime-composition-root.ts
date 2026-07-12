@@ -1,4 +1,4 @@
-import { ConsoleRuntimeOutputWriter } from '#runtime/infrastructure/process/console-runtime-output-writer.js';
+import { InkRuntimeUiRenderer } from '#runtime/infrastructure/ink/ink-runtime-ui-renderer.jsx';
 import { RuntimeApplication } from '#runtime/application/runtime/runtime-application.js';
 import { RuntimeInvocationParser } from '#runtime/application/invocation/runtime-invocation-parser.js';
 import { StdinRuntimeInvocationReader } from '#runtime/infrastructure/process/stdin-runtime-invocation-reader.js';
@@ -16,7 +16,7 @@ export class RuntimeCompositionRoot {
     return new RuntimeApplication(
       new StdinRuntimeInvocationReader(),
       new RuntimeInvocationParser(),
-      new ConsoleRuntimeOutputWriter(),
+      new InkRuntimeUiRenderer(),
     );
   }
 }

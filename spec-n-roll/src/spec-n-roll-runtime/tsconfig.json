@@ -2,8 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "jsx": "react-jsx",
     "paths": {
       "#runtime/*.js": ["src/*.ts"],
+      "#runtime/*.jsx": ["src/*.tsx"],
       "#runtime/*": ["src/*"]
     },
     "rootDir": ".",

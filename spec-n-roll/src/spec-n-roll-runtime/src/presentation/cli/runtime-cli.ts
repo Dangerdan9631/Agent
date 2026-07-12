@@ -30,10 +30,10 @@ export class RuntimeCli {
    *
    * @param argv - Process argument vector including executable and script path.
    */
-  run(argv: readonly string[] = process.argv): void {
-    this.programFactory
+  async run(argv: readonly string[] = process.argv): Promise<void> {
+    await this.programFactory
       .create(this.compositionRoot.createApplication())
-      .parse([...argv]);
+      .parseAsync([...argv]);
   }
 
   /**
@@ -42,13 +42,13 @@ export class RuntimeCli {
    * @param moduleUrl - Import metadata URL for the module that owns the check.
    * @param argv - Process argument vector including executable and script path.
    */
-  runIfMain(moduleUrl: string, argv: readonly string[] = process.argv): void {
+  async runIfMain(moduleUrl: string, argv: readonly string[] = process.argv): Promise<void> {
     if (!this.isMainModule(moduleUrl, argv)) {
       return;
     }
 
     try {
-      this.run(argv);
+      await this.run(argv);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(message);

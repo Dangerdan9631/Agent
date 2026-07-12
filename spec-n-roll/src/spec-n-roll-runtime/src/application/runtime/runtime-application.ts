@@ -1,7 +1,8 @@
 import { Logger } from 'tslog';
 import { RuntimeInvocationParser } from '#runtime/application/invocation/runtime-invocation-parser.js';
 import type { RuntimeInvocationReader } from '#runtime/application/invocation/runtime-invocation-reader.js';
-import type { RuntimeOutputWriter } from '#runtime/application/output/runtime-output-writer.js';
+import type { RuntimeUiRenderer } from '#runtime/application/ui/runtime-ui-renderer.js';
+import { RuntimeUiModeResolver } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
 
 /**
  * Runs the runtime stub implementation.
@@ -12,13 +13,15 @@ export class RuntimeApplication {
    *
    * @param reader - Input reader for dispatcher invocation JSON.
    * @param parser - Parser and validator for invocation payloads.
-   * @param writer - Output writer for rendered invocation data.
+   * @param renderer - Interactive terminal UI presentation boundary.
+   * @param modeResolver - Resolver for global and local home selection.
    * @param logger - Logger used to report the invocation configuration received.
    */
   constructor(
     private readonly reader: RuntimeInvocationReader,
     private readonly parser: RuntimeInvocationParser,
-    private readonly writer: RuntimeOutputWriter,
+    private readonly renderer: RuntimeUiRenderer,
+    private readonly modeResolver = new RuntimeUiModeResolver(),
     private readonly logger = new Logger({
       name: 'spec-n-roll-runtime',
       minLevel: 6,
@@ -28,7 +31,7 @@ export class RuntimeApplication {
   /**
    * Executes the runtime stub by printing the dispatcher invocation.
    */
-  run(): void {
+  async run(): Promise<void> {
     const invocation = this.parser.parse(this.reader.read());
     this.logger.debug('Received dispatcher invocation.', {
       argv: invocation.argv,
@@ -36,6 +39,8 @@ export class RuntimeApplication {
       projectRoot: invocation.projectRoot,
       dispatcherInstallSource: invocation.dispatcher.installSource,
     });
-    this.writer.writeLine(JSON.stringify(invocation, null, 2));
+    const mode = this.modeResolver.resolve(invocation);
+    this.logger.debug('Launching interactive runtime UI.', { mode });
+    await this.renderer.render(mode);
   }
 }

@@ -1,6 +1,6 @@
 # Runtime presentation layer - src/spec-n-roll-runtime/src/presentation
 
-This directory contains entry adapters for runtime commands. It translates executable startup into composed runtime behavior.
+This directory contains CLI and Ink adapters for runtime commands. It translates executable startup into composed runtime behavior and owns the interactive terminal presentation.
 
 ## Conventions
 

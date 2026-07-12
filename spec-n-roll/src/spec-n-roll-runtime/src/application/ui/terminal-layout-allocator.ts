@@ -23,9 +23,9 @@ export class TerminalLayoutAllocator {
   /** Fixed status bar height in rows. */
   static readonly STATUS_ROWS = 3;
   /** Fixed key hint overlay height in rows. */
-  static readonly HINT_ROWS = 2;
+  static readonly HINT_ROWS = 3;
   /** Smallest useful route content height in rows. */
-  static readonly MINIMUM_CONTENT_ROWS = 4;
+  static readonly MINIMUM_CONTENT_ROWS = 7;
 
   /**
    * Allocates terminal rows without allowing shell regions to overlap.

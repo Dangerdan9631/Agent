@@ -18,8 +18,6 @@ export class RuntimeProgramFactory {
       .version('0.1.0')
       .allowUnknownOption(true)
       .allowExcessArguments(true)
-      .action(() => {
-        application.run();
-      });
+      .action(async () => application.run());
   }
 }
