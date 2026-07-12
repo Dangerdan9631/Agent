@@ -1,6 +1,9 @@
 import type { FrameworkUpdateOutput } from '#runtime/application/update/global-framework-updater.js';
 import type { RuntimeUiMode } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
-import type { AgentExtensionRegistration, ProjectFrameworkUpdateAvailability } from 'spec-n-roll-sdk';
+import type {
+  AgentExtensionRegistration,
+  ProjectFrameworkUpdateAvailability,
+} from 'spec-n-roll-sdk';
 import type { DispatcherMetadata, RuntimeTarget } from 'spec-n-roll-api';
 
 /**
@@ -17,8 +20,12 @@ export interface RuntimeUiSession {
   /** Creates the project at the configured root. */ readonly initializeProject: () => void;
   /** Updates the project-local framework at the configured root. */ readonly updateProjectFramework: () => void;
   /** Availability for a project framework update. */ readonly projectUpdate: ProjectFrameworkUpdateAvailability;
-  /** Updates the dispatcher framework installation. */ readonly updateGlobalFramework: (output: FrameworkUpdateOutput) => Promise<void>;
+  /** Updates the dispatcher framework installation without ending the current UI session. */ readonly updateGlobalFramework: (
+    output: FrameworkUpdateOutput,
+  ) => Promise<void>;
+  /** Restarts the runtime through its dispatcher after a completed global update. */ readonly reloadRuntime: () => void;
   /** Availability for a global framework update. */ readonly globalUpdate: ProjectFrameworkUpdateAvailability;
-  /** Lists configured agent extensions for the active project. */ readonly listAgents: () => Promise<readonly AgentExtensionRegistration[]>;
+  /** Lists configured agent extensions for the active project. */ readonly listAgents: () => Promise<
+    readonly AgentExtensionRegistration[]
+  >;
 }
-

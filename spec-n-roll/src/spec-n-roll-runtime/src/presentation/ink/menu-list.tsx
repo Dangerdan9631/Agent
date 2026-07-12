@@ -11,7 +11,9 @@ export interface MenuItem {
 /** Describes a selectable menu and its activation boundary. */
 export interface MenuListProps {
   /** Ordered menu items, including disabled entries. */ readonly items: readonly MenuItem[];
-  /** Called only when an enabled item is activated. */ readonly onSelect: (item: MenuItem) => void;
+  /** Called only when an enabled item is activated. */ readonly onSelect: (
+    item: MenuItem,
+  ) => void;
 }
 
 /**
@@ -21,14 +23,33 @@ export interface MenuListProps {
  * @returns Keyboard-aware menu element.
  */
 export function MenuList(props: MenuListProps): React.ReactElement {
-  const enabled = useMemo(() => props.items.filter((item) => !item.disabled), [props.items]);
+  const enabled = useMemo(
+    () => props.items.filter((item) => !item.disabled),
+    [props.items],
+  );
   const [selected, setSelected] = useState(0);
   const selectedItem = enabled[selected];
   useInput((_input, key) => {
     if (enabled.length === 0) return;
-    if (key.upArrow) setSelected((value) => (value - 1 + enabled.length) % enabled.length);
+    if (key.upArrow)
+      setSelected((value) => (value - 1 + enabled.length) % enabled.length);
     if (key.downArrow) setSelected((value) => (value + 1) % enabled.length);
     if (key.return && selectedItem != null) props.onSelect(selectedItem);
   });
-  return <Box flexDirection="column">{props.items.map((item) => <Text key={item.id} color={item.disabled ? 'gray' : item === selectedItem ? 'cyan' : undefined}>{item === selectedItem ? '› ' : '  '}{item.label}{item.disabled ? ' (disabled)' : ''}</Text>)}</Box>;
+  return (
+    <Box flexDirection="column" flexShrink={0} height={props.items.length}>
+      {props.items.map((item) => (
+        <Text
+          key={item.id}
+          color={
+            item.disabled ? 'gray' : item === selectedItem ? 'cyan' : undefined
+          }
+        >
+          {item === selectedItem ? '› ' : '  '}
+          {item.label}
+          {item.disabled ? ' (disabled)' : ''}
+        </Text>
+      ))}
+    </Box>
+  );
 }

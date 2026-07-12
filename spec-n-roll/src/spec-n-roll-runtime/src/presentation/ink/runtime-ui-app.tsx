@@ -6,6 +6,7 @@ import {
   NavigationStack,
   type RouteId,
 } from '#runtime/presentation/ink/navigation-stack.js';
+import { AppScaffold } from '#runtime/presentation/ink/layouts/app-scaffold.jsx';
 import { RouteScreen } from '#runtime/presentation/ink/route-screen.jsx';
 import { useStdoutSize } from '#runtime/presentation/ink/use-stdout-size.js';
 
@@ -26,7 +27,7 @@ const EXIT_DIALOG_TIMEOUT_MS = 3000;
 type ExitConfirmationKey = 'enter' | 'escape';
 
 /**
- * Renders the stable status, route content, and key hint regions for the runtime UI.
+ * Renders shared application chrome around the active route-selected layout.
  *
  * @param props - Resolved invocation mode used to choose the home route.
  * @returns Fullscreen Ink application shell.
@@ -47,9 +48,20 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
   );
   const [route, setRoute] = useState<RouteId>(navigation.current());
   const routeTitle =
-    route === 'global-home' || route === 'local-home' ? 'Home' : route === 'agents' ? 'Agents' : route === 'manage' ? 'Manage Spec-N-Roll' : route === 'global-update' ? 'Update Global Framework' : route === 'project-update' ? 'Update Project Framework' : route;
+    route === 'global-home' || route === 'local-home'
+      ? 'Home'
+      : route === 'agents'
+        ? 'Agents'
+        : route === 'manage'
+          ? 'Manage Spec-N-Roll'
+          : route === 'global-update'
+            ? 'Update Global Framework'
+            : route === 'project-update'
+              ? 'Update Project Framework'
+              : route;
   const [updateRunning, setUpdateRunning] = useState(false);
-  const [exitConfirmationKey, setExitConfirmationKey] = 
+  const [reloadOnBack, setReloadOnBack] = useState(false);
+  const [exitConfirmationKey, setExitConfirmationKey] =
     useState<ExitConfirmationKey>();
 
   const requestExit = useCallback(
@@ -57,6 +69,11 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
       setExitConfirmationKey(confirmationKey),
     [],
   );
+  const requestReloadOnBack = useCallback(
+    (): void => setReloadOnBack(true),
+    [],
+  );
+
   useEffect(() => {
     if (exitConfirmationKey == null) return;
     const timeout = setTimeout(
@@ -80,8 +97,12 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
     if (!key.escape) return;
     if (navigation.isHome()) requestExit('escape');
     else {
+      const routeBeforeBack = navigation.current();
       navigation.pop();
       setRoute(navigation.current());
+      if (reloadOnBack && routeBeforeBack === 'global-update') {
+        props.session.reloadRuntime();
+      }
     }
   });
 
@@ -102,67 +123,50 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
   }
 
   return (
-    <Box
-      height={layout.terminalRows}
-      width={size.columns}
-      flexDirection="column"
-    >
-      <Box
-        height={layout.statusRows}
-        flexShrink={0}
-        borderStyle="single"
-        paddingX={1}
-      >
-        <Text bold>Spec N' Roll · {routeTitle}</Text>
-      </Box>
-      <Box height={layout.contentRows} flexDirection="column">
-        <RouteScreen
-          route={route}
-          rows={layout.contentRows}
-          onNavigate={(next) => {
-            navigation.push(next);
-            setRoute(navigation.current());
-          }}
-          onExitRequest={() => requestExit('enter')}
-          onUpdateRunningChange={setUpdateRunning}
-          session={props.session}
-        />
-        {exitConfirmationKey != null ? (
-          <Box
-            position="absolute"
-            height={layout.contentRows}
-            width="100%"
-            alignItems="center"
-            justifyContent="center"
-          >
+    <AppScaffold
+      backEnabled={!navigation.isHome() && !updateRunning}
+      hintRows={layout.hintRows}
+      routeLayout={
+        <>
+          <RouteScreen
+            route={route}
+            rows={layout.contentRows}
+            onReloadRequired={requestReloadOnBack}
+            onNavigate={(next) => {
+              navigation.push(next);
+              setRoute(navigation.current());
+            }}
+            onExitRequest={() => requestExit('enter')}
+            onUpdateRunningChange={setUpdateRunning}
+            session={props.session}
+          />
+          {exitConfirmationKey != null ? (
             <Box
-              borderStyle="round"
-              paddingX={2}
-              paddingY={1}
-              backgroundColor="black"
+              position="absolute"
+              height={layout.contentRows}
+              width="100%"
+              alignItems="center"
+              justifyContent="center"
             >
-              <Text bold color="yellow">
-                Press {exitConfirmationKey} to exit
-              </Text>
+              <Box
+                borderStyle="round"
+                paddingX={2}
+                paddingY={1}
+                backgroundColor="black"
+              >
+                <Text bold color="yellow">
+                  Press {exitConfirmationKey} to exit
+                </Text>
+              </Box>
             </Box>
-          </Box>
-        ) : null}
-      </Box>
-      {route === 'global-update' || route === 'project-update' ? null : (
-        <Box
-          height={layout.hintRows}
-          flexShrink={0}
-          borderStyle="single"
-          paddingX={1}
-        >
-          <Text color="gray">↑/↓ select · Enter open · Esc back</Text>
-        </Box>
-      )}
-    </Box>
+          ) : null}
+        </>
+      }
+      routeLayoutRows={layout.contentRows}
+      terminalColumns={size.columns}
+      terminalRows={layout.terminalRows}
+      title={routeTitle}
+      titleRows={layout.statusRows}
+    />
   );
 }
-
-
-
-
-

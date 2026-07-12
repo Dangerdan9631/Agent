@@ -15,6 +15,8 @@ import {
 } from '#runtime/index.js';
 import type { RuntimeInvocation } from 'spec-n-roll-api';
 import type { ProjectInitializer } from '#runtime/application/init/project-initializer.js';
+import type { GlobalFrameworkUpdater } from '#runtime/application/update/global-framework-updater.js';
+import type { RuntimeReloader } from '#runtime/application/update/runtime-reloader.js';
 import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 import { CodexAgentExtensionSource } from '#runtime/application/extensions/agents/codex-agent-extension-source.js';
 import { CursorAgentExtensionSource } from '#runtime/application/extensions/agents/cursor-agent-extension-source.js';
@@ -95,6 +97,15 @@ class RecordingProjectInitializer implements ProjectInitializer {
    * Records one initialization request.
    */
   initialize(projectRoot: string): void {
+    this.requests.push(projectRoot);
+  }
+
+  /**
+   * Records a framework update request for the configured project root.
+   *
+   * @param projectRoot - Absolute project root selected for the update.
+   */
+  upgrade(projectRoot: string): void {
     this.requests.push(projectRoot);
   }
 }
@@ -237,21 +248,59 @@ describe('spec-n-roll-runtime executable', () => {
     const runtimeRoot = await mkdtemp(join(tmpdir(), 'spec-n-roll-runtime-'));
     const runtimeBinaryPath = join(runtimeRoot, 'spec-n-roll-runtime.js');
     const mcpBinaryPath = join(runtimeRoot, 'spec-n-roll-mcp.js');
-    const userExtensionPath = join(projectRoot, '.spec-n-roll', 'extensions', 'agents', 'codex', 'extension.mjs');
+    const userExtensionPath = join(
+      projectRoot,
+      '.spec-n-roll',
+      'extensions',
+      'agents',
+      'codex',
+      'extension.mjs',
+    );
 
     try {
       await writeFile(runtimeBinaryPath, 'new runtime binary', 'utf8');
       await writeFile(mcpBinaryPath, 'new mcp binary', 'utf8');
-      const initializer = new NodeProjectInitializer(runtimeBinaryPath, mcpBinaryPath);
+      const initializer = new NodeProjectInitializer(
+        runtimeBinaryPath,
+        mcpBinaryPath,
+      );
       initializer.initialize(projectRoot);
-      await writeFile(userExtensionPath, 'export default class UserExtension {}\n', 'utf8');
-      await writeFile(join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'), JSON.stringify({ agents: { codex: { enabled: false, retained: true } } }), 'utf8');
+      await writeFile(
+        userExtensionPath,
+        'export default class UserExtension {}\n',
+        'utf8',
+      );
+      await writeFile(
+        join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'),
+        JSON.stringify({
+          agents: { codex: { enabled: false, retained: true } },
+        }),
+        'utf8',
+      );
 
       initializer.upgrade(projectRoot);
 
-      await expect(readFile(userExtensionPath, 'utf8')).resolves.toBe('export default class UserExtension {}\n');
-      await expect(readFile(join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'), 'utf8')).resolves.toContain('"retained": true');
-      await expect(readFile(join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-runtime.js'), 'utf8')).resolves.toBe('new runtime binary');
+      await expect(readFile(userExtensionPath, 'utf8')).resolves.toBe(
+        'export default class UserExtension {}\n',
+      );
+      await expect(
+        readFile(
+          join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'),
+          'utf8',
+        ),
+      ).resolves.toContain('"retained": true');
+      await expect(
+        readFile(
+          join(
+            projectRoot,
+            '.spec-n-roll',
+            'cli',
+            'bin',
+            'spec-n-roll-runtime.js',
+          ),
+          'utf8',
+        ),
+      ).resolves.toBe('new runtime binary');
     } finally {
       await rm(projectRoot, { force: true, recursive: true });
       await rm(runtimeRoot, { force: true, recursive: true });
@@ -378,6 +427,54 @@ describe('spec-n-roll-runtime executable', () => {
     ]);
   });
 
+  it('defers global runtime reload until the completed update session requests it', async () => {
+    const invocation: RuntimeInvocation = {
+      argv: ['version'],
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      cwd: '/workspace/project',
+    };
+    const renderer = new RecordingRuntimeUiRenderer();
+    const reload = vi.fn();
+    const updater: GlobalFrameworkUpdater = {
+      isUpdateAvailable: () => true,
+      update: async (_source, _directory, output) => {
+        output.write('Updated framework.');
+      },
+    };
+    const reloader: RuntimeReloader = { reload };
+
+    await new RuntimeApplication(
+      new StringRuntimeInvocationReader(JSON.stringify(invocation)),
+      new RuntimeInvocationParser(),
+      renderer,
+      new RecordingProjectInitializer(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      updater,
+      undefined,
+      reloader,
+    ).run();
+
+    const session = renderer.sessions[0];
+    if (session == null)
+      throw new Error('Expected an interactive runtime session.');
+    await session.updateGlobalFramework({ write: () => undefined });
+
+    expect(reload).not.toHaveBeenCalled();
+    session.reloadRuntime();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
   it('keeps global initialization enabled when a specified root has no project configuration', async () => {
     const invocation: RuntimeInvocation = {
       argv: ['--root', '/workspace/new-project', 'version'],
@@ -529,5 +626,3 @@ describe('spec-n-roll-runtime executable', () => {
     }
   });
 });
-
-

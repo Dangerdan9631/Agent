@@ -97,8 +97,8 @@ var NodeExtensionDiscoverer = class {
 import { render } from "ink";
 
 // src/presentation/ink/runtime-ui-app.tsx
-import { useCallback, useEffect as useEffect3, useMemo as useMemo2, useState as useState4 } from "react";
-import { Box as Box3, Text as Text3, useApp, useInput as useInput3 } from "ink";
+import { useCallback as useCallback2, useEffect as useEffect3, useMemo as useMemo4, useState as useState5 } from "react";
+import { Box as Box5, Text as Text5, useApp, useInput as useInput3 } from "ink";
 
 // src/application/ui/terminal-layout-allocator.ts
 var TerminalLayoutAllocator = class _TerminalLayoutAllocator {
@@ -154,14 +154,60 @@ var NavigationStack = class {
   }
 };
 
+// src/presentation/ink/layouts/app-scaffold.tsx
+import { Box, Text } from "ink";
+import { jsx, jsxs } from "react/jsx-runtime";
+function AppScaffold(props) {
+  return /* @__PURE__ */ jsxs(
+    Box,
+    {
+      height: props.terminalRows,
+      width: props.terminalColumns,
+      flexDirection: "column",
+      children: [
+        /* @__PURE__ */ jsx(
+          Box,
+          {
+            height: props.titleRows,
+            flexShrink: 0,
+            borderStyle: "single",
+            paddingX: 1,
+            children: /* @__PURE__ */ jsxs(Text, { bold: true, children: [
+              "Spec N' Roll \xB7 ",
+              props.title
+            ] })
+          }
+        ),
+        /* @__PURE__ */ jsx(Box, { height: props.routeLayoutRows, flexDirection: "column", children: props.routeLayout }),
+        /* @__PURE__ */ jsx(
+          Box,
+          {
+            height: props.hintRows,
+            flexShrink: 0,
+            borderStyle: "single",
+            paddingX: 1,
+            children: /* @__PURE__ */ jsxs(Text, { color: "gray", children: [
+              "Page Up/Down scroll",
+              props.backEnabled ? " \xB7 Esc back" : ""
+            ] })
+          }
+        )
+      ]
+    }
+  );
+}
+
 // src/presentation/ink/route-screen.tsx
-import { useEffect, useState as useState2 } from "react";
-import { Box as Box2, Text as Text2, useInput as useInput2 } from "ink";
+import { useCallback, useEffect, useMemo as useMemo3, useState as useState3 } from "react";
+import { Text as Text4 } from "ink";
+
+// src/presentation/ink/layouts/action-layout.tsx
+import { Box as Box3 } from "ink";
 
 // src/presentation/ink/menu-list.tsx
 import { useMemo, useState } from "react";
-import { Box, Text, useInput } from "ink";
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Box as Box2, Text as Text2, useInput } from "ink";
+import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 function MenuList(props) {
   const enabled = useMemo(() => props.items.filter((item) => !item.disabled), [props.items]);
   const [selected, setSelected] = useState(0);
@@ -172,30 +218,268 @@ function MenuList(props) {
     if (key.downArrow) setSelected((value) => (value + 1) % enabled.length);
     if (key.return && selectedItem != null) props.onSelect(selectedItem);
   });
-  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", children: props.items.map((item) => /* @__PURE__ */ jsxs(Text, { color: item.disabled ? "gray" : item === selectedItem ? "cyan" : void 0, children: [
+  return /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", children: props.items.map((item) => /* @__PURE__ */ jsxs2(Text2, { color: item.disabled ? "gray" : item === selectedItem ? "cyan" : void 0, children: [
     item === selectedItem ? "\u203A " : "  ",
     item.label,
     item.disabled ? " (disabled)" : ""
   ] }, item.id)) });
 }
 
+// src/presentation/ink/layouts/action-layout.tsx
+import { Fragment, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+function ActionLayout(props) {
+  const hasActions = props.actions.length > 0 && props.onActionSelect != null;
+  const actionRows = hasActions ? props.actions.length + 1 : 0;
+  const contentRows = Math.max(1, props.rows - actionRows);
+  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", height: props.rows, children: [
+    /* @__PURE__ */ jsx3(Box3, { flexDirection: "column", height: contentRows, paddingX: 2, children: props.content }),
+    hasActions ? /* @__PURE__ */ jsxs3(Fragment, { children: [
+      /* @__PURE__ */ jsx3(
+        Box3,
+        {
+          borderStyle: "single",
+          borderBottom: false,
+          borderLeft: false,
+          borderRight: false,
+          height: 1,
+          width: "100%"
+        }
+      ),
+      /* @__PURE__ */ jsx3(MenuList, { items: props.actions, onSelect: props.onActionSelect })
+    ] }) : null
+  ] });
+}
+
+// src/presentation/ink/layouts/console-history.ts
+var ConsoleHistory = class _ConsoleHistory {
+  /**
+   * Maximum number of transcript rows retained for display and scrolling.
+   */
+  static MAXIMUM_ROWS = 9999;
+  /**
+   * Appends output and discards the oldest rows beyond the retention limit.
+   *
+   * @param transcript - Existing console transcript, which may be empty.
+   * @param output - New console output to append without interpretation.
+   * @returns Transcript containing at most `MAXIMUM_ROWS` rows.
+   */
+  append(transcript, output) {
+    return this.retain(`${transcript}${output}`);
+  }
+  /**
+   * Returns the retained rows of a transcript in display order.
+   *
+   * @param transcript - Console transcript that may exceed the retention limit.
+   * @returns At most `MAXIMUM_ROWS` rows, ordered from oldest to newest.
+   */
+  rows(transcript) {
+    return this.retain(transcript).split(/\r?\n/);
+  }
+  /**
+   * Discards transcript rows that precede the retention window.
+   *
+   * @param transcript - Console transcript that may exceed the retention limit.
+   * @returns Transcript containing only the newest retained rows.
+   */
+  retain(transcript) {
+    return transcript.split(/\r?\n/).slice(-_ConsoleHistory.MAXIMUM_ROWS).join("\n");
+  }
+};
+
+// src/presentation/ink/layouts/console-layout.tsx
+import { useMemo as useMemo2, useState as useState2 } from "react";
+import { Box as Box4, Text as Text3, useInput as useInput2 } from "ink";
+import { jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
+function ConsoleLayout(props) {
+  const history = useMemo2(() => new ConsoleHistory(), []);
+  const lines = history.rows(props.output);
+  const pageSize = Math.max(1, props.rows);
+  const [topLine, setTopLine] = useState2(Math.max(0, lines.length - pageSize));
+  const [following, setFollowing] = useState2(true);
+  const maximumTopLine = Math.max(0, lines.length - pageSize);
+  const visibleTopLine = following ? maximumTopLine : Math.min(topLine, maximumTopLine);
+  const visibleLines = lines.slice(visibleTopLine, visibleTopLine + pageSize);
+  const scrollbar = new ConsoleScrollbar(
+    pageSize,
+    lines.length,
+    visibleTopLine,
+    maximumTopLine
+  ).render();
+  useInput2((_input, key) => {
+    if (key.pageUp) {
+      setFollowing(false);
+      setTopLine(Math.max(0, visibleTopLine - pageSize));
+    }
+    if (key.pageDown) {
+      const next = Math.min(maximumTopLine, visibleTopLine + pageSize);
+      setFollowing(next === maximumTopLine);
+      setTopLine(next);
+    }
+    if (key.end) {
+      setFollowing(true);
+      setTopLine(maximumTopLine);
+    }
+  });
+  return /* @__PURE__ */ jsxs4(Box4, { height: props.rows, flexDirection: "row", children: [
+    /* @__PURE__ */ jsx4(Box4, { height: props.rows, flexGrow: 1, paddingX: 2, children: /* @__PURE__ */ jsx4(Text3, { wrap: "wrap", children: visibleLines.join("\n") }) }),
+    /* @__PURE__ */ jsx4(Box4, { height: props.rows, width: 1, flexShrink: 0, children: /* @__PURE__ */ jsx4(Text3, { children: scrollbar }) })
+  ] });
+}
+var ConsoleScrollbar = class {
+  /**
+   * Creates one scrollbar for the currently visible transcript page.
+   *
+   * @param pageRows - Number of rows visible in the console viewport.
+   * @param transcriptRows - Number of retained transcript rows.
+   * @param topRow - First transcript row displayed in the viewport.
+   * @param maximumTopRow - Largest valid first transcript row.
+   */
+  constructor(pageRows, transcriptRows, topRow, maximumTopRow) {
+    this.pageRows = pageRows;
+    this.transcriptRows = transcriptRows;
+    this.topRow = topRow;
+    this.maximumTopRow = maximumTopRow;
+  }
+  pageRows;
+  transcriptRows;
+  topRow;
+  maximumTopRow;
+  /**
+   * Renders one scrollbar character for every console viewport row.
+   *
+   * @returns Newline-separated scrollbar track and thumb characters.
+   */
+  render() {
+    const thumbRows = this.thumbRows();
+    const thumbStartRow = this.thumbStartRow(thumbRows);
+    return Array.from(
+      { length: this.pageRows },
+      (_, row) => row >= thumbStartRow && row < thumbStartRow + thumbRows ? "\u2588" : "\u2591"
+    ).join("\n");
+  }
+  /**
+   * Calculates the number of rows occupied by the scrollbar thumb.
+   *
+   * @returns Thumb height clamped to the console viewport.
+   */
+  thumbRows() {
+    if (this.transcriptRows <= this.pageRows) return this.pageRows;
+    return Math.max(
+      1,
+      Math.min(
+        this.pageRows,
+        Math.ceil(this.pageRows * this.pageRows / this.transcriptRows)
+      )
+    );
+  }
+  /**
+   * Calculates the first viewport row occupied by the scrollbar thumb.
+   *
+   * @param thumbRows - Height of the scrollbar thumb in viewport rows.
+   * @returns First thumb row within the scrollbar viewport.
+   */
+  thumbStartRow(thumbRows) {
+    if (this.maximumTopRow === 0) return 0;
+    return Math.round(
+      this.topRow / this.maximumTopRow * (this.pageRows - thumbRows)
+    );
+  }
+};
+
+// src/presentation/ink/layouts/console-output-buffer.ts
+var ConsoleOutputBuffer = class _ConsoleOutputBuffer {
+  /**
+   * Creates a buffer that delivers coalesced output through one callback.
+   *
+   * @param onFlush - Receives each non-empty batch of console output.
+   */
+  constructor(onFlush) {
+    this.onFlush = onFlush;
+  }
+  onFlush;
+  /**
+   * Milliseconds to wait before publishing a group of console writes.
+   */
+  static FLUSH_INTERVAL_MS = 33;
+  /** Pending output not yet delivered to the transcript owner. */
+  pendingOutput = "";
+  /** Scheduled flush that coalesces writes received during one interval. */
+  timer;
+  /**
+   * Queues console output for the next visual transcript update.
+   *
+   * @param output - Console text to append. Empty text is ignored.
+   */
+  write(output) {
+    if (output.length === 0) return;
+    this.pendingOutput += output;
+    if (this.timer != null) return;
+    this.timer = setTimeout(
+      () => this.flush(),
+      _ConsoleOutputBuffer.FLUSH_INTERVAL_MS
+    );
+  }
+  /**
+   * Immediately delivers every queued write as one transcript update.
+   */
+  flush() {
+    if (this.timer != null) {
+      clearTimeout(this.timer);
+      this.timer = void 0;
+    }
+    if (this.pendingOutput.length === 0) return;
+    const output = this.pendingOutput;
+    this.pendingOutput = "";
+    this.onFlush(output);
+  }
+  /**
+   * Cancels a pending visual update and discards its undelivered output.
+   */
+  dispose() {
+    if (this.timer != null) clearTimeout(this.timer);
+    this.timer = void 0;
+    this.pendingOutput = "";
+  }
+};
+
 // src/presentation/ink/route-screen.tsx
-import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
 function RouteScreen(props) {
   if (props.route === "agents") {
-    return /* @__PURE__ */ jsx2(AgentsRoute, { rows: props.rows, listAgents: props.session.listAgents });
+    return /* @__PURE__ */ jsx5(AgentsRoute, { rows: props.rows, listAgents: props.session.listAgents });
   }
   if (props.route === "manage") {
-    return /* @__PURE__ */ jsx2(ManageRoute, { rows: props.rows, onNavigate: props.onNavigate, availability: props.session.projectUpdate });
+    return /* @__PURE__ */ jsx5(
+      ManageRoute,
+      {
+        rows: props.rows,
+        onNavigate: props.onNavigate,
+        availability: props.session.projectUpdate
+      }
+    );
   }
   if (props.route === "global-update") {
-    return /* @__PURE__ */ jsx2(GlobalUpdateRoute, { rows: props.rows, updateGlobalFramework: props.session.updateGlobalFramework, onRunningChange: props.onUpdateRunningChange });
+    return /* @__PURE__ */ jsx5(
+      GlobalUpdateRoute,
+      {
+        rows: props.rows,
+        updateGlobalFramework: props.session.updateGlobalFramework,
+        onRunningChange: props.onUpdateRunningChange
+      }
+    );
   }
   if (props.route === "project-update") {
-    return /* @__PURE__ */ jsx2(ProjectUpdateRoute, { rows: props.rows, updateProjectFramework: props.session.updateProjectFramework, onRunningChange: props.onUpdateRunningChange });
+    return /* @__PURE__ */ jsx5(
+      ProjectUpdateRoute,
+      {
+        rows: props.rows,
+        updateProjectFramework: props.session.updateProjectFramework,
+        onRunningChange: props.onUpdateRunningChange
+      }
+    );
   }
   if (props.route === "init") {
-    return /* @__PURE__ */ jsx2(
+    return /* @__PURE__ */ jsx5(
       InitRoute,
       {
         initializeProject: props.session.initializeProject,
@@ -203,7 +487,7 @@ function RouteScreen(props) {
       }
     );
   }
-  return /* @__PURE__ */ jsx2(
+  return /* @__PURE__ */ jsx5(
     HomeRoute,
     {
       onExitRequest: props.onExitRequest,
@@ -214,102 +498,102 @@ function RouteScreen(props) {
   );
 }
 function HomeRoute(props) {
-  const [projectFound, setProjectFound] = useState2(props.session.projectFound);
+  const [projectFound, setProjectFound] = useState3(props.session.projectFound);
   useEffect(() => {
     setProjectFound(props.session.projectExists());
   }, [props.session]);
-  const initializationItem = props.session.mode === "global" ? [
+  const initializationAction = props.session.mode === "global" ? [
     {
       id: "init",
       label: "Initialize Project",
       disabled: projectFound
     }
   ] : [];
-  const homeMenu = [
-    ...initializationItem,
-    ...props.session.mode === "local" ? [{ id: "manage", label: "Manage Spec-N-Roll" }, { id: "agents", label: "Agents" }] : [],
-    ...props.session.mode === "global" && projectFound ? [{ id: "update-project", label: "Update Project Framework", disabled: !props.session.projectUpdate.enabled }] : [],
-    ...props.session.mode === "global" ? [{ id: "update-global", label: "Update Global Framework", disabled: !props.session.globalUpdate.enabled }] : [],
+  const actions = [
+    ...initializationAction,
+    ...props.session.mode === "local" ? [
+      { id: "manage", label: "Manage Spec-N-Roll" },
+      { id: "agents", label: "Agents" }
+    ] : [],
+    ...props.session.mode === "global" && projectFound ? [
+      {
+        id: "update-project",
+        label: "Update Project Framework",
+        disabled: !props.session.projectUpdate.enabled
+      }
+    ] : [],
+    ...props.session.mode === "global" ? [
+      {
+        id: "update-global",
+        label: "Update Global Framework",
+        disabled: !props.session.globalUpdate.enabled
+      }
+    ] : [],
     { id: "exit", label: "Exit" }
   ];
-  const menuRows = homeMenu.length;
-  const separatorRows = 1;
-  const contentRows = Math.max(1, props.rows - menuRows - separatorRows);
-  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", height: props.rows, children: [
-    /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", height: contentRows, paddingX: 2, children: /* @__PURE__ */ jsx2(HomeContent, { session: props.session }) }),
-    /* @__PURE__ */ jsx2(
-      Box2,
-      {
-        borderStyle: "single",
-        borderBottom: false,
-        borderLeft: false,
-        borderRight: false,
-        height: separatorRows,
-        width: "100%"
-      }
-    ),
-    /* @__PURE__ */ jsx2(
-      MenuList,
-      {
-        items: homeMenu,
-        onSelect: (item) => {
-          if (item.id === "init") props.onNavigate("init");
-          if (item.id === "manage") props.onNavigate("manage");
-          if (item.id === "update-project") props.onNavigate("project-update");
-          if (item.id === "update-global") props.onNavigate("global-update");
-          if (item.id === "agents") props.onNavigate("agents");
-          if (item.id === "exit") props.onExitRequest();
-        }
-      }
-    )
-  ] });
+  return /* @__PURE__ */ jsx5(
+    ActionLayout,
+    {
+      actions,
+      content: /* @__PURE__ */ jsx5(HomeContent, { session: props.session }),
+      onActionSelect: (action) => {
+        if (action.id === "init") props.onNavigate("init");
+        if (action.id === "manage") props.onNavigate("manage");
+        if (action.id === "update-project") props.onNavigate("project-update");
+        if (action.id === "update-global") props.onNavigate("global-update");
+        if (action.id === "agents") props.onNavigate("agents");
+        if (action.id === "exit") props.onExitRequest();
+      },
+      rows: props.rows
+    }
+  );
 }
 function HomeContent(props) {
   const dispatcherSource = props.session.dispatcher.installSource === "local" ? "Local" : "Remote";
   const runtimeSource = props.session.runtime.projectLocal ? "Local" : "Global";
-  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", children: [
-    /* @__PURE__ */ jsxs2(Text2, { children: [
-      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Dispatcher:" }),
+  return /* @__PURE__ */ jsxs5(Fragment2, { children: [
+    /* @__PURE__ */ jsxs5(Text4, { children: [
+      /* @__PURE__ */ jsx5(Text4, { bold: true, color: "cyan", children: "Dispatcher:" }),
       " ",
       "(",
       dispatcherSource,
       ") ",
       props.session.dispatcher.installDirectory
     ] }),
-    /* @__PURE__ */ jsxs2(Text2, { children: [
-      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Version:" }),
+    /* @__PURE__ */ jsxs5(Text4, { children: [
+      /* @__PURE__ */ jsx5(Text4, { bold: true, color: "cyan", children: "Version:" }),
       " ",
       props.session.dispatcher.packageVersion
     ] }),
-    /* @__PURE__ */ jsx2(Box2, { height: 1 }),
-    /* @__PURE__ */ jsxs2(Text2, { children: [
-      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Runtime:" }),
+    /* @__PURE__ */ jsx5(Text4, { children: " " }),
+    /* @__PURE__ */ jsxs5(Text4, { children: [
+      /* @__PURE__ */ jsx5(Text4, { bold: true, color: "cyan", children: "Runtime:" }),
       " ",
       "(",
       runtimeSource,
       ") ",
       props.session.runtime.executablePath
     ] }),
-    /* @__PURE__ */ jsxs2(Text2, { children: [
-      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Version:" }),
+    /* @__PURE__ */ jsxs5(Text4, { children: [
+      /* @__PURE__ */ jsx5(Text4, { bold: true, color: "cyan", children: "Version:" }),
       " ",
       props.session.runtime.packageVersion
     ] }),
-    /* @__PURE__ */ jsxs2(Text2, { children: [
-      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Working Directory:" }),
+    /* @__PURE__ */ jsxs5(Text4, { children: [
+      /* @__PURE__ */ jsx5(Text4, { bold: true, color: "cyan", children: "Working Directory:" }),
       " ",
       props.session.cwd
     ] }),
-    /* @__PURE__ */ jsx2(Box2, { height: 1 }),
-    /* @__PURE__ */ jsxs2(Text2, { children: [
-      /* @__PURE__ */ jsx2(Text2, { bold: true, color: "cyan", children: "Project Root:" }),
+    /* @__PURE__ */ jsx5(Text4, { children: " " }),
+    /* @__PURE__ */ jsxs5(Text4, { children: [
+      /* @__PURE__ */ jsx5(Text4, { bold: true, color: "cyan", children: "Project Root:" }),
       " ",
       props.session.projectRoot ?? "None"
     ] })
   ] });
 }
 function InitRoute(props) {
-  const [result, setResult] = useState2("Initializing project\u2026");
+  const [result, setResult] = useState3("Initializing project\u2026");
   useEffect(() => {
     try {
       props.initializeProject();
@@ -320,79 +604,119 @@ function InitRoute(props) {
       );
     }
   }, [props.initializeProject]);
-  return /* @__PURE__ */ jsx2(Box2, { height: props.rows, paddingX: 2, children: /* @__PURE__ */ jsx2(Text2, { children: result }) });
+  return /* @__PURE__ */ jsx5(
+    ActionLayout,
+    {
+      actions: [],
+      content: /* @__PURE__ */ jsx5(Text4, { children: result }),
+      rows: props.rows
+    }
+  );
 }
 function AgentsRoute(props) {
-  const [content, setContent] = useState2("Loading agents\u2026");
+  const [content, setContent] = useState3("Loading agents\u2026");
   useEffect(() => {
-    props.listAgents().then((agents) => setContent(agents.length === 0 ? "No agent extensions registered." : agents.map((agent) => agent.name + "  " + (agent.enabled ? "enabled" : "disabled")).join("\n"))).catch((error) => setContent("Unable to list agents: " + (error instanceof Error ? error.message : String(error))));
+    props.listAgents().then(
+      (agents) => setContent(
+        agents.length === 0 ? "No agent extensions registered." : agents.map(
+          (agent) => `${agent.name}  ${agent.enabled ? "enabled" : "disabled"}`
+        ).join("\n")
+      )
+    ).catch(
+      (error) => setContent(
+        `Unable to list agents: ${error instanceof Error ? error.message : String(error)}`
+      )
+    );
   }, [props]);
-  return /* @__PURE__ */ jsx2(Box2, { height: props.rows, paddingX: 2, children: /* @__PURE__ */ jsx2(Text2, { children: content }) });
+  return /* @__PURE__ */ jsx5(
+    ActionLayout,
+    {
+      actions: [],
+      content: /* @__PURE__ */ jsx5(Text4, { children: content }),
+      rows: props.rows
+    }
+  );
 }
 function ManageRoute(props) {
-  const items = [{ id: "update-project", label: "Update Project Framework", disabled: !props.availability.enabled }];
-  return /* @__PURE__ */ jsx2(Box2, { height: props.rows, flexDirection: "column", paddingX: 2, children: /* @__PURE__ */ jsx2(MenuList, { items, onSelect: () => props.onNavigate("project-update") }) });
-}
-function UpdateConsole(props) {
-  const lines = props.output.split(/\r?\n/);
-  const pageSize = Math.max(1, props.rows - 2);
-  const [topLine, setTopLine] = useState2(Math.max(0, lines.length - pageSize));
-  const [following, setFollowing] = useState2(true);
-  const maximumTopLine = Math.max(0, lines.length - pageSize);
-  useEffect(() => {
-    if (following) setTopLine(maximumTopLine);
-  }, [following, maximumTopLine]);
-  useInput2((_input, key) => {
-    if (key.pageUp) {
-      setFollowing(false);
-      setTopLine((value) => Math.max(0, value - pageSize));
+  const actions = [
+    {
+      id: "update-project",
+      label: "Update Project Framework",
+      disabled: !props.availability.enabled
     }
-    if (key.pageDown) setTopLine((value) => {
-      const next = Math.min(maximumTopLine, value + pageSize);
-      setFollowing(next === maximumTopLine);
-      return next;
-    });
-    if (key.end) {
-      setFollowing(true);
-      setTopLine(maximumTopLine);
+  ];
+  return /* @__PURE__ */ jsx5(
+    ActionLayout,
+    {
+      actions,
+      content: /* @__PURE__ */ jsx5(Text4, { children: "Choose a framework maintenance action." }),
+      onActionSelect: () => props.onNavigate("project-update"),
+      rows: props.rows
     }
-  });
-  return /* @__PURE__ */ jsx2(Box2, { height: props.rows, paddingX: 2, children: /* @__PURE__ */ jsx2(Text2, { wrap: "wrap", children: lines.slice(topLine, topLine + pageSize).join("\n") }) });
+  );
 }
 function ProjectUpdateRoute(props) {
-  const [output, setOutput] = useState2("Starting project framework update\u2026\n");
+  const history = useMemo3(() => new ConsoleHistory(), []);
+  const [output, setOutput] = useState3("Starting project framework update\u2026\n");
+  const appendOutput = useCallback(
+    (newOutput) => setOutput((currentOutput) => history.append(currentOutput, newOutput)),
+    [history]
+  );
   useEffect(() => {
     props.onRunningChange(true);
     try {
       props.updateProjectFramework();
-      setOutput((value) => value + "Project update completed.");
+      appendOutput("Project update completed.");
     } catch (error) {
-      setOutput((value) => value + `Update failed: ${error instanceof Error ? error.message : String(error)}`);
+      appendOutput(
+        `Update failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     } finally {
       props.onRunningChange(false);
     }
     return () => props.onRunningChange(false);
-  }, [props.onRunningChange, props.updateProjectFramework]);
-  return /* @__PURE__ */ jsx2(UpdateConsole, { rows: props.rows, output });
+  }, [appendOutput, props.onRunningChange, props.updateProjectFramework]);
+  return /* @__PURE__ */ jsx5(ConsoleLayout, { rows: props.rows, output });
 }
 function GlobalUpdateRoute(props) {
-  const [output, setOutput] = useState2("Starting global framework update\u2026\n");
+  const history = useMemo3(() => new ConsoleHistory(), []);
+  const [output, setOutput] = useState3("Starting global framework update\u2026\n");
+  const appendOutput = useCallback(
+    (newOutput) => setOutput((currentOutput) => history.append(currentOutput, newOutput)),
+    [history]
+  );
+  const outputBuffer = useMemo3(
+    () => new ConsoleOutputBuffer(appendOutput),
+    [appendOutput]
+  );
   useEffect(() => {
     props.onRunningChange(true);
-    void props.updateGlobalFramework({ write: (text) => setOutput((value) => value + text) }).then(() => setOutput((value) => value + "\nUpdate completed. Reloading runtime\u2026")).catch((error) => setOutput((value) => value + `
-Update failed: ${error instanceof Error ? error.message : String(error)}`)).finally(() => props.onRunningChange(false));
-    return () => props.onRunningChange(false);
-  }, [props.onRunningChange, props.updateGlobalFramework]);
-  return /* @__PURE__ */ jsx2(UpdateConsole, { rows: props.rows, output });
+    void props.updateGlobalFramework({
+      write: (text) => outputBuffer.write(text)
+    }).then(() => outputBuffer.write("\nUpdate completed. Reloading runtime\u2026")).catch(
+      (error) => outputBuffer.write(
+        `
+Update failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    ).finally(() => {
+      outputBuffer.flush();
+      props.onRunningChange(false);
+    });
+    return () => {
+      outputBuffer.dispose();
+      props.onRunningChange(false);
+    };
+  }, [outputBuffer, props.onRunningChange, props.updateGlobalFramework]);
+  return /* @__PURE__ */ jsx5(ConsoleLayout, { rows: props.rows, output });
 }
 
 // src/presentation/ink/use-stdout-size.ts
-import { useEffect as useEffect2, useState as useState3 } from "react";
+import { useEffect as useEffect2, useState as useState4 } from "react";
 import { useStdout } from "ink";
 function useStdoutSize() {
   const { stdout } = useStdout();
   const read = () => ({ columns: stdout.columns ?? 80, rows: stdout.rows ?? 24 });
-  const [size, setSize] = useState3(read);
+  const [size, setSize] = useState4(read);
   useEffect2(() => {
     const onResize = () => setSize(read());
     stdout.on("resize", onResize);
@@ -404,26 +728,26 @@ function useStdoutSize() {
 }
 
 // src/presentation/ink/runtime-ui-app.tsx
-import { jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+import { Fragment as Fragment3, jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
 var EXIT_DIALOG_TIMEOUT_MS = 3e3;
 function RuntimeUiApp(props) {
   const app = useApp();
   const size = useStdoutSize();
-  const layout = useMemo2(
+  const layout = useMemo4(
     () => new TerminalLayoutAllocator().allocate(size.rows),
     [size.rows]
   );
-  const navigation = useMemo2(
+  const navigation = useMemo4(
     () => new NavigationStack(
       props.session.mode === "local" ? "local-home" : "global-home"
     ),
     [props.session.mode]
   );
-  const [route, setRoute] = useState4(navigation.current());
+  const [route, setRoute] = useState5(navigation.current());
   const routeTitle = route === "global-home" || route === "local-home" ? "Home" : route === "agents" ? "Agents" : route === "manage" ? "Manage Spec-N-Roll" : route === "global-update" ? "Update Global Framework" : route === "project-update" ? "Update Project Framework" : route;
-  const [updateRunning, setUpdateRunning] = useState4(false);
-  const [exitConfirmationKey, setExitConfirmationKey] = useState4();
-  const requestExit = useCallback(
+  const [updateRunning, setUpdateRunning] = useState5(false);
+  const [exitConfirmationKey, setExitConfirmationKey] = useState5();
+  const requestExit = useCallback2(
     (confirmationKey) => setExitConfirmationKey(confirmationKey),
     []
   );
@@ -454,16 +778,16 @@ function RuntimeUiApp(props) {
     }
   });
   if (layout.requiresResize) {
-    return /* @__PURE__ */ jsxs3(
-      Box3,
+    return /* @__PURE__ */ jsxs6(
+      Box5,
       {
         height: layout.terminalRows,
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         children: [
-          /* @__PURE__ */ jsx3(Text3, { bold: true, color: "yellow", children: "Terminal is too small" }),
-          /* @__PURE__ */ jsxs3(Text3, { children: [
+          /* @__PURE__ */ jsx6(Text5, { bold: true, color: "yellow", children: "Terminal is too small" }),
+          /* @__PURE__ */ jsxs6(Text5, { children: [
             "Resize to at least ",
             layout.minimumRows,
             " rows."
@@ -472,83 +796,62 @@ function RuntimeUiApp(props) {
       }
     );
   }
-  return /* @__PURE__ */ jsxs3(
-    Box3,
+  return /* @__PURE__ */ jsx6(
+    AppScaffold,
     {
-      height: layout.terminalRows,
-      width: size.columns,
-      flexDirection: "column",
-      children: [
-        /* @__PURE__ */ jsx3(
-          Box3,
+      backEnabled: !navigation.isHome() && !updateRunning,
+      hintRows: layout.hintRows,
+      routeLayout: /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        /* @__PURE__ */ jsx6(
+          RouteScreen,
           {
-            height: layout.statusRows,
-            flexShrink: 0,
-            borderStyle: "single",
-            paddingX: 1,
-            children: /* @__PURE__ */ jsxs3(Text3, { bold: true, children: [
-              "Spec N' Roll \xB7 ",
-              routeTitle
-            ] })
+            route,
+            rows: layout.contentRows,
+            onNavigate: (next) => {
+              navigation.push(next);
+              setRoute(navigation.current());
+            },
+            onExitRequest: () => requestExit("enter"),
+            onUpdateRunningChange: setUpdateRunning,
+            session: props.session
           }
         ),
-        /* @__PURE__ */ jsxs3(Box3, { height: layout.contentRows, flexDirection: "column", children: [
-          /* @__PURE__ */ jsx3(
-            RouteScreen,
-            {
-              route,
-              rows: layout.contentRows,
-              onNavigate: (next) => {
-                navigation.push(next);
-                setRoute(navigation.current());
-              },
-              onExitRequest: () => requestExit("enter"),
-              onUpdateRunningChange: setUpdateRunning,
-              session: props.session
-            }
-          ),
-          exitConfirmationKey != null ? /* @__PURE__ */ jsx3(
-            Box3,
-            {
-              position: "absolute",
-              height: layout.contentRows,
-              width: "100%",
-              alignItems: "center",
-              justifyContent: "center",
-              children: /* @__PURE__ */ jsx3(
-                Box3,
-                {
-                  borderStyle: "round",
-                  paddingX: 2,
-                  paddingY: 1,
-                  backgroundColor: "black",
-                  children: /* @__PURE__ */ jsxs3(Text3, { bold: true, color: "yellow", children: [
-                    "Press ",
-                    exitConfirmationKey,
-                    " to exit"
-                  ] })
-                }
-              )
-            }
-          ) : null
-        ] }),
-        route === "global-update" || route === "project-update" ? null : /* @__PURE__ */ jsx3(
-          Box3,
+        exitConfirmationKey != null ? /* @__PURE__ */ jsx6(
+          Box5,
           {
-            height: layout.hintRows,
-            flexShrink: 0,
-            borderStyle: "single",
-            paddingX: 1,
-            children: /* @__PURE__ */ jsx3(Text3, { color: "gray", children: "\u2191/\u2193 select \xB7 Enter open \xB7 Esc back" })
+            position: "absolute",
+            height: layout.contentRows,
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            children: /* @__PURE__ */ jsx6(
+              Box5,
+              {
+                borderStyle: "round",
+                paddingX: 2,
+                paddingY: 1,
+                backgroundColor: "black",
+                children: /* @__PURE__ */ jsxs6(Text5, { bold: true, color: "yellow", children: [
+                  "Press ",
+                  exitConfirmationKey,
+                  " to exit"
+                ] })
+              }
+            )
           }
-        )
-      ]
+        ) : null
+      ] }),
+      routeLayoutRows: layout.contentRows,
+      terminalColumns: size.columns,
+      terminalRows: layout.terminalRows,
+      title: routeTitle,
+      titleRows: layout.statusRows
     }
   );
 }
 
 // src/infrastructure/ink/ink-runtime-ui-renderer.tsx
-import { jsx as jsx4 } from "react/jsx-runtime";
+import { jsx as jsx7 } from "react/jsx-runtime";
 var InkRuntimeUiRenderer = class {
   /**
    * Renders the interactive application and waits until it exits.
@@ -557,7 +860,7 @@ var InkRuntimeUiRenderer = class {
    * @returns Promise fulfilled when Ink unmounts after user exit.
    */
   async render(session) {
-    const instance = render(/* @__PURE__ */ jsx4(RuntimeUiApp, { session }));
+    const instance = render(/* @__PURE__ */ jsx7(RuntimeUiApp, { session }));
     await instance.waitUntilExit();
     if (process.stdout.isTTY) process.stdout.write("\x1B[2J\x1B[H");
   }
