@@ -1,10 +1,10 @@
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import type { ArchitectureFolderDiagramConfig } from '#arch/application/config/architecture-config.js';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
-import { PackageFolderDependencyCytoscapeConverter } from '#arch/application/graph/package-folder-dependency-cytoscape-converter.js';
+import type { ArchitectureTypeGraph } from '#arch/application/graph/architecture-type-graph.js';
+import { ArchitectureTypeCytoscapeConverter } from '#arch/application/graph/architecture-type-cytoscape-converter.js';
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
@@ -21,7 +21,7 @@ export class PackageFolderArchitectureArtifactGenerator {
    * @param matrixWriter - Writer for dependency matrix HTML artifacts.
    */
   constructor(
-    private readonly converter = new PackageFolderDependencyCytoscapeConverter(),
+    private readonly converter = new ArchitectureTypeCytoscapeConverter(),
     private readonly writer = new CytoscapeArtifactWriter(),
     private readonly matrixWriter = new DependencyMatrixArtifactWriter(),
   ) {}
@@ -32,7 +32,6 @@ export class PackageFolderArchitectureArtifactGenerator {
    * @param outputRoot - Absolute path to the architecture output directory.
    * @param workspacePackage - Package metadata for the source package to inspect.
    * @param folderDiagram - Opt-in folder diagram configuration.
-   * @param packages - Runtime package metadata used to consolidate external workspace packages.
    * @param pages - Generated HTML pages to show in the navigation pane.
    * @param exclusionFilter - Folder-specific dependency and project file exclusion filter.
    * @param collapseFilter - Folder-specific external dependency collapse filter.
@@ -42,17 +41,13 @@ export class PackageFolderArchitectureArtifactGenerator {
     outputRoot: string,
     workspacePackage: WorkspacePackage,
     folderDiagram: ArchitectureFolderDiagramConfig,
-    packages: WorkspacePackage[] = [workspacePackage],
+    typeGraph: ArchitectureTypeGraph = { nodes: [], relationships: [] },
     pages?: ArchitecturePage[],
     exclusionFilter?: ArchitectureExclusionFilter,
     collapseFilter?: ArchitectureCollapseFilter,
   ): string[] {
     const packageOutputRoot = join(outputRoot, workspacePackage.name);
     const diagramSlug = this.diagramSlug(folderDiagram.path);
-    const dependencyCruiserJsonPath = join(
-      packageOutputRoot,
-      'dependency-cruiser.json',
-    );
     const cytoscapeJsonPath = join(
       packageOutputRoot,
       `${diagramSlug}.cytoscape.json`,
@@ -65,11 +60,10 @@ export class PackageFolderArchitectureArtifactGenerator {
       packageOutputRoot,
       `${diagramSlug}.matrix.html`,
     );
-    const elements = this.converter.convert(
-      readFileSync(dependencyCruiserJsonPath, 'utf8'),
+    const elements = this.converter.folderElements(
+      typeGraph,
       workspacePackage,
       folderDiagram.path,
-      packages,
       exclusionFilter,
       collapseFilter,
     );

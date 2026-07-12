@@ -840,7 +840,7 @@ export class ArchitectureViewerHttpServer {
     }
 
     const match = /^src\/([^/]+)\/(.+)$/u.exec(
-      this.normalizeConfigPath(node.data.id),
+      this.normalizeConfigPath(node.data.sourceFile ?? node.data.id),
     );
     if (!match) {
       return null;
@@ -1043,9 +1043,8 @@ export class ArchitectureViewerHttpServer {
 
   private exportedImageFileName(htmlPath: string): string {
     const baseName = basename(htmlPath, '.html');
-    const timestamp = new Date().toISOString().replaceAll(':', '-');
 
-    return `${baseName}.${timestamp}.png`;
+    return `${baseName}.png`;
   }
 
   private isPngImage(image: Buffer): boolean {

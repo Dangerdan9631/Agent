@@ -24,7 +24,7 @@ module.exports = {
           "spec-n-roll-mcp",
           "spec-n-roll-runtime"
         ],
-        "fs": [
+        "node:fs": [
           "spec-n-roll",
           "spec-n-roll-runtime"
         ]
@@ -35,33 +35,33 @@ module.exports = {
     "externalDependencies": [
       "chalk",
       "commander",
-      "fs",
-      "module",
-      "path",
+      "node:fs",
+      "node:url",
+      "node:module",
+      "node:path",
       "reflect-metadata",
       "ts",
       "tslog",
-      "tsyringe",
-      "url"
+      "tsyringe"
     ]
   },
   "exclusions": {
     "landscape": [
-      "module",
-      "path",
+      "node:module",
+      "node:path",
+      "node:url",
       "reflect-metadata",
       "tslog",
-      "tsyringe",
-      "url"
+      "tsyringe"
     ],
     "projectFiles": {
       "allPackages": [
+        "node:module",
+        "node:path",
+        "node:url",
         "reflect-metadata",
-        "module",
-        "path",
         "tslog",
-        "tsyringe",
-        "url"
+        "tsyringe"
       ],
       "packages": {
         "spec-n-roll-api": [
@@ -75,7 +75,10 @@ module.exports = {
         ],
         "spec-n-roll": [
           "composition/dispatcher/dispatcher-container-factory",
-          "composition/dispatcher/dispatcher-injection-tokens"
+          "composition/dispatcher/dispatcher-injection-tokens",
+          "node:path",
+          "node:url",
+          "tslog"
         ]
       }
     }

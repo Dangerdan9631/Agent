@@ -1,7 +1,7 @@
 import { Logger } from 'tslog';
 import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 import type { DispatcherRunRequest } from '#dispatcher/application/dispatch/dispatcher-run-request.js';
-import { DispatcherMetadataResolver } from '#dispatcher/application/metadata/dispatcher-metadata-resolver.js';
+import { DispatcherMetadataResolver } from '#dispatcher/application/dispatcher/dispatcher-metadata-resolver.js';
 import { ProjectRootResolver } from '#dispatcher/application/project/project-root-resolver.js';
 import { RuntimeTargetResolver } from '#dispatcher/application/runtime/runtime-target-resolver.js';
 import type { RuntimeProcessExecutor } from '#dispatcher/application/runtime/runtime-process-executor.js';

@@ -3,10 +3,10 @@ node_modules/
 coverage/
 .specify/
 specs/
-src/spec-n-roll-arch/architecture/**
-!src/spec-n-roll-arch/architecture/
-!src/spec-n-roll-arch/architecture/**/
-!src/spec-n-roll-arch/architecture/*/cytoscape.layout.json
-!src/spec-n-roll-arch/architecture/project-dependencies.cytoscape.layout.json
-!src/spec-n-roll-arch/architecture/**/*.png
+architecture/**
+!architecture/
+!architecture/**/
+!architecture/*/cytoscape.layout.json
+!architecture/project-dependencies.cytoscape.layout.json
+!architecture/**/*.png
 .tmp/

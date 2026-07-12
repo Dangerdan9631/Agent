@@ -83,12 +83,7 @@ export class ArchProgramFactory {
       .action(async (options: { host: string; port: string }) => {
         const workspaceRoot = this.workspaceRootResolver.resolve();
         const runningServer = await this.viewerServer.start({
-          artifactRoot: join(
-            workspaceRoot,
-            'src',
-            'spec-n-roll-arch',
-            'architecture',
-          ),
+          artifactRoot: join(workspaceRoot, 'architecture'),
           workspaceRoot,
           host: options.host,
           port: Number.parseInt(options.port, 10),

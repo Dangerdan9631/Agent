@@ -17,6 +17,8 @@ import { ProjectArchitectureArtifactGenerator } from '#arch/application/artifact
 import { RuntimePackageDiscoverer } from '#arch/application/packages/runtime-package-discoverer.js';
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 import { WorkspaceRootResolver } from '#arch/infrastructure/workspace/workspace-root-resolver.js';
+import type { ArchitectureTypeGraphReader } from '#arch/application/graph/architecture-type-graph-reader.js';
+import { TypeScriptArchitectureTypeGraphReader } from '#arch/infrastructure/typescript/type-script-architecture-type-graph-reader.js';
 
 /**
  * Orchestrates workspace architecture artifact generation.
@@ -40,6 +42,7 @@ export class ArchitectureArtifactGenerator {
     private readonly packageGenerator = new PackageArchitectureArtifactGenerator(),
     private readonly packageFolderGenerator = new PackageFolderArchitectureArtifactGenerator(),
     private readonly projectGenerator = new ProjectArchitectureArtifactGenerator(),
+    private readonly typeGraphReader: ArchitectureTypeGraphReader = new TypeScriptArchitectureTypeGraphReader(),
     private readonly logger = new Logger({
       name: 'spec-n-roll-arch',
       minLevel: 6,
@@ -65,24 +68,25 @@ export class ArchitectureArtifactGenerator {
     this.logger.debug('Discovered runtime workspace packages.', {
       packageCount: packages.length,
     });
-    const outputRoot = join(
-      workspaceRoot,
-      'src',
-      'spec-n-roll-arch',
-      'architecture',
-    );
+    const outputRoot = join(workspaceRoot, 'architecture');
     mkdirSync(outputRoot, { recursive: true });
     const folderDiagramEntries = this.folderDiagramEntries(config, packages);
     this.logger.debug('Resolved configured package folder diagrams.', {
       folderDiagramCount: folderDiagramEntries.length,
     });
     const pages = this.pages(outputRoot, packages, folderDiagramEntries);
+    const typeGraph = this.typeGraphReader.read(workspaceRoot, packages);
+    this.logger.debug('Read TypeScript declaration graph.', {
+      nodeCount: typeGraph.nodes.length,
+      relationshipCount: typeGraph.relationships.length,
+    });
 
     const packageFiles = packages.flatMap((workspacePackage) =>
       this.packageGenerator.generate(
         workspaceRoot,
         outputRoot,
         workspacePackage,
+        typeGraph,
         pages,
         exclusionFilter,
         collapseFilter,
@@ -93,7 +97,7 @@ export class ArchitectureArtifactGenerator {
         outputRoot,
         entry.workspacePackage,
         entry.folderDiagram,
-        packages,
+        typeGraph,
         pages,
         exclusionFilter.forFolderDiagram(
           entry.workspacePackage.name,
@@ -108,6 +112,7 @@ export class ArchitectureArtifactGenerator {
       ...this.projectGenerator.generate(
         outputRoot,
         packages,
+        typeGraph,
         pages,
         exclusionFilter,
         dependencySplitter,

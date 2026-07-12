@@ -16,7 +16,7 @@ import { DispatcherApplication } from '#dispatcher/application/dispatch/dispatch
 import { DispatcherCli } from '#dispatcher/presentation/cli/dispatcher-cli.js';
 import { DispatcherContainerFactory } from '#dispatcher/composition/dispatcher/dispatcher-container-factory.js';
 import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
-import { DispatcherMetadataResolver } from '#dispatcher/application/metadata/dispatcher-metadata-resolver.js';
+import { DispatcherMetadataResolver } from '#dispatcher/application/dispatcher/dispatcher-metadata-resolver.js';
 import { NodeDispatcherFileSystem } from '#dispatcher/infrastructure/filesystem/node-dispatcher-file-system.js';
 import { NodeRuntimePackageManifestPathResolver } from '#dispatcher/infrastructure/module/node-runtime-package-manifest-path-resolver.js';
 import { NodeRuntimeProcessExecutor } from '#dispatcher/infrastructure/runtime/node-runtime-process-executor.js';

@@ -152,7 +152,7 @@ npm run arch
 The generated files are written under:
 
 ```text
-src/spec-n-roll-arch/architecture/
+architecture/
 ```
 
 Important generated views include:

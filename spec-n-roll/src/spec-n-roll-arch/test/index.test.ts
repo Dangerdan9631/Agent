@@ -23,9 +23,51 @@ import { PackageFolderArchitectureArtifactGenerator } from '#arch/application/ar
 import { PackageDependencyCytoscapeConverter } from '#arch/application/graph/package-dependency-cytoscape-converter.js';
 import { PackageFolderDependencyCytoscapeConverter } from '#arch/application/graph/package-folder-dependency-cytoscape-converter.js';
 import { PackagePublicApiExportIndex } from '#arch/application/graph/package-public-api-export-index.js';
+import { ArchitectureTypeCytoscapeConverter } from '#arch/application/graph/architecture-type-cytoscape-converter.js';
+import { TypeScriptArchitectureTypeGraphReader } from '#arch/infrastructure/typescript/type-script-architecture-type-graph-reader.js';
 import { RuntimePackageDiscoverer } from '#arch/index.js';
 
 describe('spec-n-roll-arch', () => {
+  it('creates declaration and module nodes with reference and inheritance relationships', () => {
+    const workspaceRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-types-'));
+    const packageRoot = join(workspaceRoot, 'src', 'alpha');
+    const sourceRoot = join(packageRoot, 'src');
+    mkdirSync(sourceRoot, { recursive: true });
+    writeFileSync(join(sourceRoot, 'contract.ts'), 'export interface Contract {}\nexport type Alias = Contract;\nexport enum State { Ready }\n');
+    writeFileSync(join(sourceRoot, 'service.ts'), "import { Contract, Alias } from './contract.js';\nexport class Service implements Contract { value!: Alias; contract!: Contract; }\nexport class PlainService implements Contract {}\nexport const create = (): Contract => new Service();\n");
+
+    const graph = new TypeScriptArchitectureTypeGraphReader().read(workspaceRoot, [{ name: 'alpha', root: packageRoot, dependencies: {} }]);
+    const service = graph.nodes.find((node) => node.label === 'Service');
+    const plainService = graph.nodes.find((node) => node.label === 'PlainService');
+    const contract = graph.nodes.find((node) => node.label === 'Contract');
+    const moduleNode = graph.nodes.find((node) => node.moduleNode);
+
+    expect(service?.nodeKind).toBe('class');
+    expect(contract?.nodeKind).toBe('interface');
+    expect(graph.nodes.find((node) => node.label === 'Alias')?.nodeKind).toBe('other');
+    expect(moduleNode?.label).toBe('service module');
+    expect(graph.relationships).toContainEqual({ sourceId: service?.id, targetId: contract?.id, relationshipType: 'inheritance' });
+    expect(graph.relationships).toContainEqual({ sourceId: service?.id, targetId: contract?.id, relationshipType: 'reference' });
+    expect(graph.relationships).toContainEqual({ sourceId: plainService?.id, targetId: contract?.id, relationshipType: 'inheritance' });
+    expect(graph.relationships).not.toContainEqual({ sourceId: plainService?.id, targetId: contract?.id, relationshipType: 'reference' });
+    expect(graph.relationships).toContainEqual({ sourceId: moduleNode?.id, targetId: contract?.id, relationshipType: 'reference' });
+  });
+  it('excludes external declaration relationships by their displayed package dependency name', () => {
+    const elements = new ArchitectureTypeCytoscapeConverter().packageElements(
+      {
+        nodes: [{ id: 'type:src/alpha/src/runtime.ts:Runtime', label: 'Runtime', nodeKind: 'class', packageName: 'alpha', sourceFile: 'src/alpha/src/runtime.ts', moduleNode: false }],
+        relationships: [
+          { sourceId: 'type:src/alpha/src/runtime.ts:Runtime', targetId: 'external:node:path', relationshipType: 'reference' },
+          { sourceId: 'type:src/alpha/src/runtime.ts:Runtime', targetId: 'external:node:url', relationshipType: 'reference' },
+        ],
+      },
+      { name: 'alpha', root: 'D:/repo/src/alpha', dependencies: {} },
+      new ArchitectureExclusionFilter({ exclusions: { projectFiles: { packages: { alpha: ['node:path', 'node:url'] } } } }),
+    );
+
+    expect(elements.some((element) => element.data.id === 'external:node:path')).toBe(false);
+    expect(elements.some((element) => element.data.id === 'external:node:url')).toBe(false);
+  });
   it('discovers runtime packages and excludes arch and test packages', () => {
     const workspaceRoot = mkdtempSync(join(tmpdir(), 'spec-n-roll-arch-'));
     const sourceRoot = join(workspaceRoot, 'src');
@@ -1092,6 +1134,11 @@ describe('spec-n-roll-arch', () => {
     expect(inlineScript).toBeDefined();
     expect(() => new Script(inlineScript ?? '')).not.toThrow();
     expect(html).toContain("'font-size': 25");
+    expect(html).toContain('node[nodeKind = "class"]');
+    expect(html).toContain('node[nodeKind = "interface"]');
+    expect(html).toContain('node[nodeKind = "other"]');
+    expect(html).toContain('edge[relationshipType = "inheritance"]');
+    expect(html).toContain('Implements/extends');
     expect(html).toContain('const MINIMUM_WHEEL_SENSITIVITY = 0.15');
     expect(html).toContain('const MAXIMUM_WHEEL_SENSITIVITY = 1');
     expect(html).toContain(
@@ -1114,7 +1161,7 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('const autoLayout = new DiagramAutoLayout(cy)');
     expect(html).toContain('layoutGroup(node)');
     expect(html).toContain('autoLayout.layoutGroup(selectedGroup)');
-    expect(html).toContain('void initializeDiagramLayout()');
+    expect(html).toContain('const diagramReady = initializeDiagramLayout()');
     expect(html).toContain('autoLayoutButton.addEventListener');
     expect(html).not.toContain('cytoscape-fcose@2.2.0');
     expect(html).not.toContain("const preferredLayout = { name: 'fcose'");
@@ -1124,6 +1171,9 @@ describe('spec-n-roll-arch', () => {
       'id="create-folder-diagram" type="button" disabled>Create Diagram</button>',
     );
     expect(html).toContain('>Export Image</button>');
+    expect(html).toContain(
+      'id="export-all-diagram-images" type="button">Export All</button>',
+    );
     expect(html).toContain('id="hide-action"');
     expect(html).not.toContain('id="hide-node"');
     expect(html).not.toContain('id="hide-connection"');
@@ -1153,6 +1203,7 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('class DiagramGridSnapper');
     expect(html).toContain('Math.round(position.x / gridSize) * gridSize');
     expect(html).toContain('Math.round(position.y / gridSize) * gridSize');
+    expect(html).toContain('node.children().length === 0');
     expect(html).toContain('gridSnapper.snap(Number(snapGrid.value), selectedNode)');
     expect(html).toContain('autoLayout.configure(');
     expect(html).toContain('this.maxRows = 5');
@@ -1168,6 +1219,9 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain('synchronizeCollapsedGroups()');
     expect(html).toContain('class DiagramImageExportClient');
     expect(html).toContain('class DiagramImageExporter');
+    expect(html).toContain('class AllDiagramImagesExporter');
+    expect(html).toContain('window.exportDiagramImage = async () => {');
+    expect(html).toContain('All images exported: ');
     expect(html).toContain("'/__spec-n-roll/image?diagram='");
     expect(html).toContain("'content-type': 'image/png'");
     expect(html).toContain("output: 'blob'");
@@ -1510,7 +1564,7 @@ describe('spec-n-roll-arch', () => {
     expect(html).not.toContain('class DiagramImageExporter');
     expect(html).toContain('src/alpha/src/application/use-case.ts');
     expect(html).toContain('src/alpha/src/zeta.ts');
-    expect(html).toContain('Files');
+    expect(html).toContain('Declarations');
     expect(html).toContain('Dependencies');
     expect(html).toContain('Density');
     expect(html).toContain('50.00%');
@@ -1833,13 +1887,33 @@ describe('spec-n-roll-arch', () => {
       );
       const imageResult = (await imageResponse.json()) as { fileName: string };
       expect(imageResponse.status).toBe(200);
-      expect(imageResult.fileName).toMatch(
-        /^graph\.\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z\.png$/u,
-      );
+      expect(imageResult.fileName).toBe('graph.png');
       expect(readFileSync(join(artifactRoot, imageResult.fileName))).toEqual(
         pngBody,
       );
       expect(readdirSync(artifactRoot)).toContain(imageResult.fileName);
+
+      const replacementPngBody = Buffer.concat([pngBody, Buffer.from([0x01])]);
+      const replacementImageResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/image?diagram=graph.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'image/png' },
+          body: replacementPngBody,
+        },
+      );
+      const replacementImageResult =
+        (await replacementImageResponse.json()) as { fileName: string };
+      expect(replacementImageResponse.status).toBe(200);
+      expect(replacementImageResult.fileName).toBe('graph.png');
+      expect(readFileSync(join(artifactRoot, 'graph.png'))).toEqual(
+        replacementPngBody,
+      );
+      expect(
+        readdirSync(artifactRoot).filter((fileName) =>
+          fileName.endsWith('.png'),
+        ),
+      ).toEqual(['graph.png']);
 
       writeFileSync(join(artifactRoot, 'matrix.html'), '<!doctype html>');
       const matrixImageResponse = await fetch(

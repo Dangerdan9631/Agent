@@ -99,6 +99,11 @@ export class CytoscapeArtifactWriter {
       .toolbar-button.active { background: #1d4ed8; border-color: #1d4ed8; color: #ffffff; }
       .toolbar-button:disabled { cursor: not-allowed; opacity: 0.45; }
       .toolbar-separator { color: #94a3b8; font-size: 18px; line-height: 30px; }
+      .graph-legend { color: #475569; display: inline-flex; font-size: 12px; gap: 8px; margin-left: 8px; }
+      .graph-legend-item { align-items: center; display: inline-flex; gap: 4px; }
+      .legend-swatch { border-radius: 50%; display: inline-block; height: 10px; width: 10px; }
+      .legend-class { background: #3b82f6; } .legend-interface { background: #14b8a6; } .legend-other { background: #f59e0b; }
+      .legend-edge { border-top: 2px solid #94a3b8; display: inline-block; width: 18px; } .legend-inheritance { border-top-style: dashed; }
       .layout-control { align-items: center; display: inline-flex; font-size: 12px; gap: 6px; white-space: nowrap; }
       .layout-control input { accent-color: #2563eb; width: 96px; }
       .layout-control output { color: #475569; font-variant-numeric: tabular-nums; min-width: 24px; }
@@ -118,6 +123,7 @@ export class CytoscapeArtifactWriter {
       .dark-mode .navigation { background: #111827; border-right-color: #334155; }
       .dark-mode .nav-toggle, .dark-mode .toolbar-button, .dark-mode .search-input, .dark-mode .exclusion-menu, .dark-mode .exclusion-add input { background: #1f2937; border-color: #475569; color: #e5e7eb; }
       .dark-mode .toolbar-separator, .dark-mode .layout-control output { color: #94a3b8; }
+      .dark-mode .graph-legend { color: #cbd5e1; }
       .dark-mode .navigation-link { color: #cbd5e1; }
       .dark-mode .navigation-group-title { color: #e5e7eb; }
       .dark-mode .navigation-link:hover { background: #334155; color: #f8fafc; }
@@ -154,7 +160,9 @@ export class CytoscapeArtifactWriter {
             <span class="toolbar-separator" aria-hidden="true">|</span>
             <button class="toolbar-button" id="create-folder-diagram" type="button" disabled>Create Diagram</button>
             <button class="toolbar-button" id="export-diagram-image" type="button">Export Image</button>
+            <button class="toolbar-button" id="export-all-diagram-images" type="button">Export All</button>
             <button class="toolbar-button theme-toggle" id="toggle-dark-mode" type="button">Dark Mode</button>
+            <span class="graph-legend" aria-label="Graph legend"><span class="graph-legend-item"><i class="legend-swatch legend-class"></i>Class</span><span class="graph-legend-item"><i class="legend-swatch legend-interface"></i>Interface</span><span class="graph-legend-item"><i class="legend-swatch legend-other"></i>Other</span><span class="graph-legend-item"><i class="legend-edge"></i>Reference</span><span class="graph-legend-item"><i class="legend-edge legend-inheritance"></i>Implements/extends</span></span>
           </div>
           <div class="toolbar-row toolbar-row-secondary">
             <button class="toolbar-button" id="fit-diagram" type="button">Fit</button>
@@ -203,7 +211,11 @@ export class CytoscapeArtifactWriter {
           { selector: ':parent', style: { label: 'data(label)', 'background-color': '#f8fafc', 'border-color': '#64748b', 'border-width': 1, padding: 24, 'text-valign': 'top', 'text-halign': 'center' } },
           { selector: 'node[externalDependency = "true"]', style: { 'background-color': '#6b7280', color: '#111827' } },
           { selector: 'node[workspaceDependency = "true"]', style: { 'background-color': '#f3f0ff', color: '#111827' } },
+          { selector: 'node[nodeKind = "class"]', style: { 'background-color': '#3b82f6' } },
+          { selector: 'node[nodeKind = "interface"]', style: { 'background-color': '#14b8a6' } },
+          { selector: 'node[nodeKind = "other"]', style: { 'background-color': '#f59e0b' } },
           { selector: 'edge', style: { width: 2, 'line-color': '#94a3b8', 'target-arrow-shape': 'triangle', 'target-arrow-color': '#94a3b8', 'curve-style': 'bezier' } },
+          { selector: 'edge[relationshipType = "inheritance"]', style: { 'line-style': 'dashed' } },
           { selector: 'node.collapsed-proxy', style: { shape: 'round-rectangle', width: 160, height: 64, 'background-color': '#f59e0b', 'border-color': '#b45309', 'border-width': 2, color: '#111827', 'text-valign': 'center', 'text-halign': 'center' } },
           { selector: 'edge.collapsed-proxy', style: { 'line-style': 'dashed' } },
           { selector: 'edge.hidden-connection', style: { opacity: 0.22, 'line-style': 'dotted' } },
@@ -315,9 +327,11 @@ export class CytoscapeArtifactWriter {
             const result = await this.client.write(this.imageBlob());
             this.status.textContent = 'Image exported: ' + result.fileName;
             this.status.classList.remove('error');
+            return true;
           } catch {
             this.status.textContent = 'Image export failed';
             this.status.classList.add('error');
+            return false;
           }
         }
 
@@ -327,6 +341,56 @@ export class CytoscapeArtifactWriter {
             full: true,
             output: 'blob',
             scale: 2,
+          });
+        }
+      }
+
+      class AllDiagramImagesExporter {
+        constructor(pagePaths, status) {
+          this.pagePaths = pagePaths;
+          this.status = status;
+        }
+
+        async export() {
+          this.status.classList.remove('error');
+          for (const [index, pagePath] of this.pagePaths.entries()) {
+            this.status.textContent = 'Exporting image ' + (index + 1) + ' of ' + this.pagePaths.length;
+            try {
+              await this.exportPage(pagePath);
+            } catch {
+              this.status.textContent = 'Export all failed on image ' + (index + 1) + ' of ' + this.pagePaths.length;
+              this.status.classList.add('error');
+              return;
+            }
+          }
+          this.status.textContent = 'All images exported: ' + this.pagePaths.length;
+        }
+
+        exportPage(pagePath) {
+          return new Promise((resolve, reject) => {
+            const frame = document.createElement('iframe');
+            frame.style.position = 'fixed';
+            frame.style.left = '-10000px';
+            frame.style.width = '1280px';
+            frame.style.height = '720px';
+            frame.style.border = '0';
+            frame.addEventListener('load', () => {
+              const exportImage = frame.contentWindow && frame.contentWindow.exportDiagramImage;
+              if (typeof exportImage !== 'function') {
+                frame.remove();
+                reject(new Error('Diagram image exporter was unavailable.'));
+                return;
+              }
+              Promise.resolve(exportImage())
+                .then((succeeded) => succeeded ? resolve() : reject(new Error('Diagram image export failed.')), reject)
+                .finally(() => frame.remove());
+            }, { once: true });
+            frame.addEventListener('error', () => {
+              frame.remove();
+              reject(new Error('Diagram page failed to load.'));
+            }, { once: true });
+            frame.src = pagePath;
+            document.body.append(frame);
           });
         }
       }
@@ -353,7 +417,7 @@ export class CytoscapeArtifactWriter {
           const scope = selectedNode && !isCollapsedProxyNode(selectedNode) && selectedNode.children().length > 0
             ? selectedNode.union(selectedNode.descendants())
             : this.graph.nodes();
-          return scope.filter((node) => !isCollapsedProxyNode(node));
+          return scope.filter((node) => !isCollapsedProxyNode(node) && node.children().length === 0);
         }
       }
 
@@ -631,6 +695,10 @@ export class CytoscapeArtifactWriter {
         new DiagramImageExportClient(currentDiagramPath),
         layoutStatus,
       );
+      const allImagesExporter = new AllDiagramImagesExporter(
+        ${JSON.stringify(this.diagramPagePaths(pages, dirname(currentPath)))},
+        layoutStatus,
+      );
       const autoLayout = new DiagramAutoLayout(cy);
 
       function fitGraph() {
@@ -649,7 +717,11 @@ export class CytoscapeArtifactWriter {
         requestAnimationFrame(fitGraph);
       }
 
-      void initializeDiagramLayout();
+      const diagramReady = initializeDiagramLayout();
+      window.exportDiagramImage = async () => {
+        await diagramReady;
+        return imageExporter.export();
+      };
 
       function normalizedWheelDelta(event) {
         if (event.deltaMode === 1) {
@@ -703,6 +775,7 @@ export class CytoscapeArtifactWriter {
       const autoLayoutButton = document.getElementById('auto-layout');
       const verticalLayout = document.getElementById('vertical-layout');
       const exportDiagramImage = document.getElementById('export-diagram-image');
+      const exportAllDiagramImages = document.getElementById('export-all-diagram-images');
       const hideAction = document.getElementById('hide-action');
       const splitExternalDependency = document.getElementById('split-external-dependency');
       const hiddenConnectionToggle = document.getElementById('toggle-hidden-connections');
@@ -733,6 +806,9 @@ export class CytoscapeArtifactWriter {
         return darkMode
           ? {
               fileNode: '#60a5fa',
+              classNode: '#60a5fa',
+              interfaceNode: '#2dd4bf',
+              otherNode: '#fbbf24',
               workspaceNode: '#1f1633',
               externalNode: '#9ca3af',
               collapsedNode: '#fbbf24',
@@ -747,6 +823,9 @@ export class CytoscapeArtifactWriter {
             }
           : {
               fileNode: '#3b82f6',
+              classNode: '#3b82f6',
+              interfaceNode: '#14b8a6',
+              otherNode: '#f59e0b',
               workspaceNode: '#f3f0ff',
               externalNode: '#6b7280',
               collapsedNode: '#f59e0b',
@@ -772,6 +851,12 @@ export class CytoscapeArtifactWriter {
           .style({ 'background-color': theme.externalNode, color: theme.text })
           .selector('node[workspaceDependency = "true"]')
           .style({ 'background-color': theme.workspaceNode, color: theme.text })
+          .selector('node[nodeKind = "class"]')
+          .style({ 'background-color': theme.classNode, color: theme.text })
+          .selector('node[nodeKind = "interface"]')
+          .style({ 'background-color': theme.interfaceNode, color: theme.text })
+          .selector('node[nodeKind = "other"]')
+          .style({ 'background-color': theme.otherNode, color: theme.text })
           .selector('node.collapsed-proxy')
           .style({ 'background-color': theme.collapsedNode, 'border-color': theme.collapsedBorder, color: theme.text })
           .selector('edge')
@@ -1286,6 +1371,7 @@ export class CytoscapeArtifactWriter {
       darkModeToggle.addEventListener('click', toggleDarkMode);
       fitDiagram.addEventListener('click', fitGraph);
       exportDiagramImage.addEventListener('click', () => void imageExporter.export());
+      exportAllDiagramImages.addEventListener('click', () => void allImagesExporter.export());
       configureAutoLayout();
       loadDarkModePreference();
       applyDiagramTheme();
@@ -1316,5 +1402,17 @@ export class CytoscapeArtifactWriter {
         return `<div class="navigation-item">${item}${children}</div>`;
       })
       .join('\n          ');
+  }
+
+  private diagramPagePaths(
+    pages: ArchitecturePage[],
+    basePath: string,
+  ): string[] {
+    return pages.flatMap((page) => {
+      const pagePath = page.htmlPath?.endsWith('.cytoscape.html')
+        ? [relative(basePath, page.htmlPath).replaceAll('\\', '/')]
+        : [];
+      return [...pagePath, ...this.diagramPagePaths(page.children ?? [], basePath)];
+    });
   }
 }

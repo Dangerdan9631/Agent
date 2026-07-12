@@ -1,12 +1,16 @@
 # Architecture graph domain - src/spec-n-roll-arch/src/application/graph
 
-This directory contains graph models and conversion behavior used by architecture artifacts. It turns dependency data into Cytoscape-ready application models and resolves public package entrypoint dependencies to the source files that back exported symbols.
+This directory contains graph models and conversion behavior used by architecture artifacts. It turns TypeScript declaration relationships into Cytoscape-ready application models while retaining dependency-cruiser models for validation compatibility.
 
 ## Conventions
 
 ### Graph conversion
 
-Keep graph semantics and filtering behavior here. Rendering and file writing belong in infrastructure.
+Keep graph semantics and filtering behavior here. Declaration graphs model named top-level classes, interfaces, aliases, enums, and file-level module nodes; rendering and file writing belong in infrastructure.
+
+### Relationship semantics
+
+Use `reference` relationships for normal type and value use, and `inheritance` relationships for TypeScript `extends` and `implements` clauses. Renderers use this distinction to draw inheritance with dashed edges.
 
 ### Public API resolution
 

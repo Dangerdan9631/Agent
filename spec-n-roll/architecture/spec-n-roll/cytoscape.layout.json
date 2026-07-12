@@ -1,0 +1,237 @@
+{
+  "version": 3,
+  "nodes": {
+    "spec-n-roll": {
+      "parentId": null,
+      "position": {
+        "x": -747,
+        "y": 971.5
+      }
+    },
+    "directory:spec-n-roll:application": {
+      "parentId": "spec-n-roll",
+      "position": {
+        "x": -842,
+        "y": 1034.25
+      }
+    },
+    "directory:spec-n-roll:application/dispatch": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -1379.75,
+        "y": 787
+      }
+    },
+    "type:src/spec-n-roll/src/application/dispatch/dispatcher-application.ts:DispatcherApplication": {
+      "parentId": "directory:spec-n-roll:application/dispatch",
+      "position": {
+        "x": -1200,
+        "y": 760
+      }
+    },
+    "type:src/spec-n-roll/src/application/dispatch/dispatcher-command-options.ts:DispatcherCommandOptions": {
+      "parentId": "directory:spec-n-roll:application/dispatch",
+      "position": {
+        "x": -1520,
+        "y": 760
+      }
+    },
+    "type:src/spec-n-roll/src/application/dispatch/dispatcher-run-request.ts:DispatcherRunRequest": {
+      "parentId": "directory:spec-n-roll:application/dispatch",
+      "position": {
+        "x": -1380,
+        "y": 840
+      }
+    },
+    "directory:spec-n-roll:application/dispatcher": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -1520,
+        "y": 1167
+      }
+    },
+    "type:src/spec-n-roll/src/application/dispatcher/dispatcher-metadata-resolver.ts:DispatcherMetadataResolver": {
+      "parentId": "directory:spec-n-roll:application/dispatcher",
+      "position": {
+        "x": -1520,
+        "y": 1180
+      }
+    },
+    "directory:spec-n-roll:application/environment": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -960,
+        "y": 1327
+      }
+    },
+    "type:src/spec-n-roll/src/application/environment/dispatcher-environment.ts:DispatcherEnvironment": {
+      "parentId": "directory:spec-n-roll:application/environment",
+      "position": {
+        "x": -960,
+        "y": 1340
+      }
+    },
+    "directory:spec-n-roll:application/filesystem": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -1360,
+        "y": 1347
+      }
+    },
+    "type:src/spec-n-roll/src/application/filesystem/dispatcher-file-system.ts:DispatcherFileSystem": {
+      "parentId": "directory:spec-n-roll:application/filesystem",
+      "position": {
+        "x": -1360,
+        "y": 1360
+      }
+    },
+    "directory:spec-n-roll:application/project": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -1140,
+        "y": 1147
+      }
+    },
+    "type:src/spec-n-roll/src/application/project/project-root-resolver.ts:ProjectRootResolver": {
+      "parentId": "directory:spec-n-roll:application/project",
+      "position": {
+        "x": -1140,
+        "y": 1160
+      }
+    },
+    "directory:spec-n-roll:application/runtime": {
+      "parentId": "directory:spec-n-roll:application",
+      "position": {
+        "x": -416.75,
+        "y": 1027
+      }
+    },
+    "type:src/spec-n-roll/src/application/runtime/runtime-package-manifest-path-resolver.ts:RuntimePackageManifestPathResolver": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": -220,
+        "y": 1040
+      }
+    },
+    "type:src/spec-n-roll/src/application/runtime/runtime-process-executor.ts:RuntimeProcessExecutor": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": -500,
+        "y": 980
+      }
+    },
+    "type:src/spec-n-roll/src/application/runtime/runtime-process-request.ts:RuntimeProcessRequest": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": -500,
+        "y": 1100
+      }
+    },
+    "type:src/spec-n-roll/src/application/runtime/runtime-target-resolver.ts:RuntimeTargetResolver": {
+      "parentId": "directory:spec-n-roll:application/runtime",
+      "position": {
+        "x": -700,
+        "y": 1020
+      }
+    },
+    "directory:spec-n-roll:infrastructure": {
+      "parentId": "spec-n-roll",
+      "position": {
+        "x": -702,
+        "y": 1554.25
+      }
+    },
+    "directory:spec-n-roll:infrastructure/environment": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": -580,
+        "y": 1567
+      }
+    },
+    "type:src/spec-n-roll/src/infrastructure/environment/process-dispatcher-environment.ts:ProcessDispatcherEnvironment": {
+      "parentId": "directory:spec-n-roll:infrastructure/environment",
+      "position": {
+        "x": -580,
+        "y": 1580
+      }
+    },
+    "directory:spec-n-roll:infrastructure/filesystem": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": -1440,
+        "y": 1567
+      }
+    },
+    "type:src/spec-n-roll/src/infrastructure/filesystem/node-dispatcher-file-system.ts:NodeDispatcherFileSystem": {
+      "parentId": "directory:spec-n-roll:infrastructure/filesystem",
+      "position": {
+        "x": -1440,
+        "y": 1580
+      }
+    },
+    "directory:spec-n-roll:infrastructure/module": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": -60,
+        "y": 1567
+      }
+    },
+    "type:src/spec-n-roll/src/infrastructure/module/node-runtime-package-manifest-path-resolver.ts:NodeRuntimePackageManifestPathResolver": {
+      "parentId": "directory:spec-n-roll:infrastructure/module",
+      "position": {
+        "x": -60,
+        "y": 1580
+      }
+    },
+    "directory:spec-n-roll:infrastructure/runtime": {
+      "parentId": "directory:spec-n-roll:infrastructure",
+      "position": {
+        "x": -1020,
+        "y": 1567
+      }
+    },
+    "type:src/spec-n-roll/src/infrastructure/runtime/node-runtime-process-executor.ts:NodeRuntimeProcessExecutor": {
+      "parentId": "directory:spec-n-roll:infrastructure/runtime",
+      "position": {
+        "x": -1020,
+        "y": 1580
+      }
+    },
+    "directory:spec-n-roll:presentation": {
+      "parentId": "spec-n-roll",
+      "position": {
+        "x": -1440,
+        "y": 414.25
+      }
+    },
+    "directory:spec-n-roll:presentation/cli": {
+      "parentId": "directory:spec-n-roll:presentation",
+      "position": {
+        "x": -1440,
+        "y": 427
+      }
+    },
+    "type:src/spec-n-roll/src/presentation/cli/dispatcher-cli.ts:DispatcherCli": {
+      "parentId": "directory:spec-n-roll:presentation/cli",
+      "position": {
+        "x": -1440,
+        "y": 440
+      }
+    },
+    "external:node:fs": {
+      "parentId": null,
+      "position": {
+        "x": -1200,
+        "y": 1720
+      }
+    },
+    "external:commander": {
+      "parentId": null,
+      "position": {
+        "x": -1840,
+        "y": 400
+      }
+    }
+  },
+  "hiddenConnections": []
+}

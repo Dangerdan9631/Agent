@@ -7,6 +7,13 @@ export { ArchCli } from '#arch/presentation/cli/arch-cli.js';
 export { ArchProgramFactory } from '#arch/composition/architecture/arch-program-factory.js';
 export { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 export type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
+export type {
+  ArchitectureTypeGraph,
+  ArchitectureTypeNode,
+  ArchitectureTypeRelationship,
+} from '#arch/application/graph/architecture-type-graph.js';
+export { ArchitectureTypeCytoscapeConverter } from '#arch/application/graph/architecture-type-cytoscape-converter.js';
+export { TypeScriptArchitectureTypeGraphReader } from '#arch/infrastructure/typescript/type-script-architecture-type-graph-reader.js';
 export { DependencyCruiserCytoscapeConverter } from '#arch/application/graph/dependency-cruiser-cytoscape-converter.js';
 export { DependencyCruiserRunner } from '#arch/infrastructure/dependency-cruiser/dependency-cruiser-runner.js';
 export { PackageArchitectureArtifactGenerator } from '#arch/application/artifacts/package-architecture-artifact-generator.js';

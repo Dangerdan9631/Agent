@@ -13,7 +13,7 @@ export class DependencyMatrixArtifactWriter {
    * Writes an HTML dependency matrix page for Cytoscape graph elements.
    *
    * @param matrixHtmlPath - Absolute destination path for the HTML matrix artifact.
-   * @param elements - Cytoscape graph elements used to derive file dependencies.
+   * @param elements - Cytoscape graph elements used to derive declaration dependencies.
    * @param pages - Generated HTML pages to show in the navigation pane.
    */
   write(
@@ -163,7 +163,7 @@ export class DependencyMatrixArtifactWriter {
 
   private renderMetrics(matrix: DependencyMatrix): string {
     return [
-      this.renderMetric('Files', matrix.metrics.fileCount.toString()),
+      this.renderMetric('Declarations', matrix.metrics.fileCount.toString()),
       this.renderMetric(
         'Dependencies',
         matrix.metrics.dependencyCount.toString(),
@@ -198,7 +198,7 @@ export class DependencyMatrixArtifactWriter {
 
   private renderMatrix(matrix: DependencyMatrix): string {
     if (matrix.files.length === 0) {
-      return '<div class="empty-state">No file dependencies were found for this graph.</div>';
+      return '<div class="empty-state">No declaration dependencies were found for this graph.</div>';
     }
 
     const folderBands = this.folderBands(matrix.files);
@@ -206,7 +206,7 @@ export class DependencyMatrixArtifactWriter {
     return `<table aria-label="Dependency matrix">
             <thead>
               <tr>
-                <th scope="col">File path</th>
+                <th scope="col">Declaration</th>
                 ${matrix.files.map((file, index) => this.renderColumnHeader(file, index, folderBands.get(file) ?? 0, this.boundaryClass(file, index, matrix.files, 'column'))).join('\n                ')}
               </tr>
             </thead>
@@ -257,7 +257,8 @@ export class DependencyMatrixArtifactWriter {
     columnFolderClass: string,
     columnBoundaryClass: string,
   ): string {
-    const hasDependency = matrix.hasDependency(source, target);
+    const relationshipTypes = matrix.relationshipTypes(source, target);
+    const hasDependency = relationshipTypes.length > 0;
     const classes = [
       'matrix-cell',
       this.columnClass(columnIndex),
@@ -269,11 +270,13 @@ export class DependencyMatrixArtifactWriter {
     ]
       .filter(Boolean)
       .join(' ');
+    const relationshipLabel = relationshipTypes.length === 2 ? 'reference and inheritance' : relationshipTypes[0] ?? 'no relationship';
     const label = hasDependency
-      ? `${source} depends on ${target}`
+      ? `${source} has ${relationshipLabel} relationship to ${target}`
       : `${source} does not depend on ${target}`;
 
-    return `<td class="${classes}" title="${this.escapeHtml(label)}">${hasDependency ? 'x' : ''}</td>`;
+    const cellLabel = relationshipTypes.length === 2 ? 'R+I' : relationshipTypes[0] === 'inheritance' ? 'I' : relationshipTypes[0] === 'reference' ? 'R' : '';
+    return `<td class="${classes}" title="${this.escapeHtml(label)}">${cellLabel}</td>`;
   }
 
   private headerLabel(file: string): { fileName: string; folderPath: string } {

@@ -58,6 +58,9 @@ export interface DependencyMatrixEdge {
    * Target file path for the dependency. The value matches a column path in the matrix.
    */
   target: string;
+
+  /** Semantic relationship represented by this matrix edge. */
+  relationshipType: 'reference' | 'inheritance';
 }
 
 /**
@@ -95,6 +98,10 @@ export class DependencyMatrix {
       .map((element) => ({
         source: element.data.source,
         target: element.data.target,
+        relationshipType:
+          element.data.relationshipType === 'inheritance'
+            ? 'inheritance'
+            : 'reference',
       }))
       .sort((left, right) =>
         left.source === right.source
@@ -118,11 +125,22 @@ export class DependencyMatrix {
     );
   }
 
+  /**
+   * Returns all relationship kinds between two matrix nodes.
+   *
+   * @param source - Source declaration node id.
+   * @param target - Target declaration node id.
+   * @returns Relationship kinds in stable display order.
+   */
+  relationshipTypes(source: string, target: string): Array<'reference' | 'inheritance'> {
+    return [...new Set(this.edges.filter((edge) => edge.source === source && edge.target === target).map((edge) => edge.relationshipType))].sort();
+  }
+
   private static isFileNode(element: CytoscapeElement): boolean {
     return (
       Boolean(element.data.id) &&
       !element.data.source &&
-      this.isFilePath(element.data.id)
+      (Boolean(element.data.nodeKind) || this.isFilePath(element.data.id))
     );
   }
 
@@ -139,12 +157,9 @@ export class DependencyMatrix {
   }
 
   private static isFilePath(value: string): boolean {
-    return (
-      !value.startsWith('directory:') &&
-      !value.startsWith('folder:') &&
-      value.includes('/')
-    );
+    return !value.startsWith('directory:') && !value.startsWith('folder:') && value.includes('/');
   }
+
 
   private static metrics(
     files: string[],
@@ -161,13 +176,14 @@ export class DependencyMatrix {
       inboundCounts.set(edge.target, (inboundCounts.get(edge.target) ?? 0) + 1);
     }
 
+    const uniquePairs = new Set(edges.map((edge) => `${edge.source}->${edge.target}`));
     const possibleDependencies = files.length * Math.max(files.length - 1, 0);
 
     return {
       fileCount: files.length,
       dependencyCount: edges.length,
       density:
-        possibleDependencies === 0 ? 0 : edges.length / possibleDependencies,
+        possibleDependencies === 0 ? 0 : uniquePairs.size / possibleDependencies,
       averageOutboundDependencies:
         files.length === 0 ? 0 : edges.length / files.length,
       maximumOutboundDependencies: Math.max(0, ...outboundCounts.values()),

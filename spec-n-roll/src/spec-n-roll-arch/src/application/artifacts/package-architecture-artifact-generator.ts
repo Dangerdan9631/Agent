@@ -1,11 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
-import { DependencyCruiserCytoscapeConverter } from '#arch/application/graph/dependency-cruiser-cytoscape-converter.js';
+import type { ArchitectureTypeGraph } from '#arch/application/graph/architecture-type-graph.js';
+import { ArchitectureTypeCytoscapeConverter } from '#arch/application/graph/architecture-type-cytoscape-converter.js';
 import { DependencyCruiserRunner } from '#arch/infrastructure/dependency-cruiser/dependency-cruiser-runner.js';
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 
@@ -23,7 +24,7 @@ export class PackageArchitectureArtifactGenerator {
    */
   constructor(
     private readonly cruiser = new DependencyCruiserRunner(),
-    private readonly converter = new DependencyCruiserCytoscapeConverter(),
+    private readonly converter = new ArchitectureTypeCytoscapeConverter(),
     private readonly writer = new CytoscapeArtifactWriter(),
     private readonly matrixWriter = new DependencyMatrixArtifactWriter(),
   ) {}
@@ -43,6 +44,7 @@ export class PackageArchitectureArtifactGenerator {
     workspaceRoot: string,
     outputRoot: string,
     workspacePackage: WorkspacePackage,
+    typeGraph: ArchitectureTypeGraph,
     pages?: ArchitecturePage[],
     exclusionFilter?: ArchitectureExclusionFilter,
     collapseFilter?: ArchitectureCollapseFilter,
@@ -61,15 +63,11 @@ export class PackageArchitectureArtifactGenerator {
       dependencyCruiserJsonPath,
       this.cruiser.run(workspaceRoot, workspacePackage),
     );
-    const elements = this.converter.convert(
-      readFileSync(dependencyCruiserJsonPath, 'utf8'),
+    const elements = this.converter.packageElements(
+      typeGraph,
       workspacePackage,
       exclusionFilter,
-      {
-        collapseFilter,
-        rootParentId: workspacePackage.name,
-        rootParentLabel: workspacePackage.name,
-      },
+      collapseFilter,
     );
     this.writer.write(cytoscapeJsonPath, cytoscapeHtmlPath, elements, pages);
     this.matrixWriter.write(matrixHtmlPath, elements, pages);

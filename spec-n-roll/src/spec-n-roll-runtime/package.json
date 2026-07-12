@@ -20,10 +20,14 @@
   },
   "dependencies": {
     "commander": "^13.1.0",
+    "ink": "^7.0.6",
+    "react": "^19.2.0",
     "spec-n-roll-api": "0.1.0",
     "tslog": "^4.9.3"
   },
   "devDependencies": {
+    "@types/react": "^19.2.0",
+    "ink-testing-library": "^4.0.0",
     "spec-n-roll-test": "0.1.0"
   }
 }

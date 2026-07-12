@@ -11,42 +11,42 @@
     "directory:spec-n-roll-sdk:application": {
       "parentId": "spec-n-roll-sdk",
       "position": {
-        "x": -211.5,
+        "x": -213.5,
         "y": 75.75
       }
     },
     "directory:spec-n-roll-sdk:application/identity": {
       "parentId": "directory:spec-n-roll-sdk:application",
       "position": {
-        "x": -211.5,
+        "x": -213.5,
         "y": 88.5
+      }
+    },
+    "type:src/spec-n-roll-sdk/src/application/identity/spec-n-roll-sdk.ts:SpecNRollSdk": {
+      "parentId": "directory:spec-n-roll-sdk:application/identity",
+      "position": {
+        "x": -213.5,
+        "y": 101.5
       }
     },
     "directory:spec-n-roll-sdk:infrastructure": {
       "parentId": "spec-n-roll-sdk",
       "position": {
-        "x": 193,
+        "x": 192,
         "y": 75.75
       }
     },
     "directory:spec-n-roll-sdk:infrastructure/logging": {
       "parentId": "directory:spec-n-roll-sdk:infrastructure",
       "position": {
-        "x": 193,
+        "x": 192,
         "y": 88.5
       }
     },
-    "src/spec-n-roll-sdk/src/application/identity/spec-n-roll-sdk.ts": {
-      "parentId": "directory:spec-n-roll-sdk:application/identity",
-      "position": {
-        "x": -211.5,
-        "y": 101.5
-      }
-    },
-    "src/spec-n-roll-sdk/src/infrastructure/logging/sdk-logger-factory.ts": {
+    "type:src/spec-n-roll-sdk/src/infrastructure/logging/sdk-logger-factory.ts:SdkLoggerFactory": {
       "parentId": "directory:spec-n-roll-sdk:infrastructure/logging",
       "position": {
-        "x": 193,
+        "x": 192,
         "y": 101.5
       }
     }

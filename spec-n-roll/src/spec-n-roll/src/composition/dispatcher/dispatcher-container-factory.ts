@@ -4,7 +4,7 @@ import { Logger } from 'tslog';
 import { DispatcherApplication } from '#dispatcher/application/dispatch/dispatcher-application.js';
 import type { DispatcherEnvironment } from '#dispatcher/application/environment/dispatcher-environment.js';
 import type { DispatcherFileSystem } from '#dispatcher/application/filesystem/dispatcher-file-system.js';
-import { DispatcherMetadataResolver } from '#dispatcher/application/metadata/dispatcher-metadata-resolver.js';
+import { DispatcherMetadataResolver } from '#dispatcher/application/dispatcher/dispatcher-metadata-resolver.js';
 import { ProjectRootResolver } from '#dispatcher/application/project/project-root-resolver.js';
 import type { RuntimePackageManifestPathResolver } from '#dispatcher/application/runtime/runtime-package-manifest-path-resolver.js';
 import { DispatcherCli } from '#dispatcher/presentation/cli/dispatcher-cli.js';

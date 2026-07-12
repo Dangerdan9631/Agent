@@ -1,12 +1,11 @@
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
 import type { ArchitectureLandscapeDependencySplitter } from '#arch/application/config/architecture-landscape-dependency-splitter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
-import { PackageDependencyCytoscapeConverter } from '#arch/application/graph/package-dependency-cytoscape-converter.js';
-import { PackagePublicApiExportIndex } from '#arch/application/graph/package-public-api-export-index.js';
+import type { ArchitectureTypeGraph } from '#arch/application/graph/architecture-type-graph.js';
+import { ArchitectureTypeCytoscapeConverter } from '#arch/application/graph/architecture-type-cytoscape-converter.js';
 import type { WorkspacePackage } from '#arch/application/packages/workspace-package.js';
 
 /**
@@ -21,7 +20,7 @@ export class ProjectArchitectureArtifactGenerator {
    * @param matrixWriter - Writer for dependency matrix HTML artifacts.
    */
   constructor(
-    private readonly converter = new PackageDependencyCytoscapeConverter(),
+    private readonly converter = new ArchitectureTypeCytoscapeConverter(),
     private readonly writer = new CytoscapeArtifactWriter(),
     private readonly matrixWriter = new DependencyMatrixArtifactWriter(),
   ) {}
@@ -39,25 +38,15 @@ export class ProjectArchitectureArtifactGenerator {
   generate(
     outputRoot: string,
     packages: WorkspacePackage[],
+    typeGraph: ArchitectureTypeGraph,
     pages?: ArchitecturePage[],
     exclusionFilter?: ArchitectureExclusionFilter,
     dependencySplitter?: ArchitectureLandscapeDependencySplitter,
   ): string[] {
-    const packageReports = new Map(
-      packages.map((workspacePackage) => [
-        workspacePackage.name,
-        readFileSync(
-          join(outputRoot, workspacePackage.name, 'dependency-cruiser.json'),
-          'utf8',
-        ),
-      ]),
-    );
-    const elements = this.converter.convert(
+    const elements = this.converter.landscapeElements(
+      typeGraph,
       packages,
-      packageReports,
       exclusionFilter,
-      this.sourceTexts(packages, packageReports),
-      this.publicApiExportIndex(packages),
       dependencySplitter,
     );
     const cytoscapeJsonPath = join(outputRoot, 'landscape.cytoscape.json');
@@ -68,87 +57,5 @@ export class ProjectArchitectureArtifactGenerator {
     this.matrixWriter.write(matrixHtmlPath, elements, pages);
 
     return [cytoscapeJsonPath, cytoscapeHtmlPath, matrixHtmlPath];
-  }
-
-  private publicApiExportIndex(
-    packages: WorkspacePackage[],
-  ): PackagePublicApiExportIndex {
-    return new PackagePublicApiExportIndex(
-      packages.map((workspacePackage) => ({
-        package: workspacePackage,
-        sourceText: readFileSync(
-          join(workspacePackage.root, 'src', 'index.ts'),
-          'utf8',
-        ),
-      })),
-    );
-  }
-
-  private sourceTexts(
-    packages: WorkspacePackage[],
-    packageReports: ReadonlyMap<string, string>,
-  ): ReadonlyMap<string, string> {
-    const sourceTexts = new Map<string, string>();
-
-    for (const reportJson of packageReports.values()) {
-      const report = JSON.parse(reportJson) as {
-        modules?: Array<{ source: string }>;
-      };
-
-      for (const module of report.modules ?? []) {
-        const sourcePackage = packages.find((workspacePackage) =>
-          this.belongsToPackage(module.source, workspacePackage),
-        );
-        if (!sourcePackage) {
-          continue;
-        }
-
-        sourceTexts.set(
-          module.source,
-          readFileSync(
-            join(
-              sourcePackage.root,
-              this.packageRootRelativePath(module.source, sourcePackage),
-            ),
-            'utf8',
-          ),
-        );
-      }
-    }
-
-    return sourceTexts;
-  }
-
-  private belongsToPackage(
-    filePath: string,
-    workspacePackage: WorkspacePackage,
-  ): boolean {
-    const normalizedFilePath = filePath.replaceAll('\\', '/');
-    const packageRoot = this.packageRelativeRoot(workspacePackage);
-
-    return (
-      normalizedFilePath === packageRoot ||
-      normalizedFilePath.startsWith(`${packageRoot}/`)
-    );
-  }
-
-  private packageRootRelativePath(
-    filePath: string,
-    workspacePackage: WorkspacePackage,
-  ): string {
-    const normalizedFilePath = filePath.replaceAll('\\', '/');
-    const packageRootPrefix = `${this.packageRelativeRoot(workspacePackage)}/`;
-
-    return normalizedFilePath.startsWith(packageRootPrefix)
-      ? normalizedFilePath.slice(packageRootPrefix.length)
-      : normalizedFilePath;
-  }
-
-  private packageRelativeRoot(workspacePackage: WorkspacePackage): string {
-    const normalizedPackageRoot = workspacePackage.root.replaceAll('\\', '/');
-    const packageDirectory =
-      normalizedPackageRoot.split('/').at(-1) ?? workspacePackage.name;
-
-    return `src/${packageDirectory}`;
   }
 }

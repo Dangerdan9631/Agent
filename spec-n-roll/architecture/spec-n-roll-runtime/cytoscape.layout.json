@@ -1,0 +1,160 @@
+{
+  "version": 3,
+  "nodes": {
+    "spec-n-roll-runtime": {
+      "parentId": null,
+      "position": {
+        "x": 0,
+        "y": 451.5
+      }
+    },
+    "directory:spec-n-roll-runtime:application": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": -511,
+        "y": 739.25
+      }
+    },
+    "directory:spec-n-roll-runtime:application/invocation": {
+      "parentId": "directory:spec-n-roll-runtime:application",
+      "position": {
+        "x": -715.5,
+        "y": 865.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-parser.ts:RuntimeInvocationParser": {
+      "parentId": "directory:spec-n-roll-runtime:application/invocation",
+      "position": {
+        "x": -923.5,
+        "y": 878.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-reader.ts:RuntimeInvocationReader": {
+      "parentId": "directory:spec-n-roll-runtime:application/invocation",
+      "position": {
+        "x": -512,
+        "y": 878.5
+      }
+    },
+    "directory:spec-n-roll-runtime:application/output": {
+      "parentId": "directory:spec-n-roll-runtime:application",
+      "position": {
+        "x": -75.5,
+        "y": 865.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/application/output/runtime-output-writer.ts:RuntimeOutputWriter": {
+      "parentId": "directory:spec-n-roll-runtime:application/output",
+      "position": {
+        "x": -75.5,
+        "y": 878.5
+      }
+    },
+    "directory:spec-n-roll-runtime:application/runtime": {
+      "parentId": "directory:spec-n-roll-runtime:application",
+      "position": {
+        "x": -511,
+        "y": 638.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/application/runtime/runtime-application.ts:RuntimeApplication": {
+      "parentId": "directory:spec-n-roll-runtime:application/runtime",
+      "position": {
+        "x": -511,
+        "y": 651.5
+      }
+    },
+    "directory:spec-n-roll-runtime:composition": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 0,
+        "y": 350.75
+      }
+    },
+    "directory:spec-n-roll-runtime:composition/runtime": {
+      "parentId": "directory:spec-n-roll-runtime:composition",
+      "position": {
+        "x": 0,
+        "y": 363.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/composition/runtime/runtime-composition-root.ts:RuntimeCompositionRoot": {
+      "parentId": "directory:spec-n-roll-runtime:composition/runtime",
+      "position": {
+        "x": -199.5,
+        "y": 376.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/composition/runtime/runtime-program-factory.ts:RuntimeProgramFactory": {
+      "parentId": "directory:spec-n-roll-runtime:composition/runtime",
+      "position": {
+        "x": 205.5,
+        "y": 376.5
+      }
+    },
+    "directory:spec-n-roll-runtime:infrastructure": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 664,
+        "y": 739.25
+      }
+    },
+    "directory:spec-n-roll-runtime:infrastructure/process": {
+      "parentId": "directory:spec-n-roll-runtime:infrastructure",
+      "position": {
+        "x": 664,
+        "y": 752
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/infrastructure/process/console-runtime-output-writer.ts:ConsoleRuntimeOutputWriter": {
+      "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
+      "position": {
+        "x": 427.5,
+        "y": 765
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/infrastructure/process/stdin-runtime-invocation-reader.ts:StdinRuntimeInvocationReader": {
+      "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
+      "position": {
+        "x": 890.5,
+        "y": 765
+      }
+    },
+    "directory:spec-n-roll-runtime:presentation": {
+      "parentId": "spec-n-roll-runtime",
+      "position": {
+        "x": 0,
+        "y": 75.75
+      }
+    },
+    "directory:spec-n-roll-runtime:presentation/cli": {
+      "parentId": "directory:spec-n-roll-runtime:presentation",
+      "position": {
+        "x": 0,
+        "y": 88.5
+      }
+    },
+    "type:src/spec-n-roll-runtime/src/presentation/cli/runtime-cli.ts:RuntimeCli": {
+      "parentId": "directory:spec-n-roll-runtime:presentation/cli",
+      "position": {
+        "x": 0,
+        "y": 101.5
+      }
+    },
+    "external:commander": {
+      "parentId": null,
+      "position": {
+        "x": -104.5,
+        "y": 1129.5
+      }
+    },
+    "external:node:fs": {
+      "parentId": null,
+      "position": {
+        "x": 129,
+        "y": 1129.5
+      }
+    }
+  },
+  "hiddenConnections": []
+}
