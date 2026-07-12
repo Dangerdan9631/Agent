@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Commander Drone animation preview</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">Codex pet preview</p>
+          <h1>Commander Drone</h1>
+          <p class="intro">Every standard animation, playing from the source frames.</p>
+        </div>
+        <div class="controls" aria-label="Preview controls">
+          <label>
+            Frame rate
+            <select id="frame-rate">
+              <option value="4">4 fps</option>
+              <option value="6" selected>6 fps</option>
+              <option value="8">8 fps</option>
+              <option value="12">12 fps</option>
+            </select>
+          </label>
+          <button id="toggle" type="button" aria-pressed="false">Pause</button>
+        </div>
+      </header>
+
+      <section id="animation-grid" class="animation-grid" aria-label="Animation previews"></section>
+    </main>
+    <script src="preview.js"></script>
+  </body>
+</html>

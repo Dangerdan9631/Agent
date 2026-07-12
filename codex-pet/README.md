@@ -9,6 +9,18 @@ This directory is the maintainable source package for the Commander Drone Codex 
 - `output/` — the two files installed by Codex: `pet.json` and `spritesheet.webp`.
 - `build.ps1` — rebuilds the atlas from `source/` using the installed hatch-pet assembly scripts.
 - `install.ps1` — copies the contents of `output/` into `%USERPROFILE%\.codex\pets\commander-drone`.
+- `preview/` — dependency-free browser app that previews every standard animation from its source frames.
+- `run-preview.ps1` — opens the preview app in the default browser.
+
+## Preview animations
+
+From this directory, run:
+
+```powershell
+.\run-preview.ps1
+```
+
+The page opens in your default browser and shows all nine standard animation states in a looping grid. Use the frame-rate selector or pause button to inspect timing. It reads the PNGs directly from `source/`, so no build or install step is needed. You can also open `preview\index.html` directly in a browser.
 
 ## Modify and rebuild
 
