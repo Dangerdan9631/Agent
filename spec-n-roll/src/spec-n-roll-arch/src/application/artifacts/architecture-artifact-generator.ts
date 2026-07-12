@@ -10,6 +10,7 @@ import type { ArchitecturePage } from '#arch/application/graph/architecture-page
 import { ArchitectureConfigReader } from '#arch/application/config/architecture-config-reader.js';
 import { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
+import { ArchitectureLandscapeDependencySplitter } from '#arch/application/config/architecture-landscape-dependency-splitter.js';
 import { PackageArchitectureArtifactGenerator } from '#arch/application/artifacts/package-architecture-artifact-generator.js';
 import { PackageFolderArchitectureArtifactGenerator } from '#arch/application/artifacts/package-folder-architecture-artifact-generator.js';
 import { ProjectArchitectureArtifactGenerator } from '#arch/application/artifacts/project-architecture-artifact-generator.js';
@@ -56,6 +57,9 @@ export class ArchitectureArtifactGenerator {
     const config = this.configReader.read(workspaceRoot);
     const exclusionFilter = new ArchitectureExclusionFilter(config);
     const collapseFilter = new ArchitectureCollapseFilter(config);
+    const dependencySplitter = new ArchitectureLandscapeDependencySplitter(
+      config,
+    );
     this.logger.debug('Loaded architecture configuration.', { config });
     const packages = this.packageDiscoverer.discover(workspaceRoot);
     this.logger.debug('Discovered runtime workspace packages.', {
@@ -106,6 +110,7 @@ export class ArchitectureArtifactGenerator {
         packages,
         pages,
         exclusionFilter,
+        dependencySplitter,
       ),
     ];
 
@@ -172,7 +177,10 @@ export class ArchitectureArtifactGenerator {
                 title,
                 children: [
                   page('Diagram', join(packageRoot, `${slug}.cytoscape.html`)),
-                  page('Dependency matrix', join(packageRoot, `${slug}.matrix.html`)),
+                  page(
+                    'Dependency matrix',
+                    join(packageRoot, `${slug}.matrix.html`),
+                  ),
                 ],
               };
             }),

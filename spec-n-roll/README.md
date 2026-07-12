@@ -187,13 +187,28 @@ spec-n-roll.architecture.config.cjs
 
 Use it to:
 
-| Setting                               | Purpose                                                      |
-| ------------------------------------- | ------------------------------------------------------------ |
-| `collapsed.externalDependencies`      | Collapse selected external modules into one dependency node. |
-| `exclusions.landscape`                | Hide selected external modules from the landscape diagram.   |
-| `exclusions.projectFiles.allPackages` | Hide matching project files from every package diagram.      |
-| `exclusions.projectFiles.packages`    | Hide matching files for specific packages.                   |
-| `folderDiagrams.packages`             | Opt packages into additional folder-scoped diagrams.         |
+| Setting                                | Purpose                                                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `collapsed.externalDependencies`       | Collapse selected external modules into one dependency node.                                |
+| `split.landscape.externalDependencies` | Give configured workspace-package imports separate external nodes in the landscape diagram. |
+| `exclusions.landscape`                 | Hide selected external modules from the landscape diagram.                                  |
+| `exclusions.projectFiles.allPackages`  | Hide matching project files from every package diagram.                                     |
+| `exclusions.projectFiles.packages`     | Hide matching files for specific packages.                                                  |
+| `folderDiagrams.packages`              | Opt packages into additional folder-scoped diagrams.                                        |
+
+For example, this creates separate `commander` nodes for the listed workspace
+packages in the landscape diagram. Each import points to its package-specific
+node; packages omitted from the list continue to use the shared node.
+
+```js
+split: {
+  landscape: {
+    externalDependencies: {
+      commander: ['spec-n-roll', 'spec-n-roll-mcp', 'spec-n-roll-runtime'],
+    },
+  },
+},
+```
 
 Folder diagrams are configured per package. Paths are relative to the package
 root:

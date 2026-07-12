@@ -3,6 +3,21 @@
  */
 export interface ArchitectureConfig {
   /**
+   * Diagram split settings. Omitted sections retain one shared node per external dependency.
+   */
+  split?: {
+    /**
+     * Landscape diagram settings that change how external dependency nodes are represented.
+     */
+    landscape?: {
+      /**
+       * Workspace package names that receive separate identically labelled nodes for each external dependency key.
+       */
+      externalDependencies?: Record<string, string[]>;
+    };
+  };
+
+  /**
    * Diagram collapse settings. Omitted sections use each diagram's default node detail.
    */
   collapsed?: {

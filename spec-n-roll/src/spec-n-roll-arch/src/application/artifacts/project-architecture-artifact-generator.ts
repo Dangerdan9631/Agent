@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
+import type { ArchitectureLandscapeDependencySplitter } from '#arch/application/config/architecture-landscape-dependency-splitter.js';
 import type { ArchitecturePage } from '#arch/application/graph/architecture-page.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
@@ -32,6 +33,7 @@ export class ProjectArchitectureArtifactGenerator {
    * @param packages - Runtime package metadata to include in the graph.
    * @param pages - Generated HTML pages to show in the navigation pane.
    * @param exclusionFilter - User-configured project file exclusion filter.
+   * @param dependencySplitter - User-configured landscape external dependency node splitter.
    * @returns Absolute paths to the generated project graph artifacts.
    */
   generate(
@@ -39,6 +41,7 @@ export class ProjectArchitectureArtifactGenerator {
     packages: WorkspacePackage[],
     pages?: ArchitecturePage[],
     exclusionFilter?: ArchitectureExclusionFilter,
+    dependencySplitter?: ArchitectureLandscapeDependencySplitter,
   ): string[] {
     const packageReports = new Map(
       packages.map((workspacePackage) => [
@@ -55,6 +58,7 @@ export class ProjectArchitectureArtifactGenerator {
       exclusionFilter,
       this.sourceTexts(packages, packageReports),
       this.publicApiExportIndex(packages),
+      dependencySplitter,
     );
     const cytoscapeJsonPath = join(outputRoot, 'landscape.cytoscape.json');
     const cytoscapeHtmlPath = join(outputRoot, 'landscape.cytoscape.html');

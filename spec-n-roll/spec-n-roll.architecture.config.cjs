@@ -1,8 +1,10 @@
 // User-editable architecture diagram configuration.
 //
 // External dependencies are matched by displayed package/module name, such as
-// "tslog", "commander", or "fs". Collapsed dependencies render as one node;
-// landscape exclusions are omitted from the landscape diagram. Project node
+// "tslog", "commander", or "fs". A split landscape dependency creates one
+// identically labelled node for each configured importing workspace package.
+// Collapsed dependencies render as one node; landscape exclusions are omitted
+// from the landscape diagram. Project node
 // exclusions are exact node names or node-name globs, such as
 // "composition/**/*.test". Node names are relative to the package source root
 // and omit the file extension.
@@ -14,6 +16,21 @@
 // Diagram layouts are saved automatically by the architecture viewer as checked-in
 // *.layout.json files next to each generated diagram artifact.
 module.exports = {
+  "split": {
+    "landscape": {
+      "externalDependencies": {
+        "commander": [
+          "spec-n-roll",
+          "spec-n-roll-mcp",
+          "spec-n-roll-runtime"
+        ],
+        "fs": [
+          "spec-n-roll",
+          "spec-n-roll-runtime"
+        ]
+      }
+    }
+  },
   "collapsed": {
     "externalDependencies": [
       "chalk",
@@ -30,9 +47,9 @@ module.exports = {
   },
   "exclusions": {
     "landscape": [
-      "reflect-metadata",
       "module",
       "path",
+      "reflect-metadata",
       "tslog",
       "tsyringe",
       "url"
@@ -64,6 +81,6 @@ module.exports = {
     }
   },
   "folderDiagrams": {
-    "packages": { }
+    "packages": {}
   }
 };

@@ -161,11 +161,13 @@ export class CytoscapeArtifactWriter {
             <span class="toolbar-separator" aria-hidden="true">|</span>
             <button class="toolbar-button" id="collapse-group" type="button" disabled>Collapse</button>
             <button class="toolbar-button" id="hide-action" type="button" disabled>Hide</button>
+            <button class="toolbar-button" id="split-external-dependency" type="button" disabled>Split</button>
             <span class="toolbar-separator" aria-hidden="true">|</span>
             <button class="toolbar-button" id="auto-layout" type="button">Auto layout</button>
-            <label class="layout-control" for="layout-columns">Layout Columns
-              <input id="layout-columns" type="range" min="3" max="8" value="5" />
-              <output id="layout-columns-value" for="layout-columns">5</output>
+            <button class="toolbar-button" id="vertical-layout" type="button" aria-pressed="false">Vertical</button>
+            <label class="layout-control" for="layout-rows">Layout Rows
+              <input id="layout-rows" type="range" min="3" max="8" value="5" />
+              <output id="layout-rows-value" for="layout-rows">5</output>
             </label>
             <label class="layout-control" for="horizontal-gap">Horizontal Gap
               <input id="horizontal-gap" type="range" min="80" max="200" step="5" value="120" />
@@ -174,6 +176,12 @@ export class CytoscapeArtifactWriter {
             <label class="layout-control" for="vertical-gap">Vertical Gap
               <input id="vertical-gap" type="range" min="80" max="200" step="5" value="120" />
               <output id="vertical-gap-value" for="vertical-gap">120</output>
+            </label>
+            <span class="toolbar-separator" aria-hidden="true">|</span>
+            <button class="toolbar-button" id="snap-diagram" type="button">Snap</button>
+            <label class="layout-control" for="snap-grid">Snap grid
+              <input id="snap-grid" type="range" min="5" max="100" step="5" value="20" />
+              <output id="snap-grid-value" for="snap-grid">20</output>
             </label>
             <div class="exclusion-control">
               <button class="toolbar-button" id="excluded-toggle" type="button" aria-expanded="false">Excluded</button>
@@ -320,6 +328,32 @@ export class CytoscapeArtifactWriter {
             output: 'blob',
             scale: 2,
           });
+        }
+      }
+
+      class DiagramGridSnapper {
+        constructor(graph) {
+          this.graph = graph;
+        }
+
+        snap(gridSize, selectedNode) {
+          const nodes = this.nodesToSnap(selectedNode);
+          this.graph.batch(() => {
+            nodes.forEach((node) => {
+              const position = node.position();
+              node.position({
+                x: Math.round(position.x / gridSize) * gridSize,
+                y: Math.round(position.y / gridSize) * gridSize,
+              });
+            });
+          });
+        }
+
+        nodesToSnap(selectedNode) {
+          const scope = selectedNode && !isCollapsedProxyNode(selectedNode) && selectedNode.children().length > 0
+            ? selectedNode.union(selectedNode.descendants())
+            : this.graph.nodes();
+          return scope.filter((node) => !isCollapsedProxyNode(node));
         }
       }
 
@@ -652,6 +686,7 @@ export class CytoscapeArtifactWriter {
       let selectedEdgeId = null;
       let dependencyMode = 'both';
       let showExternalDependencies = true;
+      let verticalLayoutEnabled = false;
       const locallyCreatedFolderDiagramKeys = new Set();
       const collapsedGroupIds = new Set();
 
@@ -666,17 +701,23 @@ export class CytoscapeArtifactWriter {
       const externalToggle = document.getElementById('toggle-external');
       const fitDiagram = document.getElementById('fit-diagram');
       const autoLayoutButton = document.getElementById('auto-layout');
+      const verticalLayout = document.getElementById('vertical-layout');
       const exportDiagramImage = document.getElementById('export-diagram-image');
       const hideAction = document.getElementById('hide-action');
+      const splitExternalDependency = document.getElementById('split-external-dependency');
       const hiddenConnectionToggle = document.getElementById('toggle-hidden-connections');
       const collapseGroup = document.getElementById('collapse-group');
       const createFolderDiagram = document.getElementById('create-folder-diagram');
-      const layoutColumns = document.getElementById('layout-columns');
-      const layoutColumnsValue = document.getElementById('layout-columns-value');
+      const layoutRows = document.getElementById('layout-rows');
+      const layoutRowsValue = document.getElementById('layout-rows-value');
       const horizontalGap = document.getElementById('horizontal-gap');
       const horizontalGapValue = document.getElementById('horizontal-gap-value');
       const verticalGap = document.getElementById('vertical-gap');
       const verticalGapValue = document.getElementById('vertical-gap-value');
+      const snapDiagram = document.getElementById('snap-diagram');
+      const snapGrid = document.getElementById('snap-grid');
+      const snapGridValue = document.getElementById('snap-grid-value');
+      const gridSnapper = new DiagramGridSnapper(cy);
       const darkModeToggle = document.getElementById('toggle-dark-mode');
       ${ArchitectureViewerDarkModeScript.render()}
 
@@ -938,6 +979,14 @@ export class CytoscapeArtifactWriter {
         return !!selectedNode && (isExternalNode(selectedNode) || !!projectFileSelection(selectedNode));
       }
 
+      function canToggleSelectedExternalDependencySplit() {
+        return !!selectedNode && isExternalNode(selectedNode) && currentDiagramPath === '/landscape.cytoscape.html';
+      }
+
+      function isSelectedExternalDependencySplit() {
+        return canToggleSelectedExternalDependencySplit() && selectedNode.data('splitExternalDependency') === 'true';
+      }
+
       function canHideSelectedConnection() {
         return !!selectedEdgeId;
       }
@@ -957,6 +1006,8 @@ export class CytoscapeArtifactWriter {
 
       function updateActionButtons() {
         hideAction.disabled = !canHideSelectedNode() && !canHideSelectedConnection();
+        splitExternalDependency.disabled = !canToggleSelectedExternalDependencySplit();
+        splitExternalDependency.classList.toggle('active', isSelectedExternalDependencySplit());
         collapseGroup.disabled = !canToggleSelectedGroupCollapse();
         collapseGroup.textContent = selectedNode && isCollapsedProxyNode(selectedNode) ? 'Expand' : 'Collapse';
         createFolderDiagram.disabled = !canCreateSelectedFolderDiagram();
@@ -1047,16 +1098,24 @@ export class CytoscapeArtifactWriter {
 
       function configureAutoLayout() {
         autoLayout.configure(
-          Number(layoutColumns.value),
+          Number(layoutRows.value),
           Number(horizontalGap.value),
           Number(verticalGap.value),
+          verticalLayoutEnabled,
         );
-        layoutColumnsValue.value = layoutColumns.value;
-        layoutColumnsValue.textContent = layoutColumns.value;
+        layoutRowsValue.value = layoutRows.value;
+        layoutRowsValue.textContent = layoutRows.value;
         horizontalGapValue.value = horizontalGap.value;
         horizontalGapValue.textContent = horizontalGap.value;
         verticalGapValue.value = verticalGap.value;
         verticalGapValue.textContent = verticalGap.value;
+      }
+
+      function toggleVerticalLayout() {
+        verticalLayoutEnabled = !verticalLayoutEnabled;
+        verticalLayout.classList.toggle('active', verticalLayoutEnabled);
+        verticalLayout.setAttribute('aria-pressed', String(verticalLayoutEnabled));
+        configureAutoLayout();
       }
 
       function applyAutoLayout() {
@@ -1100,6 +1159,19 @@ export class CytoscapeArtifactWriter {
         }
 
         hideSelectedConnection();
+      }
+
+      async function toggleSelectedExternalDependencySplit() {
+        if (!canToggleSelectedExternalDependencySplit()) {
+          return;
+        }
+
+        try {
+          await configClient.write({ action: 'toggle-external-dependency-split', nodeId: selectedNode.id() });
+          window.location.reload();
+        } catch {
+          showConfigStatus('Config update failed', true);
+        }
       }
 
       function hideSelectedConnection() {
@@ -1193,13 +1265,24 @@ export class CytoscapeArtifactWriter {
       modeButtons.none.addEventListener('click', () => setMode('none'));
       externalToggle.addEventListener('click', toggleExternalDependencies);
       autoLayoutButton.addEventListener('click', applyAutoLayout);
+      verticalLayout.addEventListener('click', toggleVerticalLayout);
       hideAction.addEventListener('click', () => void hideSelectedAction());
+      splitExternalDependency.addEventListener('click', () => void toggleSelectedExternalDependencySplit());
       hiddenConnectionToggle.addEventListener('click', toggleHiddenConnections);
       collapseGroup.addEventListener('click', toggleSelectedGroupCollapse);
       createFolderDiagram.addEventListener('click', () => void createSelectedFolderDiagram());
-      layoutColumns.addEventListener('input', configureAutoLayout);
+      layoutRows.addEventListener('input', configureAutoLayout);
       horizontalGap.addEventListener('input', configureAutoLayout);
       verticalGap.addEventListener('input', configureAutoLayout);
+      snapGrid.addEventListener('input', () => {
+        snapGridValue.value = snapGrid.value;
+        snapGridValue.textContent = snapGrid.value;
+      });
+      snapDiagram.addEventListener('click', () => {
+        gridSnapper.snap(Number(snapGrid.value), selectedNode);
+        layoutStore.saveSoon();
+        updateGraph();
+      });
       darkModeToggle.addEventListener('click', toggleDarkMode);
       fitDiagram.addEventListener('click', fitGraph);
       exportDiagramImage.addEventListener('click', () => void imageExporter.export());

@@ -14,7 +14,7 @@ Project-level dependency graphs should show the files that own imported public A
 
 ### External dependencies
 
-Use `ExternalDependencyIdentifier` to classify npm and Node.js core modules consistently across package-level and project-level converters. Configured collapsed modules use `external:<name>` ids, and external nodes use the `externalDependency: 'true'` data flag so the HTML viewer can style and toggle them.
+Use `ExternalDependencyIdentifier` to classify npm and Node.js core modules consistently across package-level and project-level converters. Configured collapsed modules use `external:<name>` ids; configured landscape splits use `external:<name>:<source-package>` ids. External nodes use the `externalDependency: 'true'` data flag so the HTML viewer can style and toggle them.
 
 Apply project dependency exclusions before pruning disconnected nodes. Retain connected node parent hierarchies so package and directory grouping remains intact.
 

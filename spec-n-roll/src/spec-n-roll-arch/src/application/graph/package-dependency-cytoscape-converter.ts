@@ -1,4 +1,5 @@
 import type { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
+import type { ArchitectureLandscapeDependencySplitter } from '#arch/application/config/architecture-landscape-dependency-splitter.js';
 import type { CytoscapeElement } from '#arch/application/graph/cytoscape-element.js';
 import { DirectoryCytoscapeGroupBuilder } from '#arch/application/graph/directory-cytoscape-group-builder.js';
 import { DisconnectedCytoscapeElementPruner } from '#arch/application/graph/disconnected-cytoscape-element-pruner.js';
@@ -34,6 +35,7 @@ export class PackageDependencyCytoscapeConverter {
    * @param exclusionFilter - User-configured project file exclusion filter.
    * @param sourceTexts - TypeScript source text keyed by dependency-cruiser source path.
    * @param publicApiExportIndex - Index of package public exports to their backing files.
+   * @param dependencySplitter - User-configured landscape external dependency node splitter.
    * @returns Cytoscape parent package nodes, cross-package file nodes, and cross-package dependency edges.
    */
   convert(
@@ -42,6 +44,7 @@ export class PackageDependencyCytoscapeConverter {
     exclusionFilter?: ArchitectureExclusionFilter,
     sourceTexts?: ReadonlyMap<string, string>,
     publicApiExportIndex?: PackagePublicApiExportIndex,
+    dependencySplitter?: ArchitectureLandscapeDependencySplitter,
   ): CytoscapeElement[] {
     const packagePaths = this.packagePaths(packages);
     const packageLookup = new Map(
@@ -173,12 +176,22 @@ export class PackageDependencyCytoscapeConverter {
           }
 
           this.addFileNode(fileNodes, groupNodes, module.source, sourcePackage);
-          this.addExternalNode(externalNodes, externalId);
-          edges.set(`${module.source}->${externalId}`, {
+          const externalNodeId =
+            dependencySplitter?.nodeId(
+              this.externalDependencyIdentifier.label(externalId),
+              sourcePackage,
+            ) ?? externalId;
+          this.addExternalNode(
+            externalNodes,
+            externalNodeId,
+            externalId,
+            externalNodeId === externalId ? undefined : sourcePackage,
+          );
+          edges.set(`${module.source}->${externalNodeId}`, {
             data: {
-              id: `${module.source}->${externalId}`,
+              id: `${module.source}->${externalNodeId}`,
               source: module.source,
-              target: externalId,
+              target: externalNodeId,
             },
           });
         }
@@ -336,17 +349,22 @@ export class PackageDependencyCytoscapeConverter {
 
   private addExternalNode(
     externalNodes: Map<string, CytoscapeElement>,
+    externalNodeId: string,
     externalId: string,
+    splitSourcePackage?: string,
   ): void {
-    if (externalNodes.has(externalId)) {
+    if (externalNodes.has(externalNodeId)) {
       return;
     }
 
-    externalNodes.set(externalId, {
+    externalNodes.set(externalNodeId, {
       data: {
-        id: externalId,
+        id: externalNodeId,
         label: this.externalDependencyIdentifier.label(externalId),
         externalDependency: 'true',
+        ...(splitSourcePackage
+          ? { splitExternalDependency: 'true', splitSourcePackage }
+          : {}),
       },
     });
   }

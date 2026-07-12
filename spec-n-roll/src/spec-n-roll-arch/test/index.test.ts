@@ -12,6 +12,7 @@ import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { ArchitectureCollapseFilter } from '#arch/application/config/architecture-collapse-filter.js';
 import { ArchitectureExclusionFilter } from '#arch/application/config/architecture-exclusion-filter.js';
+import { ArchitectureLandscapeDependencySplitter } from '#arch/application/config/architecture-landscape-dependency-splitter.js';
 import { ArchitectureViewerAutoLayoutScript } from '#arch/infrastructure/cytoscape/architecture-viewer-auto-layout-script.js';
 import { CytoscapeArtifactWriter } from '#arch/infrastructure/cytoscape/cytoscape-artifact-writer.js';
 import { DependencyMatrixArtifactWriter } from '#arch/infrastructure/cytoscape/dependency-matrix-artifact-writer.js';
@@ -490,6 +491,72 @@ describe('spec-n-roll-arch', () => {
           target: 'external:tslog',
         },
       },
+    ]);
+  });
+
+  it('splits configured landscape external dependencies by importing workspace package', () => {
+    const packageNames = [
+      'spec-n-roll',
+      'spec-n-roll-mcp',
+      'spec-n-roll-runtime',
+    ];
+    const packages = packageNames.map((name) => ({
+      name,
+      root: `D:/repo/src/${name}`,
+      dependencies: {},
+    }));
+    const reports = new Map(
+      packageNames.map((name) => [
+        name,
+        JSON.stringify({
+          modules: [
+            {
+              source: `src/${name}/src/index.ts`,
+              dependencies: [
+                {
+                  module: 'commander',
+                  resolved: 'node_modules/commander/index.js',
+                  coreModule: false,
+                },
+              ],
+            },
+          ],
+        }),
+      ]),
+    );
+
+    const elements = new PackageDependencyCytoscapeConverter().convert(
+      packages,
+      reports,
+      undefined,
+      undefined,
+      undefined,
+      new ArchitectureLandscapeDependencySplitter({
+        split: {
+          landscape: {
+            externalDependencies: { commander: packageNames },
+          },
+        },
+      }),
+    );
+
+    expect(
+      elements
+        .filter((element) => element.data.label === 'commander')
+        .map((element) => element.data.id),
+    ).toEqual([
+      'external:commander:spec-n-roll',
+      'external:commander:spec-n-roll-mcp',
+      'external:commander:spec-n-roll-runtime',
+    ]);
+    expect(
+      elements
+        .filter((element) => element.data.source != null)
+        .map((element) => element.data.target),
+    ).toEqual([
+      'external:commander:spec-n-roll',
+      'external:commander:spec-n-roll-mcp',
+      'external:commander:spec-n-roll-runtime',
     ]);
   });
 
@@ -1032,6 +1099,13 @@ describe('spec-n-roll-arch', () => {
     );
     expect(html).toContain('#cy { background: #ffffff; height: 100%;');
     expect(html).toContain('id="auto-layout"');
+    expect(html).toContain(
+      'id="split-external-dependency" type="button" disabled>Split</button>',
+    );
+    expect(html).toContain('toggle-external-dependency-split');
+    expect(html).toContain(
+      'id="vertical-layout" type="button" aria-pressed="false">Vertical</button>',
+    );
     expect(html).toContain('class DiagramLayoutGroup');
     expect(html).toContain('class DiagramAutoLayout');
     expect(html).toContain('dependencyLayers(groups, scopeElement)');
@@ -1062,7 +1136,7 @@ describe('spec-n-roll-arch', () => {
       '<span class="toolbar-separator" aria-hidden="true">|</span>',
     );
     expect(html).toContain(
-      'id="layout-columns" type="range" min="3" max="8" value="5"',
+      'id="layout-rows" type="range" min="3" max="8" value="5"',
     );
     expect(html).toContain(
       'id="horizontal-gap" type="range" min="80" max="200" step="5" value="120"',
@@ -1070,8 +1144,20 @@ describe('spec-n-roll-arch', () => {
     expect(html).toContain(
       'id="vertical-gap" type="range" min="80" max="200" step="5" value="120"',
     );
+    expect(html).toContain(
+      '<button class="toolbar-button" id="snap-diagram" type="button">Snap</button>',
+    );
+    expect(html).toContain(
+      'id="snap-grid" type="range" min="5" max="100" step="5" value="20"',
+    );
+    expect(html).toContain('class DiagramGridSnapper');
+    expect(html).toContain('Math.round(position.x / gridSize) * gridSize');
+    expect(html).toContain('Math.round(position.y / gridSize) * gridSize');
+    expect(html).toContain('gridSnapper.snap(Number(snapGrid.value), selectedNode)');
     expect(html).toContain('autoLayout.configure(');
-    expect(html).toContain('this.maxColumns = 5');
+    expect(html).toContain('this.maxRows = 5');
+    expect(html).toContain('this.verticalMode = false');
+    expect(html).toContain('verticalLayout.addEventListener');
     expect(html).toContain('class HiddenConnectionState');
     expect(html).toContain('selectedEdgeId');
     expect(html).toContain('edge.selected-connection');
@@ -1292,9 +1378,10 @@ describe('spec-n-roll-arch', () => {
       `${ArchitectureViewerAutoLayoutScript.render()}\nDiagramAutoLayout`,
     ).runInNewContext() as new (layoutGraph: LayoutTestGraph) => {
       configure(
-        maxColumns: number,
+        maxRows: number,
         horizontalGap: number,
         verticalGap: number,
+        verticalMode?: boolean,
       ): void;
       layout(): void;
       layoutGroup(node: LayoutTestNode): boolean;
@@ -1345,6 +1432,31 @@ describe('spec-n-roll-arch', () => {
     ).toBe(180);
     expect(libraryFile.currentLayoutPosition().y).toBe(
       libraryDelta.currentLayoutPosition().y + 250,
+    );
+
+    const verticalLayout = new DiagramAutoLayout(graph);
+    verticalLayout.configure(3, 80, 200, true);
+    verticalLayout.layout();
+
+    expect(alpha.currentLayoutPosition().x).toBe(
+      charlie.currentLayoutPosition().x,
+    );
+    expect(alpha.currentLayoutPosition().y).toBeLessThan(
+      charlie.currentLayoutPosition().y,
+    );
+    expect(
+      beta.currentLayoutPosition().y - alpha.currentLayoutPosition().y,
+    ).toBe(250);
+    expect(beta.currentLayoutPosition().x).toBeLessThan(
+      libraryFile.currentLayoutPosition().x,
+    );
+
+    const alphaPositionBeforeVerticalGroupLayout =
+      alpha.currentLayoutPosition();
+    verticalLayout.layoutGroup(module);
+
+    expect(alpha.currentLayoutPosition()).toEqual(
+      alphaPositionBeforeVerticalGroupLayout,
     );
   });
 
@@ -1537,6 +1649,116 @@ describe('spec-n-roll-arch', () => {
       await runningServer.close();
     }
   });
+  it('persists landscape external dependency split and unsplit decisions', async () => {
+    const workspaceRoot = mkdtempSync(
+      join(tmpdir(), 'spec-n-roll-arch-split-config-'),
+    );
+    const artifactRoot = join(workspaceRoot, 'architecture');
+    mkdirSync(artifactRoot);
+    writeFileSync(
+      join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
+      'module.exports = {};\n',
+    );
+    writeFileSync(
+      join(artifactRoot, 'landscape.cytoscape.html'),
+      '<!doctype html><html></html>',
+    );
+    writeFileSync(
+      join(artifactRoot, 'landscape.cytoscape.json'),
+      JSON.stringify([
+        {
+          data: {
+            id: 'external:commander',
+            label: 'commander',
+            externalDependency: 'true',
+          },
+        },
+        {
+          data: {
+            id: 'src/alpha/src/index.ts->external:commander',
+            source: 'src/alpha/src/index.ts',
+            target: 'external:commander',
+          },
+        },
+        {
+          data: {
+            id: 'src/beta/src/index.ts->external:commander',
+            source: 'src/beta/src/index.ts',
+            target: 'external:commander',
+          },
+        },
+      ]),
+    );
+    const runningServer = await new ArchitectureViewerHttpServer().start({
+      artifactRoot,
+      workspaceRoot,
+      host: '127.0.0.1',
+      port: 0,
+    });
+
+    try {
+      const splitResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/config?diagram=landscape.cytoscape.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'toggle-external-dependency-split',
+            nodeId: 'external:commander',
+          }),
+        },
+      );
+      expect(splitResponse.status).toBe(200);
+      expect(
+        readFileSync(
+          join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
+          'utf8',
+        ),
+      ).toContain('"alpha"');
+      expect(
+        readFileSync(
+          join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
+          'utf8',
+        ),
+      ).toContain('"beta"');
+
+      writeFileSync(
+        join(artifactRoot, 'landscape.cytoscape.json'),
+        JSON.stringify([
+          {
+            data: {
+              id: 'external:commander:alpha',
+              label: 'commander',
+              externalDependency: 'true',
+              splitExternalDependency: 'true',
+              splitSourcePackage: 'alpha',
+            },
+          },
+        ]),
+      );
+      const unsplitResponse = await fetch(
+        `${runningServer.url}__spec-n-roll/config?diagram=landscape.cytoscape.html`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'toggle-external-dependency-split',
+            nodeId: 'external:commander:alpha',
+          }),
+        },
+      );
+      expect(unsplitResponse.status).toBe(200);
+      const configText = readFileSync(
+        join(workspaceRoot, 'spec-n-roll.architecture.config.cjs'),
+        'utf8',
+      );
+      expect(configText).not.toContain('"alpha"');
+      expect(configText).toContain('"beta"');
+    } finally {
+      await runningServer.close();
+    }
+  });
+
   it('serves diagrams and persists cleaned layout files through the viewer server', async () => {
     const artifactRoot = mkdtempSync(
       join(tmpdir(), 'spec-n-roll-arch-server-'),

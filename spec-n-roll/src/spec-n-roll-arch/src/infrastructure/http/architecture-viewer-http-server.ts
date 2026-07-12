@@ -83,10 +83,11 @@ export interface RunningArchitectureViewerHttpServer {
  */
 interface ArchitectureViewerConfigAction {
   /**
-   * Requested configuration action. Supported values include node hiding, folder diagram creation, and exclusion updates.
+   * Requested configuration action. Supported values include node hiding, external dependency splitting, folder diagram creation, and exclusion updates.
    */
   action:
     | 'hide-node'
+    | 'toggle-external-dependency-split'
     | 'create-folder-diagram'
     | 'add-exclusion'
     | 'remove-exclusion';
@@ -447,7 +448,8 @@ export class ArchitectureViewerHttpServer {
 
     const requiresNode =
       action.action === 'hide-node' ||
-      action.action === 'create-folder-diagram';
+      action.action === 'create-folder-diagram' ||
+      action.action === 'toggle-external-dependency-split';
     const elements = requiresNode
       ? await this.readElements(htmlPath.replace(/\.html$/u, '.json'))
       : [];
@@ -532,6 +534,18 @@ export class ArchitectureViewerHttpServer {
       return true;
     }
 
+    if (
+      action.action === 'toggle-external-dependency-split' &&
+      node &&
+      this.isExternalNode(node) &&
+      diagramContext.kind === 'project'
+    ) {
+      this.toggleLandscapeExternalDependencySplit(config, node, elements);
+      await this.writeArchitectureConfig(workspaceRoot, config);
+      this.regenerateArtifacts(workspaceRoot);
+      return true;
+    }
+
     const projectFile = node ? this.projectFileSelection(node, elements) : null;
     if (action.action === 'hide-node' && projectFile) {
       this.addProjectFileExclusion(config, diagramContext, projectFile);
@@ -608,6 +622,52 @@ export class ArchitectureViewerHttpServer {
       config.folderDiagrams?.packages?.[packageName]?.find(
         (folderDiagram) => this.diagramSlug(folderDiagram.path) === slug,
       ) ?? null
+    );
+  }
+
+  private toggleLandscapeExternalDependencySplit(
+    config: ArchitectureConfig,
+    node: CytoscapeElement & { data: { id: string; label: string } },
+    elements: CytoscapeElement[],
+  ): void {
+    config.split ??= {};
+    config.split.landscape ??= {};
+    config.split.landscape.externalDependencies ??= {};
+    const dependencyName = node.data.label;
+    const splitPackages =
+      config.split.landscape.externalDependencies[dependencyName] ?? [];
+    const splitSourcePackage = node.data.splitSourcePackage;
+
+    config.split.landscape.externalDependencies[dependencyName] =
+      splitSourcePackage
+        ? splitPackages.filter(
+            (packageName) => packageName !== splitSourcePackage,
+          )
+        : this.sortedUnique([
+            ...splitPackages,
+            ...this.importingPackageNames(node.data.id, elements),
+          ]);
+
+    if (
+      config.split.landscape.externalDependencies[dependencyName].length === 0
+    ) {
+      delete config.split.landscape.externalDependencies[dependencyName];
+    }
+  }
+
+  private importingPackageNames(
+    externalNodeId: string,
+    elements: CytoscapeElement[],
+  ): string[] {
+    return this.sortedUnique(
+      elements
+        .filter(
+          (element) =>
+            this.isEdgeElement(element) &&
+            element.data.target === externalNodeId,
+        )
+        .map((element) => /^src\/([^/]+)\//u.exec(element.data.source)?.[1])
+        .filter((packageName): packageName is string => packageName != null),
     );
   }
 
@@ -866,8 +926,10 @@ export class ArchitectureViewerHttpServer {
     return `// User-editable architecture diagram configuration.
 //
 // External dependencies are matched by displayed package/module name, such as
-// "tslog", "commander", or "fs". Collapsed dependencies render as one node;
-// landscape exclusions are omitted from the landscape diagram. Project node
+// "tslog", "commander", or "fs". A split landscape dependency creates one
+// identically labelled node for each configured importing workspace package.
+// Collapsed dependencies render as one node; landscape exclusions are omitted
+// from the landscape diagram. Project node
 // exclusions are exact node names or node-name globs, such as
 // "composition/**/*.test". Node names are relative to the package source root
 // and omit the file extension.
@@ -1048,7 +1110,8 @@ export class ArchitectureViewerHttpServer {
 
     return (
       ((candidate.action === 'hide-node' ||
-        candidate.action === 'create-folder-diagram') &&
+        candidate.action === 'create-folder-diagram' ||
+        candidate.action === 'toggle-external-dependency-split') &&
         typeof candidate.nodeId === 'string') ||
       ((candidate.action === 'add-exclusion' ||
         candidate.action === 'remove-exclusion') &&

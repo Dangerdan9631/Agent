@@ -23,6 +23,8 @@ export class ArchitectureViewerAutoLayoutScript {
           this.rows = 1;
           this.rowWidths = [];
           this.rowHeights = [];
+          this.columnWidths = [];
+          this.columnHeights = [];
           this.layers = [];
         }
 
@@ -37,16 +39,18 @@ export class ArchitectureViewerAutoLayoutScript {
       class DiagramAutoLayout {
         constructor(graph) {
           this.graph = graph;
-          this.maxColumns = 5;
+          this.maxRows = 5;
           this.horizontalGap = 120;
           this.verticalGap = 120;
           this.targetAspectRatio = 3 / 2;
+          this.verticalMode = false;
         }
 
-        configure(maxColumns, horizontalGap, verticalGap) {
-          this.maxColumns = maxColumns;
+        configure(maxRows, horizontalGap, verticalGap, verticalMode) {
+          this.maxRows = maxRows;
           this.horizontalGap = horizontalGap;
           this.verticalGap = verticalGap;
+          this.verticalMode = verticalMode;
         }
 
         layout() {
@@ -209,64 +213,92 @@ export class ArchitectureViewerAutoLayoutScript {
 
           if (group.layers.length > 0) {
             group.layers.forEach((layer) => this.measure(layer));
-            group.width =
-              Math.max(...group.layers.map((layer) => layer.width)) + group.padding * 2;
-            group.height =
-              group.layers.reduce((height, layer) => height + layer.height, 0) +
-              Math.max(group.layers.length - 1, 0) * this.verticalGap +
-              group.padding * 2;
+            if (this.verticalMode) {
+              group.width =
+                group.layers.reduce((width, layer) => width + layer.width, 0) +
+                Math.max(group.layers.length - 1, 0) * this.horizontalGap +
+                group.padding * 2;
+              group.height =
+                Math.max(...group.layers.map((layer) => layer.height)) + group.padding * 2;
+            } else {
+              group.width =
+                Math.max(...group.layers.map((layer) => layer.width)) + group.padding * 2;
+              group.height =
+                group.layers.reduce((height, layer) => height + layer.height, 0) +
+                Math.max(group.layers.length - 1, 0) * this.verticalGap +
+                group.padding * 2;
+            }
             return;
           }
 
           group.children.forEach((child) => this.measure(child));
           const grid = this.grid(group.children.length);
-          group.columns = grid.columns;
-          group.rows = grid.rows;
+          group.columns = this.verticalMode ? grid.rows : grid.columns;
+          group.rows = this.verticalMode ? grid.columns : grid.rows;
           group.rowWidths = [];
           group.rowHeights = [];
+          group.columnWidths = [];
+          group.columnHeights = [];
 
           let childIndex = 0;
-          for (let row = 0; row < group.rows; row += 1) {
+          for (let row = 0; row < grid.rows; row += 1) {
             const rowChildren = group.children.slice(
               childIndex,
-              childIndex + this.elementsInRow(group, row),
+              childIndex + this.elementsInGridRow(group.children.length, grid.rows, row),
             );
-            group.rowWidths.push(
-              rowChildren.reduce(
-                (width, child) => width + child.width,
-                0,
-              ) + Math.max(rowChildren.length - 1, 0) * this.horizontalGap,
-            );
-            group.rowHeights.push(
-              Math.max(...rowChildren.map((child) => child.height)),
-            );
+            if (this.verticalMode) {
+              group.columnWidths.push(
+                Math.max(...rowChildren.map((child) => child.width)),
+              );
+              group.columnHeights.push(
+                rowChildren.reduce((height, child) => height + child.height, 0) +
+                Math.max(rowChildren.length - 1, 0) * this.verticalGap,
+              );
+            } else {
+              group.rowWidths.push(
+                rowChildren.reduce(
+                  (width, child) => width + child.width,
+                  0,
+                ) + Math.max(rowChildren.length - 1, 0) * this.horizontalGap,
+              );
+              group.rowHeights.push(
+                Math.max(...rowChildren.map((child) => child.height)),
+              );
+            }
             childIndex += rowChildren.length;
           }
 
-          group.width = Math.max(...group.rowWidths);
-          group.height =
-            group.rowHeights.reduce((height, rowHeight) => height + rowHeight, 0) +
-            Math.max(group.rows - 1, 0) * this.verticalGap;
+          if (this.verticalMode) {
+            group.width =
+              group.columnWidths.reduce((width, columnWidth) => width + columnWidth, 0) +
+              Math.max(group.columns - 1, 0) * this.horizontalGap;
+            group.height = Math.max(...group.columnHeights);
+          } else {
+            group.width = Math.max(...group.rowWidths);
+            group.height =
+              group.rowHeights.reduce((height, rowHeight) => height + rowHeight, 0) +
+              Math.max(group.rows - 1, 0) * this.verticalGap;
+          }
         }
 
         grid(elementCount) {
-          if (elementCount <= this.maxColumns) {
+          if (elementCount <= this.maxRows) {
             return { columns: Math.max(elementCount, 1), rows: 1 };
           }
 
           let bestGrid = {
-            columns: this.maxColumns,
-            rows: Math.ceil(elementCount / this.maxColumns),
+            columns: this.maxRows,
+            rows: Math.ceil(elementCount / this.maxRows),
           };
           let bestDifference = Number.POSITIVE_INFINITY;
 
           for (
-            let rows = Math.ceil(elementCount / this.maxColumns);
+            let rows = Math.ceil(elementCount / this.maxRows);
             rows <= elementCount;
             rows += 1
           ) {
             const columns = Math.ceil(elementCount / rows);
-            if (columns > this.maxColumns) {
+            if (columns > this.maxRows) {
               continue;
             }
             const difference = Math.abs(columns / rows - this.targetAspectRatio);
@@ -293,15 +325,55 @@ export class ArchitectureViewerAutoLayoutScript {
           }
 
           if (group.layers.length > 0) {
-            const contentWidth = group.width - group.padding * 2;
-            let layerTop = top + group.padding;
-            for (const layer of group.layers) {
-              this.place(
-                layer,
-                left + group.padding + (contentWidth - layer.width) / 2,
-                layerTop,
+            if (this.verticalMode) {
+              const contentHeight = group.height - group.padding * 2;
+              let layerLeft = left + group.padding;
+              for (const layer of group.layers) {
+                this.place(
+                  layer,
+                  layerLeft,
+                  top + group.padding + (contentHeight - layer.height) / 2,
+                );
+                layerLeft += layer.width + this.horizontalGap;
+              }
+            } else {
+              const contentWidth = group.width - group.padding * 2;
+              let layerTop = top + group.padding;
+              for (const layer of group.layers) {
+                this.place(
+                  layer,
+                  left + group.padding + (contentWidth - layer.width) / 2,
+                  layerTop,
+                );
+                layerTop += layer.height + this.verticalGap;
+              }
+            }
+            return;
+          }
+
+          if (this.verticalMode) {
+            let childIndex = 0;
+            let childLeft = left;
+            for (let column = 0; column < group.columns; column += 1) {
+              const elementsInColumn = this.elementsInGridRow(
+                group.children.length,
+                group.columns,
+                column,
               );
-              layerTop += layer.height + this.verticalGap;
+              let childTop = top + (group.height - group.columnHeights[column]) / 2;
+
+              for (let row = 0; row < elementsInColumn; row += 1) {
+                const child = group.children[childIndex];
+                this.place(
+                  child,
+                  childLeft + (group.columnWidths[column] - child.width) / 2,
+                  childTop,
+                );
+                childTop += child.height + this.verticalGap;
+                childIndex += 1;
+              }
+
+              childLeft += group.columnWidths[column] + this.horizontalGap;
             }
             return;
           }
@@ -309,7 +381,11 @@ export class ArchitectureViewerAutoLayoutScript {
           let childIndex = 0;
           let childTop = top;
           for (let row = 0; row < group.rows; row += 1) {
-            const elementsInRow = this.elementsInRow(group, row);
+            const elementsInRow = this.elementsInGridRow(
+              group.children.length,
+              group.rows,
+              row,
+            );
             let childLeft = left + (group.width - group.rowWidths[row]) / 2;
 
             for (let column = 0; column < elementsInRow; column += 1) {
@@ -327,9 +403,9 @@ export class ArchitectureViewerAutoLayoutScript {
           }
         }
 
-        elementsInRow(group, row) {
-          const minimumPerRow = Math.floor(group.children.length / group.rows);
-          const rowsWithOneMore = group.children.length % group.rows;
+        elementsInGridRow(elementCount, rowCount, row) {
+          const minimumPerRow = Math.floor(elementCount / rowCount);
+          const rowsWithOneMore = elementCount % rowCount;
           return minimumPerRow + (row < rowsWithOneMore ? 1 : 0);
         }
 

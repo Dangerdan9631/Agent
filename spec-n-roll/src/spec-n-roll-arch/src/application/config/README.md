@@ -2,6 +2,8 @@
 
 This directory contains architecture configuration models, readers, and filters. It owns configuration decisions that shape generated dependency views.
 
+Landscape dependency splitting assigns a separate external graph node to each configured importing workspace package while preserving the dependency's displayed name.
+
 ## Conventions
 
 ### Configuration behavior
