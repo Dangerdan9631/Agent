@@ -3,6 +3,7 @@ export type { DispatcherMetadata } from '#api/contracts/dispatcher/dispatcher-me
 export {
   DISPATCHER_LOCAL_SOURCE_MARKER_FILE,
   LOCAL_CLI_RELATIVE_PATH_SEGMENTS,
+  LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS,
   LOCAL_MCP_RELATIVE_PATH_SEGMENTS,
   SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
 } from '#api/contracts/dispatcher/dispatcher-path-constants.js';
@@ -17,3 +18,4 @@ export type { ProjectRootResolution } from '#api/contracts/project/project-root-
 export type { RuntimeInvocation } from '#api/contracts/runtime/runtime-invocation.js';
 export { RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE } from '#api/contracts/runtime/runtime-invocation-environment.js';
 export type { RuntimeTarget } from '#api/contracts/runtime/runtime-target.js';
+

@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from 'node:path';
 import {
   LOCAL_CLI_RELATIVE_PATH_SEGMENTS,
+  LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS,
   type RuntimeTarget,
 } from 'spec-n-roll-api';
 import type { DispatcherFileSystem } from '#dispatcher/application/filesystem/dispatcher-file-system.js';
@@ -57,7 +58,7 @@ export class RuntimeTargetResolver {
     if (!forceGlobal && localExecutable != null) {
       return {
         executablePath: localExecutable,
-        packageVersion: globalRuntime.packageVersion,
+        packageVersion: this.readLocalRuntimeVersion(projectRoot, globalRuntime.packageVersion),
         projectLocal: true,
       };
     }
@@ -83,6 +84,23 @@ export class RuntimeTargetResolver {
     return this.fileSystem.pathExists(executablePath)
       ? executablePath
       : undefined;
+  }
+
+  /**
+   * Reads copied local runtime metadata with a compatible fallback for old projects.
+   *
+   * @param projectRoot - Absolute project root containing the local framework.
+   * @param fallbackVersion - Global runtime version used by projects without metadata.
+   * @returns Local runtime semantic version.
+   */
+  private readLocalRuntimeVersion(projectRoot: string, fallbackVersion: string): string {
+    const metadataText = this.fileSystem.readText(join(projectRoot, ...LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS));
+    try {
+      const metadata = metadataText == null ? undefined : JSON.parse(metadataText) as { runtimeVersion?: unknown };
+      return typeof metadata?.runtimeVersion === 'string' && metadata.runtimeVersion !== '' ? metadata.runtimeVersion : fallbackVersion;
+    } catch {
+      return fallbackVersion;
+    }
   }
 
   /**
@@ -133,3 +151,4 @@ export class RuntimeTargetResolver {
     }
   }
 }
+

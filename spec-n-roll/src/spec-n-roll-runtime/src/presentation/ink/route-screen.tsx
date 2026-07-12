@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import type { RouteId } from '#runtime/presentation/ink/navigation-stack.js';
 import {
   MenuList,
@@ -22,11 +22,13 @@ export interface RouteScreenProps {
   /**
    * Opens an application command route.
    */
-  readonly onNavigate: (route: 'init') => void;
+  readonly onNavigate: (route: 'init' | 'agents' | 'manage' | 'global-update' | 'project-update') => void;
   /**
    * Starts the shell exit confirmation dialog.
    */
   readonly onExitRequest: () => void;
+  /** Reports whether an uncancellable framework update is currently running. */
+  readonly onUpdateRunningChange: (running: boolean) => void;
   /**
    * Project state and commands configured for this session.
    */
@@ -40,6 +42,20 @@ export interface RouteScreenProps {
  * @returns Route-owned content and selection regions.
  */
 export function RouteScreen(props: RouteScreenProps): React.ReactElement {
+  if (props.route === 'agents') {
+    return <AgentsRoute rows={props.rows} listAgents={props.session.listAgents} />;
+  }
+
+  if (props.route === 'manage') {
+    return <ManageRoute rows={props.rows} onNavigate={props.onNavigate} availability={props.session.projectUpdate} />;
+  }
+
+  if (props.route === 'global-update') {
+    return <GlobalUpdateRoute rows={props.rows} updateGlobalFramework={props.session.updateGlobalFramework} onRunningChange={props.onUpdateRunningChange} />;
+  }
+  if (props.route === 'project-update') {
+    return <ProjectUpdateRoute rows={props.rows} updateProjectFramework={props.session.updateProjectFramework} onRunningChange={props.onUpdateRunningChange} />;
+  }
   if (props.route === 'init') {
     return (
       <InitRoute
@@ -67,7 +83,9 @@ export function RouteScreen(props: RouteScreenProps): React.ReactElement {
  */
 function HomeRoute(props: {
   readonly onExitRequest: () => void;
-  readonly onNavigate: (route: 'init') => void;
+  /** Reports whether an uncancellable framework update is currently running. */
+  readonly onUpdateRunningChange: (running: boolean) => void;
+  readonly onNavigate: (route: 'init' | 'agents' | 'manage' | 'global-update' | 'project-update') => void;
   readonly rows: number;
   readonly session: RuntimeUiSession;
 }): React.ReactElement {
@@ -89,6 +107,9 @@ function HomeRoute(props: {
       : [];
   const homeMenu: readonly MenuItem[] = [
     ...initializationItem,
+    ...(props.session.mode === 'local' ? [{ id: 'manage', label: 'Manage Spec-N-Roll' }, { id: 'agents', label: 'Agents' }] : []),
+    ...(props.session.mode === 'global' && projectFound ? [{ id: 'update-project', label: 'Update Project Framework', disabled: !props.session.projectUpdate.enabled }] : []),
+    ...(props.session.mode === 'global' ? [{ id: 'update-global', label: 'Update Global Framework', disabled: !props.session.globalUpdate.enabled }] : []),
     { id: 'exit', label: 'Exit' },
   ];
   const menuRows = homeMenu.length;
@@ -112,6 +133,10 @@ function HomeRoute(props: {
         items={homeMenu}
         onSelect={(item) => {
           if (item.id === 'init') props.onNavigate('init');
+          if (item.id === 'manage') props.onNavigate('manage');
+          if (item.id === 'update-project') props.onNavigate('project-update');
+          if (item.id === 'update-global') props.onNavigate('global-update');
+          if (item.id === 'agents') props.onNavigate('agents');
           if (item.id === 'exit') props.onExitRequest();
         }}
       />
@@ -214,3 +239,52 @@ function InitRoute(props: InitRouteProps): React.ReactElement {
     </Box>
   );
 }
+
+/** Renders registered agent extensions for a project. */
+function AgentsRoute(props: { readonly rows: number; readonly listAgents: () => Promise<readonly { readonly name: string; readonly enabled: boolean }[]> }): React.ReactElement {
+  const [content, setContent] = useState('Loading agents…');
+  useEffect(() => {
+    props.listAgents().then((agents) => setContent(agents.length === 0 ? 'No agent extensions registered.' : agents.map((agent) => agent.name + '  ' + (agent.enabled ? 'enabled' : 'disabled')).join('\n'))).catch((error: unknown) => setContent('Unable to list agents: ' + (error instanceof Error ? error.message : String(error))));
+  }, [props]);
+  return <Box height={props.rows} paddingX={2}><Text>{content}</Text></Box>;
+}
+
+
+
+/** Renders the local framework management menu. */
+function ManageRoute(props: { readonly rows: number; readonly onNavigate: (route: 'project-update') => void; readonly availability: { readonly enabled: boolean } }): React.ReactElement {
+  const items: readonly MenuItem[] = [{ id: 'update-project', label: 'Update Project Framework', disabled: !props.availability.enabled }];
+  return <Box height={props.rows} flexDirection="column" paddingX={2}><MenuList items={items} onSelect={() => props.onNavigate('project-update')} /></Box>;
+}
+
+/** Renders a console transcript that follows new output until the user scrolls away. */
+function UpdateConsole(props: { readonly rows: number; readonly output: string }): React.ReactElement {
+  const lines = props.output.split(/\r?\n/);
+  const pageSize = Math.max(1, props.rows - 2);
+  const [topLine, setTopLine] = useState(Math.max(0, lines.length - pageSize));
+  const [following, setFollowing] = useState(true);
+  const maximumTopLine = Math.max(0, lines.length - pageSize);
+  useEffect(() => { if (following) setTopLine(maximumTopLine); }, [following, maximumTopLine]);
+  useInput((_input, key) => {
+    if (key.pageUp) { setFollowing(false); setTopLine((value) => Math.max(0, value - pageSize)); }
+    if (key.pageDown) setTopLine((value) => { const next = Math.min(maximumTopLine, value + pageSize); setFollowing(next === maximumTopLine); return next; });
+    if (key.end) { setFollowing(true); setTopLine(maximumTopLine); }
+  });
+  return <Box height={props.rows} paddingX={2}><Text wrap="wrap">{lines.slice(topLine, topLine + pageSize).join('\n')}</Text></Box>;
+}
+
+/** Runs a local project framework update on a console page. */
+function ProjectUpdateRoute(props: { readonly rows: number; readonly updateProjectFramework: () => void; readonly onRunningChange: (running: boolean) => void }): React.ReactElement {
+  const [output, setOutput] = useState('Starting project framework update…\n');
+  useEffect(() => { props.onRunningChange(true); try { props.updateProjectFramework(); setOutput((value) => value + 'Project update completed.'); } catch (error) { setOutput((value) => value + `Update failed: ${error instanceof Error ? error.message : String(error)}`); } finally { props.onRunningChange(false); } return () => props.onRunningChange(false); }, [props.onRunningChange, props.updateProjectFramework]);
+  return <UpdateConsole rows={props.rows} output={output} />;
+}
+
+/** Runs a global framework update on a console page. */
+function GlobalUpdateRoute(props: { readonly rows: number; readonly updateGlobalFramework: (output: { write(text: string): void }) => Promise<void>; readonly onRunningChange: (running: boolean) => void }): React.ReactElement {
+  const [output, setOutput] = useState('Starting global framework update…\n');
+  useEffect(() => { props.onRunningChange(true); void props.updateGlobalFramework({ write: (text) => setOutput((value) => value + text) }).then(() => setOutput((value) => value + '\nUpdate completed. Reloading runtime…')).catch((error: unknown) => setOutput((value) => value + `\nUpdate failed: ${error instanceof Error ? error.message : String(error)}`)).finally(() => props.onRunningChange(false)); return () => props.onRunningChange(false); }, [props.onRunningChange, props.updateGlobalFramework]);
+  return <UpdateConsole rows={props.rows} output={output} />;
+}
+
+

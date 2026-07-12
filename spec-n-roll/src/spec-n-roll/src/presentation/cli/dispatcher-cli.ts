@@ -27,7 +27,7 @@ export class DispatcherCli {
       .description(
         'Dispatches spec-n-roll commands to a project-local or global runtime.',
       )
-      .version('0.1.0')
+      .helpOption(false)
       .option(
         '--global',
         'Run the globally installed runtime instead of a project-local copy',

@@ -8,7 +8,14 @@ export class CodexAgentExtensionSource {
    * @returns ECMAScript module text for the Codex agent extension.
    */
   source(): string {
-    return `import { mkdir, readFile, writeFile } from 'node:fs/promises';
+    return `/*
+---
+metadata:
+  author: 'spec-n-roll'
+  version: '0.1.0'
+---
+*/
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 /**
@@ -94,3 +101,4 @@ export default class CodexAgentExtension {
 `;
   }
 }
+

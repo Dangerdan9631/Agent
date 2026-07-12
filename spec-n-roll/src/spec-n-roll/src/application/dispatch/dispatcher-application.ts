@@ -71,12 +71,14 @@ export class DispatcherApplication {
       cwd,
     };
 
-    return this.processExecutor.execute({
+    const exitCode = this.processExecutor.execute({
       executablePath: target.executablePath,
       argv: invocation.argv,
       cwd: invocation.cwd,
       invocation: JSON.stringify(invocation),
       invocationEnvironmentVariable: RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE,
     });
+    return exitCode === 75 ? this.run(request) : exitCode;
   }
 }
+

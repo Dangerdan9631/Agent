@@ -1,9 +1,15 @@
 import { Logger } from 'tslog';
+import { join } from 'node:path';
+import type { AgentLister } from 'spec-n-roll-sdk';
+import type { RuntimeOutputWriter } from '#runtime/application/output/runtime-output-writer.js';
 import { RuntimeInvocationParser } from '#runtime/application/invocation/runtime-invocation-parser.js';
 import type { RuntimeInvocationReader } from '#runtime/application/invocation/runtime-invocation-reader.js';
 import type { RuntimeUiRenderer } from '#runtime/application/ui/runtime-ui-renderer.js';
 import { RuntimeUiModeResolver } from '#runtime/application/ui/runtime-ui-mode-resolver.js';
 import { InitCommandResolver } from '#runtime/application/init/init-command-resolver.js';
+import type { GlobalFrameworkUpdater } from '#runtime/application/update/global-framework-updater.js';
+import type { RuntimeReloader } from '#runtime/application/update/runtime-reloader.js';
+import { FrameworkUpdateAvailabilityResolver } from '#runtime/application/update/framework-update-availability-resolver.js';
 import type { ProjectInitializer } from '#runtime/application/init/project-initializer.js';
 
 /**
@@ -28,6 +34,11 @@ export class RuntimeApplication {
     private readonly projectInitializer: ProjectInitializer,
     private readonly modeResolver = new RuntimeUiModeResolver(),
     private readonly initCommandResolver = new InitCommandResolver(),
+    private readonly agentLister?: AgentLister,
+    private readonly outputWriter?: RuntimeOutputWriter,
+    private readonly globalFrameworkUpdater?: GlobalFrameworkUpdater,
+    private readonly updateAvailabilityResolver = new FrameworkUpdateAvailabilityResolver(),
+    private readonly runtimeReloader?: RuntimeReloader,
     private readonly logger = new Logger({
       name: 'spec-n-roll-runtime',
       minLevel: 6,
@@ -58,6 +69,21 @@ export class RuntimeApplication {
       return;
     }
 
+    if (invocation.argv[0] === 'update') {
+      await this.updateGlobalFramework(invocation, false, { write: (text) => this.outputWriter?.writeLine(text) });
+      return;
+    }
+
+    if (invocation.argv[0] === 'agents' && invocation.argv[1] === 'list') {
+      if (invocation.projectRoot == null || this.agentLister == null || this.outputWriter == null) {
+        throw new Error('Agent listing requires a configured Spec-N-Roll project.');
+      }
+      const agents = await this.agentLister.list(invocation.projectRoot);
+      this.logger.info('Writing agent extension list.', { agentCount: agents.length });
+      this.outputWriter.writeLine('NAME\tSTATUS');
+      for (const agent of agents) this.outputWriter.writeLine(agent.name + '\t' + (agent.enabled ? 'enabled' : 'disabled'));
+      return;
+    }
     const projectOperationRoot = invocation.projectRoot ?? invocation.cwd;
     const projectFound =
       invocation.projectRoot != null &&
@@ -70,6 +96,8 @@ export class RuntimeApplication {
       projectRoot: invocation.projectRoot,
       projectFound,
     });
+    const projectUpdate = this.updateAvailabilityResolver.project(invocation.dispatcher.installSource, invocation.runtime.packageVersion, invocation.dispatcher.packageVersion);
+    const globalUpdate = this.resolveGlobalUpdate(invocation);
     await this.renderer.render({
       mode,
       dispatcher: invocation.dispatcher,
@@ -83,6 +111,53 @@ export class RuntimeApplication {
         this.projectInitializer.projectExists(projectOperationRoot),
       initializeProject: () =>
         this.projectInitializer.initialize(projectOperationRoot),
+      updateProjectFramework: () => this.projectInitializer.upgrade(projectOperationRoot),
+      projectUpdate,
+      updateGlobalFramework: async (output) => this.updateGlobalFramework(invocation, true, output),
+      globalUpdate,
+      listAgents: async () => {
+        if (invocation.projectRoot == null || this.agentLister == null) throw new Error('Agent listing requires a configured Spec-N-Roll project.');
+        return this.agentLister.list(invocation.projectRoot);
+      },
     });
   }
+
+  /**
+   * Updates the global framework and optionally starts a refreshed runtime session.
+   *
+   * @param invocation - Dispatcher invocation that selected this runtime.
+   * @param reload - True when an interactive session should be relaunched.
+   */
+  private async updateGlobalFramework(invocation: import('spec-n-roll-api').RuntimeInvocation, reload: boolean, output: import('#runtime/application/update/global-framework-updater.js').FrameworkUpdateOutput): Promise<void> {
+    if (this.globalFrameworkUpdater == null) throw new Error('Global framework updates are unavailable.');
+    this.logger.info('Updating global Spec-N-Roll framework.', { installSource: invocation.dispatcher.installSource, installDirectory: invocation.dispatcher.installDirectory });
+    await this.globalFrameworkUpdater.update(invocation.dispatcher.installSource, invocation.dispatcher.installDirectory, output);
+    if (reload) this.runtimeReloader?.reload();
+  }
+
+  /**
+   * Resolves whether the current global dispatcher source can be updated.
+   *
+   * @param invocation - Dispatcher invocation metadata for this runtime process.
+   * @returns Global framework update availability.
+   */
+  private resolveGlobalUpdate(invocation: import('spec-n-roll-api').RuntimeInvocation): import('spec-n-roll-sdk').ProjectFrameworkUpdateAvailability {
+    if (this.globalFrameworkUpdater == null) return { enabled: false, disabledReason: 'Global updates are unavailable.' };
+    try {
+      return this.globalFrameworkUpdater.isUpdateAvailable(invocation.dispatcher.installSource, invocation.dispatcher.packageVersion) ? { enabled: true } : { enabled: false, disabledReason: 'Global framework is current.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn('Unable to determine global framework update availability.', { message });
+      return { enabled: false, disabledReason: 'Unable to check npm for updates.' };
+    }
+  }
 }
+
+
+
+
+
+
+
+
+

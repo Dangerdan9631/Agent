@@ -304,6 +304,25 @@ describe('spec-n-roll dispatcher executable', () => {
     });
   });
 
+  it.each([
+    ['help', ['--help']],
+    ['version', ['--version']],
+    ['unknown command and arguments', ['publish', '--dry-run']],
+  ])('delegates %s to the selected runtime', (_description, argv) => {
+    const run = vi.fn(() => 0);
+    const application = { run } as unknown as DispatcherApplication;
+    const commandContainer = new DispatcherContainerFactory().create();
+    commandContainer.registerInstance(DispatcherApplication, application);
+
+    commandContainer
+      .resolve(DispatcherCli)
+      .run(['node', 'spec-n-roll', ...argv]);
+
+    expect(run).toHaveBeenCalledWith({
+      argv,
+      options: {},
+    });
+  });
   it('resolves concrete services through tsyringe auto construction', () => {
     const commandContainer = new DispatcherContainerFactory().create();
 

@@ -3,17 +3,24 @@
  */
 export interface ProjectInitializer {
   /**
-   * Determines whether a root already contains a Spec-N-Roll project.
+   * Determines whether the project configuration directory exists.
    *
    * @param projectRoot - Absolute project root to inspect.
-   * @returns true when the project configuration directory exists.
+   * @returns true when `.spec-n-roll` exists.
    */
   projectExists(projectRoot: string): boolean;
 
   /**
-   * Initializes a project from the globally installed runtime binary.
+   * Creates a new project-local framework installation.
    *
    * @param projectRoot - Absolute project root that receives the configuration.
    */
   initialize(projectRoot: string): void;
+
+  /**
+   * Replaces framework-owned files and migrates project configuration.
+   *
+   * @param projectRoot - Absolute existing project root to update.
+   */
+  upgrade(projectRoot: string): void;
 }

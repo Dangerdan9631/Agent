@@ -1,7 +1,7 @@
 /**
  * Identifies routes available in the interactive runtime.
  */
-export type RouteId = 'global-home' | 'local-home' | 'init';
+export type RouteId = 'global-home' | 'local-home' | 'init' | 'agents' | 'manage' | 'global-update' | 'project-update';
 
 /**
  * Maintains route history while preserving the selected home route as its root.
@@ -30,3 +30,7 @@ export class NavigationStack {
     return this.routes.length === 1;
   }
 }
+
+
+
+

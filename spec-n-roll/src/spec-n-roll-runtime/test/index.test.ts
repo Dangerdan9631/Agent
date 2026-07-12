@@ -232,6 +232,31 @@ describe('spec-n-roll-runtime executable', () => {
     }
   });
 
+  it('preserves user extension files while replacing framework-owned files during update', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'spec-n-roll-runtime-'));
+    const runtimeRoot = await mkdtemp(join(tmpdir(), 'spec-n-roll-runtime-'));
+    const runtimeBinaryPath = join(runtimeRoot, 'spec-n-roll-runtime.js');
+    const mcpBinaryPath = join(runtimeRoot, 'spec-n-roll-mcp.js');
+    const userExtensionPath = join(projectRoot, '.spec-n-roll', 'extensions', 'agents', 'codex', 'extension.mjs');
+
+    try {
+      await writeFile(runtimeBinaryPath, 'new runtime binary', 'utf8');
+      await writeFile(mcpBinaryPath, 'new mcp binary', 'utf8');
+      const initializer = new NodeProjectInitializer(runtimeBinaryPath, mcpBinaryPath);
+      initializer.initialize(projectRoot);
+      await writeFile(userExtensionPath, 'export default class UserExtension {}\n', 'utf8');
+      await writeFile(join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'), JSON.stringify({ agents: { codex: { enabled: false, retained: true } } }), 'utf8');
+
+      initializer.upgrade(projectRoot);
+
+      await expect(readFile(userExtensionPath, 'utf8')).resolves.toBe('export default class UserExtension {}\n');
+      await expect(readFile(join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'), 'utf8')).resolves.toContain('"retained": true');
+      await expect(readFile(join(projectRoot, '.spec-n-roll', 'cli', 'bin', 'spec-n-roll-runtime.js'), 'utf8')).resolves.toBe('new runtime binary');
+    } finally {
+      await rm(projectRoot, { force: true, recursive: true });
+      await rm(runtimeRoot, { force: true, recursive: true });
+    }
+  });
   it.each([
     ['codex', 'CodexAgentExtension'],
     ['cursor', 'CursorAgentExtension'],
@@ -504,3 +529,5 @@ describe('spec-n-roll-runtime executable', () => {
     }
   });
 });
+
+

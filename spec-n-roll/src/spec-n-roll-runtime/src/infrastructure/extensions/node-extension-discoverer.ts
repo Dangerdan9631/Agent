@@ -5,12 +5,14 @@ import {
   type ExtensionConfiguration,
   type ExtensionConfigurationEntry,
 } from 'spec-n-roll-api';
+import type { AgentExtensionRegistration, AgentExtensionRegistrationReader } from 'spec-n-roll-sdk';
+
 import type { ExtensionDiscoverer } from '#runtime/application/extensions/extension-discoverer.js';
 
 /**
  * Reads extension enabled-state configuration from the project filesystem.
  */
-export class NodeExtensionDiscoverer implements ExtensionDiscoverer {
+export class NodeExtensionDiscoverer implements ExtensionDiscoverer, AgentExtensionRegistrationReader {
   /**
    * Reads and validates the project's extension configuration without loading extensions.
    *
@@ -26,6 +28,20 @@ export class NodeExtensionDiscoverer implements ExtensionDiscoverer {
     );
     const content = await readFile(configurationPath, 'utf8');
     return this.parse(JSON.parse(content) as unknown, configurationPath);
+  }
+
+  /**
+   * Reads registered agent extension names and enabled state from configuration.
+   *
+   * @param projectRoot - Absolute project root containing `.spec-n-roll`.
+   * @returns Registered agent extensions and their enabled state.
+   */
+  async read(projectRoot: string): Promise<readonly AgentExtensionRegistration[]> {
+    const configuration = await this.discover(projectRoot);
+    return Object.entries(configuration.agents).map(([name, entry]) => ({
+      name,
+      enabled: entry.enabled,
+    }));
   }
 
   /**
@@ -67,3 +83,5 @@ export class NodeExtensionDiscoverer implements ExtensionDiscoverer {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }
+
+

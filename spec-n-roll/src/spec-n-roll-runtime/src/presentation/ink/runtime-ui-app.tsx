@@ -47,8 +47,9 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
   );
   const [route, setRoute] = useState<RouteId>(navigation.current());
   const routeTitle =
-    route === 'global-home' || route === 'local-home' ? 'Home' : route;
-  const [exitConfirmationKey, setExitConfirmationKey] =
+    route === 'global-home' || route === 'local-home' ? 'Home' : route === 'agents' ? 'Agents' : route === 'manage' ? 'Manage Spec-N-Roll' : route === 'global-update' ? 'Update Global Framework' : route === 'project-update' ? 'Update Project Framework' : route;
+  const [updateRunning, setUpdateRunning] = useState(false);
+  const [exitConfirmationKey, setExitConfirmationKey] = 
     useState<ExitConfirmationKey>();
 
   const requestExit = useCallback(
@@ -66,6 +67,7 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
   }, [exitConfirmationKey]);
 
   useInput((_input, key) => {
+    if (updateRunning) return;
     if (exitConfirmationKey === 'escape' && key.escape) {
       app.exit();
       return;
@@ -122,6 +124,7 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
             setRoute(navigation.current());
           }}
           onExitRequest={() => requestExit('enter')}
+          onUpdateRunningChange={setUpdateRunning}
           session={props.session}
         />
         {exitConfirmationKey != null ? (
@@ -145,14 +148,21 @@ export function RuntimeUiApp(props: RuntimeUiAppProps): React.ReactElement {
           </Box>
         ) : null}
       </Box>
-      <Box
-        height={layout.hintRows}
-        flexShrink={0}
-        borderStyle="single"
-        paddingX={1}
-      >
-        <Text color="gray">↑/↓ select · Enter open · Esc back</Text>
-      </Box>
+      {route === 'global-update' || route === 'project-update' ? null : (
+        <Box
+          height={layout.hintRows}
+          flexShrink={0}
+          borderStyle="single"
+          paddingX={1}
+        >
+          <Text color="gray">↑/↓ select · Enter open · Esc back</Text>
+        </Box>
+      )}
     </Box>
   );
 }
+
+
+
+
+

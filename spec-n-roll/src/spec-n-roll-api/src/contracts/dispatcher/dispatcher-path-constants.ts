@@ -1,6 +1,5 @@
 /**
- * Names the project configuration directory used to recognize a Spec-N-Roll
- * project root.
+ * Names the project configuration directory used to recognize a Spec-N-Roll project root.
  */
 export const SPEC_N_ROLL_CONFIG_DIRECTORY_NAME = '.spec-n-roll';
 
@@ -20,7 +19,15 @@ export const LOCAL_CLI_RELATIVE_PATH_SEGMENTS = [
 ] as const;
 
 /**
- * Defines the project-local MCP server path components below a project root.
+ * Defines the framework metadata file path below a project root.
+ */
+export const LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS = [
+  SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
+  'framework.json',
+] as const;
+
+/**
+ * Defines the project-local MCP launcher path components below a project root.
  */
 export const LOCAL_MCP_RELATIVE_PATH_SEGMENTS = [
   SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
