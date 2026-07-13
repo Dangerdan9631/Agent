@@ -8,6 +8,7 @@ const animations = [
   ["waiting", 6],
   ["running", 6],
   ["review", 6],
+  ["look-directions", 16],
 ];
 
 const grid = document.querySelector("#animation-grid");
@@ -21,13 +22,26 @@ const players = animations.map(([name, frameCount]) => {
       <h2>${name.replace("-", " ")}</h2>
       <span class="frame-count">${frameCount} frames</span>
     </div>
-    <div class="stage"><img alt="${name} animation frame" /></div>`;
+    <div class="comparison" aria-label="${name} layer comparison">
+      <figure class="stage"><figcaption>Robot</figcaption><img data-layer="robot" alt="${name} robot animation frame" /></figure>
+      <figure class="stage"><figcaption>Drone</figcaption><img data-layer="drone" alt="${name} drone animation frame" /></figure>
+      <figure class="stage"><figcaption>Combined</figcaption><img data-layer="combined" alt="${name} combined animation frame" /></figure>
+    </div>`;
   grid.append(card);
-  return { name, frameCount, frame: 0, image: card.querySelector("img") };
+  return { name, frameCount, frame: 0, images: {
+    robot: card.querySelector('[data-layer="robot"]'),
+    drone: card.querySelector('[data-layer="drone"]'),
+    combined: card.querySelector('[data-layer="combined"]'),
+  }};
 });
 
 function render(player) {
-  player.image.src = `../source/${player.name}/${String(player.frame).padStart(2, "0")}.png`;
+  const filename = player.name === "look-directions"
+    ? ["000", "022.5", "045", "067.5", "090", "112.5", "135", "157.5", "180", "202.5", "225", "247.5", "270", "292.5", "315", "337.5"][player.frame]
+    : String(player.frame).padStart(2, "0");
+  player.images.robot.src = `../source/${player.name}/robot/${filename}.png`;
+  player.images.drone.src = `../source/${player.name}/drone/${filename}.png`;
+  player.images.combined.src = `../source/${player.name}/${filename}.png`;
 }
 
 players.forEach(render);

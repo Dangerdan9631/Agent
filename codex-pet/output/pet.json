@@ -1,6 +1,6 @@
 {
-  "id": "commander-drone",
-  "displayName": "Commander Drone",
+  "id": "commander",
+  "displayName": "Commander",
   "description": "A stern futuristic battlesuit commander accompanied by a hovering tactical scout drone.",
   "spriteVersionNumber": 2,
   "spritesheetPath": "spritesheet.webp"

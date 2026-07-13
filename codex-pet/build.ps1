@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $python = 'C:\Users\dangr\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
 $skill = 'C:\Users\dangr\.codex\skills\hatch-pet\scripts'
-$temp = Join-Path ([System.IO.Path]::GetTempPath()) 'commander-drone-pet-build'
+$temp = Join-Path ([System.IO.Path]::GetTempPath()) 'commander-pet-build'
 Remove-Item $temp -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $temp | Out-Null
 & $python "$skill\compose_atlas.py" --frames-root "$PSScriptRoot\source" --output "$temp\standard.png" --webp-output "$temp\standard.webp"

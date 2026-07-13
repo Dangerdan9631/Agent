@@ -1,15 +1,15 @@
-# Commander Drone
+# Commander
 
-This directory is the maintainable source package for the Commander Drone Codex pet.
+This directory is the maintainable source package for the Commander Codex pet.
 
 ## Layout
 
 - `robot-cutout.png` — original source artwork.
-- `source/` — final individual PNG frames for the nine standard animation rows and all 16 look directions.
+- `source/` — composite PNG frames for the nine standard animation rows and all 16 look directions. Each animation folder also includes matching `robot/` and `drone/` visible-layer frames.
 - `output/` — the two files installed by Codex: `pet.json` and `spritesheet.webp`.
 - `build.ps1` — rebuilds the atlas from `source/` using the installed hatch-pet assembly scripts.
-- `install.ps1` — copies the contents of `output/` into `%USERPROFILE%\.codex\pets\commander-drone`.
-- `preview/` — dependency-free browser app that previews every standard animation from its source frames.
+- `install.ps1` — copies the contents of `output/` into `%USERPROFILE%\.codex\pets\commander`.
+- `preview/` — dependency-free browser app that previews the robot, drone, and combined layers side by side.
 - `run-preview.ps1` — opens the preview app in the default browser.
 
 ## Preview animations
@@ -20,7 +20,7 @@ From this directory, run:
 .\run-preview.ps1
 ```
 
-The page opens in your default browser and shows all nine standard animation states in a looping grid. Use the frame-rate selector or pause button to inspect timing. It reads the PNGs directly from `source/`, so no build or install step is needed. You can also open `preview\index.html` directly in a browser.
+The page opens in your default browser and shows every animation state (including look directions) in a looping grid. Each state presents robot, drone, and combined frames side by side. Use the frame-rate selector or pause button to inspect timing. It reads the PNGs directly from `source/`, so no build or install step is needed. You can also open `preview\index.html` directly in a browser.
 
 ## Modify and rebuild
 

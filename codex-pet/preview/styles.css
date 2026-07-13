@@ -24,12 +24,15 @@ button, select { border: 1px solid #38516f; border-radius: .5rem; background: #1
 button { cursor: pointer; font-weight: 700; }
 button:hover { background: #1b3554; }
 
-.animation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.animation-grid { display: grid; gap: 1rem; }
 .card { border: 1px solid #233b58; border-radius: .85rem; overflow: hidden; background: #0d1a2b; box-shadow: 0 12px 28px rgb(0 0 0 / .18); }
 .card-header { display: flex; justify-content: space-between; align-items: baseline; padding: .85rem 1rem; }
 .card h2 { margin: 0; font-size: 1rem; text-transform: capitalize; }
 .frame-count { color: #7f96b1; font-size: .8rem; }
-.stage { display: grid; place-items: center; min-height: 245px; padding: 1rem; background-color: #142439; background-image: linear-gradient(45deg, #1b304a 25%, transparent 25%), linear-gradient(-45deg, #1b304a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1b304a 75%), linear-gradient(-45deg, transparent 75%, #1b304a 75%); background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; }
+.comparison { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stage { display: grid; place-items: center; min-height: 245px; margin: 0; padding: .6rem; border-left: 1px solid #233b58; background-color: #142439; background-image: linear-gradient(45deg, #1b304a 25%, transparent 25%), linear-gradient(-45deg, #1b304a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1b304a 75%), linear-gradient(-45deg, transparent 75%, #1b304a 75%); background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; }
+.stage:first-child { border-left: 0; }
+.stage figcaption { align-self: start; color: #aebed1; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .stage img { display: block; width: 192px; height: 208px; max-width: 100%; object-fit: contain; image-rendering: auto; }
 
-@media (max-width: 620px) { header { align-items: start; flex-direction: column; } .controls { width: 100%; justify-content: space-between; } }
+@media (max-width: 620px) { header { align-items: start; flex-direction: column; } .controls { width: 100%; justify-content: space-between; } .comparison { grid-template-columns: 1fr; } .stage { border-left: 0; border-top: 1px solid #233b58; } .stage:first-child { border-top: 0; } }

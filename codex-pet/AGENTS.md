@@ -1,6 +1,6 @@
-# Commander Drone Pet Contribution Guide
+# Commander Pet Contribution Guide
 
-This repository is the maintainable source package for the Commander Drone Codex pet.
+This repository is the maintainable source package for the Commander Codex pet.
 
 ## Repository layout
 
@@ -11,7 +11,7 @@ This repository is the maintainable source package for the Commander Drone Codex
   basis for the final pixel art frames.
 - `output/` contains the Codex-installable artifacts: `pet.json` and `spritesheet.webp`.
 - `build.ps1` rebuilds the sprite atlas from `source/` using the installed hatch-pet assembly scripts.
-- `install.ps1` copies `output/` to `%USERPROFILE%\.codex\pets\commander-drone`.
+- `install.ps1` copies `output/` to `%USERPROFILE%\.codex\pets\commander`.
 - `preview/` is a dependency-free browser preview application that reads frames directly from `source/`.
 - `run-preview.ps1` opens the preview application in the default browser.
 
@@ -28,7 +28,7 @@ disappear, or swap sides without an intentional state-specific reason.
 
 ### Character identity
 
-Commander Drone is a compact, ruthless coding mech accompanied by a small spherical scout drone. The mech is precise, relentless, and intimidating: an unstoppable machine built to execute work, not a friendly mascot. The paired drone must be present in every frame and always be layered behind the robot; it is a core part of the character's silhouette, motion, and personality.
+Commander is a compact, ruthless coding mech accompanied by a small spherical scout drone. The mech is precise, relentless, and intimidating: an unstoppable machine built to execute work, not a friendly mascot. The paired drone must be present in every frame and always be layered behind the robot; it is a core part of the character's silhouette, motion, and personality.
 
 The mech has a broad armored upper body, sturdy planted legs, articulated black joints, clenched mechanical hands, a narrow cyan visor, and two long swept antennae/horns. Its bright circular chest reactor is the main focal point. The scout is a cream-and-black orb with a single cyan eye, rear thruster, and orbital ring. The ring hangs beneath the drone and responds with a subtle, delayed bouncy swing to changes in the drone's motion.
 
