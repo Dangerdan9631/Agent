@@ -1,0 +1,152 @@
+{
+  "ok": false,
+  "frames_root": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames",
+  "states": [
+    "running-right"
+  ],
+  "errors": [
+    "running-right frame 02 is empty or too sparse (8 pixels)"
+  ],
+  "warnings": [
+    "running-right used extraction method stable-slots; component extraction is preferred",
+    "running-right frame 02 is much smaller than the row median (8 vs 6064)"
+  ],
+  "rows": [
+    {
+      "state": "running-right",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": "stable-slots",
+      "ok": false,
+      "errors": [
+        "running-right frame 02 is empty or too sparse (8 pixels)"
+      ],
+      "warnings": [
+        "running-right used extraction method stable-slots; component extraction is preferred",
+        "running-right frame 02 is much smaller than the row median (8 vs 6064)"
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 6318,
+          "bbox": [
+            42,
+            48,
+            150,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 71
+        },
+        {
+          "index": 1,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 6239,
+          "bbox": [
+            42,
+            48,
+            150,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 63
+        },
+        {
+          "index": 2,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 8,
+          "bbox": [
+            93,
+            101,
+            99,
+            105
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 2
+        },
+        {
+          "index": 3,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 6040,
+          "bbox": [
+            43,
+            48,
+            149,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 58
+        },
+        {
+          "index": 4,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 6070,
+          "bbox": [
+            42,
+            48,
+            150,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 81
+        },
+        {
+          "index": 5,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 6021,
+          "bbox": [
+            44,
+            48,
+            148,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 72
+        },
+        {
+          "index": 6,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 6059,
+          "bbox": [
+            41,
+            48,
+            150,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 79
+        },
+        {
+          "index": 7,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11655,
+          "bbox": [
+            5,
+            48,
+            187,
+            160
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 165
+        }
+      ]
+    }
+  ]
+}

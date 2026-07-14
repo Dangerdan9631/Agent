@@ -1,0 +1,150 @@
+{
+  "ok": false,
+  "frames_root": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames",
+  "states": [
+    "running-right"
+  ],
+  "errors": [
+    "running-right frame 02 is empty or too sparse (1 pixels)"
+  ],
+  "warnings": [
+    "running-right frame 02 is much smaller than the row median (1 vs 18115)"
+  ],
+  "rows": [
+    {
+      "state": "running-right",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": "components",
+      "ok": false,
+      "errors": [
+        "running-right frame 02 is empty or too sparse (1 pixels)"
+      ],
+      "warnings": [
+        "running-right frame 02 is much smaller than the row median (1 vs 18115)"
+      ],
+      "frames": [
+        {
+          "index": 0,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18292,
+          "bbox": [
+            5,
+            8,
+            187,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 444
+        },
+        {
+          "index": 1,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18506,
+          "bbox": [
+            5,
+            7,
+            187,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 402
+        },
+        {
+          "index": 2,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 1,
+          "bbox": [
+            95,
+            103,
+            96,
+            104
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 1
+        },
+        {
+          "index": 3,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18475,
+          "bbox": [
+            5,
+            6,
+            187,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 426
+        },
+        {
+          "index": 4,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17938,
+          "bbox": [
+            5,
+            7,
+            187,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 455
+        },
+        {
+          "index": 5,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 18658,
+          "bbox": [
+            6,
+            5,
+            186,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 481
+        },
+        {
+          "index": 6,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 17558,
+          "bbox": [
+            5,
+            8,
+            187,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 393
+        },
+        {
+          "index": 7,
+          "file": "D:\\Dan\\Source\\GitHub\\Dangerdan9631\\Agent\\codex-pet\\tmp\\robot-thruster-refresh\\frames\\running-right\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 11982,
+          "bbox": [
+            5,
+            48,
+            187,
+            159
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 146
+        }
+      ]
+    }
+  ]
+}
