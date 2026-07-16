@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "canvas": [192, 208],
+  "frames": ["00", "01", "02", "03", "04", "05", "06", "07"],
+  "layerOrder": ["robot", "drone"],
+  "layers": {
+    "robot": {"source": "robot/{frame}.png"},
+    "drone": {
+      "source": "drone/{frame}.png",
+      "transform": {
+        "anchor": "content-center",
+        "scale": 0.28,
+        "position": {
+          "type": "ellipse",
+          "center": [-48, -55],
+          "radii": [3, 2],
+          "startAngle": 0,
+          "endAngle": 360
+        }
+      }
+    }
+  }
+}

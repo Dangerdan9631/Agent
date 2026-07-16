@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "canvas": [192, 208],
+  "frames": ["00", "01", "02", "03"],
+  "layerOrder": ["drone", "robot"],
+  "layers": {
+    "drone": {
+      "source": "drone/{frame}.png",
+      "transform": {"anchor": "content-center", "scale": 0.6}
+    },
+    "robot": {"source": "robot/{frame}.png"}
+  }
+}
