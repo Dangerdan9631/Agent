@@ -23,6 +23,19 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: [
+      'example/.spec-n-roll/cli/bin/**/*.js',
+      'example/.spec-n-roll/extensions/**/*.mjs',
+    ],
+    languageOptions: {
+      globals: {
+        clearTimeout: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
+  },
   ...tseslint.configs.recommended,
   {
     rules: {

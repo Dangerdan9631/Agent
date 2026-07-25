@@ -6,6 +6,11 @@ import { collectHookInstructions, type StepHookInstruction } from '../extensions
 
 export type { StepHookInstruction } from '../extensions/hooks.js';
 import { readManifestosForStep } from '../manifesto/index.js';
+import {
+  ManifestoResolver,
+  type ManifestoProvenance,
+  type ResolvedManifesto,
+} from '../manifesto/resolver.js';
 import { readSetListsFile } from '../setlists/index.js';
 import { taskSpecDir } from './paths.js';
 import { readWorkflowState, writeWorkflowState } from './workflow-state.js';
@@ -14,6 +19,7 @@ import {
   resolveRegisteredWorkflowStepIds,
 } from '../workflow/step-manifest.js';
 import type { WorkflowState } from '../workflow/state.js';
+import { readWorkflowConfig } from '../workflow/artifacts.js';
 
 /**
  * One manifesto entry included in a step init response.
@@ -35,6 +41,30 @@ export interface StepInitManifestoEntry {
    * Raw markdown body loaded from disk.
    */
   content: string;
+  /**
+   * Stable manifesto identity when loaded from a versioned declaration.
+   */
+  id?: string;
+  /**
+   * Exact semantic version when loaded from a versioned declaration.
+   */
+  version?: string;
+  /**
+   * Neutral purpose when loaded from a versioned declaration.
+   */
+  purpose?: string;
+  /**
+   * Optional read-only input schema.
+   */
+  inputSchema?: Record<string, unknown>;
+  /**
+   * Optional neutral input template.
+   */
+  inputTemplate?: string;
+  /**
+   * Declared tool and MCP compatibility requirements.
+   */
+  requirements?: ResolvedManifesto['requirements'];
 }
 
 /**
@@ -83,6 +113,10 @@ export interface StepInitResult {
    * Scope-labeled manifesto entries loaded for the step.
    */
   manifestos?: StepInitManifestoEntry[];
+  /**
+   * Ordered load provenance for every configured manifesto reference.
+   */
+  manifestoProvenance?: ManifestoProvenance[];
   /**
    * Enabled before-phase hook instructions for the agent to call.
    */
@@ -236,13 +270,34 @@ export async function runStepInit(
     };
   }
 
-  const manifestoEntries = await readManifestosForStep(resolvedRoot, stepId);
+  const config = await readWorkflowConfig(resolvedRoot);
+  const step = config?.steps.find((entry) => entry.id === stepId);
+  const configuredManifestos =
+    config != null &&
+    step != null &&
+    ((config.globalManifestos?.length ?? 0) > 0 || (step.manifestos?.length ?? 0) > 0);
+  const manifestoResolution = configuredManifestos
+    ? await new ManifestoResolver().resolve(resolvedRoot, config, step)
+    : null;
+  const manifestoEntries: StepInitManifestoEntry[] =
+    manifestoResolution?.manifestos.map((entry) => ({
+      scope: entry.scope,
+      stepId: entry.scope === 'step' ? stepId : undefined,
+      path: entry.source,
+      content: entry.content,
+      id: entry.id,
+      version: entry.version,
+      purpose: entry.purpose,
+      inputSchema: entry.inputSchema,
+      inputTemplate: entry.inputTemplate,
+      requirements: entry.requirements,
+    })) ?? (await readManifestosForStep(resolvedRoot, stepId));
   const hookCollection = await collectHookInstructions({
     projectRoot: resolvedRoot,
     stepId,
     phase: 'before',
   });
-  const diagnostics = [...hookCollection.diagnostics];
+  const diagnostics = [...hookCollection.diagnostics, ...(manifestoResolution?.diagnostics ?? [])];
 
   if (!manifestoEntries.some((entry) => entry.scope === 'global')) {
     diagnostics.push('no global manifesto defined');
@@ -259,10 +314,27 @@ export async function runStepInit(
     interruptedArtifacts: workflowState.interruptedArtifacts,
     lifecycle: {
       activeStepId: stepId,
-      status: 'in-progress',
-      initAt,
+      status: manifestoResolution?.blocking === true ? 'pending-init' : 'in-progress',
+      initAt: manifestoResolution?.blocking === true ? undefined : initAt,
+      manifestoProvenance: manifestoResolution?.provenance,
     },
   });
+
+  if (manifestoResolution?.blocking === true) {
+    const blocked = manifestoResolution.provenance.filter((entry) => entry.outcome === 'blocked');
+    return {
+      taskSpecId,
+      slug,
+      stepId,
+      workflowState: updatedState,
+      manifestos: manifestoEntries,
+      manifestoProvenance: manifestoResolution.provenance,
+      beforeHooks: [],
+      diagnostics,
+      blocking: true,
+      message: blocked.map((entry) => entry.message).join(' '),
+    };
+  }
 
   const setListId = await resolveSetListId(resolvedRoot, workflowState.workflowVariantId);
 
@@ -273,6 +345,7 @@ export async function runStepInit(
     setListId,
     workflowState: updatedState,
     manifestos: manifestoEntries,
+    manifestoProvenance: manifestoResolution?.provenance,
     beforeHooks: hookCollection.instructions,
     diagnostics,
     blocking: false,
@@ -364,6 +437,7 @@ export async function runStepFinalize(
       initAt: lifecycle.initAt,
       validatedAt: now,
       finalizedAt: now,
+      manifestoProvenance: lifecycle.manifestoProvenance,
     },
   });
 

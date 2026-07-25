@@ -53,6 +53,14 @@ export {
   type ValidateManifestoDraftOptions,
 } from './validation.js';
 
+export {
+  ManifestoResolver,
+  type ManifestoLoadOutcome,
+  type ManifestoProvenance,
+  type ManifestoResolution,
+  type ResolvedManifesto,
+} from './resolver.js';
+
 /**
  * Reads the global manifesto file when present.
  *

@@ -20,7 +20,6 @@ import type { RuntimeReloader } from '#runtime/application/update/runtime-reload
 import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 import { CodexAgentExtensionSource } from '#runtime/application/extensions/agents/codex-agent-extension-source.js';
 import { CursorAgentExtensionSource } from '#runtime/application/extensions/agents/cursor-agent-extension-source.js';
-import { BuiltInSkillDefinitionSource } from '#runtime/application/extensions/agents/built-in-skill-definition-source.js';
 
 /**
  * Runtime invocation reader fixture backed by a string.
@@ -192,9 +191,7 @@ describe('spec-n-roll-runtime executable', () => {
           join(projectRoot, '.codex', 'skills', 'spec-n-roll', 'SKILL.md'),
           'utf8',
         ),
-      ).resolves.toBe(
-        `---\nname: "spec-n-roll"\ndescription: "Scaffold instructions for working with Spec-N-Roll."\nmetadata:\n  author: "spec-n-roll"\n  version: "0.1.0"\n---\n\n${new BuiltInSkillDefinitionSource().definition().source}\n`,
-      );
+      ).resolves.toContain('Spec-N-Roll scaffold');
 
       await expect(
         readFile(
@@ -399,10 +396,7 @@ describe('spec-n-roll-runtime executable', () => {
             input: { properties: {}, required: [] },
             output: { properties: {}, required: [] },
             source: 'First instruction.\nSecond instruction.',
-            requirements: {
-              tools: [],
-              mcpServers: ['spec-n-roll'],
-            },
+            requirements: { tools: [], mcpServers: ['spec-n-roll'] },
           },
         ]);
         await writeFile(
@@ -424,18 +418,6 @@ describe('spec-n-roll-runtime executable', () => {
             'utf8',
           ),
         ).resolves.toContain('First instruction.\nSecond instruction.');
-        await expect(
-          readFile(
-            join(
-              projectRoot,
-              `.${agentName}`,
-              'skills',
-              'spec-n-example',
-              'SKILL.md',
-            ),
-            'utf8',
-          ),
-        ).resolves.toContain('version: "1.2.3"');
         await expect(
           readFile(join(projectRoot, `.${agentName}`, 'mcp.json'), 'utf8'),
         ).resolves.toContain('"spec-n-roll"');

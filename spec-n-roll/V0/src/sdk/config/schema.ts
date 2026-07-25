@@ -42,6 +42,92 @@ export const taskSpecIdPattern = /^[0-9]{3,}$/;
 export const taskSpecIdSchema = z.string().regex(taskSpecIdPattern);
 
 /**
+ * Zod schema for an ordered manifesto reference attached to a workflow or step.
+ */
+export const manifestoReferenceSchema = z
+  .object({
+    /**
+     * Stable manifesto id resolved from the project manifesto registry.
+     */
+    id: kebabCaseIdSchema,
+    /**
+     * Exact semantic version required by this reference, or the registered version when omitted.
+     */
+    version: semverSchema.optional(),
+    /**
+     * Whether resolution failure blocks step execution; defaults to true.
+     */
+    required: z.boolean().optional(),
+  })
+  .strict();
+
+/**
+ * Ordered reference to a versioned manifesto declaration.
+ */
+export type ManifestoReference = z.infer<typeof manifestoReferenceSchema>;
+
+/**
+ * Zod schema for external capabilities declared by a neutral manifesto.
+ */
+export const manifestoRequirementsSchema = z
+  .object({
+    /**
+     * Stable tool names needed to follow the manifesto guidance.
+     */
+    tools: z.array(z.string().min(1)).optional(),
+    /**
+     * Stable MCP server names needed to follow the manifesto guidance.
+     */
+    mcpServers: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
+
+/**
+ * Zod schema for one versioned, agent-neutral manifesto declaration.
+ */
+export const manifestoDefinitionSchema = z
+  .object({
+    /**
+     * Stable kebab-case identity retained across manifesto versions.
+     */
+    id: kebabCaseIdSchema,
+    /**
+     * Semantic version identifying this exact instruction contract.
+     */
+    version: semverSchema,
+    /**
+     * Non-empty neutral description of the guidance supplied by the manifesto.
+     */
+    purpose: z.string().min(1),
+    /**
+     * Project-relative Markdown source under the user-owned manifesto configuration directory.
+     */
+    source: z.string().min(1),
+    /**
+     * Optional JSON Schema describing approved read-only context accepted by the manifesto.
+     */
+    inputSchema: z.record(z.unknown()).optional(),
+    /**
+     * Optional neutral template populated only from approved read-only context.
+     */
+    inputTemplate: z.string().min(1).optional(),
+    /**
+     * Optional external capability declarations used for compatibility validation.
+     */
+    requirements: manifestoRequirementsSchema.optional(),
+    /**
+     * Stable protected rule names that step manifestos may refine but cannot replace.
+     */
+    protectedRules: z.array(kebabCaseIdSchema).optional(),
+  })
+  .strict();
+
+/**
+ * Versioned, agent-neutral manifesto declaration stored in workflow configuration.
+ */
+export type ManifestoDefinition = z.infer<typeof manifestoDefinitionSchema>;
+
+/**
  * Zod schema for one AI coding agent selected for a project.
  */
 export const agentConfigSchema = z
@@ -115,6 +201,10 @@ export const workflowStepSchema = z
      * Optional list of project-relative artifact paths this step is expected to produce; supports partial-completion detection.
      */
     outputs: z.array(z.string()).optional(),
+    /**
+     * Ordered step-specific manifestos loaded after all workflow-global manifestos.
+     */
+    manifestos: z.array(manifestoReferenceSchema).optional(),
   })
   .strict();
 
@@ -199,6 +289,14 @@ export const workflowConfigSchema = z
      */
     agents: z.array(agentConfigSchema),
     /**
+     * Registry of versioned, agent-neutral manifesto declarations available to workflows and steps.
+     */
+    manifestos: z.array(manifestoDefinitionSchema).optional(),
+    /**
+     * Ordered manifesto references loaded before every workflow step.
+     */
+    globalManifestos: z.array(manifestoReferenceSchema).optional(),
+    /**
      * Non-empty registry of reusable step definitions composed by workflow variants.
      */
     steps: z.array(workflowStepSchema).min(1),
@@ -262,6 +360,41 @@ export const stepLifecycleSchema = z
      * Current lifecycle phase for the active step attempt.
      */
     status: stepLifecycleStatusSchema,
+    /**
+     * Ordered manifesto resolution provenance for this exact step attempt.
+     */
+    manifestoProvenance: z
+      .array(
+        z
+          .object({
+            /**
+             * Stable manifesto identity.
+             */
+            id: kebabCaseIdSchema,
+            /**
+             * Resolved or requested semantic version, or `unknown` when unavailable.
+             */
+            version: z.string().min(1),
+            /**
+             * Zero-based global-then-step resolution position.
+             */
+            order: z.number().int().nonnegative(),
+            /**
+             * Scope contributing the reference.
+             */
+            scope: z.enum(['global', 'step']),
+            /**
+             * Resolution and load result.
+             */
+            outcome: z.enum(['loaded', 'skipped', 'blocked']),
+            /**
+             * Diagnostic explaining skipped or blocked outcomes.
+             */
+            message: z.string().optional(),
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 

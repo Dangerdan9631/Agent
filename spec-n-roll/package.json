@@ -18,7 +18,7 @@
     "lint": "eslint . \u0026\u0026 prettier --check .",
     "lint:fix": "eslint . --fix \u0026\u0026 prettier --write .",
     "test": "vitest run",
-    "test:cucumber": "cucumber-js src/spec-n-roll-test/test/features --import src/spec-n-roll-test/dist/cucumber/**/*.js",
+    "test:cucumber": "tsup src/spec-n-roll-test/src/cucumber/stubs.steps.ts --format esm --clean --external @cucumber/cucumber --out-dir src/spec-n-roll-test/dist/cucumber && cucumber-js src/spec-n-roll-test/test/features --import src/spec-n-roll-test/dist/cucumber/**/*.js",
     "arch": "npm run arch --workspace spec-n-roll-arch",
     "arch-view": "npm run view --workspace spec-n-roll-arch"
   },

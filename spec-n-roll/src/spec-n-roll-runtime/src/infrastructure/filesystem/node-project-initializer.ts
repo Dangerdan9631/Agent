@@ -24,7 +24,6 @@ import type { ProjectInitializer } from '#runtime/application/init/project-initi
 import { CodexAgentExtensionSource } from '#runtime/application/extensions/agents/codex-agent-extension-source.js';
 import { CursorAgentExtensionSource } from '#runtime/application/extensions/agents/cursor-agent-extension-source.js';
 import { BuiltInAgentInstructionSource } from '#runtime/application/extensions/agents/built-in-agent-instruction-source.js';
-import { BuiltInSkillDefinitionSource } from '#runtime/application/extensions/agents/built-in-skill-definition-source.js';
 import { FrameworkExtensionOwnership } from '#runtime/infrastructure/update/framework-extension-ownership.js';
 import { NodeProjectConfigurationMigrator } from '#runtime/infrastructure/update/node-project-configuration-migrator.js';
 
@@ -53,7 +52,6 @@ export class NodeProjectInitializer
     ),
     private readonly codexAgentExtensionSource = new CodexAgentExtensionSource(),
     private readonly cursorAgentExtensionSource = new CursorAgentExtensionSource(),
-    private readonly skillDefinitionSource = new BuiltInSkillDefinitionSource(),
     private readonly instructionSource = new BuiltInAgentInstructionSource(),
     private readonly ownership = new FrameworkExtensionOwnership(),
     private readonly migrator: ProjectConfigurationMigrator = new NodeProjectConfigurationMigrator(),
@@ -219,11 +217,7 @@ export class NodeProjectInitializer
         !existsSync(instructionPath) ||
         this.ownership.isFrameworkOwnedInstruction(instructionPath)
       )
-        writeFileSync(
-          instructionPath,
-          this.instructionSource.source(this.skillDefinitionSource.definition()),
-          'utf8',
-        );
+        writeFileSync(instructionPath, this.instructionSource.source(name), 'utf8');
     }
     const configurationPath = join(extensionsRoot, 'extensions.json');
     const selectedDefaults = defaults.filter(
