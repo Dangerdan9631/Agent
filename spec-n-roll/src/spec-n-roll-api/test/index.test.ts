@@ -7,6 +7,7 @@ import {
   type PathResolutionContext,
   type RuntimeInvocation,
   type RuntimeTarget,
+  type SkillDefinition,
 } from '#api/index.js';
 
 describe('spec-n-roll-api contracts', () => {
@@ -47,5 +48,30 @@ describe('spec-n-roll-api contracts', () => {
     expect(join(...LOCAL_CLI_RELATIVE_PATH_SEGMENTS)).toMatch(
       /\.spec-n-roll[\\/]cli[\\/]bin[\\/]spec-n-roll/u,
     );
+  });
+
+  it('describes skills without depending on agent-native artifacts', () => {
+    const definition: SkillDefinition = {
+      identifier: 'specification-review',
+      purpose: 'Reviews a specification for actionable gaps.',
+      version: '1.0.0',
+      input: {
+        properties: { specification: { type: 'string' } },
+        required: ['specification'],
+      },
+      output: {
+        properties: { findings: { type: 'array' } },
+        required: ['findings'],
+      },
+      source: 'Review the supplied specification.',
+      requirements: {
+        tools: ['filesystem.read'],
+        mcpServers: ['spec-n-roll'],
+      },
+    };
+
+    expect(definition.identifier).toBe('specification-review');
+    expect(definition.input.required).toEqual(['specification']);
+    expect(definition.requirements.mcpServers).toEqual(['spec-n-roll']);
   });
 });

@@ -35,18 +35,17 @@ export default class CodexAgentExtension {
    */
   async createSkills(skills) {
     for (const skill of skills) {
-      const metadata = skill.metadata ?? CodexAgentExtension.defaultSkillMetadata;
-      const skillPath = join(process.cwd(), '.codex', 'skills', skill.name, 'SKILL.md');
+      const skillPath = join(process.cwd(), '.codex', 'skills', skill.identifier, 'SKILL.md');
       const content = [
         '---',
-        \`name: \${JSON.stringify(skill.name)}\`,
-        \`description: \${JSON.stringify(skill.description)}\`,
+        \`name: \${JSON.stringify(skill.identifier)}\`,
+        \`description: \${JSON.stringify(skill.purpose)}\`,
         'metadata:',
-        \`  author: \${JSON.stringify(metadata.author)}\`,
-        \`  version: \${JSON.stringify(metadata.version)}\`,
+        \`  author: \${JSON.stringify(CodexAgentExtension.defaultSkillMetadata.author)}\`,
+        \`  version: \${JSON.stringify(skill.version)}\`,
         '---',
         '',
-        ...skill.instructions.map((instruction) => instruction.content),
+        skill.source,
         '',
       ].join('\\n');
       await mkdir(dirname(skillPath), { recursive: true });

@@ -1,4 +1,4 @@
-import type { AgentSkill } from '#api/contracts/extensions/agents/agent-skill.js';
+import type { SkillDefinition } from '#api/contracts/skills/skill-definition.js';
 
 /**
  * Integrates Spec-N-Roll skills and MCP configuration with one coding agent.
@@ -10,7 +10,7 @@ export interface AgentExtension {
    * @param skills - Ordered skill configurations to create.
    * @returns A promise that resolves when the skills are created.
    */
-  createSkills(skills: readonly AgentSkill[]): Promise<void>;
+  createSkills(skills: readonly SkillDefinition[]): Promise<void>;
 
   /**
    * Configures this agent's Model Context Protocol integration.

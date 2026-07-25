@@ -8,11 +8,11 @@ export {
   SPEC_N_ROLL_CONFIG_DIRECTORY_NAME,
 } from '#api/contracts/dispatcher/dispatcher-path-constants.js';
 export type { AgentExtension } from '#api/contracts/extensions/agents/agent-extension.js';
-export type { AgentInstruction } from '#api/contracts/extensions/agents/agent-instruction.js';
-export type { AgentSkill } from '#api/contracts/extensions/agents/agent-skill.js';
-export type { AgentSkillMetadata } from '#api/contracts/extensions/agents/agent-skill-metadata.js';
 export type { ExtensionConfiguration } from '#api/contracts/extensions/configuration/extension-configuration.js';
 export type { ExtensionConfigurationEntry } from '#api/contracts/extensions/configuration/extension-configuration-entry.js';
+export type { SkillDataShape } from '#api/contracts/skills/skill-data-shape.js';
+export type { SkillDefinition } from '#api/contracts/skills/skill-definition.js';
+export type { SkillRequirements } from '#api/contracts/skills/skill-requirements.js';
 export type { PathResolutionContext } from '#api/contracts/project/path-resolution-context.js';
 export type { ProjectRootResolution } from '#api/contracts/project/project-root-resolution.js';
 export type { RuntimeInvocation } from '#api/contracts/runtime/runtime-invocation.js';
