@@ -64,7 +64,10 @@ export class RuntimeApplication {
       this.logger.info('Initializing Spec-N-Roll project.', {
         projectRoot: initRequest.projectRoot,
       });
-      this.projectInitializer.initialize(initRequest.projectRoot);
+      this.projectInitializer.initialize(
+        initRequest.projectRoot,
+        initRequest.agents,
+      );
       return;
     }
 
@@ -125,8 +128,13 @@ export class RuntimeApplication {
       projectFound,
       projectExists: () =>
         this.projectInitializer.projectExists(projectOperationRoot),
-      initializeProject: () =>
-        this.projectInitializer.initialize(projectOperationRoot),
+      initializeProject: (agents) =>
+        this.projectInitializer.initialize(projectOperationRoot, agents),
+      configureBuiltInAgents: (agents) =>
+        this.projectInitializer.configureBuiltInAgents(
+          projectOperationRoot,
+          agents,
+        ),
       updateProjectFramework: () =>
         this.projectInitializer.upgrade(projectOperationRoot),
       projectUpdate,

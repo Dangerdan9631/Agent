@@ -20,6 +20,7 @@ import type { RuntimeReloader } from '#runtime/application/update/runtime-reload
 import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 import { CodexAgentExtensionSource } from '#runtime/application/extensions/agents/codex-agent-extension-source.js';
 import { CursorAgentExtensionSource } from '#runtime/application/extensions/agents/cursor-agent-extension-source.js';
+import { BuiltInSkillDefinitionSource } from '#runtime/application/extensions/agents/built-in-skill-definition-source.js';
 
 /**
  * Runtime invocation reader fixture backed by a string.
@@ -84,6 +85,11 @@ class RecordingProjectInitializer implements ProjectInitializer {
   readonly requests: string[] = [];
 
   /**
+   * Built-in agents selected by recorded initialization requests.
+   */
+  readonly agentRequests: string[][] = [];
+
+  /**
    * Reports the configured fixture project detection result.
    *
    * @returns Configured project detection result for fixture roots.
@@ -96,8 +102,17 @@ class RecordingProjectInitializer implements ProjectInitializer {
   /**
    * Records one initialization request.
    */
-  initialize(projectRoot: string): void {
+  initialize(projectRoot: string, agents: readonly string[] = []): void {
     this.requests.push(projectRoot);
+    this.agentRequests.push([...agents]);
+  }
+
+  /**
+   * Records one built-in agent configuration request.
+   */
+  configureBuiltInAgents(projectRoot: string, agents: readonly string[]): void {
+    this.requests.push(projectRoot);
+    this.agentRequests.push([...agents]);
   }
 
   /**
@@ -172,6 +187,14 @@ describe('spec-n-roll-runtime executable', () => {
           'utf8',
         ),
       ).rejects.toThrow();
+      await expect(
+        readFile(
+          join(projectRoot, '.codex', 'skills', 'spec-n-roll', 'SKILL.md'),
+          'utf8',
+        ),
+      ).resolves.toBe(
+        `---\nname: "spec-n-roll"\ndescription: "Scaffold instructions for working with Spec-N-Roll."\nmetadata:\n  author: "spec-n-roll"\n  version: "0.1.0"\n---\n\n${new BuiltInSkillDefinitionSource().definition().source}\n`,
+      );
 
       await expect(
         readFile(
@@ -237,6 +260,48 @@ describe('spec-n-roll-runtime executable', () => {
           'utf8',
         ),
       ).resolves.toContain('class CursorAgentExtension');
+    } finally {
+      await rm(projectRoot, { force: true, recursive: true });
+      await rm(runtimeRoot, { force: true, recursive: true });
+    }
+  });
+
+  it('creates only selected built-in agent extensions during initialization', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'spec-n-roll-runtime-'));
+    const runtimeRoot = await mkdtemp(join(tmpdir(), 'spec-n-roll-runtime-'));
+    const runtimeBinaryPath = join(runtimeRoot, 'spec-n-roll-runtime.js');
+    const mcpBinaryPath = join(runtimeRoot, 'spec-n-roll-mcp.js');
+
+    try {
+      await writeFile(runtimeBinaryPath, 'runtime binary', 'utf8');
+      await writeFile(mcpBinaryPath, 'mcp binary', 'utf8');
+
+      new NodeProjectInitializer(runtimeBinaryPath, mcpBinaryPath).initialize(
+        projectRoot,
+        ['codex'],
+      );
+
+      await expect(
+        readFile(
+          join(projectRoot, '.spec-n-roll', 'extensions', 'extensions.json'),
+          'utf8',
+        ),
+      ).resolves.toBe(
+        `${JSON.stringify({ agents: { codex: { enabled: true } } }, null, 2)}\n`,
+      );
+      await expect(
+        readFile(
+          join(
+            projectRoot,
+            '.spec-n-roll',
+            'extensions',
+            'agents',
+            'cursor',
+            'extension.mjs',
+          ),
+          'utf8',
+        ),
+      ).rejects.toThrow();
     } finally {
       await rm(projectRoot, { force: true, recursive: true });
       await rm(runtimeRoot, { force: true, recursive: true });
@@ -328,13 +393,16 @@ describe('spec-n-roll-runtime executable', () => {
 
         await extension.createSkills([
           {
-            name: 'spec-n-example',
-            description: 'Creates an example artifact.',
-            metadata: { author: 'test', version: '1.2.3' },
-            instructions: [
-              { content: 'First instruction.' },
-              { content: 'Second instruction.' },
-            ],
+            identifier: 'spec-n-example',
+            purpose: 'Creates an example artifact.',
+            version: '1.2.3',
+            input: { properties: {}, required: [] },
+            output: { properties: {}, required: [] },
+            source: 'First instruction.\nSecond instruction.',
+            requirements: {
+              tools: [],
+              mcpServers: ['spec-n-roll'],
+            },
           },
         ]);
         await writeFile(
@@ -356,6 +424,18 @@ describe('spec-n-roll-runtime executable', () => {
             'utf8',
           ),
         ).resolves.toContain('First instruction.\nSecond instruction.');
+        await expect(
+          readFile(
+            join(
+              projectRoot,
+              `.${agentName}`,
+              'skills',
+              'spec-n-example',
+              'SKILL.md',
+            ),
+            'utf8',
+          ),
+        ).resolves.toContain('version: "1.2.3"');
         await expect(
           readFile(join(projectRoot, `.${agentName}`, 'mcp.json'), 'utf8'),
         ).resolves.toContain('"spec-n-roll"');
@@ -586,6 +666,87 @@ describe('spec-n-roll-runtime executable', () => {
     ).run();
 
     expect(initializer.requests[0]).toBe('/workspace/project');
+  });
+
+  it('initializes only the built-in agents selected by repeatable init flags', async () => {
+    const initializer = new RecordingProjectInitializer();
+    const invocation: RuntimeInvocation = {
+      argv: ['init', '--agent', 'codex'],
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      cwd: '/workspace/project',
+    };
+
+    await new RuntimeApplication(
+      new StringRuntimeInvocationReader(JSON.stringify(invocation)),
+      new RuntimeInvocationParser(),
+      new RecordingRuntimeUiRenderer(),
+      initializer,
+    ).run();
+
+    expect(initializer.agentRequests).toEqual([['codex']]);
+  });
+
+  it('rejects unknown built-in agents selected by init flags', async () => {
+    const invocation: RuntimeInvocation = {
+      argv: ['init', '--agent', 'unknown'],
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      cwd: '/workspace/project',
+    };
+
+    await expect(
+      new RuntimeApplication(
+        new StringRuntimeInvocationReader(JSON.stringify(invocation)),
+        new RuntimeInvocationParser(),
+        new RecordingRuntimeUiRenderer(),
+        new RecordingProjectInitializer(),
+      ).run(),
+    ).rejects.toThrow(
+      'Unknown built-in agent "unknown". Choose codex or cursor.',
+    );
+  });
+
+  it('rejects an init agent flag without a name', async () => {
+    const invocation: RuntimeInvocation = {
+      argv: ['init', '--agent'],
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      cwd: '/workspace/project',
+    };
+
+    await expect(
+      new RuntimeApplication(
+        new StringRuntimeInvocationReader(JSON.stringify(invocation)),
+        new RuntimeInvocationParser(),
+        new RecordingRuntimeUiRenderer(),
+        new RecordingProjectInitializer(),
+      ).run(),
+    ).rejects.toThrow('The --agent option requires a built-in agent name.');
   });
 
   it('rejects empty stdin instead of launching the UI', async () => {

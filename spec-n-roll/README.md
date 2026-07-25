@@ -81,12 +81,23 @@ npx snr [options] [...runtime-args]
 
 Dispatcher options:
 
-| Option          | Description                                                               |
-| --------------- | ------------------------------------------------------------------------- |
-| `--root <path>` | Uses the supplied project root when resolving runtime context.            |
-| `--global`      | Forces the globally installed runtime instead of a project-local runtime. |
-| `--version`     | Prints the dispatcher version.                                            |
-| `--help`        | Prints dispatcher help.                                                   |
+| Option          | Description                                                    |
+| --------------- | -------------------------------------------------------------- |
+| `--root <path>` | Uses the supplied project root when resolving runtime context. |
+
+### Initialize selected agents
+
+`init` installs both bundled agent extensions by default. To install only specific built-in agents, repeat `--agent`:
+
+```sh
+spec-n-roll init --agent codex
+spec-n-roll init --agent codex --agent cursor
+```
+
+Supported agent names are `codex` and `cursor`. In the interactive UI, choose **Initialize Project**, use Space to toggle agents, and select **Initialize project**.
+| `--global` | Forces the globally installed runtime instead of a project-local runtime. |
+| `--version` | Prints the dispatcher version. |
+| `--help` | Prints dispatcher help. |
 
 Additional arguments are preserved and forwarded to the runtime. This lets the
 dispatcher remain focused on routing while runtime packages own command behavior.

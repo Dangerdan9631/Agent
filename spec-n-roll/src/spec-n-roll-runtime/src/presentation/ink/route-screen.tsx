@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text } from 'ink';
+import { Text, useInput } from 'ink';
 import type { RuntimeUiSession } from '#runtime/application/ui/runtime-ui-session.js';
 import { ActionLayout } from '#runtime/presentation/ink/layouts/action-layout.jsx';
 import { ConsoleHistory } from '#runtime/presentation/ink/layouts/console-history.js';
@@ -39,7 +39,11 @@ export interface RouteScreenProps {
 export function RouteScreen(props: RouteScreenProps): React.ReactElement {
   if (props.route === 'agents') {
     return (
-      <AgentsRoute rows={props.rows} listAgents={props.session.listAgents} />
+      <AgentsRoute
+        rows={props.rows}
+        listAgents={props.session.listAgents}
+        configureBuiltInAgents={props.session.configureBuiltInAgents}
+      />
     );
   }
 
@@ -237,34 +241,77 @@ function HomeContent(props: {
 interface InitRouteProps {
   /** Rows allocated to the route. */
   readonly rows: number;
-  /** Project initialization command to run once. */
-  readonly initializeProject: () => void;
+  /** Project initialization command supplied with chosen built-in agents. */
+  readonly initializeProject: (agents: readonly string[]) => void;
 }
 
 /**
- * Runs project initialization when its route loads and reports the outcome.
+ * Lets the user choose built-in agents before initializing the project.
  *
  * @param props - Row allocation and configured project command.
  * @returns Initialization progress or result content.
  */
 function InitRoute(props: InitRouteProps): React.ReactElement {
-  const [result, setResult] = useState('Initializing project…');
+  const agents = ['codex', 'cursor'] as const;
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedAgents, setSelectedAgents] =
+    useState<readonly string[]>(agents);
+  const [result, setResult] = useState<string>();
 
-  useEffect(() => {
-    try {
-      props.initializeProject();
-      setResult('Project initialized successfully.');
-    } catch (error) {
-      setResult(
-        `Initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+  useInput((_input, key) => {
+    if (result != null) return;
+    if (key.upArrow)
+      setSelectedIndex(
+        (value) => (value - 1 + agents.length + 1) % (agents.length + 1),
+      );
+    if (key.downArrow)
+      setSelectedIndex((value) => (value + 1) % (agents.length + 1));
+    if (_input === ' ' && selectedIndex < agents.length) {
+      const agent = agents[selectedIndex];
+      setSelectedAgents((current) =>
+        current.includes(agent)
+          ? current.filter((value) => value !== agent)
+          : [...current, agent],
       );
     }
-  }, [props.initializeProject]);
+    if (key.return && selectedIndex === agents.length) {
+      if (selectedAgents.length === 0) {
+        setResult('Select at least one built-in agent before initializing.');
+        return;
+      }
+      try {
+        props.initializeProject(selectedAgents);
+        setResult('Project initialized successfully.');
+      } catch (error) {
+        setResult(
+          `Initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  });
+
+  if (result != null)
+    return (
+      <ActionLayout
+        actions={[]}
+        content={<Text>{result}</Text>}
+        rows={props.rows}
+      />
+    );
 
   return (
     <ActionLayout
       actions={[]}
-      content={<Text>{result}</Text>}
+      content={
+        <Text>
+          Select built-in agents (Space toggles, Enter initializes){'\n'}
+          {agents.map(
+            (agent, index) =>
+              `${selectedIndex === index ? '›' : ' '} [${selectedAgents.includes(agent) ? 'x' : ' '}] ${agent}\n`,
+          )}
+          {`${selectedIndex === agents.length ? '›' : ' '} Initialize project`}
+        </Text>
+      }
       rows={props.rows}
     />
   );
@@ -283,22 +330,26 @@ function AgentsRoute(props: {
   readonly listAgents: () => Promise<
     readonly { readonly name: string; readonly enabled: boolean }[]
   >;
+  /** Persists the selected built-in agent extensions. */
+  readonly configureBuiltInAgents: (agents: readonly string[]) => void;
 }): React.ReactElement {
+  const agents = useMemo(() => ['codex', 'cursor'] as const, []);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedAgents, setSelectedAgents] = useState<readonly string[]>();
   const [content, setContent] = useState('Loading agents…');
 
   useEffect(() => {
     props
       .listAgents()
-      .then((agents) =>
-        setContent(
-          agents.length === 0
-            ? 'No agent extensions registered.'
-            : agents
-                .map(
-                  (agent) =>
-                    `${agent.name}  ${agent.enabled ? 'enabled' : 'disabled'}`,
-                )
-                .join('\n'),
+      .then((registered) =>
+        setSelectedAgents(
+          registered
+            .filter(
+              (agent) =>
+                agent.enabled &&
+                agents.includes(agent.name as 'codex' | 'cursor'),
+            )
+            .map((agent) => agent.name),
         ),
       )
       .catch((error: unknown) =>
@@ -306,12 +357,59 @@ function AgentsRoute(props: {
           `Unable to list agents: ${error instanceof Error ? error.message : String(error)}`,
         ),
       );
-  }, [props]);
+  }, [agents, props]);
+
+  useInput((input, key) => {
+    if (selectedAgents == null) return;
+    if (key.upArrow)
+      setSelectedIndex(
+        (value) => (value - 1 + agents.length + 1) % (agents.length + 1),
+      );
+    if (key.downArrow)
+      setSelectedIndex((value) => (value + 1) % (agents.length + 1));
+    if (input === ' ' && selectedIndex < agents.length) {
+      const agent = agents[selectedIndex];
+      setSelectedAgents((current) =>
+        current?.includes(agent)
+          ? current.filter((value) => value !== agent)
+          : [...(current ?? []), agent],
+      );
+    }
+    if (key.return && selectedIndex === agents.length) {
+      try {
+        props.configureBuiltInAgents(selectedAgents);
+        setContent('Built-in agent selection saved.');
+      } catch (error) {
+        setContent(
+          `Unable to update agents: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  });
+
+  if (selectedAgents == null)
+    return (
+      <ActionLayout
+        actions={[]}
+        content={<Text>{content}</Text>}
+        rows={props.rows}
+      />
+    );
 
   return (
     <ActionLayout
       actions={[]}
-      content={<Text>{content}</Text>}
+      content={
+        <Text>
+          Manage built-in agents (Space toggles, Enter saves){'\n'}
+          {agents.map(
+            (agent, index) =>
+              `${selectedIndex === index ? '›' : ' '} [${selectedAgents.includes(agent) ? 'x' : ' '}] ${agent}\n`,
+          )}
+          {`${selectedIndex === agents.length ? '›' : ' '} Save changes`}
+          {content.startsWith('Built-in') ? `\n${content}` : ''}
+        </Text>
+      }
       rows={props.rows}
     />
   );

@@ -14,4 +14,4 @@ Shell-level navigation and exit behavior remain in the shell. The action layout 
 
 ### Routed commands
 
-Command routes execute application-provided callbacks when loaded. Home pages show the dispatcher, selected runtime, working directory, and discovered project root; the global home exposes initialization and disables it when the configured root already contains a project. Completed global updates reload only when Escape returns from the update route.
+Command routes execute application-provided callbacks when loaded. The initialization route is the exception: it lets users toggle built-in agents before running its command. Home pages show the dispatcher, selected runtime, working directory, and discovered project root; the global home exposes initialization and disables it when the configured root already contains a project. Completed global updates reload only when Escape returns from the update route.

@@ -335,7 +335,9 @@ describe('spec-n-roll dispatcher executable', () => {
 describe('dispatcher architecture', () => {
   it('keeps filesystem imports in infrastructure and API contracts above it', () => {
     expect(
-      new DispatcherSourceArchitecturePolicy().boundaryViolations('src'),
+      new DispatcherSourceArchitecturePolicy().boundaryViolations(
+        resolve(import.meta.dirname, '../src'),
+      ),
     ).toEqual([]);
   });
 });

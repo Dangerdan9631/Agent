@@ -1,6 +1,6 @@
 # API source - src
 
-This directory contains the shared boundary contracts for dispatcher metadata, install-source classification, runtime target selection, project-root resolution, and runtime invocation payloads. The source is intentionally representation-focused because its primary purpose is stable cross-process vocabulary.
+This directory contains the shared boundary contracts for dispatcher metadata, install-source classification, runtime target selection, project-root resolution, runtime invocation payloads, neutral skills, agent-agnostic workflow definitions, and workflow hook execution. The source is intentionally representation-focused because its primary purpose is stable cross-process vocabulary.
 
 ## Structure
 
@@ -11,11 +11,15 @@ flowchart TD
     Metadata["dispatcher metadata"]
     Project["project resolution"]
     Runtime["runtime invocation"]
+    Workflow["workflow definitions and hooks"]
+    Skills["neutral skill definitions"]
 
     PublicApi -->|"exports contracts"| Paths
     PublicApi -->|"exports contracts"| Metadata
     PublicApi -->|"exports contracts"| Project
     PublicApi -->|"exports contracts"| Runtime
+    PublicApi -->|"exports contracts"| Workflow
+    PublicApi -->|"exports contracts"| Skills
 ```
 
 ## Conventions

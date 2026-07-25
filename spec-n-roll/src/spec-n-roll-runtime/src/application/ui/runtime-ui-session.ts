@@ -17,7 +17,12 @@ export interface RuntimeUiSession {
   /** Absolute discovered project root, when one exists. */ readonly projectRoot?: string;
   /** Whether the configured root already contains a project. */ readonly projectFound: boolean;
   /** Checks whether the project operation root now contains Spec-N-Roll configuration. */ readonly projectExists: () => boolean;
-  /** Creates the project at the configured root. */ readonly initializeProject: () => void;
+  /** Creates the project at the configured root with selected built-in agents. */ readonly initializeProject: (
+    agents: readonly string[],
+  ) => void;
+  /** Updates built-in agent extensions at the configured initialized project root. */ readonly configureBuiltInAgents: (
+    agents: readonly string[],
+  ) => void;
   /** Updates the project-local framework at the configured root. */ readonly updateProjectFramework: () => void;
   /** Availability for a project framework update. */ readonly projectUpdate: ProjectFrameworkUpdateAvailability;
   /** Updates the dispatcher framework installation without ending the current UI session. */ readonly updateGlobalFramework: (

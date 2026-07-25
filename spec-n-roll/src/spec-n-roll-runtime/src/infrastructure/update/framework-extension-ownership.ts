@@ -16,4 +16,17 @@ export class FrameworkExtensionOwnership {
     const match = source.match(/^\/\*\s*\r?\n---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n\*\//);
     return match != null && /metadata:\s*\r?\n\s*author:\s*['"]spec-n-roll['"]/.test(match[1]);
   }
+
+  /**
+   * Checks YAML frontmatter for framework ownership of an instruction artifact.
+   *
+   * @param filePath - Absolute instruction file path to inspect.
+   * @returns true when the instruction declares `metadata.author: spec-n-roll`.
+   */
+  isFrameworkOwnedInstruction(filePath: string): boolean {
+    if (!existsSync(filePath)) return false;
+    return /metadata:\s*\r?\n\s*author:\s*spec-n-roll/.test(
+      readFileSync(filePath, 'utf8'),
+    );
+  }
 }

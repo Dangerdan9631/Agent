@@ -6,4 +6,4 @@ This directory contains serialized and cross-package contracts shared by executa
 
 ### Contract focus
 
-Keep these files representation-focused and free of process, filesystem, or parsing behavior. Add a domain directory when a new shared vocabulary appears.
+Keep these files representation-focused and free of process, filesystem, or parsing behavior. Add a domain directory when a new shared vocabulary appears. Workflow contracts define neutral orchestration data while SDK behavior owns their validation and acceptance.

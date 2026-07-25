@@ -90,6 +90,7 @@ describe('runtime Ink layouts', () => {
       projectFound: false,
       projectExists: () => false,
       initializeProject: () => undefined,
+      configureBuiltInAgents: () => undefined,
       updateProjectFramework: () => undefined,
       projectUpdate: { enabled: false, disabledReason: 'No project update.' },
       updateGlobalFramework: async (output) =>
@@ -126,6 +127,104 @@ describe('runtime Ink layouts', () => {
 
     expect(result.lastFrame()).toContain('Framework details');
     expect(result.lastFrame()).toContain('Update Framework');
+  });
+
+  it('offers a built-in agent picker before interactive initialization', async () => {
+    const initializeProject = vi.fn();
+    const session: RuntimeUiSession = {
+      mode: 'global',
+      dispatcher: {
+        installSource: 'remote',
+        installDirectory: '/global/spec-n-roll',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/runtime/spec-n-roll-runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: false,
+      },
+      cwd: '/workspace/project',
+      projectFound: false,
+      projectExists: () => false,
+      initializeProject,
+      configureBuiltInAgents: () => undefined,
+      updateProjectFramework: () => undefined,
+      projectUpdate: { enabled: false },
+      updateGlobalFramework: async () => undefined,
+      reloadRuntime: () => undefined,
+      globalUpdate: { enabled: false },
+      listAgents: async () => [],
+    };
+    const result = render(<RuntimeUiApp session={session} />);
+
+    result.stdin.write('\r');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(result.lastFrame()).toContain('Select built-in agents');
+    expect(result.lastFrame()).toContain('[x] codex');
+    expect(result.lastFrame()).toContain('[x] cursor');
+    expect(initializeProject).not.toHaveBeenCalled();
+
+    result.stdin.write(' ');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(result.lastFrame()).toContain('[ ] codex');
+
+    result.stdin.write('\u001B[B');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    result.stdin.write('\u001B[B');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    result.stdin.write('\r');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(initializeProject).toHaveBeenCalledWith(['cursor']);
+  });
+
+  it('saves built-in agent changes from the initialized-project agents route', async () => {
+    const configureBuiltInAgents = vi.fn();
+    const session: RuntimeUiSession = {
+      mode: 'local',
+      dispatcher: {
+        installSource: 'local',
+        installDirectory: '/project',
+        packageVersion: '0.1.0',
+      },
+      runtime: {
+        executablePath: '/project/runtime.js',
+        packageVersion: '0.1.0',
+        projectLocal: true,
+      },
+      cwd: '/project',
+      projectRoot: '/project',
+      projectFound: true,
+      projectExists: () => true,
+      initializeProject: () => undefined,
+      configureBuiltInAgents,
+      updateProjectFramework: () => undefined,
+      projectUpdate: { enabled: false },
+      updateGlobalFramework: async () => undefined,
+      reloadRuntime: () => undefined,
+      globalUpdate: { enabled: false },
+      listAgents: async () => [
+        { name: 'codex', enabled: true },
+        { name: 'cursor', enabled: true },
+      ],
+    };
+    const result = render(<RuntimeUiApp session={session} />);
+
+    result.stdin.write('\u001B[B');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    result.stdin.write('\r');
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    expect(result.lastFrame()).toContain('Manage built-in agents');
+
+    result.stdin.write(' ');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    result.stdin.write('\u001B[B');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    result.stdin.write('\u001B[B');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    result.stdin.write('\r');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(configureBuiltInAgents).toHaveBeenCalledWith(['cursor']);
   });
 
   it('uses every allocated row for the latest console page and renders a scrollbar', () => {

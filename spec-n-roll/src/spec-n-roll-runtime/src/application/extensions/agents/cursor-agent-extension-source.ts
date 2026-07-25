@@ -35,18 +35,17 @@ export default class CursorAgentExtension {
    */
   async createSkills(skills) {
     for (const skill of skills) {
-      const metadata = skill.metadata ?? CursorAgentExtension.defaultSkillMetadata;
-      const skillPath = join(process.cwd(), '.cursor', 'skills', skill.name, 'SKILL.md');
+      const skillPath = join(process.cwd(), '.cursor', 'skills', skill.identifier, 'SKILL.md');
       const content = [
         '---',
-        \`name: \${JSON.stringify(skill.name)}\`,
-        \`description: \${JSON.stringify(skill.description)}\`,
+        \`name: \${JSON.stringify(skill.identifier)}\`,
+        \`description: \${JSON.stringify(skill.purpose)}\`,
         'metadata:',
-        \`  author: \${JSON.stringify(metadata.author)}\`,
-        \`  version: \${JSON.stringify(metadata.version)}\`,
+        \`  author: \${JSON.stringify(CursorAgentExtension.defaultSkillMetadata.author)}\`,
+        \`  version: \${JSON.stringify(skill.version)}\`,
         '---',
         '',
-        ...skill.instructions.map((instruction) => instruction.content),
+        skill.source,
         '',
       ].join('\\n');
       await mkdir(dirname(skillPath), { recursive: true });

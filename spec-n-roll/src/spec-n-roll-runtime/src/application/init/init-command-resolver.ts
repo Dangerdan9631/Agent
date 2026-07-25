@@ -2,9 +2,13 @@ import { resolve } from 'node:path';
 import type { InitCommandRequest } from '#runtime/application/init/init-command-request.js';
 
 /**
- * Resolves the optional positional or flagged root accepted by the init command.
+ * Resolves the root and built-in agents selected by the init command.
  */
 export class InitCommandResolver {
+  /**
+   * Built-in agent extension names accepted by project initialization.
+   */
+  private static readonly builtInAgents = ['codex', 'cursor'] as const;
   /**
    * Resolves an init request from dispatcher-preserved arguments.
    *
@@ -24,7 +28,7 @@ export class InitCommandResolver {
     const flaggedRoot = this.flagValue(argv, '--root');
     const positionalRoot = argv[initIndex + 1];
     if (flaggedRoot != null && configuredRoot != null) {
-      return { projectRoot: configuredRoot };
+      return { projectRoot: configuredRoot, agents: this.agents(argv) };
     }
 
     const requestedRoot =
@@ -33,7 +37,10 @@ export class InitCommandResolver {
         ? positionalRoot
         : '.');
 
-    return { projectRoot: resolve(cwd, requestedRoot) };
+    return {
+      projectRoot: resolve(cwd, requestedRoot),
+      agents: this.agents(argv),
+    };
   }
 
   /**
@@ -52,5 +59,37 @@ export class InitCommandResolver {
     return argv
       .find((value) => value.startsWith(`${option}=`))
       ?.slice(option.length + 1);
+  }
+
+  /**
+   * Resolves repeatable agent flags and preserves the established all-agent default.
+   *
+   * @param argv - Full dispatcher-preserved argument list.
+   * @returns Unique, supported built-in agent names.
+   */
+  private agents(argv: readonly string[]): readonly string[] {
+    const selected = argv.flatMap((value, index) => {
+      if (value === '--agent') {
+        const agent = argv[index + 1];
+        if (agent == null || agent.startsWith('-'))
+          throw new Error('The --agent option requires a built-in agent name.');
+        return [agent];
+      }
+      return value.startsWith('--agent=')
+        ? [value.slice('--agent='.length)]
+        : [];
+    });
+    if (selected.length === 0) return InitCommandResolver.builtInAgents;
+    const invalid = selected.find(
+      (agent) =>
+        !InitCommandResolver.builtInAgents.includes(
+          agent as 'codex' | 'cursor',
+        ),
+    );
+    if (invalid != null)
+      throw new Error(
+        `Unknown built-in agent "${invalid}". Choose codex or cursor.`,
+      );
+    return [...new Set(selected)];
   }
 }
