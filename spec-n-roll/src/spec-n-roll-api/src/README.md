@@ -1,6 +1,6 @@
 # API source - src
 
-This directory contains the shared boundary contracts for dispatcher metadata, install-source classification, runtime target selection, project-root resolution, and runtime invocation payloads. The source is intentionally representation-focused because its primary purpose is stable cross-process vocabulary.
+This directory contains the shared boundary contracts for dispatcher metadata, install-source classification, runtime target selection, project-root resolution, runtime invocation payloads, and agent-agnostic workflow definitions. The source is intentionally representation-focused because its primary purpose is stable cross-process vocabulary.
 
 ## Structure
 

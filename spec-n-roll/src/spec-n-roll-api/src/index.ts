@@ -18,4 +18,11 @@ export type { ProjectRootResolution } from '#api/contracts/project/project-root-
 export type { RuntimeInvocation } from '#api/contracts/runtime/runtime-invocation.js';
 export { RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE } from '#api/contracts/runtime/runtime-invocation-environment.js';
 export type { RuntimeTarget } from '#api/contracts/runtime/runtime-target.js';
-
+export type { StepCompletionCriteria } from '#api/contracts/workflow/step-completion-criteria.js';
+export type { StepDefinition } from '#api/contracts/workflow/step-definition.js';
+export type { StepFailurePolicy } from '#api/contracts/workflow/step-failure-policy.js';
+export type {
+  WorkflowDefinition,
+  WorkflowDefinitionDefaults,
+  WorkflowDefinitionMetadata,
+} from '#api/contracts/workflow/workflow-definition.js';

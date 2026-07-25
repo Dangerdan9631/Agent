@@ -7,6 +7,7 @@ import {
   type PathResolutionContext,
   type RuntimeInvocation,
   type RuntimeTarget,
+  type WorkflowDefinition,
 } from '#api/index.js';
 
 describe('spec-n-roll-api contracts', () => {
@@ -47,5 +48,36 @@ describe('spec-n-roll-api contracts', () => {
     expect(join(...LOCAL_CLI_RELATIVE_PATH_SEGMENTS)).toMatch(
       /\.spec-n-roll[\\/]cli[\\/]bin[\\/]spec-n-roll/u,
     );
+  });
+
+  it('publishes versioned agent-agnostic workflow contracts', () => {
+    const workflow: WorkflowDefinition = {
+      schemaVersion: '1',
+      id: 'feature-delivery',
+      version: '1.0.0',
+      metadata: { name: 'Feature delivery' },
+      stepDefinitions: [
+        {
+          id: 'specify',
+          skillId: 'spec-n-roll.specify',
+          inputSchema: { type: 'object' },
+          outputSchema: {
+            type: 'object',
+            properties: { specification: { type: 'string' } },
+          },
+          completionCriteria: {
+            description: 'A specification is available after required hooks.',
+            requiredOutputProperties: ['specification'],
+          },
+          failurePolicy: { strategy: 'stop' },
+        },
+      ],
+      steps: ['specify'],
+    };
+
+    expect(workflow.schemaVersion).toBe('1');
+    expect(workflow.steps).toEqual(['specify']);
+    expect(workflow.stepDefinitions[0]?.skillId).toBe('spec-n-roll.specify');
+    expect(workflow.stepDefinitions[0]).not.toHaveProperty('agent');
   });
 });

@@ -7,4 +7,8 @@ export type { AgentExtensionRegistrationReader } from '#sdk/application/agents/a
 export type { ProjectConfigurationMigrator } from '#sdk/application/updates/project-configuration-migrator.js';
 export type { ProjectFrameworkUpgrader } from '#sdk/application/updates/project-framework-upgrader.js';
 export type { ProjectFrameworkUpdateAvailability } from '#sdk/application/updates/project-framework-update-availability.js';
-
+export type {
+  WorkflowDefinitionValidationIssue,
+  WorkflowDefinitionValidationResult,
+} from '#sdk/application/workflows/workflow-definition-validation.js';
+export { WorkflowDefinitionValidator } from '#sdk/application/workflows/workflow-definition-validator.js';
