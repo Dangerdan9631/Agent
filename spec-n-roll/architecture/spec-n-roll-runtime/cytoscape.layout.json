@@ -4,309 +4,323 @@
     "spec-n-roll-runtime": {
       "parentId": null,
       "position": {
-        "x": 0,
-        "y": 913.5
+        "x": 530.3153950953676,
+        "y": 698.2370572207085
+      }
+    },
+    "external-package:spec-n-roll-api": {
+      "parentId": null,
+      "position": {
+        "x": -1455.324250681199,
+        "y": 459.3399182561308
       }
     },
     "directory:spec-n-roll-runtime:application": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": -453,
-        "y": 278.75
+        "x": 43.95504087193456,
+        "y": 585.3658038147139
       }
     },
     "directory:spec-n-roll-runtime:application/invocation": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": -1049,
-        "y": 405
+        "x": 159.77384196185278,
+        "y": 490.49863760217977
       }
     },
     "type:src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-parser.ts:RuntimeInvocationParser": {
       "parentId": "directory:spec-n-roll-runtime:application/invocation",
       "position": {
-        "x": -1257,
-        "y": 418
+        "x": -116.03542234332443,
+        "y": 500.55040871934597
       }
     },
     "type:src/spec-n-roll-runtime/src/application/invocation/runtime-invocation-reader.ts:RuntimeInvocationReader": {
       "parentId": "directory:spec-n-roll-runtime:application/invocation",
       "position": {
-        "x": -845.5,
-        "y": 418
+        "x": 431.0831062670299,
+        "y": 506.4468664850135
       }
     },
     "directory:spec-n-roll-runtime:application/output": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": -648,
-        "y": 88.5
+        "x": -235.24795640326988,
+        "y": 200.5326975476839
       }
     },
     "type:src/spec-n-roll-runtime/src/application/output/runtime-output-writer.ts:RuntimeOutputWriter": {
       "parentId": "directory:spec-n-roll-runtime:application/output",
       "position": {
-        "x": -648,
-        "y": 101.5
+        "x": -235.24795640326985,
+        "y": 213.5326975476839
       }
     },
     "directory:spec-n-roll-runtime:application/runtime": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": -248.5,
-        "y": 88.5
+        "x": 291.0258855585833,
+        "y": 256.54904632152585
       }
     },
     "type:src/spec-n-roll-runtime/src/application/runtime/runtime-application.ts:RuntimeApplication": {
       "parentId": "directory:spec-n-roll-runtime:application/runtime",
       "position": {
-        "x": -248.5,
-        "y": 101.5
+        "x": 291.0258855585833,
+        "y": 269.54904632152585
       }
     },
     "directory:spec-n-roll-runtime:application/ui": {
       "parentId": "directory:spec-n-roll-runtime:application",
       "position": {
-        "x": -17.5,
-        "y": 405
+        "x": 20.826975476839152,
+        "y": 906.1989100817439
       }
     },
     "type:src/spec-n-roll-runtime/src/application/ui/runtime-ui-mode-resolver.ts:RuntimeUiMode": {
       "parentId": "directory:spec-n-roll-runtime:application/ui",
       "position": {
-        "x": -165.5,
-        "y": 507.5
+        "x": -127.17302452316075,
+        "y": 1008.6989100817439
       }
     },
     "type:src/spec-n-roll-runtime/src/application/ui/runtime-ui-mode-resolver.ts:RuntimeUiModeResolver": {
       "parentId": "directory:spec-n-roll-runtime:application/ui",
       "position": {
-        "x": -387.5,
-        "y": 328.5
+        "x": -349.17302452316085,
+        "y": 829.6989100817437
       }
     },
     "type:src/spec-n-roll-runtime/src/application/ui/runtime-ui-renderer.ts:RuntimeUiRenderer": {
       "parentId": "directory:spec-n-roll-runtime:application/ui",
       "position": {
-        "x": -12,
-        "y": 328.5
+        "x": 26.326975476839173,
+        "y": 829.6989100817437
       }
     },
     "type:src/spec-n-roll-runtime/src/application/ui/terminal-layout-allocator.ts:TerminalLayout": {
       "parentId": "directory:spec-n-roll-runtime:application/ui",
       "position": {
-        "x": 135.5,
-        "y": 507.5
+        "x": 173.8269754768392,
+        "y": 1008.6989100817439
       }
     },
     "type:src/spec-n-roll-runtime/src/application/ui/terminal-layout-allocator.ts:TerminalLayoutAllocator": {
       "parentId": "directory:spec-n-roll-runtime:application/ui",
       "position": {
-        "x": 358,
-        "y": 328.5
+        "x": 396.32697547683915,
+        "y": 829.6989100817437
       }
     },
     "directory:spec-n-roll-runtime:composition": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 1055.5,
-        "y": 278.75
+        "x": 477.64713896457744,
+        "y": -139.89850136239778
       }
     },
     "directory:spec-n-roll-runtime:composition/runtime": {
       "parentId": "directory:spec-n-roll-runtime:composition",
       "position": {
-        "x": 1055.5,
-        "y": 291.5
+        "x": 477.64713896457744,
+        "y": -127.14850136239778
       }
     },
     "type:src/spec-n-roll-runtime/src/composition/runtime/runtime-composition-root.ts:RuntimeCompositionRoot": {
       "parentId": "directory:spec-n-roll-runtime:composition/runtime",
       "position": {
-        "x": 856,
-        "y": 304.5
+        "x": 278.1471389645777,
+        "y": -114.14850136239778
       }
     },
     "type:src/spec-n-roll-runtime/src/composition/runtime/runtime-program-factory.ts:RuntimeProgramFactory": {
       "parentId": "directory:spec-n-roll-runtime:composition/runtime",
       "position": {
-        "x": 1261,
-        "y": 304.5
+        "x": 683.1471389645772,
+        "y": -114.14850136239778
       }
     },
     "directory:spec-n-roll-runtime:infrastructure": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": -602,
-        "y": 1266.75
+        "x": 555.3910081743873,
+        "y": -360.6723433242506
       }
     },
     "directory:spec-n-roll-runtime:infrastructure/ink": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure",
       "position": {
-        "x": -1089,
-        "y": 1279.5
+        "x": 1154.6021798365125,
+        "y": -368.55994550408707
       }
     },
     "type:src/spec-n-roll-runtime/src/infrastructure/ink/ink-runtime-ui-renderer.tsx:InkRuntimeUiRenderer": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure/ink",
       "position": {
-        "x": -1089,
-        "y": 1292.5
+        "x": 1154.6021798365125,
+        "y": -355.55994550408707
       }
     },
     "directory:spec-n-roll-runtime:infrastructure/process": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure",
       "position": {
-        "x": -387.5,
-        "y": 1279.5
+        "x": 174.30483651226177,
+        "y": -327.2847411444141
       }
     },
     "type:src/spec-n-roll-runtime/src/infrastructure/process/console-runtime-output-writer.ts:ConsoleRuntimeOutputWriter": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
       "position": {
-        "x": -624,
-        "y": 1292.5
+        "x": -7.8201634877380855,
+        "y": -314.2847411444141
       }
     },
-    "type:src/spec-n-roll-runtime/src/infrastructure/process/stdin-runtime-invocation-reader.ts:StdinRuntimeInvocationReader": {
+    "type:src/spec-n-roll-runtime/src/infrastructure/process/environment-runtime-invocation-reader.ts:EnvironmentRuntimeInvocationReader": {
       "parentId": "directory:spec-n-roll-runtime:infrastructure/process",
       "position": {
-        "x": -161,
-        "y": 1292.5
+        "x": 304.92983651226166,
+        "y": -314.2847411444141
       }
     },
     "directory:spec-n-roll-runtime:presentation": {
       "parentId": "spec-n-roll-runtime",
       "position": {
-        "x": 725.5,
-        "y": 1260.5
+        "x": 1159.5551771117164,
+        "y": 1191.548365122616
       }
     },
     "directory:spec-n-roll-runtime:presentation/cli": {
       "parentId": "directory:spec-n-roll-runtime:presentation",
       "position": {
-        "x": 296,
-        "y": 1279.5
+        "x": 1354.4141689373298,
+        "y": 592.5626702997279
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/cli/runtime-cli.ts:RuntimeCli": {
       "parentId": "directory:spec-n-roll-runtime:presentation/cli",
       "position": {
-        "x": 296,
-        "y": 1292.5
+        "x": 1354.4141689373298,
+        "y": 605.5626702997279
       }
     },
     "directory:spec-n-roll-runtime:presentation/ink": {
       "parentId": "directory:spec-n-roll-runtime:presentation",
       "position": {
-        "x": 874,
-        "y": 1273.25
+        "x": 1159.5551771117164,
+        "y": 1334.681880108992
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/menu-list.tsx:MenuItem": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 822.5,
-        "y": 1407
+        "x": 1061.3065395095368,
+        "y": 1433.5340599455042
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/menu-list.tsx:MenuListProps": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 679.5,
-        "y": 1802.5
+        "x": 918.3065395095367,
+        "y": 1829.0340599455042
       }
     },
     "module:src/spec-n-roll-runtime/src/presentation/ink/menu-list.tsx": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 586,
-        "y": 1407
+        "x": 824.8065395095367,
+        "y": 1433.5340599455042
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/navigation-stack.ts:RouteId": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 1164.5,
-        "y": 999
+        "x": 1403.3065395095366,
+        "y": 1025.5340599455042
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/navigation-stack.ts:NavigationStack": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 630,
-        "y": 999
+        "x": 1446.6594005449592,
+        "y": 866.3297002724797
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/route-screen.tsx:RouteScreenProps": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 1110.5,
-        "y": 1407
+        "x": 1408.2711171662124,
+        "y": 1188.8310626702998
       }
     },
     "module:src/spec-n-roll-runtime/src/presentation/ink/route-screen.tsx": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 920.5,
-        "y": 999
+        "x": 1118.0313351498637,
+        "y": 1317.408719346049
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/runtime-ui-app.tsx:RuntimeUiAppProps": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 722.5,
-        "y": 1203
+        "x": 887.6008174386919,
+        "y": 1099.8119891008175
       }
     },
     "module:src/spec-n-roll-runtime/src/presentation/ink/runtime-ui-app.tsx": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 874,
-        "y": 795
+        "x": 1065.6348773841962,
+        "y": 898.1880108991827
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/scrollable-content.tsx:ScrollableContentProps": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 1020.5,
-        "y": 1802.5
+        "x": 1259.3065395095366,
+        "y": 1829.0340599455042
       }
     },
     "module:src/spec-n-roll-runtime/src/presentation/ink/scrollable-content.tsx": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 750.5,
-        "y": 1611
+        "x": 1172.0967302452316,
+        "y": 1634.5858310626702
       }
     },
     "type:src/spec-n-roll-runtime/src/presentation/ink/use-stdout-size.ts:StdoutSize": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 1038.5,
-        "y": 1611
+        "x": 1474.8378746594003,
+        "y": 1652.2752043596731
       }
     },
     "module:src/spec-n-roll-runtime/src/presentation/ink/use-stdout-size.ts": {
       "parentId": "directory:spec-n-roll-runtime:presentation/ink",
       "position": {
-        "x": 1050.5,
-        "y": 1203
+        "x": 1460.3038147138961,
+        "y": 1547.9427792915533
+      }
+    },
+    "type:src/spec-n-roll-api/src/contracts/runtime/runtime-invocation.ts:RuntimeInvocation": {
+      "parentId": "external-package:spec-n-roll-api",
+      "position": {
+        "x": -1455.324250681199,
+        "y": 472.3399182561308
       }
     },
     "external:commander": {
       "parentId": null,
       "position": {
-        "x": -104.5,
-        "y": 2053.5
+        "x": 1688.0231607629428,
+        "y": -98.70708446866465
       }
     },
     "external:node:fs": {
       "parentId": null,
       "position": {
-        "x": 129,
-        "y": 2053.5
+        "x": 1753.4741144414168,
+        "y": 579.3855585831064
       }
     }
   },

@@ -98,7 +98,7 @@ import { render } from "ink";
 
 // src/presentation/ink/runtime-ui-app.tsx
 import { useCallback as useCallback2, useEffect as useEffect3, useMemo as useMemo4, useState as useState5 } from "react";
-import { Box as Box5, Text as Text5, useApp, useInput as useInput3 } from "ink";
+import { Box as Box5, Text as Text5, useApp, useInput as useInput4 } from "ink";
 
 // src/application/ui/terminal-layout-allocator.ts
 var TerminalLayoutAllocator = class _TerminalLayoutAllocator {
@@ -164,6 +164,7 @@ function AppScaffold(props) {
       height: props.terminalRows,
       width: props.terminalColumns,
       flexDirection: "column",
+      overflow: "hidden",
       children: [
         /* @__PURE__ */ jsx(
           Box,
@@ -178,7 +179,16 @@ function AppScaffold(props) {
             ] })
           }
         ),
-        /* @__PURE__ */ jsx(Box, { height: props.routeLayoutRows, flexDirection: "column", children: props.routeLayout }),
+        /* @__PURE__ */ jsx(
+          Box,
+          {
+            height: props.routeLayoutRows,
+            flexDirection: "column",
+            flexShrink: 0,
+            overflow: "hidden",
+            children: props.routeLayout
+          }
+        ),
         /* @__PURE__ */ jsx(
           Box,
           {
@@ -199,7 +209,7 @@ function AppScaffold(props) {
 
 // src/presentation/ink/route-screen.tsx
 import { useCallback, useEffect, useMemo as useMemo3, useState as useState3 } from "react";
-import { Text as Text4 } from "ink";
+import { Text as Text4, useInput as useInput3 } from "ink";
 
 // src/presentation/ink/layouts/action-layout.tsx
 import { Box as Box3 } from "ink";
@@ -209,20 +219,31 @@ import { useMemo, useState } from "react";
 import { Box as Box2, Text as Text2, useInput } from "ink";
 import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 function MenuList(props) {
-  const enabled = useMemo(() => props.items.filter((item) => !item.disabled), [props.items]);
+  const enabled = useMemo(
+    () => props.items.filter((item) => !item.disabled),
+    [props.items]
+  );
   const [selected, setSelected] = useState(0);
   const selectedItem = enabled[selected];
   useInput((_input, key) => {
     if (enabled.length === 0) return;
-    if (key.upArrow) setSelected((value) => (value - 1 + enabled.length) % enabled.length);
+    if (key.upArrow)
+      setSelected((value) => (value - 1 + enabled.length) % enabled.length);
     if (key.downArrow) setSelected((value) => (value + 1) % enabled.length);
     if (key.return && selectedItem != null) props.onSelect(selectedItem);
   });
-  return /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", children: props.items.map((item) => /* @__PURE__ */ jsxs2(Text2, { color: item.disabled ? "gray" : item === selectedItem ? "cyan" : void 0, children: [
-    item === selectedItem ? "\u203A " : "  ",
-    item.label,
-    item.disabled ? " (disabled)" : ""
-  ] }, item.id)) });
+  return /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", flexShrink: 0, height: props.items.length, children: props.items.map((item) => /* @__PURE__ */ jsxs2(
+    Text2,
+    {
+      color: item.disabled ? "gray" : item === selectedItem ? "cyan" : void 0,
+      children: [
+        item === selectedItem ? "\u203A " : "  ",
+        item.label,
+        item.disabled ? " (disabled)" : ""
+      ]
+    },
+    item.id
+  )) });
 }
 
 // src/presentation/ink/layouts/action-layout.tsx
@@ -232,7 +253,16 @@ function ActionLayout(props) {
   const actionRows = hasActions ? props.actions.length + 1 : 0;
   const contentRows = Math.max(1, props.rows - actionRows);
   return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", height: props.rows, children: [
-    /* @__PURE__ */ jsx3(Box3, { flexDirection: "column", height: contentRows, paddingX: 2, children: props.content }),
+    /* @__PURE__ */ jsx3(
+      Box3,
+      {
+        flexDirection: "column",
+        height: contentRows,
+        overflow: "hidden",
+        paddingX: 2,
+        children: props.content
+      }
+    ),
     hasActions ? /* @__PURE__ */ jsxs3(Fragment, { children: [
       /* @__PURE__ */ jsx3(
         Box3,
@@ -320,8 +350,8 @@ function ConsoleLayout(props) {
       setTopLine(maximumTopLine);
     }
   });
-  return /* @__PURE__ */ jsxs4(Box4, { height: props.rows, flexDirection: "row", children: [
-    /* @__PURE__ */ jsx4(Box4, { height: props.rows, flexGrow: 1, paddingX: 2, children: /* @__PURE__ */ jsx4(Text3, { wrap: "wrap", children: visibleLines.join("\n") }) }),
+  return /* @__PURE__ */ jsxs4(Box4, { height: props.rows, flexDirection: "row", overflow: "hidden", children: [
+    /* @__PURE__ */ jsx4(Box4, { height: props.rows, flexGrow: 1, overflow: "hidden", paddingX: 2, children: /* @__PURE__ */ jsx4(Text3, { wrap: "wrap", children: visibleLines.join("\n") }) }),
     /* @__PURE__ */ jsx4(Box4, { height: props.rows, width: 1, flexShrink: 0, children: /* @__PURE__ */ jsx4(Text3, { children: scrollbar }) })
   ] });
 }
@@ -446,7 +476,14 @@ var ConsoleOutputBuffer = class _ConsoleOutputBuffer {
 import { Fragment as Fragment2, jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
 function RouteScreen(props) {
   if (props.route === "agents") {
-    return /* @__PURE__ */ jsx5(AgentsRoute, { rows: props.rows, listAgents: props.session.listAgents });
+    return /* @__PURE__ */ jsx5(
+      AgentsRoute,
+      {
+        rows: props.rows,
+        listAgents: props.session.listAgents,
+        configureBuiltInAgents: props.session.configureBuiltInAgents
+      }
+    );
   }
   if (props.route === "manage") {
     return /* @__PURE__ */ jsx5(
@@ -464,6 +501,7 @@ function RouteScreen(props) {
       {
         rows: props.rows,
         updateGlobalFramework: props.session.updateGlobalFramework,
+        onReloadRequired: props.onReloadRequired,
         onRunningChange: props.onUpdateRunningChange
       }
     );
@@ -593,46 +631,132 @@ function HomeContent(props) {
   ] });
 }
 function InitRoute(props) {
-  const [result, setResult] = useState3("Initializing project\u2026");
-  useEffect(() => {
-    try {
-      props.initializeProject();
-      setResult("Project initialized successfully.");
-    } catch (error) {
-      setResult(
-        `Initialization failed: ${error instanceof Error ? error.message : String(error)}`
+  const agents = ["codex", "cursor"];
+  const [selectedIndex, setSelectedIndex] = useState3(0);
+  const [selectedAgents, setSelectedAgents] = useState3(agents);
+  const [result, setResult] = useState3();
+  useInput3((_input, key) => {
+    if (result != null) return;
+    if (key.upArrow)
+      setSelectedIndex(
+        (value) => (value - 1 + agents.length + 1) % (agents.length + 1)
+      );
+    if (key.downArrow)
+      setSelectedIndex((value) => (value + 1) % (agents.length + 1));
+    if (_input === " " && selectedIndex < agents.length) {
+      const agent = agents[selectedIndex];
+      setSelectedAgents(
+        (current) => current.includes(agent) ? current.filter((value) => value !== agent) : [...current, agent]
       );
     }
-  }, [props.initializeProject]);
+    if (key.return && selectedIndex === agents.length) {
+      if (selectedAgents.length === 0) {
+        setResult("Select at least one built-in agent before initializing.");
+        return;
+      }
+      try {
+        props.initializeProject(selectedAgents);
+        setResult("Project initialized successfully.");
+      } catch (error) {
+        setResult(
+          `Initialization failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+  });
+  if (result != null)
+    return /* @__PURE__ */ jsx5(
+      ActionLayout,
+      {
+        actions: [],
+        content: /* @__PURE__ */ jsx5(Text4, { children: result }),
+        rows: props.rows
+      }
+    );
   return /* @__PURE__ */ jsx5(
     ActionLayout,
     {
       actions: [],
-      content: /* @__PURE__ */ jsx5(Text4, { children: result }),
+      content: /* @__PURE__ */ jsxs5(Text4, { children: [
+        "Select built-in agents (Space toggles, Enter initializes)",
+        "\n",
+        agents.map(
+          (agent, index) => `${selectedIndex === index ? "\u203A" : " "} [${selectedAgents.includes(agent) ? "x" : " "}] ${agent}
+`
+        ),
+        `${selectedIndex === agents.length ? "\u203A" : " "} Initialize project`
+      ] }),
       rows: props.rows
     }
   );
 }
 function AgentsRoute(props) {
+  const agents = useMemo3(() => ["codex", "cursor"], []);
+  const [selectedIndex, setSelectedIndex] = useState3(0);
+  const [selectedAgents, setSelectedAgents] = useState3();
   const [content, setContent] = useState3("Loading agents\u2026");
   useEffect(() => {
     props.listAgents().then(
-      (agents) => setContent(
-        agents.length === 0 ? "No agent extensions registered." : agents.map(
-          (agent) => `${agent.name}  ${agent.enabled ? "enabled" : "disabled"}`
-        ).join("\n")
+      (registered) => setSelectedAgents(
+        registered.filter(
+          (agent) => agent.enabled && agents.includes(agent.name)
+        ).map((agent) => agent.name)
       )
     ).catch(
       (error) => setContent(
         `Unable to list agents: ${error instanceof Error ? error.message : String(error)}`
       )
     );
-  }, [props]);
+  }, [agents, props]);
+  useInput3((input, key) => {
+    if (selectedAgents == null) return;
+    if (key.upArrow)
+      setSelectedIndex(
+        (value) => (value - 1 + agents.length + 1) % (agents.length + 1)
+      );
+    if (key.downArrow)
+      setSelectedIndex((value) => (value + 1) % (agents.length + 1));
+    if (input === " " && selectedIndex < agents.length) {
+      const agent = agents[selectedIndex];
+      setSelectedAgents(
+        (current) => current?.includes(agent) ? current.filter((value) => value !== agent) : [...current ?? [], agent]
+      );
+    }
+    if (key.return && selectedIndex === agents.length) {
+      try {
+        props.configureBuiltInAgents(selectedAgents);
+        setContent("Built-in agent selection saved.");
+      } catch (error) {
+        setContent(
+          `Unable to update agents: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+  });
+  if (selectedAgents == null)
+    return /* @__PURE__ */ jsx5(
+      ActionLayout,
+      {
+        actions: [],
+        content: /* @__PURE__ */ jsx5(Text4, { children: content }),
+        rows: props.rows
+      }
+    );
   return /* @__PURE__ */ jsx5(
     ActionLayout,
     {
       actions: [],
-      content: /* @__PURE__ */ jsx5(Text4, { children: content }),
+      content: /* @__PURE__ */ jsxs5(Text4, { children: [
+        "Manage built-in agents (Space toggles, Enter saves)",
+        "\n",
+        agents.map(
+          (agent, index) => `${selectedIndex === index ? "\u203A" : " "} [${selectedAgents.includes(agent) ? "x" : " "}] ${agent}
+`
+        ),
+        `${selectedIndex === agents.length ? "\u203A" : " "} Save changes`,
+        content.startsWith("Built-in") ? `
+${content}` : ""
+      ] }),
       rows: props.rows
     }
   );
@@ -693,7 +817,12 @@ function GlobalUpdateRoute(props) {
     props.onRunningChange(true);
     void props.updateGlobalFramework({
       write: (text) => outputBuffer.write(text)
-    }).then(() => outputBuffer.write("\nUpdate completed. Reloading runtime\u2026")).catch(
+    }).then(() => {
+      outputBuffer.write(
+        "\nUpdate completed. Press Esc to return and reload runtime."
+      );
+      props.onReloadRequired();
+    }).catch(
       (error) => outputBuffer.write(
         `
 Update failed: ${error instanceof Error ? error.message : String(error)}`
@@ -706,7 +835,12 @@ Update failed: ${error instanceof Error ? error.message : String(error)}`
       outputBuffer.dispose();
       props.onRunningChange(false);
     };
-  }, [outputBuffer, props.onRunningChange, props.updateGlobalFramework]);
+  }, [
+    outputBuffer,
+    props.onReloadRequired,
+    props.onRunningChange,
+    props.updateGlobalFramework
+  ]);
   return /* @__PURE__ */ jsx5(ConsoleLayout, { rows: props.rows, output });
 }
 
@@ -746,9 +880,14 @@ function RuntimeUiApp(props) {
   const [route, setRoute] = useState5(navigation.current());
   const routeTitle = route === "global-home" || route === "local-home" ? "Home" : route === "agents" ? "Agents" : route === "manage" ? "Manage Spec-N-Roll" : route === "global-update" ? "Update Global Framework" : route === "project-update" ? "Update Project Framework" : route;
   const [updateRunning, setUpdateRunning] = useState5(false);
+  const [reloadOnBack, setReloadOnBack] = useState5(false);
   const [exitConfirmationKey, setExitConfirmationKey] = useState5();
   const requestExit = useCallback2(
     (confirmationKey) => setExitConfirmationKey(confirmationKey),
+    []
+  );
+  const requestReloadOnBack = useCallback2(
+    () => setReloadOnBack(true),
     []
   );
   useEffect3(() => {
@@ -759,7 +898,7 @@ function RuntimeUiApp(props) {
     );
     return () => clearTimeout(timeout);
   }, [exitConfirmationKey]);
-  useInput3((_input, key) => {
+  useInput4((_input, key) => {
     if (updateRunning) return;
     if (exitConfirmationKey === "escape" && key.escape) {
       app.exit();
@@ -773,8 +912,12 @@ function RuntimeUiApp(props) {
     if (!key.escape) return;
     if (navigation.isHome()) requestExit("escape");
     else {
+      const routeBeforeBack = navigation.current();
       navigation.pop();
       setRoute(navigation.current());
+      if (reloadOnBack && routeBeforeBack === "global-update") {
+        props.session.reloadRuntime();
+      }
     }
   });
   if (layout.requiresResize) {
@@ -807,6 +950,7 @@ function RuntimeUiApp(props) {
           {
             route,
             rows: layout.contentRows,
+            onReloadRequired: requestReloadOnBack,
             onNavigate: (next) => {
               navigation.push(next);
               setRoute(navigation.current());
@@ -884,7 +1028,11 @@ var RuntimeUiModeResolver = class {
 
 // src/application/init/init-command-resolver.ts
 import { resolve } from "path";
-var InitCommandResolver = class {
+var InitCommandResolver = class _InitCommandResolver {
+  /**
+   * Built-in agent extension names accepted by project initialization.
+   */
+  static builtInAgents = ["codex", "cursor"];
   /**
    * Resolves an init request from dispatcher-preserved arguments.
    *
@@ -899,10 +1047,13 @@ var InitCommandResolver = class {
     const flaggedRoot = this.flagValue(argv, "--root");
     const positionalRoot = argv[initIndex + 1];
     if (flaggedRoot != null && configuredRoot != null) {
-      return { projectRoot: configuredRoot };
+      return { projectRoot: configuredRoot, agents: this.agents(argv) };
     }
     const requestedRoot = flaggedRoot ?? (positionalRoot != null && !positionalRoot.startsWith("-") ? positionalRoot : ".");
-    return { projectRoot: resolve(cwd, requestedRoot) };
+    return {
+      projectRoot: resolve(cwd, requestedRoot),
+      agents: this.agents(argv)
+    };
   }
   /**
    * Reads a string option in either separated or equals form.
@@ -915,6 +1066,34 @@ var InitCommandResolver = class {
     const separatedIndex = argv.indexOf(option);
     if (separatedIndex >= 0) return argv[separatedIndex + 1];
     return argv.find((value) => value.startsWith(`${option}=`))?.slice(option.length + 1);
+  }
+  /**
+   * Resolves repeatable agent flags and preserves the established all-agent default.
+   *
+   * @param argv - Full dispatcher-preserved argument list.
+   * @returns Unique, supported built-in agent names.
+   */
+  agents(argv) {
+    const selected = argv.flatMap((value, index) => {
+      if (value === "--agent") {
+        const agent = argv[index + 1];
+        if (agent == null || agent.startsWith("-"))
+          throw new Error("The --agent option requires a built-in agent name.");
+        return [agent];
+      }
+      return value.startsWith("--agent=") ? [value.slice("--agent=".length)] : [];
+    });
+    if (selected.length === 0) return _InitCommandResolver.builtInAgents;
+    const invalid = selected.find(
+      (agent) => !_InitCommandResolver.builtInAgents.includes(
+        agent
+      )
+    );
+    if (invalid != null)
+      throw new Error(
+        `Unknown built-in agent "${invalid}". Choose codex or cursor.`
+      );
+    return [...new Set(selected)];
   }
 };
 
@@ -1013,21 +1192,33 @@ var RuntimeApplication = class {
       this.logger.info("Initializing Spec-N-Roll project.", {
         projectRoot: initRequest.projectRoot
       });
-      this.projectInitializer.initialize(initRequest.projectRoot);
+      this.projectInitializer.initialize(
+        initRequest.projectRoot,
+        initRequest.agents
+      );
       return;
     }
     if (invocation.argv[0] === "update") {
-      await this.updateGlobalFramework(invocation, false, { write: (text) => this.outputWriter?.writeLine(text) });
+      await this.updateGlobalFramework(invocation, {
+        write: (text) => this.outputWriter?.writeLine(text)
+      });
       return;
     }
     if (invocation.argv[0] === "agents" && invocation.argv[1] === "list") {
       if (invocation.projectRoot == null || this.agentLister == null || this.outputWriter == null) {
-        throw new Error("Agent listing requires a configured Spec-N-Roll project.");
+        throw new Error(
+          "Agent listing requires a configured Spec-N-Roll project."
+        );
       }
       const agents = await this.agentLister.list(invocation.projectRoot);
-      this.logger.info("Writing agent extension list.", { agentCount: agents.length });
+      this.logger.info("Writing agent extension list.", {
+        agentCount: agents.length
+      });
       this.outputWriter.writeLine("NAME	STATUS");
-      for (const agent of agents) this.outputWriter.writeLine(agent.name + "	" + (agent.enabled ? "enabled" : "disabled"));
+      for (const agent of agents)
+        this.outputWriter.writeLine(
+          agent.name + "	" + (agent.enabled ? "enabled" : "disabled")
+        );
       return;
     }
     const projectOperationRoot = invocation.projectRoot ?? invocation.cwd;
@@ -1038,7 +1229,11 @@ var RuntimeApplication = class {
       projectRoot: invocation.projectRoot,
       projectFound
     });
-    const projectUpdate = this.updateAvailabilityResolver.project(invocation.dispatcher.installSource, invocation.runtime.packageVersion, invocation.dispatcher.packageVersion);
+    const projectUpdate = this.updateAvailabilityResolver.project(
+      invocation.dispatcher.installSource,
+      invocation.runtime.packageVersion,
+      invocation.dispatcher.packageVersion
+    );
     const globalUpdate = this.resolveGlobalUpdate(invocation);
     await this.renderer.render({
       mode,
@@ -1048,28 +1243,42 @@ var RuntimeApplication = class {
       ...invocation.projectRoot == null ? {} : { projectRoot: invocation.projectRoot },
       projectFound,
       projectExists: () => this.projectInitializer.projectExists(projectOperationRoot),
-      initializeProject: () => this.projectInitializer.initialize(projectOperationRoot),
+      initializeProject: (agents) => this.projectInitializer.initialize(projectOperationRoot, agents),
+      configureBuiltInAgents: (agents) => this.projectInitializer.configureBuiltInAgents(
+        projectOperationRoot,
+        agents
+      ),
       updateProjectFramework: () => this.projectInitializer.upgrade(projectOperationRoot),
       projectUpdate,
-      updateGlobalFramework: async (output) => this.updateGlobalFramework(invocation, true, output),
+      updateGlobalFramework: async (output) => this.updateGlobalFramework(invocation, output),
+      reloadRuntime: () => this.runtimeReloader?.reload(),
       globalUpdate,
       listAgents: async () => {
-        if (invocation.projectRoot == null || this.agentLister == null) throw new Error("Agent listing requires a configured Spec-N-Roll project.");
+        if (invocation.projectRoot == null || this.agentLister == null)
+          throw new Error(
+            "Agent listing requires a configured Spec-N-Roll project."
+          );
         return this.agentLister.list(invocation.projectRoot);
       }
     });
   }
   /**
-   * Updates the global framework and optionally starts a refreshed runtime session.
+   * Updates the global framework while leaving interactive reload timing to the UI.
    *
    * @param invocation - Dispatcher invocation that selected this runtime.
-   * @param reload - True when an interactive session should be relaunched.
    */
-  async updateGlobalFramework(invocation, reload, output) {
-    if (this.globalFrameworkUpdater == null) throw new Error("Global framework updates are unavailable.");
-    this.logger.info("Updating global Spec-N-Roll framework.", { installSource: invocation.dispatcher.installSource, installDirectory: invocation.dispatcher.installDirectory });
-    await this.globalFrameworkUpdater.update(invocation.dispatcher.installSource, invocation.dispatcher.installDirectory, output);
-    if (reload) this.runtimeReloader?.reload();
+  async updateGlobalFramework(invocation, output) {
+    if (this.globalFrameworkUpdater == null)
+      throw new Error("Global framework updates are unavailable.");
+    this.logger.info("Updating global Spec-N-Roll framework.", {
+      installSource: invocation.dispatcher.installSource,
+      installDirectory: invocation.dispatcher.installDirectory
+    });
+    await this.globalFrameworkUpdater.update(
+      invocation.dispatcher.installSource,
+      invocation.dispatcher.installDirectory,
+      output
+    );
   }
   /**
    * Resolves whether the current global dispatcher source can be updated.
@@ -1078,13 +1287,26 @@ var RuntimeApplication = class {
    * @returns Global framework update availability.
    */
   resolveGlobalUpdate(invocation) {
-    if (this.globalFrameworkUpdater == null) return { enabled: false, disabledReason: "Global updates are unavailable." };
+    if (this.globalFrameworkUpdater == null)
+      return {
+        enabled: false,
+        disabledReason: "Global updates are unavailable."
+      };
     try {
-      return this.globalFrameworkUpdater.isUpdateAvailable(invocation.dispatcher.installSource, invocation.dispatcher.packageVersion) ? { enabled: true } : { enabled: false, disabledReason: "Global framework is current." };
+      return this.globalFrameworkUpdater.isUpdateAvailable(
+        invocation.dispatcher.installSource,
+        invocation.dispatcher.packageVersion
+      ) ? { enabled: true } : { enabled: false, disabledReason: "Global framework is current." };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn("Unable to determine global framework update availability.", { message });
-      return { enabled: false, disabledReason: "Unable to check npm for updates." };
+      this.logger.warn(
+        "Unable to determine global framework update availability.",
+        { message }
+      );
+      return {
+        enabled: false,
+        disabledReason: "Unable to check npm for updates."
+      };
     }
   }
 };
@@ -1164,10 +1386,24 @@ var EnvironmentRuntimeInvocationReader = class {
 };
 
 // src/infrastructure/filesystem/node-project-initializer.ts
-import { chmodSync, cpSync, existsSync as existsSync3, mkdirSync, readdirSync, readFileSync as readFileSync3, rmSync, writeFileSync as writeFileSync2 } from "fs";
+import {
+  chmodSync,
+  cpSync,
+  existsSync as existsSync3,
+  mkdirSync,
+  readdirSync,
+  readFileSync as readFileSync3,
+  rmSync,
+  writeFileSync as writeFileSync2
+} from "fs";
 import { createRequire } from "module";
 import { dirname, join as join3 } from "path";
-import { LOCAL_CLI_RELATIVE_PATH_SEGMENTS, LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS, LOCAL_MCP_RELATIVE_PATH_SEGMENTS, SPEC_N_ROLL_CONFIG_DIRECTORY_NAME as SPEC_N_ROLL_CONFIG_DIRECTORY_NAME3 } from "spec-n-roll-api";
+import {
+  LOCAL_CLI_RELATIVE_PATH_SEGMENTS,
+  LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS,
+  LOCAL_MCP_RELATIVE_PATH_SEGMENTS,
+  SPEC_N_ROLL_CONFIG_DIRECTORY_NAME as SPEC_N_ROLL_CONFIG_DIRECTORY_NAME3
+} from "spec-n-roll-api";
 
 // src/application/extensions/agents/codex-agent-extension-source.ts
 var CodexAgentExtensionSource = class {
@@ -1456,7 +1692,9 @@ var NodeProjectInitializer = class {
    * @param ownership - Ownership reader for files in the extension directory.
    * @param migrator - Configuration migration boundary run after framework replacement.
    */
-  constructor(runtimeBinaryPath = process.argv[1], mcpBinaryPath = createRequire(import.meta.url).resolve("spec-n-roll-mcp/dist/index.js"), codexAgentExtensionSource = new CodexAgentExtensionSource(), cursorAgentExtensionSource = new CursorAgentExtensionSource(), ownership = new FrameworkExtensionOwnership(), migrator = new NodeProjectConfigurationMigrator()) {
+  constructor(runtimeBinaryPath = process.argv[1], mcpBinaryPath = createRequire(import.meta.url).resolve(
+    "spec-n-roll-mcp/dist/index.js"
+  ), codexAgentExtensionSource = new CodexAgentExtensionSource(), cursorAgentExtensionSource = new CursorAgentExtensionSource(), ownership = new FrameworkExtensionOwnership(), migrator = new NodeProjectConfigurationMigrator()) {
     this.runtimeBinaryPath = runtimeBinaryPath;
     this.mcpBinaryPath = mcpBinaryPath;
     this.codexAgentExtensionSource = codexAgentExtensionSource;
@@ -1484,9 +1722,22 @@ var NodeProjectInitializer = class {
    *
    * @param projectRoot - Absolute project root receiving the installation.
    */
-  initialize(projectRoot) {
+  initialize(projectRoot, agents = ["codex", "cursor"]) {
     this.copyFrameworkFiles(projectRoot);
-    this.writeDefaultExtensions(projectRoot, true);
+    this.writeDefaultExtensions(projectRoot, true, agents);
+  }
+  /**
+   * Reconciles framework-owned built-in extensions with the selected agent names.
+   *
+   * @param projectRoot - Absolute initialized project root receiving the update.
+   * @param agents - Built-in agent names that should be enabled.
+   */
+  configureBuiltInAgents(projectRoot, agents) {
+    if (!this.projectExists(projectRoot))
+      throw new Error(
+        `Cannot configure built-in agents because ${projectRoot} is not initialized.`
+      );
+    this.writeDefaultExtensions(projectRoot, true, agents);
   }
   /**
    * Replaces framework-owned files, preserves user extensions, and migrates configuration.
@@ -1494,7 +1745,10 @@ var NodeProjectInitializer = class {
    * @param projectRoot - Absolute existing project root receiving the update.
    */
   upgrade(projectRoot) {
-    if (!this.projectExists(projectRoot)) throw new Error(`Cannot update Spec-N-Roll framework because ${projectRoot} is not initialized.`);
+    if (!this.projectExists(projectRoot))
+      throw new Error(
+        `Cannot update Spec-N-Roll framework because ${projectRoot} is not initialized.`
+      );
     this.copyFrameworkFiles(projectRoot);
     this.writeDefaultExtensions(projectRoot, false);
     this.migrator.migrate(projectRoot);
@@ -1505,9 +1759,19 @@ var NodeProjectInitializer = class {
    * @param projectRoot - Absolute project root receiving the framework files.
    */
   copyFrameworkFiles(projectRoot) {
-    this.copyExecutable(this.runtimeBinaryPath, join3(projectRoot, ...LOCAL_CLI_RELATIVE_PATH_SEGMENTS));
-    this.copyExecutable(this.mcpBinaryPath, join3(projectRoot, ...LOCAL_MCP_RELATIVE_PATH_SEGMENTS));
-    writeFileSync2(join3(projectRoot, ...LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS), JSON.stringify({ runtimeVersion: this.runtimeVersion() }, null, 2) + "\n", "utf8");
+    this.copyExecutable(
+      this.runtimeBinaryPath,
+      join3(projectRoot, ...LOCAL_CLI_RELATIVE_PATH_SEGMENTS)
+    );
+    this.copyExecutable(
+      this.mcpBinaryPath,
+      join3(projectRoot, ...LOCAL_MCP_RELATIVE_PATH_SEGMENTS)
+    );
+    writeFileSync2(
+      join3(projectRoot, ...LOCAL_FRAMEWORK_METADATA_RELATIVE_PATH_SEGMENTS),
+      JSON.stringify({ runtimeVersion: this.runtimeVersion() }, null, 2) + "\n",
+      "utf8"
+    );
   }
   /**
    * Reads the package version associated with the current global runtime binary.
@@ -1516,7 +1780,11 @@ var NodeProjectInitializer = class {
    */
   runtimeVersion() {
     try {
-      const packagePath = join3(dirname(this.runtimeBinaryPath), "..", "package.json");
+      const packagePath = join3(
+        dirname(this.runtimeBinaryPath),
+        "..",
+        "package.json"
+      );
       const packageJson = JSON.parse(readFileSync3(packagePath, "utf8"));
       return typeof packageJson.version === "string" && packageJson.version !== "" ? packageJson.version : "0.0.0";
     } catch {
@@ -1540,17 +1808,50 @@ var NodeProjectInitializer = class {
    * @param projectRoot - Absolute project root receiving extension files.
    * @param initializing - True when the project is newly initialized.
    */
-  writeDefaultExtensions(projectRoot, initializing) {
-    const extensionsRoot = join3(projectRoot, SPEC_N_ROLL_CONFIG_DIRECTORY_NAME3, "extensions");
-    const defaults = [["codex", this.codexAgentExtensionSource.source()], ["cursor", this.cursorAgentExtensionSource.source()]];
+  writeDefaultExtensions(projectRoot, initializing, selectedAgents = ["codex", "cursor"]) {
+    const extensionsRoot = join3(
+      projectRoot,
+      SPEC_N_ROLL_CONFIG_DIRECTORY_NAME3,
+      "extensions"
+    );
+    const defaults = [
+      ["codex", this.codexAgentExtensionSource.source()],
+      ["cursor", this.cursorAgentExtensionSource.source()]
+    ];
     for (const [name, source] of defaults) {
-      const extensionPath = join3(extensionsRoot, "agents", name, "extension.mjs");
+      if (initializing && !selectedAgents.includes(name)) continue;
+      const extensionPath = join3(
+        extensionsRoot,
+        "agents",
+        name,
+        "extension.mjs"
+      );
       mkdirSync(dirname(extensionPath), { recursive: true });
-      if (initializing || !existsSync3(extensionPath) || this.ownership.isFrameworkOwned(extensionPath)) writeFileSync2(extensionPath, source, "utf8");
+      if (initializing || !existsSync3(extensionPath) || this.ownership.isFrameworkOwned(extensionPath))
+        writeFileSync2(extensionPath, source, "utf8");
     }
     const configurationPath = join3(extensionsRoot, "extensions.json");
-    if (initializing || !existsSync3(configurationPath)) writeFileSync2(configurationPath, JSON.stringify({ agents: { codex: { enabled: true }, cursor: { enabled: true } } }, null, 2) + "\n", "utf8");
-    this.removeOwnedExtensionsAbsentFromDefaults(extensionsRoot, new Set(defaults.map(([name]) => name)));
+    const selectedDefaults = defaults.filter(
+      ([name]) => !initializing || selectedAgents.includes(name)
+    );
+    if (initializing || !existsSync3(configurationPath))
+      writeFileSync2(
+        configurationPath,
+        JSON.stringify(
+          {
+            agents: Object.fromEntries(
+              selectedDefaults.map(([name]) => [name, { enabled: true }])
+            )
+          },
+          null,
+          2
+        ) + "\n",
+        "utf8"
+      );
+    this.removeOwnedExtensionsAbsentFromDefaults(
+      extensionsRoot,
+      new Set(selectedDefaults.map(([name]) => name))
+    );
   }
   /**
    * Removes only framework-owned default extension folders that the new framework no longer supplies.
@@ -1564,7 +1865,8 @@ var NodeProjectInitializer = class {
     for (const name of readdirSync(agentsRoot)) {
       if (defaultNames.has(name)) continue;
       const extensionPath = join3(agentsRoot, name, "extension.mjs");
-      if (this.ownership.isFrameworkOwned(extensionPath)) rmSync(join3(agentsRoot, name), { recursive: true, force: true });
+      if (this.ownership.isFrameworkOwned(extensionPath))
+        rmSync(join3(agentsRoot, name), { recursive: true, force: true });
     }
   }
 };

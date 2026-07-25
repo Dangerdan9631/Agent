@@ -1,3 +1,10 @@
+/*
+---
+metadata:
+  author: 'spec-n-roll'
+  version: '0.1.0'
+---
+*/
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 

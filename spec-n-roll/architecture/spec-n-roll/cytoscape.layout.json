@@ -109,8 +109,8 @@
     "directory:spec-n-roll:application/runtime": {
       "parentId": "directory:spec-n-roll:application",
       "position": {
-        "x": -406.75,
-        "y": 887
+        "x": -383.7084468664851,
+        "y": 875.4792234332425
       }
     },
     "type:src/spec-n-roll/src/application/runtime/runtime-package-manifest-path-resolver.ts:RuntimePackageManifestPathResolver": {
@@ -130,15 +130,15 @@
     "type:src/spec-n-roll/src/application/runtime/runtime-process-request.ts:RuntimeProcessRequest": {
       "parentId": "directory:spec-n-roll:application/runtime",
       "position": {
-        "x": -200,
-        "y": 800
+        "x": -197.90531335149862,
+        "y": 776.958446866485
       }
     },
     "type:src/spec-n-roll/src/application/runtime/runtime-target-resolver.ts:RuntimeTargetResolver": {
       "parentId": "directory:spec-n-roll:application/runtime",
       "position": {
-        "x": -700,
-        "y": 1000
+        "x": -653.9168937329702,
+        "y": 993.715940054496
       }
     },
     "directory:spec-n-roll:infrastructure": {
@@ -263,8 +263,8 @@
     "external:node:fs": {
       "parentId": null,
       "position": {
-        "x": 1000,
-        "y": 900
+        "x": 995.8106267029973,
+        "y": 1061.2908719346049
       }
     },
     "external:commander": {
