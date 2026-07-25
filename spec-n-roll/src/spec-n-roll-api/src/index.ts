@@ -18,4 +18,22 @@ export type { ProjectRootResolution } from '#api/contracts/project/project-root-
 export type { RuntimeInvocation } from '#api/contracts/runtime/runtime-invocation.js';
 export { RUNTIME_INVOCATION_ENVIRONMENT_VARIABLE } from '#api/contracts/runtime/runtime-invocation-environment.js';
 export type { RuntimeTarget } from '#api/contracts/runtime/runtime-target.js';
+export type { WorkflowContextValue } from '#api/contracts/workflow/workflow-context-value.js';
+export type { WorkflowHookV1 } from '#api/contracts/workflow/workflow-hook-v1.js';
+export type {
+  WorkflowContextPatchV1,
+  WorkflowHookAnnotation,
+  WorkflowHookArtifact,
+  WorkflowHookResultV1,
+} from '#api/contracts/workflow/workflow-hook-result-v1.js';
+export type { WorkflowHookStatus } from '#api/contracts/workflow/workflow-hook-status.js';
+export {
+  WORKFLOW_RUN_CONTROL_FIELDS,
+} from '#api/contracts/workflow/workflow-run-control-fields.js';
+export type {
+  WorkflowCompletionStatus,
+  WorkflowHookOutcomeV1,
+  WorkflowHookPhase,
+  WorkflowRunStateV1,
+} from '#api/contracts/workflow/workflow-run-state-v1.js';
 

@@ -7,4 +7,6 @@ export type { AgentExtensionRegistrationReader } from '#sdk/application/agents/a
 export type { ProjectConfigurationMigrator } from '#sdk/application/updates/project-configuration-migrator.js';
 export type { ProjectFrameworkUpgrader } from '#sdk/application/updates/project-framework-upgrader.js';
 export type { ProjectFrameworkUpdateAvailability } from '#sdk/application/updates/project-framework-update-availability.js';
+export { WorkflowTransitionEngine } from '#sdk/application/workflow/workflow-transition-engine.js';
+export { WorkflowHookTransitionError } from '#sdk/application/workflow/workflow-hook-transition-error.js';
 
