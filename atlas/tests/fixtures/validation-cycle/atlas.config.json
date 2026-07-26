@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "discovery": {
+    "packages": [
+      {
+        "match": {
+          "name": "@atlas-fixture/validation-cycle"
+        },
+        "classification": "runtime"
+      }
+    ]
+  },
+  "rules": [
+    {
+      "id": "no-circular-imports",
+      "type": "no-circular",
+      "severity": "error"
+    }
+  ]
+}

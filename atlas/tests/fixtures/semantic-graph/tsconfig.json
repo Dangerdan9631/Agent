@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "paths": {
+      "@contracts": ["src/contracts.ts"]
+    },
+    "target": "ES2022"
+  }
+}
