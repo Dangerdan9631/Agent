@@ -6,7 +6,5 @@ specs/
 architecture/**
 !architecture/
 !architecture/**/
-!architecture/*/cytoscape.layout.json
-!architecture/project-dependencies.cytoscape.layout.json
-!architecture/**/*.png
+!architecture/**/layout.json
 .tmp/

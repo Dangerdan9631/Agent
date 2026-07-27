@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "discovery": {
+    "packageGlobs": ["src/*"],
+    "excludePackageGlobs": ["**/node_modules/**", "**/dist/**"],
+    "defaultSourceRoots": ["src"],
+    "packages": [
+      { "match": { "name": "spec-n-roll" }, "classification": "runtime" },
+      { "match": { "name": "spec-n-roll-api" }, "classification": "runtime" },
+      { "match": { "name": "spec-n-roll-mcp" }, "classification": "runtime" },
+      {
+        "match": { "name": "spec-n-roll-runtime" },
+        "classification": "runtime"
+      },
+      { "match": { "name": "spec-n-roll-sdk" }, "classification": "runtime" },
+      { "match": { "name": "spec-n-roll-test" }, "classification": "support" }
+    ]
+  },
+  "artifacts": {
+    "root": "architecture"
+  },
+  "diagrams": {
+    "excludeExternalDependencies": [
+      "node:module",
+      "node:path",
+      "node:url",
+      "reflect-metadata",
+      "tslog",
+      "tsyringe"
+    ],
+    "collapseExternalDependencies": false,
+    "collapseExternalDependencyGlobs": [
+      "chalk",
+      "commander",
+      "node:fs",
+      "node:module",
+      "node:path",
+      "node:url",
+      "reflect-metadata",
+      "ts",
+      "tslog",
+      "tsyringe"
+    ],
+    "splitExternalDependenciesByImporter": false,
+    "externalDependencyImporterSplits": [
+      {
+        "dependency": "commander",
+        "packageNames": ["spec-n-roll", "spec-n-roll-mcp", "spec-n-roll-runtime"]
+      },
+      {
+        "dependency": "node:fs",
+        "packageNames": ["spec-n-roll", "spec-n-roll-runtime"]
+      }
+    ],
+    "packages": [
+      {
+        "packageName": "spec-n-roll-api",
+        "excludeSourceGlobs": ["src/spec-n-roll-api/src/index.ts"]
+      },
+      {
+        "packageName": "spec-n-roll-runtime",
+        "excludeSourceGlobs": ["src/spec-n-roll-runtime/src/index.ts"]
+      },
+      {
+        "packageName": "spec-n-roll-sdk",
+        "excludeSourceGlobs": ["src/spec-n-roll-sdk/src/index.ts"]
+      },
+      {
+        "packageName": "spec-n-roll",
+        "excludeSourceGlobs": [
+          "src/spec-n-roll/src/composition/dispatcher/dispatcher-container-factory.ts",
+          "src/spec-n-roll/src/composition/dispatcher/dispatcher-injection-tokens.ts"
+        ]
+      }
+    ]
+  },
+  "rules": [
+    { "id": "no-circular", "type": "no-circular", "severity": "error" },
+    {
+      "id": "runtime-may-not-depend-on-support",
+      "type": "no-runtime-to-support",
+      "severity": "error"
+    }
+  ]
+}

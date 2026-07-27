@@ -3,6 +3,7 @@ import { DeclarationNode } from '#application/graph/model/DeclarationGraph.js';
 import { DeterministicLayoutService } from '#application/layout/DeterministicLayoutService.js';
 import { ResolvedWorkspacePaths } from '#application/workspace/model/ResolvedWorkspacePaths.js';
 import { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
+import { WorkspacePackage } from '#application/workspace/model/WorkspacePackage.js';
 import { NodeDiagramArtifactWriter } from '#infrastructure/artifacts/NodeDiagramArtifactWriter.js';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -68,7 +69,17 @@ describe('NodeDiagramArtifactWriter', () => {
         schemaVersion: 1,
         discovery: { packages: [{ match: { name: '@demo/app' }, classification: 'runtime' }] }
       },
-      []
+      [
+        new WorkspacePackage(
+          '@demo/app',
+          join(root.rootPath, 'src', 'demo-app'),
+          'src/demo-app',
+          [join(root.rootPath, 'src', 'demo-app', 'src')],
+          'runtime',
+          [],
+          undefined
+        )
+      ]
     );
     const diagram = new DiagramGraph(
       'landscape',
@@ -79,7 +90,7 @@ describe('NodeDiagramArtifactWriter', () => {
           'Feature',
           'class',
           '@demo/app',
-          'src/features/Feature.ts',
+          'src/demo-app/src/features/Feature.ts',
           false
         )
       ],
@@ -97,24 +108,35 @@ describe('NodeDiagramArtifactWriter', () => {
     const viewer = await readFile(join(root.rootPath, 'landscape', 'index.html'), 'utf8');
     const nodes = new Map(graph.elements.nodes.map((node) => [node.data.id, node.data]));
 
-    expect(nodes.get('directory:%40demo%2Fapp:src')).toMatchObject({
+    expect(nodes.get('directory:%40demo%2Fapp:features')).toMatchObject({
       compound: true,
       parent: 'package:%40demo%2Fapp'
     });
-    expect(nodes.get('directory:%40demo%2Fapp:src%2Ffeatures')).toMatchObject({
-      compound: true,
-      parent: 'directory:%40demo%2Fapp:src'
-    });
     expect(nodes.get('feature')).toMatchObject({
-      parent: 'directory:%40demo%2Fapp:src%2Ffeatures'
+      parent: 'directory:%40demo%2Fapp:features'
     });
-    expect(viewer).toContain("canvas.addEventListener('pointerdown'");
+    expect(viewer).toContain('cytoscape@3.31.2');
     expect(viewer).toContain("fetch('/api/layout?scope='");
     expect(viewer).toContain('id="atlas-snap"');
-    expect(viewer).toContain('atlas-layout-updated');
+    expect(viewer).toContain(
+      'if (selected.empty()) { autoLayout.layout(); } else { autoLayout.layoutGroup(selected); }'
+    );
+    expect(viewer).toContain('const selectedContents = selected.union(selected.descendants());');
+    expect(viewer).toContain("cy.on('dragfree'");
+    expect(viewer).toContain('class="shell" id="shell"');
+    expect(viewer).toContain('class="navigation"');
+    expect(viewer).toContain('class="toolbar" aria-label="Graph controls"');
+    expect(viewer).toContain('id="atlas-nav-toggle"');
+    expect(viewer).toContain('Export Image');
+    expect(viewer).toContain('Dark Mode');
     await expect(writer.readDiagram(workspace, 'landscape')).resolves.toMatchObject({
       scope: 'landscape',
-      nodes: [expect.objectContaining({ id: 'feature', sourcePath: 'src/features/Feature.ts' })]
+      nodes: [
+        expect.objectContaining({
+          id: 'feature',
+          sourcePath: 'src/demo-app/src/features/Feature.ts'
+        })
+      ]
     });
   });
 });

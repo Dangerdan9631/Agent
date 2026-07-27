@@ -122,9 +122,21 @@
           "description": "Collapses visible external dependencies to package-level nodes.",
           "type": "boolean"
         },
+        "collapseExternalDependencyGlobs": {
+          "description": "Collapses matching external dependency labels when global collapsing is disabled.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
         "splitExternalDependenciesByImporter": {
           "description": "Splits landscape external dependencies by importing workspace package.",
           "type": "boolean"
+        },
+        "externalDependencyImporterSplits": {
+          "description": "Selectively splits matching landscape external dependencies by importing package.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/externalDependencyImporterSplit" },
+          "uniqueItems": true
         },
         "packages": {
           "description": "Defines package-specific declaration exclusion policy.",
@@ -181,6 +193,32 @@
         "splitExternalDependenciesByImporter": {
           "description": "Optionally overrides inherited external splitting behavior.",
           "type": "boolean"
+        },
+        "externalDependencyImporterSplits": {
+          "description": "Adds selective external dependency importer splits to inherited policy.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/externalDependencyImporterSplit" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "externalDependencyImporterSplit": {
+      "description": "Splits one external dependency for selected importing workspace packages.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dependency", "packageNames"],
+      "properties": {
+        "dependency": {
+          "description": "Matches one external dependency label using a glob pattern.",
+          "type": "string",
+          "minLength": 1
+        },
+        "packageNames": {
+          "description": "Names importing workspace packages receiving separate dependency nodes.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
         }
       }
     },

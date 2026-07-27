@@ -1,0 +1,418 @@
+{
+  "hiddenRelationshipIds": [],
+  "positions": [
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#interface:ChalkInstance",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 5048,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#interface:Options",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 1450,
+      "y": 636
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#module:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 4732,
+      "y": 632
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:BackgroundColor",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 4656,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:Color",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 5274,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:ForegroundColor",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 5508,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:Modifiers",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 5742,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#interface:BackgroundColor",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2696,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#interface:ColorBase",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 1930,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#interface:ConvertColor",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2932,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#interface:CSPair",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2682,
+      "y": 440
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#interface:ForegroundColor",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 1944,
+      "y": 440
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#interface:Modifier",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2402,
+      "y": 440
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#module:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 1620,
+      "y": 320
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#type-alias:BackgroundColorName",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2432,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#type-alias:ColorName",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2178,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#type-alias:ForegroundColorName",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 1560,
+      "y": 440
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles%2Findex.d.ts#type-alias:ModifierName",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fansi-styles",
+      "x": 2180,
+      "y": 440
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color%2Findex.d.ts#module:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color%2Findex.d.ts",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color",
+      "x": 3324,
+      "y": 320
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color%2Findex.d.ts#type-alias:ColorInfo",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color",
+      "x": 3634,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color%2Findex.d.ts#type-alias:ColorSupport",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color",
+      "x": 3856,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color%2Findex.d.ts#type-alias:ColorSupportLevel",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color",
+      "x": 4100,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color%2Findex.d.ts#type-alias:Options",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fchalk%2Fsource%2Fvendor%2Fsupports-color",
+      "x": 4342,
+      "y": 324
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:Argument",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6410,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:Command",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7082,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:CommanderError",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6820,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:Help",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7306,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:InvalidArgumentError",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6156,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:Option",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6810,
+      "y": 476
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:AddHelpTextContext",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6836,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:CommandOptions",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7636,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:ErrorOptions",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7084,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:ExecutableCommandOptions",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7356,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:HelpContext",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6122,
+      "y": 476
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:OutputConfiguration",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6152,
+      "y": 592
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:ParseOptions",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6412,
+      "y": 592
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#interface:ParseOptionsResult",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6836,
+      "y": 592
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#module:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6500,
+      "y": 240
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#type-alias:AddHelpTextPosition",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6152,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#type-alias:HelpConfiguration",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7648,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#type-alias:HookEvent",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 6410,
+      "y": 476
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#type-alias:LiteralUnion",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7628,
+      "y": 476
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#type-alias:OptionValues",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7084,
+      "y": 476
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#type-alias:OptionValueSource",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 7328,
+      "y": 476
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fsrc%2Fapplication%2Fcommands%2Fcommand-runner.ts#interface:CommandRunner",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fsrc%2Fapplication%2Fcommands",
+      "x": 8136,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fsrc%2Fcomposition%2Fmcp%2Fmcp-container-factory.ts#class:McpContainerFactory",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fsrc%2Fcomposition%2Fmcp",
+      "x": 8816,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fsrc%2Fcomposition%2Fmcp%2Fmcp-program-factory.ts#class:McpProgramFactory",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fsrc%2Fcomposition%2Fmcp",
+      "x": 8544,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fsrc%2Finfrastructure%2Fcommands%2Fmcp-command-runner.ts#class:McpCommandRunner",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fsrc%2Finfrastructure%2Fcommands",
+      "x": 9244,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fsrc%2Fpresentation%2Fcli%2Fmcp-cli.ts#class:McpCli",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fsrc%2Fpresentation%2Fcli",
+      "x": 9642,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fruntime%2Fruntime-application.ts#class:RuntimeApplication",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fruntime",
+      "x": 10368,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fcomposition%2Fruntime%2Fruntime-program-factory.ts#class:RuntimeProgramFactory",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fcomposition%2Fruntime",
+      "x": 10812,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fcli%2Fruntime-cli.ts#class:RuntimeCli",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fcli",
+      "x": 11230,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#interface:ChalkInstance",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 12584,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#interface:Options",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 11930,
+      "y": 360
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#module:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 12020,
+      "y": 240
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:BackgroundColor",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 12344,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:Color",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 12810,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:ForegroundColor",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 13044,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource%2Findex.d.ts#type-alias:Modifiers",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fnode_modules%2Fchalk%2Fsource",
+      "x": 13278,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fapplication%2Fcommands%2Fcommand-runner.ts#interface:CommandRunner",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fapplication%2Fcommands",
+      "x": 13744,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support%2Ftest-support-container-factory.ts#class:TestSupportContainerFactory",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support",
+      "x": 14520,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support%2Ftest-support-program-factory.ts#class:TestSupportProgramFactory",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support",
+      "x": 14184,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Finfrastructure%2Fcommands%2Ftest-support-command-runner.ts#class:TestSupportCommandRunner",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Finfrastructure%2Fcommands",
+      "x": 15012,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fpresentation%2Fcli%2Ftest-support-cli.ts#class:TestSupportCli",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fpresentation%2Fcli",
+      "x": 15452,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch%2Fdispatcher-application.ts#class:DispatcherApplication",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch",
+      "x": 0,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch%2Fdispatcher-command-options.ts#interface:DispatcherCommandOptions",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch",
+      "x": 308,
+      "y": 244
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fpresentation%2Fcli%2Fdispatcher-cli.ts#class:DispatcherCli",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fpresentation%2Fcli",
+      "x": 744,
+      "y": 244
+    },
+    {
+      "nodeId": "external:node:fs:importer:spec-n-roll-runtime",
+      "x": 15922,
+      "y": 0
+    },
+    {
+      "nodeId": "external:node:tty:source:declaration%3Asrc%252Fspec-n-roll-mcp%252Fnode_modules%252Fchalk%252Fsource%252Fvendor%252Fsupports-color%252Findex.d.ts%23module%3Asrc%252Fspec-n-roll-mcp%252Fnode_modules%252Fchalk%252Fsource%252Fvendor%252Fsupports-color%252Findex.d.ts",
+      "x": 70,
+      "y": 24
+    }
+  ],
+  "schemaVersion": 1
+}

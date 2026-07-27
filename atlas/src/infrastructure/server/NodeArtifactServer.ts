@@ -159,6 +159,10 @@ export class NodeArtifactServer implements ArtifactServer {
       await this.applyConfigurationAction(request, response);
       return;
     }
+    if (request.method === 'GET' && this.isConfigurationActionRequest(request.url ?? '/')) {
+      await this.readConfigurationSummary(response);
+      return;
+    }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       this.writeStatus(response, 405);
       return;
@@ -256,6 +260,38 @@ export class NodeArtifactServer implements ArtifactServer {
       await this.writeValidatedConfiguration(configurationPath, updatedConfiguration);
       response.writeHead(204);
       response.end();
+    } catch {
+      this.writeStatus(response, 400);
+    }
+  }
+
+  /**
+   * Returns the globally configured diagram exclusions that the viewer may safely edit.
+   *
+   * @param response - Mutable HTTP response receiving the narrow configuration projection.
+   * @returns A promise that resolves after the response has been completed.
+   */
+  private async readConfigurationSummary(response: ServerResponse): Promise<void> {
+    const configurationPath = this.#configurationPath;
+    if (configurationPath === undefined) {
+      this.writeStatus(response, 409);
+      return;
+    }
+    try {
+      const configuration = JSON.parse(await readFile(configurationPath, 'utf8')) as unknown;
+      if (!this.isConfigurationDocument(configuration)) {
+        this.writeStatus(response, 400);
+        return;
+      }
+      response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      response.end(
+        `${JSON.stringify({
+          externalDependencies: configuration.diagrams?.excludeExternalDependencies ?? [],
+          sourceGlobs: configuration.diagrams?.excludeSourceGlobs ?? [],
+          splitExternalDependenciesByImporter:
+            configuration.diagrams?.splitExternalDependenciesByImporter ?? false
+        })}\n`
+      );
     } catch {
       this.writeStatus(response, 400);
     }
@@ -565,7 +601,7 @@ export class NodeArtifactServer implements ArtifactServer {
     }
     try {
       const graphStats = await stat(resolve(scopeDirectoryPath, 'graph.json'));
-      const image = await this.readBody(request);
+      const image = await this.readBody(request, 25 * 1024 * 1024);
       if (!graphStats.isFile() || !this.isPng(image)) {
         this.writeStatus(response, 400);
         return;
@@ -629,15 +665,16 @@ export class NodeArtifactServer implements ArtifactServer {
    * Reads a bounded request body to avoid unbounded local-server memory use.
    *
    * @param request - Incoming Node HTTP request.
+   * @param maximumBytes - Inclusive maximum accepted body size for the calling endpoint.
    * @returns Complete binary request body.
    */
-  private readBody(request: IncomingMessage): Promise<Buffer> {
+  private readBody(request: IncomingMessage, maximumBytes = 1024 * 1024): Promise<Buffer> {
     return new Promise((resolvePromise, rejectPromise) => {
       const chunks: Buffer[] = [];
       let length = 0;
       request.on('data', (chunk: Buffer) => {
         length += chunk.length;
-        if (length > 1024 * 1024) {
+        if (length > maximumBytes) {
           rejectPromise(new Error('Atlas layout request body exceeds one megabyte.'));
           request.destroy();
           return;

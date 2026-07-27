@@ -12,7 +12,6 @@ flowchart TD
     Runtime["spec-n-roll-runtime"]
     Sdk["spec-n-roll-sdk"]
     Mcp["spec-n-roll-mcp"]
-    Arch["spec-n-roll-arch"]
     Test["spec-n-roll-test"]
 
     Workspace -->|"contains packages"| Api
@@ -20,13 +19,11 @@ flowchart TD
     Workspace -->|"contains packages"| Runtime
     Workspace -->|"contains packages"| Sdk
     Workspace -->|"contains packages"| Mcp
-    Workspace -->|"contains packages"| Arch
     Workspace -->|"contains packages"| Test
     Dispatcher -->|"uses boundary"| Api
     Runtime -->|"uses boundary"| Api
     Runtime -->|"uses behavior"| Sdk
     Mcp -->|"adapts behavior"| Sdk
-    Arch -->|"validates packages"| Workspace
     Test -->|"supports tests"| Workspace
 ```
 

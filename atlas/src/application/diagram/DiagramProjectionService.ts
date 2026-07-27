@@ -1,5 +1,6 @@
 import type {
   AtlasDiagramConfiguration,
+  AtlasExternalDependencyImporterSplit,
   AtlasFolderDiagramConfiguration,
   AtlasPackageDiagramConfiguration
 } from '#application/configuration/model/AtlasConfiguration.js';
@@ -47,7 +48,23 @@ export class DiagramProjectionService {
    * @returns Workspace-wide landscape diagram graph.
    */
   private createLandscape(graph: DeclarationGraph): DiagramGraph {
-    return new DiagramGraph('landscape', 'Workspace Landscape', graph.nodes, graph.relationships);
+    const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+    const relationships = graph.relationships.filter((relationship) => {
+      const source = nodesById.get(relationship.sourceId);
+      const target = nodesById.get(relationship.targetId);
+      return (
+        source !== undefined && target !== undefined && source.packageName !== target.packageName
+      );
+    });
+    const nodeIds = new Set(
+      relationships.flatMap((relationship) => [relationship.sourceId, relationship.targetId])
+    );
+    return this.toGraph(
+      'landscape',
+      'Workspace Landscape',
+      graph.nodes.filter((node) => nodeIds.has(node.id)),
+      relationships
+    );
   }
 
   /**
@@ -200,7 +217,7 @@ export class DiagramProjectionService {
   }
 
   /**
-   * Applies exclusions and optional landscape external-dependency splitting to a complete graph.
+   * Applies exclusions, configured external collapsing, and optional landscape importer splitting to a complete graph.
    *
    * @param graph - Complete declaration graph.
    * @param policy - Effective policy after global inheritance and optional folder overrides.
@@ -222,11 +239,12 @@ export class DiagramProjectionService {
     const nodesById = new Map(
       graph.nodes.filter((node) => visibleNodeIds.has(node.id)).map((node) => [node.id, node])
     );
-    const relationships = !policy.collapseExternalDependencies
-      ? this.expandExternalDependencies(nodesById, includedRelationships)
-      : allowExternalSplitting && policy.splitExternalDependenciesByImporter
-        ? this.splitExternalDependencies(nodesById, includedRelationships)
-        : includedRelationships;
+    const relationships = this.shapeExternalDependencies(
+      nodesById,
+      includedRelationships,
+      policy,
+      allowExternalSplitting
+    );
     const relationshipNodeIds = new Set(
       relationships.flatMap((relationship) => [relationship.sourceId, relationship.targetId])
     );
@@ -239,86 +257,85 @@ export class DiagramProjectionService {
   }
 
   /**
-   * Splits external targets by source package while preserving source-to-target edge semantics.
+   * Applies the effective collapse and importer-splitting policy to external relationship targets.
    *
    * @param nodesById - Mutable visible nodes keyed by ID.
    * @param relationships - Visible graph relationships.
-   * @returns Relationships targeting importer-keyed external clones where eligible.
+   * @param policy - Effective external dependency rendering policy.
+   * @param allowExternalSplitting - Determines whether importer-specific external clones are allowed.
+   * @returns Relationships targeting the configured external dependency representation.
    */
-  private splitExternalDependencies(
+  private shapeExternalDependencies(
     nodesById: Map<string, DeclarationNode>,
-    relationships: readonly DeclarationRelationship[]
+    relationships: readonly DeclarationRelationship[],
+    policy: DiagramProjectionPolicy,
+    allowExternalSplitting: boolean
   ): readonly DeclarationRelationship[] {
     return relationships.map((relationship) => {
       const sourceNode = nodesById.get(relationship.sourceId);
       const targetNode = nodesById.get(relationship.targetId);
-      if (
-        sourceNode?.packageName === undefined ||
-        targetNode === undefined ||
-        targetNode.kind !== 'external'
-      ) {
+      if (targetNode === undefined || targetNode.kind !== 'external') {
         return relationship;
       }
-      const splitTargetId = `${targetNode.id}:importer:${encodeURIComponent(sourceNode.packageName)}`;
-      if (!nodesById.has(splitTargetId)) {
-        nodesById.set(
-          splitTargetId,
-          new DeclarationNode(
-            splitTargetId,
-            targetNode.label,
-            'external',
-            undefined,
-            undefined,
-            false
-          )
+      if (!policy.collapses(targetNode.label)) {
+        return this.createExternalClone(
+          nodesById,
+          relationship,
+          targetNode,
+          `source:${encodeURIComponent(relationship.sourceId)}`
         );
       }
-      return new DeclarationRelationship(
-        `relationship:${encodeURIComponent(relationship.sourceId)}>${encodeURIComponent(splitTargetId)}:${relationship.type}`,
-        relationship.sourceId,
-        splitTargetId,
-        relationship.type
-      );
+      if (
+        allowExternalSplitting &&
+        sourceNode?.packageName !== undefined &&
+        policy.splitsByImporter(targetNode.label, sourceNode.packageName)
+      ) {
+        return this.createExternalClone(
+          nodesById,
+          relationship,
+          targetNode,
+          `importer:${encodeURIComponent(sourceNode.packageName)}`
+        );
+      }
+      return relationship;
     });
   }
 
   /**
-   * Expands each external target to a declaration-keyed node when external collapsing is disabled.
+   * Creates a stable clone of an external target and redirects one relationship to it.
    *
    * @param nodesById - Mutable visible nodes keyed by ID.
-   * @param relationships - Visible graph relationships.
-   * @returns Relationships targeting declaration-keyed external clones where eligible.
+   * @param relationship - Relationship that requires a cloned target.
+   * @param targetNode - Visible external dependency being cloned.
+   * @param cloneSuffix - Stable clone identity scoped to its source declaration or importing package.
+   * @returns Relationship targeting the external clone.
    */
-  private expandExternalDependencies(
+  private createExternalClone(
     nodesById: Map<string, DeclarationNode>,
-    relationships: readonly DeclarationRelationship[]
-  ): readonly DeclarationRelationship[] {
-    return relationships.map((relationship) => {
-      const targetNode = nodesById.get(relationship.targetId);
-      if (targetNode === undefined || targetNode.kind !== 'external') {
-        return relationship;
-      }
-      const expandedTargetId = `${targetNode.id}:source:${encodeURIComponent(relationship.sourceId)}`;
-      if (!nodesById.has(expandedTargetId)) {
-        nodesById.set(
-          expandedTargetId,
-          new DeclarationNode(
-            expandedTargetId,
-            targetNode.label,
-            'external',
-            undefined,
-            undefined,
-            false
-          )
-        );
-      }
-      return new DeclarationRelationship(
-        `relationship:${encodeURIComponent(relationship.sourceId)}>${encodeURIComponent(expandedTargetId)}:${relationship.type}`,
-        relationship.sourceId,
-        expandedTargetId,
-        relationship.type
+    relationship: DeclarationRelationship,
+    targetNode: DeclarationNode,
+    cloneSuffix: string
+  ): DeclarationRelationship {
+    const clonedTargetId = `${targetNode.id}:${cloneSuffix}`;
+    if (!nodesById.has(clonedTargetId)) {
+      nodesById.set(
+        clonedTargetId,
+        new DeclarationNode(
+          clonedTargetId,
+          targetNode.label,
+          'external',
+          undefined,
+          undefined,
+          false
+        )
       );
-    });
+    }
+    return new DeclarationRelationship(
+      `relationship:${encodeURIComponent(relationship.sourceId)}>${encodeURIComponent(clonedTargetId)}:${relationship.type}`,
+      relationship.sourceId,
+      clonedTargetId,
+      relationship.type
+    );
   }
 
   /**
@@ -413,6 +430,12 @@ class DiagramProjectionPolicy {
       folderConfiguration?.splitExternalDependenciesByImporter ??
       globalConfiguration?.splitExternalDependenciesByImporter ??
       false;
+    this.collapseExternalDependencyGlobs =
+      globalConfiguration?.collapseExternalDependencyGlobs ?? [];
+    this.externalDependencyImporterSplits = [
+      ...(globalConfiguration?.externalDependencyImporterSplits ?? []),
+      ...(folderConfiguration?.externalDependencyImporterSplits ?? [])
+    ];
     this.collapseExternalDependencies =
       folderConfiguration?.collapseExternalDependencies ??
       globalConfiguration?.collapseExternalDependencies ??
@@ -443,6 +466,45 @@ class DiagramProjectionPolicy {
    * Determines whether one normalized external dependency node is shared by all importing declarations.
    */
   public readonly collapseExternalDependencies: boolean;
+
+  /**
+   * External dependency labels that remain collapsed when global collapsing is disabled.
+   */
+  public readonly collapseExternalDependencyGlobs: readonly string[];
+
+  /**
+   * External dependency and importer package combinations that use package-keyed landscape clones.
+   */
+  public readonly externalDependencyImporterSplits: readonly AtlasExternalDependencyImporterSplit[];
+
+  /**
+   * Determines whether an external label remains represented by one shared dependency node.
+   *
+   * @param label - Stable external dependency label.
+   * @returns True when the label should use its shared external node.
+   */
+  public collapses(label: string): boolean {
+    return (
+      this.collapseExternalDependencies ||
+      this.collapseExternalDependencyGlobs.some((pattern) => this.matches(label, pattern))
+    );
+  }
+
+  /**
+   * Determines whether a collapsed external label receives an importer-keyed landscape clone.
+   *
+   * @param label - Stable external dependency label.
+   * @param packageName - Exact importing workspace package name.
+   * @returns True when the dependency should be split for the importing package.
+   */
+  public splitsByImporter(label: string, packageName: string): boolean {
+    return (
+      this.splitExternalDependenciesByImporter ||
+      this.externalDependencyImporterSplits.some(
+        (split) => this.matches(label, split.dependency) && split.packageNames.includes(packageName)
+      )
+    );
+  }
 
   /**
    * Determines whether one semantic graph node remains visible after effective exclusions.

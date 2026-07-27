@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filesOfProject } from 'tsarch';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import ts from 'typescript';
@@ -30,6 +30,27 @@ class WorkspaceArchitectureFixtureReader {
     return JSON.parse(readFileSync(resolve(relativePath), 'utf8')) as {
       dependencies?: Record<string, string>;
     };
+  }
+}
+
+/**
+ * Runs the installed Atlas command against the workspace architecture policy.
+ */
+class AtlasArchitectureValidator {
+  /**
+   * Validates the root Atlas policy and throws when an error-severity rule is violated.
+   */
+  validate(): void {
+    execFileSync(
+      process.execPath,
+      [
+        resolve(
+          'node_modules/@starcruisestudios/atlas/dist/presentation/cli/atlas.js',
+        ),
+        'validate',
+      ],
+      { stdio: 'pipe' },
+    );
   }
 }
 
@@ -101,14 +122,8 @@ class WorkspaceIndexEntrypointPolicy {
 }
 
 describe('workspace architecture tests', () => {
-  it('keeps the SDK stub cycle free', async () => {
-    const violations = await filesOfProject('src/spec-n-roll-sdk/tsconfig.json')
-      .inFolder('src')
-      .should()
-      .beFreeOfCycles()
-      .check();
-
-    expect(violations).toEqual([]);
+  it('validates the Atlas architecture policy', () => {
+    expect(() => new AtlasArchitectureValidator().validate()).not.toThrow();
   });
 
   it('keeps dispatcher and runtime dependencies pointed at the API boundary', () => {

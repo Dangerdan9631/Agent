@@ -173,9 +173,19 @@ export interface AtlasDiagramConfiguration {
   readonly collapseExternalDependencies?: boolean;
 
   /**
+   * Collapses matching external dependency labels when global external collapsing is disabled.
+   */
+  readonly collapseExternalDependencyGlobs?: readonly string[];
+
+  /**
    * Splits landscape external dependency nodes by importing workspace package when enabled.
    */
   readonly splitExternalDependenciesByImporter?: boolean;
+
+  /**
+   * Selectively splits matching landscape external dependencies by their configured importing packages.
+   */
+  readonly externalDependencyImporterSplits?: readonly AtlasExternalDependencyImporterSplit[];
 
   /**
    * Defines package-specific source-node exclusions inherited by package and folder diagrams.
@@ -226,6 +236,26 @@ export interface AtlasFolderDiagramConfiguration {
    * Optionally overrides inherited per-importer external dependency splitting.
    */
   readonly splitExternalDependenciesByImporter?: boolean;
+
+  /**
+   * Adds selective external dependency importer splits to inherited landscape policy.
+   */
+  readonly externalDependencyImporterSplits?: readonly AtlasExternalDependencyImporterSplit[];
+}
+
+/**
+ * Splits one external dependency into separate landscape nodes for selected importing packages.
+ */
+export interface AtlasExternalDependencyImporterSplit {
+  /**
+   * Matches one external dependency label using a slash-normalized glob pattern.
+   */
+  readonly dependency: string;
+
+  /**
+   * Names the importing workspace packages that receive separate external dependency nodes.
+   */
+  readonly packageNames: readonly string[];
 }
 
 /**

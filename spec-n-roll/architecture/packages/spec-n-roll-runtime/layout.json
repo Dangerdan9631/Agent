@@ -1,0 +1,626 @@
+{
+  "hiddenRelationshipIds": [],
+  "positions": [
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:DispatcherMetadata",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 8576,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:ExtensionConfiguration",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 6952,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:ExtensionConfigurationEntry",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 7284,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:PathResolutionContext",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 7604,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:ProjectRootResolution",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 7900,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:RuntimeInvocation",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 8284,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:RuntimeTarget",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 7228,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#interface:SkillDefinition",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 7580,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#module:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 7952,
+      "y": 112
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#type-alias:DispatcherInstallSource",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 6956,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#type-alias:WorkflowContextValue",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 8296,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-api%2Fdist%2Findex.d.ts#type-alias:WorkflowHookPhase",
+      "parentId": "directory:spec-n-roll-api:src%2Fspec-n-roll-api%2Fdist",
+      "x": 8572,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings%2Findex.d.ts#class:Command",
+      "parentId": "directory:spec-n-roll-mcp:src%2Fspec-n-roll-mcp%2Fnode_modules%2Fcommander%2Ftypings",
+      "x": 9222,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents%2Fbuilt-in-agent-instruction-source.ts#class:BuiltInAgentInstructionSource",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents",
+      "x": 10032,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents%2Fbuilt-in-skill-definition-source.ts#class:BuiltInSkillDefinitionSource",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents",
+      "x": 10388,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents%2Fcodex-agent-extension-source.ts#class:CodexAgentExtensionSource",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents",
+      "x": 10728,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents%2Fcursor-agent-extension-source.ts#class:CursorAgentExtensionSource",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fagents",
+      "x": 11060,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions%2Fextension-discoverer.ts#interface:ExtensionDiscoverer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fextensions",
+      "x": 11408,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finit%2Finit-command-request.ts#interface:InitCommandRequest",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finit",
+      "x": 12044,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finit%2Finit-command-resolver.ts#class:InitCommandResolver",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finit",
+      "x": 11768,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finit%2Fproject-initializer.ts#interface:ProjectInitializer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finit",
+      "x": 12316,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finvocation%2Fruntime-invocation-parser.ts#class:RuntimeInvocationParser",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finvocation",
+      "x": 12688,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finvocation%2Fruntime-invocation-reader.ts#interface:RuntimeInvocationReader",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Finvocation",
+      "x": 13000,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Foutput%2Fruntime-output-writer.ts#interface:RuntimeOutputWriter",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Foutput",
+      "x": 13376,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fruntime%2Fruntime-application.ts#class:RuntimeApplication",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fruntime",
+      "x": 13732,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui%2Fruntime-ui-mode-resolver.ts#class:RuntimeUiModeResolver",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui",
+      "x": 14096,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui%2Fruntime-ui-mode-resolver.ts#type-alias:RuntimeUiMode",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui",
+      "x": 14880,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui%2Fruntime-ui-renderer.ts#interface:RuntimeUiRenderer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui",
+      "x": 14376,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui%2Fruntime-ui-session.ts#interface:RuntimeUiSession",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui",
+      "x": 14636,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui%2Fterminal-layout-allocator.ts#class:TerminalLayoutAllocator",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui",
+      "x": 15152,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui%2Fterminal-layout-allocator.ts#interface:TerminalLayout",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fui",
+      "x": 15428,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate%2Fframework-update-availability-resolver.ts#class:FrameworkUpdateAvailabilityResolver",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate",
+      "x": 10012,
+      "y": 356
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate%2Fglobal-framework-updater.ts#interface:FrameworkUpdateOutput",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate",
+      "x": 10664,
+      "y": 356
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate%2Fglobal-framework-updater.ts#interface:GlobalFrameworkUpdater",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate",
+      "x": 10364,
+      "y": 356
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate%2Fruntime-reloader.ts#interface:RuntimeReloader",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fapplication%2Fupdate",
+      "x": 10936,
+      "y": 356
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fcomposition%2Fruntime%2Fruntime-composition-root.ts#class:RuntimeCompositionRoot",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fcomposition%2Fruntime",
+      "x": 15860,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fcomposition%2Fruntime%2Fruntime-program-factory.ts#class:RuntimeProgramFactory",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fcomposition%2Fruntime",
+      "x": 16160,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fextensions%2Fnode-extension-discoverer.ts#class:NodeExtensionDiscoverer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fextensions",
+      "x": 16624,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Ffilesystem%2Fnode-project-initializer.ts#class:NodeProjectInitializer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Ffilesystem",
+      "x": 17012,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fink%2Fink-runtime-ui-renderer.tsx#class:InkRuntimeUiRenderer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fink",
+      "x": 17388,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fprocess%2Fconsole-runtime-output-writer.ts#class:ConsoleRuntimeOutputWriter",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fprocess",
+      "x": 17780,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fprocess%2Fenvironment-runtime-invocation-reader.ts#class:EnvironmentRuntimeInvocationReader",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fprocess",
+      "x": 18148,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate%2Fframework-extension-ownership.ts#class:FrameworkExtensionOwnership",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate",
+      "x": 18600,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate%2Fnode-global-framework-updater.ts#class:NodeGlobalFrameworkUpdater",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate",
+      "x": 18940,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate%2Fnode-project-configuration-migrator.ts#class:NodeProjectConfigurationMigrator",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate",
+      "x": 19300,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate%2Fnode-runtime-reloader.ts#class:NodeRuntimeReloader",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Finfrastructure%2Fupdate",
+      "x": 19632,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fcli%2Fruntime-cli.ts#class:RuntimeCli",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fcli",
+      "x": 20042,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Faction-layout.tsx#interface:ActionLayoutProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 21084,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Faction-layout.tsx#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Faction-layout.tsx",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 20752,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fapp-scaffold.tsx#interface:AppScaffoldProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 21744,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fapp-scaffold.tsx#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fapp-scaffold.tsx",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 21416,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fconsole-history.ts#class:ConsoleHistory",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 20392,
+      "y": 236
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fconsole-layout.tsx#class:ConsoleScrollbar",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 21080,
+      "y": 236
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fconsole-layout.tsx#interface:ConsoleLayoutProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 20688,
+      "y": 236
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fconsole-layout.tsx#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fconsole-layout.tsx",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 22072,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts%2Fconsole-output-buffer.ts#class:ConsoleOutputBuffer",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Flayouts",
+      "x": 20412,
+      "y": 120
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fmenu-list.tsx#interface:MenuItem",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 23062,
+      "y": 392
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fmenu-list.tsx#interface:MenuListProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 22828,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fmenu-list.tsx#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fmenu-list.tsx",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 22512,
+      "y": 76
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fnavigation-stack.ts#class:NavigationStack",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 23756,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fnavigation-stack.ts#type-alias:RouteId",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 23742,
+      "y": 392
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Froute-screen.tsx#interface:InitRouteProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 22832,
+      "y": 392
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Froute-screen.tsx#interface:RouteScreenProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 23480,
+      "y": 392
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Froute-screen.tsx#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Froute-screen.tsx",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 22512,
+      "y": 388
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fruntime-ui-app.tsx#interface:RuntimeUiAppProps",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 20364,
+      "y": 392
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fruntime-ui-app.tsx#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fruntime-ui-app.tsx",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 23152,
+      "y": 76
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fruntime-ui-app.tsx#type-alias:ExitConfirmationKey",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 23492,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fuse-stdout-size.ts#interface:StdoutSize",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 22422,
+      "y": 508
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fuse-stdout-size.ts#module:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink%2Fuse-stdout-size.ts",
+      "parentId": "directory:spec-n-roll-runtime:src%2Fspec-n-roll-runtime%2Fsrc%2Fpresentation%2Fink",
+      "x": 20432,
+      "y": 504
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#class:AgentLister",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 24390,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#class:SdkLoggerFactory",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 24408,
+      "y": 116
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#interface:AgentExtensionRegistration",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 25088,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#interface:AgentExtensionRegistrationReader",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 24728,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#interface:ProjectConfigurationMigrator",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 25432,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#interface:ProjectFrameworkUpdateAvailability",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 25808,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fdist%2Findex.d.ts#interface:ProjectFrameworkUpgrader",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fdist",
+      "x": 26168,
+      "y": 0
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fsrc%2Fapplication%2Fworkflow%2Fworkflow-hook-transition-error.ts#class:WorkflowHookTransitionError",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fsrc%2Fapplication%2Fworkflow",
+      "x": 26980,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-sdk%2Fsrc%2Fapplication%2Fworkflow%2Fworkflow-transition-engine.ts#class:WorkflowTransitionEngine",
+      "parentId": "directory:spec-n-roll-sdk:src%2Fspec-n-roll-sdk%2Fsrc%2Fapplication%2Fworkflow",
+      "x": 26648,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fapplication%2Fcommands%2Fcommand-runner.ts#interface:CommandRunner",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fapplication%2Fcommands",
+      "x": 27748,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support%2Ftest-support-container-factory.ts#class:TestSupportContainerFactory",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support",
+      "x": 28524,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support%2Ftest-support-program-factory.ts#class:TestSupportProgramFactory",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fcomposition%2Ftest-support",
+      "x": 28188,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Finfrastructure%2Fcommands%2Ftest-support-command-runner.ts#class:TestSupportCommandRunner",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Finfrastructure%2Fcommands",
+      "x": 29016,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll-test%2Fsrc%2Fpresentation%2Fcli%2Ftest-support-cli.ts#class:TestSupportCli",
+      "parentId": "directory:spec-n-roll-test:src%2Fspec-n-roll-test%2Fsrc%2Fpresentation%2Fcli",
+      "x": 29456,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch%2Fdispatcher-application.ts#class:DispatcherApplication",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch",
+      "x": 252,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch%2Fdispatcher-command-options.ts#interface:DispatcherCommandOptions",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch",
+      "x": 848,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch%2Fdispatcher-run-request.ts#interface:DispatcherRunRequest",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatch",
+      "x": 544,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatcher%2Fdispatcher-metadata-resolver.ts#class:DispatcherMetadataResolver",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fdispatcher",
+      "x": 1256,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fenvironment%2Fdispatcher-environment.ts#interface:DispatcherEnvironment",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fenvironment",
+      "x": 1652,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Ffilesystem%2Fdispatcher-file-system.ts#interface:DispatcherFileSystem",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Ffilesystem",
+      "x": 2024,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fproject%2Fproject-root-resolver.ts#class:ProjectRootResolver",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fproject",
+      "x": 2388,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime%2Fruntime-package-manifest-path-resolver.ts#interface:RuntimePackageManifestPathResolver",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime",
+      "x": 4000,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime%2Fruntime-process-executor.ts#interface:RuntimeProcessExecutor",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime",
+      "x": 2760,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime%2Fruntime-process-request.ts#interface:RuntimeProcessRequest",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime",
+      "x": 3060,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime%2Fruntime-target-resolver.ts#class:RuntimeTargetResolver",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime",
+      "x": 3356,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime%2Fruntime-target-resolver.ts#interface:GlobalRuntimeMetadata",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fapplication%2Fruntime",
+      "x": 3652,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Fenvironment%2Fprocess-dispatcher-environment.ts#class:ProcessDispatcherEnvironment",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Fenvironment",
+      "x": 4536,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Ffilesystem%2Fnode-dispatcher-file-system.ts#class:NodeDispatcherFileSystem",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Ffilesystem",
+      "x": 4952,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Fmodule%2Fnode-runtime-package-manifest-path-resolver.ts#class:NodeRuntimePackageManifestPathResolver",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Fmodule",
+      "x": 5392,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Fruntime%2Fnode-runtime-process-executor.ts#class:NodeRuntimeProcessExecutor",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Finfrastructure%2Fruntime",
+      "x": 5840,
+      "y": 80
+    },
+    {
+      "nodeId": "declaration:src%2Fspec-n-roll%2Fsrc%2Fpresentation%2Fcli%2Fdispatcher-cli.ts#class:DispatcherCli",
+      "parentId": "directory:spec-n-roll:src%2Fspec-n-roll%2Fsrc%2Fpresentation%2Fcli",
+      "x": 6284,
+      "y": 80
+    },
+    {
+      "nodeId": "external:node:child_process:source:declaration%3Asrc%252Fspec-n-roll-runtime%252Fsrc%252Finfrastructure%252Fupdate%252Fnode-global-framework-updater.ts%23class%3ANodeGlobalFrameworkUpdater",
+      "x": 96,
+      "y": 304
+    },
+    {
+      "nodeId": "external:node:child_process:source:declaration%3Asrc%252Fspec-n-roll%252Fsrc%252Finfrastructure%252Fruntime%252Fnode-runtime-process-executor.ts%23class%3ANodeRuntimeProcessExecutor",
+      "x": 496,
+      "y": 304
+    },
+    {
+      "nodeId": "external:node:fs:importer:spec-n-roll",
+      "x": 8982,
+      "y": 860
+    },
+    {
+      "nodeId": "external:node:fs:importer:spec-n-roll-runtime",
+      "x": 9682,
+      "y": 860
+    }
+  ],
+  "schemaVersion": 1
+}

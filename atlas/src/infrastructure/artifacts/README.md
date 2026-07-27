@@ -12,3 +12,4 @@ This directory persists deterministic Atlas-generated artifacts under a configur
 ## Contents
 
 - `NodeDependencyAnalysisArtifactWriter.ts` writes raw dependency analysis reports.
+- `LegacyAutoLayoutScript.ts` embeds the hierarchy-aware Cytoscape layout behavior retained for viewer fidelity.

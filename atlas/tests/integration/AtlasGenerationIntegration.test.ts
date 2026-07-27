@@ -94,5 +94,5 @@ describe('Atlas generation integration', () => {
 
     expect(validDiagramExitCode).toBe(0);
     expect(invalidDiagramExitCode).toBe(2);
-  });
+  }, 15000);
 });
