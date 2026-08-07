@@ -1,63 +1,31 @@
 {
-  "name": "@starcruisestudios/atlas",
+  "name": "@starcruisestudios/atlas-workspace",
   "version": "0.1.0",
-  "description": "A development-only TypeScript architecture observatory.",
   "private": true,
   "type": "module",
-  "bin": {
-    "atlas": "./dist/presentation/cli/atlas.js"
-  },
-  "exports": {
-    "./schema": "./dist/config/atlas.schema.json"
-  },
-  "imports": {
-    "#application/*": "./dist/application/*",
-    "#composition/*": "./dist/composition/*",
-    "#infrastructure/*": "./dist/infrastructure/*",
-    "#presentation/*": "./dist/presentation/*"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+  "workspaces": [
+    "src/atlas-cli",
+    "src/atlas",
+    "src/tools/atlas-ts",
+    "examples/typescript",
+    "examples/typescript/packages/*"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm run build:server && npm run build:viewer",
-    "build:server": "tsc -p tsconfig.build.json && node ./scripts/CopyBuildAssets.mjs",
-    "build:viewer": "vite build --config vite.config.ts",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build"
-  },
-  "dependencies": {
-    "ajv": "^8.20.0",
-    "commander": "^14.0.3",
-    "dependency-cruiser": "^17.4.3",
-    "fast-glob": "^3.3.3",
-    "minimatch": "^10.2.5",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "tslog": "^4.11.0",
-    "typescript": "^5.9.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.5",
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.2.0",
-    "eslint": "^9.39.5",
-    "eslint-plugin-import": "^2.32.0",
-    "prettier": "^3.9.6",
-    "typescript-eslint": "^8.65.0",
-    "vite": "^7.3.6",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.7"
+    "build": "npm run build:node && npm run build:kotlin && npm run build:examples",
+    "build:node": "npm run build --workspace=@starcruisestudios/atlas-cli && npm run build --workspace=@starcruisestudios/atlas && npm run build --workspace=@starcruisestudios/atlas-ts",
+    "build:kotlin": "node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs build",
+    "build:examples": "npm run build:example:typescript && npm run build:example:kotlin",
+    "build:example:typescript": "npm run build --workspace=@atlas-example/typescript-workspace",
+    "build:example:kotlin": "node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs --project examples/kotlin build",
+    "test": "npm run test:node && npm run test:kotlin",
+    "test:node": "npm run test --workspaces --if-present --include-workspace-root=false",
+    "test:kotlin": "node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs test",
+    "lint": "npm run lint --workspaces --if-present --include-workspace-root=false",
+    "typecheck": "npm run typecheck --workspaces --if-present --include-workspace-root=false",
+    "format:check": "npm run format:check --workspaces --if-present --include-workspace-root=false",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build"
   }
 }

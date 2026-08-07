@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "discovery": {
+    "packageGlobs": [
+      "packages/*"
+    ],
+    "defaultSourceRoots": [
+      "src"
+    ],
+    "packages": [
+      {
+        "match": {
+          "name": "@atlas-example/*"
+        },
+        "classification": "runtime"
+      }
+    ]
+  },
+  "diagrams": {
+    "moduleGroups": [
+      {
+        "id": "example",
+        "title": "TypeScript example packages",
+        "moduleIdPatterns": [
+          "@atlas-example/*"
+        ]
+      }
+    ]
+  },
+  "rules": [
+    {
+      "id": "no-cycles",
+      "type": "no-circular",
+      "severity": "error"
+    },
+    {
+      "id": "library-does-not-depend-on-app",
+      "type": "dependency-direction",
+      "severity": "error",
+      "mode": "forbid",
+      "from": {
+        "packageNames": [
+          "@atlas-example/library"
+        ]
+      },
+      "to": {
+        "packageNames": [
+          "@atlas-example/app"
+        ]
+      }
+    }
+  ]
+}

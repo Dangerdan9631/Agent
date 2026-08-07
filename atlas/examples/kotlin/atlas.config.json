@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "discovery": {
+    "packages": [
+      {
+        "match": {
+          "name": "dev.atlas.example:*"
+        },
+        "classification": "runtime"
+      }
+    ]
+  },
+  "artifacts": {
+    "root": "architecture"
+  },
+  "diagrams": {
+    "moduleGroups": [
+      {
+        "id": "example",
+        "title": "Kotlin example artifacts",
+        "moduleIdPatterns": [
+          "dev.atlas.example:*"
+        ]
+      }
+    ]
+  },
+  "rules": [
+    {
+      "id": "no-cycles",
+      "type": "no-circular",
+      "severity": "error"
+    }
+  ]
+}

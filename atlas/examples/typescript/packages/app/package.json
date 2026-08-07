@@ -1,0 +1,11 @@
+{
+  "name": "@atlas-example/app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@atlas-example/library": "file:../library",
+    "date-fns": "^4.1.0",
+    "lodash-es": "^4.17.21"
+  }
+}

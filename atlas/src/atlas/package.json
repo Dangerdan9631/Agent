@@ -1,0 +1,43 @@
+{
+  "name": "@starcruisestudios/atlas",
+  "version": "0.1.0",
+  "description": "Electron architecture diagram viewer for Atlas.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main/main/AtlasDesktopMain.js",
+  "imports": {
+    "#main/*": "./dist/main/main/*"
+  },
+  "bin": {
+    "atlas": "./scripts/AtlasElectronLauncher.mjs"
+  },
+  "scripts": {
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "vite build --config vite.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --passWithNoTests",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "cytoscape": "^3.33.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^39.2.7",
+    "eslint": "^9.39.5",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
+  }
+}

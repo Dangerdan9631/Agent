@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "discovery": {
+    "packageGlobs": ["packages/*"],
+    "defaultSourceRoots": ["src"],
+    "packages": [
+      {
+        "match": { "name": "@atlas-fixture/federation-*" },
+        "classification": "runtime"
+      }
+    ]
+  },
+  "diagrams": {
+    "moduleGroups": [
+      {
+        "id": "all-fixtures",
+        "title": "All fixture artifacts",
+        "moduleIdPatterns": ["@atlas-fixture/federation-*"]
+      }
+    ]
+  }
+}
