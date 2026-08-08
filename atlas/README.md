@@ -155,6 +155,9 @@ Root scripts:
 | `npm run build:examples` | Build both integrated examples |
 | `npm run build:example:typescript` | Build only the TypeScript example |
 | `npm run build:example:kotlin` | Build only the Kotlin example |
+| `npm run view:example:typescript` | Build and open the TypeScript example architecture viewer |
+| `npm run view:example:kotlin` | Build and open the Kotlin example architecture viewer |
+| `npm run view:examples` | Build and open both example architecture viewers |
 | `npm run verify` | Typecheck, lint, format check, test, and build |
 
 CLI tools (available after `npm link`):

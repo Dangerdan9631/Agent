@@ -98,7 +98,13 @@ class AtlasDesktopApplication {
   }
 }
 
-await new AtlasDesktopApplication(
+new AtlasDesktopApplication(
   new AtlasCompositionRoot().createArtifactHost(),
   new AtlasDesktopArgumentParser()
-).start(process.argv.slice(2), process.cwd());
+)
+  .start(process.argv.slice(2), process.cwd())
+  .catch((error: unknown) => {
+    process.stderr.write(`Atlas desktop failed to start: ${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
+    process.exitCode = 1;
+    app.quit();
+  });
