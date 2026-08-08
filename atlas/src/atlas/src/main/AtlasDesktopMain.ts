@@ -76,4 +76,4 @@ class AtlasDesktopApplication {
   }
 }
 
-await new AtlasDesktopApplication(new AtlasArtifactLoader()).start();
+void new AtlasDesktopApplication(new AtlasArtifactLoader()).start();
