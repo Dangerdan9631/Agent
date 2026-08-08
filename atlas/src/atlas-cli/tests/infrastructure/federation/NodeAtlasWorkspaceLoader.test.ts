@@ -67,6 +67,83 @@ describe('NodeAtlasWorkspaceLoader', () => {
     expect(workspace.relationships[1]?.targetModule).toBeUndefined();
     expect(workspace.relationships[1]?.targetElementId).toBeUndefined();
   });
+
+  /**
+   * Rejects a stale element identity when its explicitly selected target module is available.
+   */
+  it('rejects unknown elements in selected target modules', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-federation-'));
+    temporaryDirectories.push(directory);
+    const fixture = new FederationModelFixture();
+    await writeFile(
+      resolve(directory, 'one.json'),
+      JSON.stringify(
+        fixture.create('one', 'typescript', 'one-element', {
+          moduleId: 'two',
+          elementId: 'stale-two-element'
+        })
+      ),
+      'utf8'
+    );
+    await writeFile(
+      resolve(directory, 'two.json'),
+      JSON.stringify(fixture.create('two', 'kotlin', 'two-element', { label: 'external' })),
+      'utf8'
+    );
+    await writeFile(
+      resolve(directory, 'workspace.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        modules: [
+          { moduleId: 'one', modelPath: 'one.json' },
+          { moduleId: 'two', modelPath: 'two.json' }
+        ]
+      }),
+      'utf8'
+    );
+
+    await expect(
+      new NodeAtlasWorkspaceLoader().load(resolve(directory, 'workspace.json'))
+    ).rejects.toThrow("targets unknown element 'stale-two-element'");
+  });
+
+  /**
+   * Rejects relationship IDs that collide across independently generated module models.
+   */
+  it('rejects duplicate relationship identities across selected modules', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-federation-'));
+    temporaryDirectories.push(directory);
+    const fixture = new FederationModelFixture();
+    await writeFile(
+      resolve(directory, 'one.json'),
+      JSON.stringify(
+        fixture.create('one', 'typescript', 'one-element', { label: 'external' }, 'shared')
+      ),
+      'utf8'
+    );
+    await writeFile(
+      resolve(directory, 'two.json'),
+      JSON.stringify(
+        fixture.create('two', 'kotlin', 'two-element', { label: 'external' }, 'shared')
+      ),
+      'utf8'
+    );
+    await writeFile(
+      resolve(directory, 'workspace.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        modules: [
+          { moduleId: 'one', modelPath: 'one.json' },
+          { moduleId: 'two', modelPath: 'two.json' }
+        ]
+      }),
+      'utf8'
+    );
+
+    await expect(
+      new NodeAtlasWorkspaceLoader().load(resolve(directory, 'workspace.json'))
+    ).rejects.toThrow("duplicate relationship ID 'shared'");
+  });
 });
 
 /**
@@ -80,13 +157,15 @@ class FederationModelFixture {
    * @param sourceLanguage - Arbitrary presentation-only language metadata.
    * @param elementId - Stable owned element ID.
    * @param target - Internal or external relationship target identity.
+   * @param relationshipId - Optional stable relationship identity override.
    * @returns JSON-compatible module model value.
    */
   public create(
     moduleId: string,
     sourceLanguage: string,
     elementId: string,
-    target: { readonly moduleId?: string; readonly elementId?: string; readonly label?: string }
+    target: { readonly moduleId?: string; readonly elementId?: string; readonly label?: string },
+    relationshipId: string = `${moduleId}-relationship`
   ): object {
     return {
       schemaVersion: 1,
@@ -96,7 +175,7 @@ class FederationModelFixture {
       elements: [{ id: elementId, name: elementId, kind: 'class', qualifiedName: elementId }],
       relationships: [
         {
-          id: `${moduleId}-relationship`,
+          id: relationshipId,
           sourceElementId: elementId,
           kind: 'references',
           target

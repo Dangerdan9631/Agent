@@ -25,5 +25,5 @@
       "#renderer/*": ["src/renderer/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "tests/**/*.test.ts", "vitest.config.ts"]
 }

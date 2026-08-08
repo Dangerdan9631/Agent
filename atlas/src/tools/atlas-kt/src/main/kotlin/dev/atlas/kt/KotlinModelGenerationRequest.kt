@@ -11,6 +11,7 @@ import java.io.File
  * @property version Published artifact version.
  * @property category Portable artifact family label.
  * @property sourceRoots Kotlin source directories relative to the project root.
+ * @property semanticFragments Optional KSP fragment files that refine source-derived semantics.
  * @property outputFile Destination module-model JSON file.
  */
 data class KotlinModelGenerationRequest(
@@ -20,6 +21,7 @@ data class KotlinModelGenerationRequest(
     val version: String,
     val category: String,
     val sourceRoots: List<String>,
+    val semanticFragments: List<File>,
     val outputFile: File
 )
 
@@ -37,10 +39,19 @@ class KotlinModelGenerationRequestParser(
     fun parse(): KotlinModelGenerationRequest {
         val values = this.toValues()
         val projectRoot = File(this.required(values, "--project-root")).canonicalFile
-        val sourceRoots = values["--source-root"].orEmpty()
-        if (sourceRoots.isEmpty()) {
+        val sourceRootValues = values["--source-root"].orEmpty()
+        if (sourceRootValues.isEmpty()) {
             throw IllegalArgumentException("atlas-kt requires at least one --source-root.")
         }
+        val sourceRoots = sourceRootValues.map { value ->
+            val sourceRoot = File(projectRoot, value).canonicalFile
+            require(sourceRoot.toPath().startsWith(projectRoot.toPath())) {
+                "atlas-kt source root must be inside --project-root: $value"
+            }
+            projectRoot.toPath().relativize(sourceRoot.toPath()).toString()
+                .ifBlank { "." }
+                .replace(File.separatorChar, '/')
+        }.distinct().sorted()
         return KotlinModelGenerationRequest(
             projectRoot,
             this.required(values, "--module-id"),
@@ -48,6 +59,10 @@ class KotlinModelGenerationRequestParser(
             this.required(values, "--version"),
             this.required(values, "--category"),
             sourceRoots,
+            values["--semantic-fragment"].orEmpty()
+                .map { path -> File(path).canonicalFile }
+                .distinctBy { file -> file.path }
+                .sortedBy { file -> file.path },
             File(this.required(values, "--output")).canonicalFile
         )
     }

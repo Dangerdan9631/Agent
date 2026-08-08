@@ -62,32 +62,41 @@ $relationshipJson
      * @return Indented JSON object text.
      */
     private fun elementJson(element: KotlinAtlasElement): String {
-        val optional = listOfNotNull(
-            element.signature?.let { value -> "\"signature\": \"${this.escape(value)}\"" },
-            element.parentId?.let { value -> "\"parentId\": \"${this.escape(value)}\"" }
-        ).joinToString(",\n      ", prefix = if (element.signature == null && element.parentId == null) "" else ",\n      ")
-        return """    {
-      "id": "${this.escape(element.id)}",
-      "name": "${this.escape(element.name)}",
-      "kind": "${this.escape(element.kind)}",
-      "qualifiedName": "${this.escape(element.qualifiedName)}",
-      "sourcePath": "${this.escape(element.sourcePath)}"$optional
-    }"""
+        val fields = mutableListOf(
+            "\"id\": \"${this.escape(element.id)}\"",
+            "\"name\": \"${this.escape(element.name)}\"",
+            "\"kind\": \"${this.escape(element.kind)}\"",
+            "\"qualifiedName\": \"${this.escape(element.qualifiedName)}\""
+        )
+        element.sourcePath?.let { value -> fields.add("\"sourcePath\": \"${this.escape(value)}\"") }
+        element.signature?.let { value -> fields.add("\"signature\": \"${this.escape(value)}\"") }
+        element.parentId?.let { value -> fields.add("\"parentId\": \"${this.escape(value)}\"") }
+        if (element.traits.isNotEmpty()) {
+            val traits = element.traits.distinct().sorted()
+                .joinToString(", ") { trait -> "\"${this.escape(trait)}\"" }
+            fields.add("\"traits\": [$traits]")
+        }
+        return fields.joinToString(",\n      ", prefix = "    {\n      ", postfix = "\n    }")
     }
 
     /**
-     * Serializes one import or semantic relationship with a portable unresolved target label.
+     * Serializes one import or semantic relationship with an owned or unresolved target.
      *
      * @param relationship Source-owned relationship.
      * @return Indented JSON object text.
      */
     private fun relationshipJson(relationship: KotlinAtlasRelationship): String {
+        val targetFields = listOfNotNull(
+            relationship.target.moduleId?.let { value -> "\"moduleId\": \"${this.escape(value)}\"" },
+            relationship.target.elementId?.let { value -> "\"elementId\": \"${this.escape(value)}\"" },
+            relationship.target.label?.let { value -> "\"label\": \"${this.escape(value)}\"" }
+        ).joinToString(",\n        ")
         return """    {
       "id": "${this.escape(relationship.id)}",
       "sourceElementId": "${this.escape(relationship.sourceElementId)}",
       "kind": "${this.escape(relationship.kind)}",
       "target": {
-        "label": "${this.escape(relationship.targetLabel)}"
+        $targetFields
       }
     }"""
     }
@@ -99,10 +108,24 @@ $relationshipJson
      * @return JSON-safe text without surrounding quotes.
      */
     private fun escape(value: String): String {
-        return value.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
+        return buildString {
+            value.forEach { character ->
+                when (character) {
+                    '\\' -> append("\\\\")
+                    '\"' -> append("\\\"")
+                    '\b' -> append("\\b")
+                    '\u000C' -> append("\\f")
+                    '\n' -> append("\\n")
+                    '\r' -> append("\\r")
+                    '\t' -> append("\\t")
+                    else -> if (character.code < 0x20) {
+                        append("\\u")
+                        append(character.code.toString(16).padStart(4, '0'))
+                    } else {
+                        append(character)
+                    }
+                }
+            }
+        }
     }
 }

@@ -39,6 +39,11 @@ abstract class AtlasGenerateModuleModelTask : DefaultTask() {
             project.fileTree(directory).matching { pattern -> pattern.include("**/*.kt") }
         }).asFileTree
 
+    /** Lists optional KSP semantic fragments so resolved target changes invalidate the model. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val semanticFragmentFiles: ConfigurableFileCollection
+
     /** Defines the generated module-model JSON file. */
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
@@ -65,6 +70,9 @@ abstract class AtlasGenerateModuleModelTask : DefaultTask() {
             )
             extension.sourceDirectories.forEach { sourceDirectory ->
                 specification.args("--source-root", sourceDirectory)
+            }
+            semanticFragmentFiles.files.sortedBy { file -> file.path }.forEach { fragment ->
+                specification.args("--semantic-fragment", fragment.absolutePath)
             }
         }
     }

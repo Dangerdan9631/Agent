@@ -1,5 +1,6 @@
 import { ArtifactServerLocation } from '#application/view/model/ArtifactServerLocation.js';
 import type { ArtifactServer } from '#application/view/ports/ArtifactServer.js';
+import type { ArtifactConfigurationChangeHandler } from '#application/view/ports/ArtifactConfigurationChangeHandler.js';
 import type { AtlasConfiguration } from '#application/configuration/model/AtlasConfiguration.js';
 import type { AtlasConfigurationLoader } from '#application/configuration/ports/AtlasConfigurationLoader.js';
 import type { DeterministicLayoutService } from '#application/layout/DeterministicLayoutService.js';
@@ -36,6 +37,11 @@ export class NodeArtifactServer implements ArtifactServer {
   #configurationPath: string | undefined;
 
   /**
+   * Holds the application refresh behavior for the currently served workspace.
+   */
+  #configurationChangeHandler: ArtifactConfigurationChangeHandler | undefined;
+
+  /**
    * Creates a server that delegates generated placement to the application layout service.
    *
    * @param layoutService - Deterministic layout service shared with command-line layout generation.
@@ -52,13 +58,16 @@ export class NodeArtifactServer implements ArtifactServer {
    * @param artifactRootPath - Absolute artifact directory permitted for static file access.
    * @param host - Interface hostname or address to bind.
    * @param port - TCP port to bind. Zero requests an operating-system-selected port.
+   * @param configurationPath - Absolute configured Atlas policy path permitted for explicit viewer actions.
+   * @param configurationChangeHandler - Optional application callback that refreshes artifacts after a policy mutation.
    * @returns Active landscape location after the listener is ready.
    */
   public async start(
     artifactRootPath: string,
     host: string,
     port: number,
-    configurationPath: string
+    configurationPath: string,
+    configurationChangeHandler?: ArtifactConfigurationChangeHandler
   ): Promise<ArtifactServerLocation> {
     if (this.#server !== undefined) {
       throw new Error('Atlas artifact server is already active.');
@@ -73,6 +82,7 @@ export class NodeArtifactServer implements ArtifactServer {
       const boundPort = await this.listen(server, host, port);
       this.#server = server;
       this.#configurationPath = resolve(configurationPath);
+      this.#configurationChangeHandler = configurationChangeHandler;
       return new ArtifactServerLocation(`http://${host}:${boundPort}/landscape/index.html`);
     } catch (error: unknown) {
       server.close();
@@ -89,6 +99,7 @@ export class NodeArtifactServer implements ArtifactServer {
     const server = this.#server;
     this.#server = undefined;
     this.#configurationPath = undefined;
+    this.#configurationChangeHandler = undefined;
     if (server === undefined) {
       return Promise.resolve();
     }
@@ -251,13 +262,21 @@ export class NodeArtifactServer implements ArtifactServer {
       const action = this.readConfigurationAction(
         JSON.parse((await this.readBody(request)).toString('utf8'))
       );
-      const configuration = JSON.parse(await readFile(configurationPath, 'utf8')) as unknown;
+      const originalText = await readFile(configurationPath, 'utf8');
+      const configuration = JSON.parse(originalText) as unknown;
       if (action === undefined || !this.isConfigurationDocument(configuration)) {
         this.writeStatus(response, 400);
         return;
       }
       const updatedConfiguration = this.applyDiagramPolicyAction(configuration, action);
       await this.writeValidatedConfiguration(configurationPath, updatedConfiguration);
+      try {
+        await this.#configurationChangeHandler?.execute();
+      } catch {
+        await this.writeConfigurationTextAtomically(configurationPath, originalText);
+        this.writeStatus(response, 400);
+        return;
+      }
       response.writeHead(204);
       response.end();
     } catch {
@@ -468,6 +487,21 @@ export class NodeArtifactServer implements ArtifactServer {
     try {
       await writeFile(temporaryPath, `${JSON.stringify(configuration, undefined, 2)}\n`, 'utf8');
       await this.configurationLoader.load(temporaryPath);
+      await rename(temporaryPath, configurationPath);
+    } catch (error: unknown) {
+      await rm(temporaryPath, { force: true });
+      throw error;
+    }
+  }
+
+  /** Restores an already validated user-owned configuration when regeneration rejects a mutation. */
+  private async writeConfigurationTextAtomically(
+    configurationPath: string,
+    text: string
+  ): Promise<void> {
+    const temporaryPath = `${configurationPath}.tmp-${process.pid}`;
+    try {
+      await writeFile(temporaryPath, text, 'utf8');
       await rename(temporaryPath, configurationPath);
     } catch (error: unknown) {
       await rm(temporaryPath, { force: true });

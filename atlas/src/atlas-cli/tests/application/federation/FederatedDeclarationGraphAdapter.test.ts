@@ -28,9 +28,31 @@ describe('FederatedDeclarationGraphAdapter', () => {
     expect(futureGraph.nodes.map((node) => comparer.toSemanticNode(node))).toEqual(
       typescriptGraph.nodes.map((node) => comparer.toSemanticNode(node))
     );
-    expect(futureGraph.nodes.find((node) => node.id === 'demo-service')?.sourceLanguage).toBe(
+    expect(futureGraph.nodes.find((node) => node.id === 'demo-class')?.sourceLanguage).toBe(
       'future-language'
     );
+  });
+
+  /** Projects all portable declaration kinds to the legacy renderer's visual vocabulary. */
+  it('maps portable callable and member kinds without degrading them to classes', () => {
+    const graph = new FederatedDeclarationGraphAdapter().toGraph(
+      new FederatedWorkspaceFixture().create('typescript', [
+        'method',
+        'constructor',
+        'property',
+        'field',
+        'constant'
+      ])
+    );
+
+    expect(graph.nodes.map((node) => node.kind)).toEqual([
+      'constant',
+      'function',
+      'field',
+      'function',
+      'field',
+      'external'
+    ]);
   });
 });
 
@@ -44,25 +66,26 @@ class FederatedWorkspaceFixture {
    * @param sourceLanguage - Generator presentation metadata to preserve without interpretation.
    * @returns Resolved workspace with stable shared architectural semantics.
    */
-  public create(sourceLanguage: string): ResolvedAtlasWorkspace {
+  public create(
+    sourceLanguage: string,
+    kinds: readonly AtlasModuleModel['elements'][number]['kind'][] = ['class']
+  ): ResolvedAtlasWorkspace {
     const model: AtlasModuleModel = {
       schemaVersion: 1,
       generatorVersion: 'test-1',
       module: { id: 'demo', displayName: 'Demo', version: '1.0.0', category: 'test' },
       sourceLanguage,
-      elements: [
-        {
-          id: 'demo-service',
-          name: 'Service',
-          kind: 'class',
-          qualifiedName: 'demo.Service',
-          sourcePath: 'src/service.ts'
-        }
-      ],
+      elements: kinds.map((kind) => ({
+        id: `demo-${kind}`,
+        name: kind,
+        kind,
+        qualifiedName: `demo.${kind}`,
+        sourcePath: 'src/service.ts'
+      })),
       relationships: [
         {
           id: 'demo-external',
-          sourceElementId: 'demo-service',
+          sourceElementId: `demo-${kinds[0] ?? 'class'}`,
           kind: 'references',
           target: { moduleId: 'missing', label: 'Missing' }
         }

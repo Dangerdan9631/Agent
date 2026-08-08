@@ -46,11 +46,11 @@ export class DiagramProjectionService {
   }
 
   /**
-   * Selects runtime package aliases and manifest-only module IDs for module diagram generation.
+   * Selects runtime packages and any graph modules not represented by explicit policy.
    *
    * @param workspace - Loaded configuration and compatibility package selection.
    * @param graph - Policy-shaped graph that exposes all selected federated module owners.
-   * @returns Sorted module identities represented by individual diagrams.
+   * @returns Sorted runtime or compatibility module identities represented by individual diagrams.
    */
   private toModuleScopeIds(
     workspace: WorkspaceSnapshot,
@@ -59,9 +59,15 @@ export class DiagramProjectionService {
     const runtimePackageNames = workspace.packages
       .filter((workspacePackage) => workspacePackage.classification === 'runtime')
       .map((workspacePackage) => workspacePackage.name);
+    const classifiedPackageNames = new Set(
+      workspace.packages.map((workspacePackage) => workspacePackage.name)
+    );
     const graphModuleIds = graph.nodes
       .map((node) => node.packageName)
-      .filter((moduleId): moduleId is string => moduleId !== undefined);
+      .filter(
+        (moduleId): moduleId is string =>
+          moduleId !== undefined && !classifiedPackageNames.has(moduleId)
+      );
     return [...new Set([...runtimePackageNames, ...graphModuleIds])].sort((left, right) =>
       left.localeCompare(right)
     );

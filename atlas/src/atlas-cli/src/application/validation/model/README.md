@@ -6,7 +6,8 @@ This directory contains immutable results from dependency analysis and rule eval
 
 ## Conventions
 
-- Source and resolved target paths are slash-normalized and workspace-relative.
+- Source and resolved target paths are slash-normalized and workspace-relative or module-local.
+- Federated relationships retain opaque module IDs so equal module-local paths remain unambiguous.
 - An unresolved target remains explicit instead of being guessed.
 
 ## Contents

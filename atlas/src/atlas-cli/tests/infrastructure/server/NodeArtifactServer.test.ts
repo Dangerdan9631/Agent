@@ -124,19 +124,25 @@ class TemporaryArtifactRoot {
       unknown
     >;
   }
+
+  /** Reads the exact user-owned configuration text for rollback assertions. */
+  public readConfigurationText(): Promise<string> {
+    return readFile(join(this.rootPath, 'atlas.config.json'), 'utf8');
+  }
 }
 
 /**
- * Verifies static containment and graph-cleaned layout persistence at the local HTTP boundary.
+ * Verifies static containment, policy refresh, and graph-cleaned persistence at the local HTTP boundary.
  */
 describe('NodeArtifactServer', () => {
   afterEach(TemporaryArtifactRoot.removeAll.bind(TemporaryArtifactRoot));
 
   /**
-   * Serves the landscape root, rejects encoded traversal, and removes stale browser-submitted layout state.
+   * Serves safely, refreshes each policy mutation, and removes stale browser-submitted layout state.
    */
   it('serves contained artifacts and safely persists cleaned layout documents', async () => {
     const root = await TemporaryArtifactRoot.create();
+    let configurationRefreshCount = 0;
     const server = new NodeArtifactServer(
       new DeterministicLayoutService(),
       new JsonAtlasConfigurationLoader()
@@ -145,7 +151,13 @@ describe('NodeArtifactServer', () => {
       root.rootPath,
       '127.0.0.1',
       0,
-      join(root.rootPath, 'atlas.config.json')
+      join(root.rootPath, 'atlas.config.json'),
+      {
+        execute: () => {
+          configurationRefreshCount += 1;
+          return Promise.resolve();
+        }
+      }
     );
     const origin = new URL(location.url).origin;
 
@@ -223,6 +235,7 @@ describe('NodeArtifactServer', () => {
       expect(splitResponse.status).toBe(204);
       expect(folderResponse.status).toBe(204);
       expect(removeSourceResponse.status).toBe(204);
+      expect(configurationRefreshCount).toBe(5);
       await expect(root.readConfiguration()).resolves.toMatchObject({
         diagrams: {
           excludeExternalDependencies: ['node:fs'],
@@ -237,6 +250,36 @@ describe('NodeArtifactServer', () => {
         hiddenRelationshipIds: ['live-edge']
       });
       await expect(root.readLandscapePng()).resolves.toEqual(pngBytes);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  /** Restores the exact policy document when the dependent artifact refresh fails. */
+  it('rolls back a policy mutation when regeneration fails', async () => {
+    const root = await TemporaryArtifactRoot.create();
+    const originalText = await root.readConfigurationText();
+    const server = new NodeArtifactServer(
+      new DeterministicLayoutService(),
+      new JsonAtlasConfigurationLoader()
+    );
+    const location = await server.start(
+      root.rootPath,
+      '127.0.0.1',
+      0,
+      join(root.rootPath, 'atlas.config.json'),
+      { execute: () => Promise.reject(new Error('regeneration failed')) }
+    );
+
+    try {
+      const response = await fetch(`${new URL(location.url).origin}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'hide-external', value: 'node:fs' })
+      });
+
+      expect(response.status).toBe(400);
+      await expect(root.readConfigurationText()).resolves.toBe(originalText);
     } finally {
       await server.stop();
     }

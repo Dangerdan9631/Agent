@@ -8,6 +8,7 @@ export class RuntimeOutputWriter {
    * @param message - Rendered content without a trailing newline.
    */
   public writeLine(message: string): void {
-    process.stdout.write(`${message}\n`);
+    stdout.write(`${message}\n`);
   }
 }
+import { stdout } from 'node:process';

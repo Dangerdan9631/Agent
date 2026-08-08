@@ -59,10 +59,12 @@ export class RuntimeToSupportRuleEvaluator implements ArchitectureRuleEvaluator 
           continue;
         }
 
-        const targetPackage = this.ownershipResolver.resolve(
-          relationship.targetPath,
-          workspace.packages
-        );
+        const targetPackage =
+          relationship.targetModuleId === undefined
+            ? this.ownershipResolver.resolve(relationship.targetPath, workspace.packages)
+            : workspace.packages.find(
+                (workspacePackage) => workspacePackage.name === relationship.targetModuleId
+              );
         if (targetPackage?.classification !== 'support') {
           continue;
         }

@@ -12,4 +12,5 @@ This directory defines package discovery behavior required by Atlas workflows.
 ## Contents
 
 - `WorkspacePackageDiscoverer.ts` defines workspace package discovery.
+- `ManifestWorkspacePackageResolver.ts` classifies selected portable module models.
 - `WorkspaceLoadingWorkflow.ts` defines command-ready workspace loading.

@@ -55,7 +55,12 @@ export class ForbiddenImportRuleEvaluator implements ArchitectureRuleEvaluator {
       for (const relationship of analysisResult.relationships) {
         if (
           (importRule.from !== undefined &&
-            !this.selectorMatcher.matches(importRule.from, relationship.sourcePath, workspace)) ||
+            !this.selectorMatcher.matches(
+              importRule.from,
+              relationship.sourcePath,
+              workspace,
+              relationship.sourceModuleId ?? analysisResult.packageName
+            )) ||
           !this.matchesPattern(importRule.patterns, relationship.moduleSpecifier)
         ) {
           continue;

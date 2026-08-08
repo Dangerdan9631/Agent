@@ -54,7 +54,12 @@ export class DependencyDirectionRuleEvaluator implements ArchitectureRuleEvaluat
       for (const relationship of analysisResult.relationships) {
         if (
           relationship.targetPath === undefined ||
-          !this.selectorMatcher.matches(directionRule.from, relationship.sourcePath, workspace)
+          !this.selectorMatcher.matches(
+            directionRule.from,
+            relationship.sourcePath,
+            workspace,
+            relationship.sourceModuleId ?? analysisResult.packageName
+          )
         ) {
           continue;
         }
@@ -62,7 +67,8 @@ export class DependencyDirectionRuleEvaluator implements ArchitectureRuleEvaluat
         const targetMatches = this.selectorMatcher.matches(
           directionRule.to,
           relationship.targetPath,
-          workspace
+          workspace,
+          relationship.targetModuleId
         );
         const violates =
           (directionRule.mode === 'allow-only' && !targetMatches) ||

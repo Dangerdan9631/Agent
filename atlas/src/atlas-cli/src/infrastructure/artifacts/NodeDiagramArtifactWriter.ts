@@ -14,7 +14,8 @@ import {
 } from '#application/layout/model/LayoutDocument.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import { LegacyAutoLayoutScript } from '#infrastructure/artifacts/LegacyAutoLayoutScript.js';
-import { cp, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 /**
@@ -71,17 +72,14 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
     }
   }
 
-  /** Copies the production React viewer bundle into the generated artifact root when it is available. */
+  /** Copies the package-owned Cytoscape runtime into the generated artifact root. */
   private async copyViewerAssets(artifactRootPath: string): Promise<void> {
-    try {
-      await cp(
-        resolve(process.cwd(), 'dist', 'viewer'),
-        this.resolveContainedPath(artifactRootPath, 'viewer'),
-        { recursive: true }
-      );
-    } catch {
-      // Source-level tests run without a production Vite bundle; legacy pages remain available in that context.
-    }
+    const assetsDirectoryPath = this.resolveContainedPath(artifactRootPath, 'assets');
+    await mkdir(assetsDirectoryPath, { recursive: true });
+    await copyFile(
+      createRequire(import.meta.url).resolve('cytoscape/dist/cytoscape.min.js'),
+      this.resolveContainedPath(assetsDirectoryPath, 'cytoscape.min.js')
+    );
   }
 
   /**
@@ -118,7 +116,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
     if (diagram.scope === 'landscape') {
       await this.writeAtomically(
         this.resolveContainedPath(artifactRootPath, 'index.html'),
-        this.createViewerPage(workspace, diagram, navigation)
+        this.createViewerPage(workspace, diagram, navigation, true)
       );
     }
   }
@@ -187,9 +185,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
     );
     await this.writeAtomically(
       this.resolveContainedPath(scopeDirectoryPath, 'matrix.html'),
-      process.env.ATLAS_LEGACY_MATRIX === 'true'
-        ? this.createMatrixPage(diagram, navigation)
-        : this.createReactViewerPage(diagram, false, 'matrix')
+      this.createMatrixPage(diagram, navigation)
     );
   }
 
@@ -533,6 +529,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
         kind: node.kind,
         packageName: node.packageName,
         sourcePath: node.sourcePath,
+        packageSourcePath: this.toPackageRootRelativeSourcePath(workspace, node),
         moduleNode: node.moduleNode,
         sourceLanguage: node.sourceLanguage,
         parent: this.toCompoundParentId(workspace, node)
@@ -556,6 +553,22 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
         edges
       }
     };
+  }
+
+  /** Converts a graph source path to the owning package's root-relative policy path. */
+  private toPackageRootRelativeSourcePath(
+    workspace: WorkspaceSnapshot,
+    node: DeclarationNode
+  ): string | undefined {
+    if (node.packageName === undefined || node.sourcePath === undefined) return undefined;
+    const workspacePackage = workspace.packages.find(
+      (candidate) => candidate.name === node.packageName
+    );
+    if (workspacePackage === undefined || workspacePackage.relativeRootPath === '.') {
+      return node.sourcePath;
+    }
+    const prefix = `${workspacePackage.relativeRootPath}/`;
+    return node.sourcePath.startsWith(prefix) ? node.sourcePath.slice(prefix.length) : node.sourcePath;
   }
 
   /**
@@ -690,9 +703,11 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
     navigation: readonly DiagramNavigationItem[],
     isArtifactRoot = false
   ): string {
-    return this.createReactViewerPage(diagram, isArtifactRoot);
     const embeddedGraph = this.createScriptJson({
       ...this.createGraphDocument(workspace, diagram),
+      layoutPath: isArtifactRoot
+        ? `${this.toScopeDirectoryName(diagram.scope)}/layout.json`
+        : 'layout.json',
       pagePaths: navigation.map((item) => `/${item.graphPath}`)
     });
 
@@ -706,24 +721,24 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
 <div id="cy" role="img" aria-label="Interactive declaration relationship diagram"></div><div class="status-bar"><span class="layout-status" id="atlas-selection">Select a node to inspect direct dependencies.</span></div><section class="atlas-accessibility"><div id="atlas-packages"></div><ul id="atlas-nodes"></ul><ul id="atlas-relationships"></ul><input id="atlas-folder-package" type="hidden"><input id="atlas-folder-path" type="hidden"></section></main></div>
 <script id="atlas-graph" type="application/json">${embeddedGraph}</script>
 <style>${this.createLegacyViewerStyles()}</style>
-<script src="https://unpkg.com/cytoscape@3.31.2/dist/cytoscape.min.js"></script>
+<script src="${this.createViewerAssetPath(diagram, isArtifactRoot)}"></script>
 <script>${this.createCytoscapeViewerScript()}</script>
 </body></html>\n`;
   }
 
-  /** Creates the small scoped HTML shell that loads the shared React viewer bundle. */
-  private createReactViewerPage(
-    diagram: DiagramGraph,
-    isArtifactRoot: boolean,
-    view = 'graph'
-  ): string {
-    const graphPath = isArtifactRoot
-      ? `${this.toScopeDirectoryName(diagram.scope)}/graph.json`
-      : 'graph.json';
-    const viewerPath = isArtifactRoot
-      ? 'viewer/assets/atlas-viewer.js'
-      : '../viewer/assets/atlas-viewer.js';
-    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.escapeHtml(diagram.title)}</title></head><body><div id="root"></div><script>window.history.replaceState(null,'',window.location.pathname+'?graph=${encodeURIComponent(graphPath)}&view=${view}');</script><script type="module" src="${viewerPath}"></script></body></html>\n`;
+  /**
+   * Creates a path from a generated viewer page to the artifact-root Cytoscape asset.
+   *
+   * @param diagram - Scope whose directory depth determines the relative path.
+   * @param isArtifactRoot - Whether the page itself is the artifact-root index.
+   * @returns Browser-relative path to the copied Cytoscape runtime.
+   */
+  private createViewerAssetPath(diagram: DiagramGraph, isArtifactRoot: boolean): string {
+    if (isArtifactRoot) {
+      return 'assets/cytoscape.min.js';
+    }
+    const scopeDepth = this.toScopeDirectoryName(diagram.scope).split('/').length;
+    return `${'../'.repeat(scopeDepth)}assets/cytoscape.min.js`;
   }
 
   /**
@@ -799,13 +814,13 @@ function hideEmptyGroups() { cy.nodes(':parent').sort((left, right) => right.anc
 const autoLayout = new DiagramAutoLayout(cy);
 function runAutoLayout() { autoLayout.configure(Number(document.getElementById('atlas-rows').value) || 5, Number(document.getElementById('atlas-horizontal-gap').value) || 120, Number(document.getElementById('atlas-vertical-gap').value) || 120, verticalLayoutEnabled); const selected = cy.$(':selected').filter(':node'); if (selected.empty()) { autoLayout.layout(); } else { autoLayout.layoutGroup(selected); } cy.resize(); cy.fit(undefined, 36); }
 function setStatus(text) { status.textContent = text; }
-function focus(selected) { cy.elements().removeClass('faded inbound outbound'); const selectedEdge = cy.$(':selected').filter(':edge'); const hasNodeSelection = selected && !selected.empty(); const proxySelected = hasNodeSelection && isCollapsedProxy(selected); hideSelected.disabled = !hasNodeSelection && selectedEdge.empty(); collapseGroup.disabled = !hasNodeSelection || (!proxySelected && selected.children().empty()); collapseGroup.textContent = proxySelected ? 'Expand' : 'Collapse'; splitExternals.disabled = !hasNodeSelection || proxySelected || selected.data('kind') !== 'external' || graph.scope !== 'landscape'; createFolderDiagram.disabled = !hasNodeSelection || proxySelected || typeof selected.data('packageName') !== 'string' || typeof selected.data('sourcePath') !== 'string'; if (!hasNodeSelection) { setStatus(selectedEdge.empty() ? 'Select a node to inspect direct dependencies.' : 'Select Hide to conceal this connection.'); return; } const inbound = selected.incomers('edge'); const outbound = selected.outgoers('edge'); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : inbound.union(outbound); const selectedContents = selected.union(selected.descendants()); cy.elements().difference(selectedContents.union(shown).union(shown.connectedNodes())).addClass('faded'); if (relationshipFilter === 'none') { cy.edges().addClass('hidden-by-filter'); } else { inbound.addClass('inbound'); outbound.addClass('outbound'); } setStatus(selected.data('label') + ': ' + outbound.length + ' outbound, ' + inbound.length + ' inbound direct relationship(s).'); }
+function focus(selected) { cy.elements().removeClass('faded inbound outbound'); const selectedEdge = cy.$(':selected').filter(':edge'); const hasNodeSelection = selected && !selected.empty(); const proxySelected = hasNodeSelection && isCollapsedProxy(selected); hideSelected.disabled = !hasNodeSelection && selectedEdge.empty(); collapseGroup.disabled = !hasNodeSelection || (!proxySelected && selected.children().empty()); collapseGroup.textContent = proxySelected ? 'Expand' : 'Collapse'; splitExternals.disabled = !hasNodeSelection || proxySelected || selected.data('kind') !== 'external' || graph.scope !== 'landscape'; createFolderDiagram.disabled = !hasNodeSelection || proxySelected || typeof selected.data('packageName') !== 'string' || typeof selected.data('packageSourcePath') !== 'string'; if (!hasNodeSelection) { setStatus(selectedEdge.empty() ? 'Select a node to inspect direct dependencies.' : 'Select Hide to conceal this connection.'); return; } const inbound = selected.incomers('edge'); const outbound = selected.outgoers('edge'); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : inbound.union(outbound); const selectedContents = selected.union(selected.descendants()); cy.elements().difference(selectedContents.union(shown).union(shown.connectedNodes())).addClass('faded'); if (relationshipFilter === 'none') { cy.edges().addClass('hidden-by-filter'); } else { inbound.addClass('inbound'); outbound.addClass('outbound'); } setStatus(selected.data('label') + ': ' + outbound.length + ' outbound, ' + inbound.length + ' inbound direct relationship(s).'); }
 function updateFilters() { const query = search.value.trim().toLocaleLowerCase(); synchronizeCollapsedGroups(); cy.elements().removeClass('hidden-by-filter search-match'); hideCollapsedGroups(); cy.nodes('[kind = "external"]').toggleClass('hidden-by-filter', !externalNodesVisible); if (query) { const matches = cy.nodes().filter((node) => String(node.data('label')).toLocaleLowerCase().includes(query)); matches.addClass('search-match'); cy.nodes().difference(matches).addClass('hidden-by-filter'); } if (relationshipFilter === 'none') { cy.edges().not('.collapsed-proxy').addClass('hidden-by-filter'); } updateHiddenConnections(); hideEmptyGroups(); focus(cy.$(':selected').filter(':node')); }
 function updateTheme() { const dark = darkMode.classList.contains('active'); document.body.classList.toggle('dark-mode', dark); cy.style().selector(':parent').style('background-color', dark ? '#111827' : '#f8fafc').update(); localStorage.setItem('atlas-dark-mode', String(dark)); }
 function renderExclusionSection(title, values, removeType, addType) { const section = document.createElement('section'); section.className = 'exclusion-section'; const label = document.createElement('div'); label.className = 'exclusion-label'; label.textContent = title; section.append(label); values.forEach((value) => { const rule = document.createElement('label'); rule.className = 'exclusion-rule'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = true; checkbox.addEventListener('change', () => { if (!checkbox.checked) { void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: removeType, value }) }).then(() => window.location.reload()); } }); const text = document.createElement('span'); text.textContent = value; rule.append(checkbox, text); section.append(rule); }); const add = document.createElement('div'); add.className = 'exclusion-add'; const input = document.createElement('input'); input.placeholder = 'Node name or glob'; const button = document.createElement('button'); button.className = 'toolbar-button'; button.type = 'button'; button.textContent = '+'; const submit = () => { const value = input.value.trim(); if (value) { void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: addType, value }) }).then(() => window.location.reload()); } }; button.addEventListener('click', submit); input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); submit(); } }); add.append(input, button); section.append(add); return section; }
 function loadExclusions() { return fetch('/api/config').then((response) => response.ok ? response.json() : { externalDependencies: [], sourceGlobs: [] }).then((summary) => { excludedMenu.replaceChildren(renderExclusionSection('All packages', Array.isArray(summary.sourceGlobs) ? summary.sourceGlobs : [], 'remove-source-exclusion', 'hide-source'), renderExclusionSection(graph.title, Array.isArray(summary.externalDependencies) ? summary.externalDependencies : [], 'remove-external-exclusion', 'hide-external')); }).catch(() => { excludedMenu.textContent = 'Exclusions unavailable'; status.classList.add('error'); }); }
 function activateFilter(mode) { relationshipFilter = mode; Object.entries(filterButtons).forEach(([key, button]) => button.classList.toggle('active', key === mode)); updateFilters(); }
-function restoreLayout() { return fetch('layout.json').then((response) => response.ok ? response.json() : undefined).then((layout) => { if (!layout || !Array.isArray(layout.positions)) { runAutoLayout(); return; } if (Array.isArray(layout.hiddenRelationshipIds)) { layout.hiddenRelationshipIds.forEach((id) => hiddenRelationshipIds.add(id)); updateHiddenConnections(); } let applied = 0; layout.positions.forEach((position) => { const node = cy.$id(position.nodeId); if (!node.empty()) { node.position({ x: position.x, y: position.y }); applied += 1; } }); const bounds = cy.nodes().filter(':childless').boundingBox(); if (applied === 0 || bounds.w > 10000 || bounds.h > 10000) { runAutoLayout(); return; } cy.resize(); cy.fit(undefined, 36); }).catch(runAutoLayout); }
+function restoreLayout() { return fetch(typeof graph.layoutPath === 'string' ? graph.layoutPath : 'layout.json').then((response) => response.ok ? response.json() : undefined).then((layout) => { if (!layout || !Array.isArray(layout.positions)) { runAutoLayout(); return; } if (Array.isArray(layout.hiddenRelationshipIds)) { layout.hiddenRelationshipIds.forEach((id) => hiddenRelationshipIds.add(id)); updateHiddenConnections(); } let applied = 0; layout.positions.forEach((position) => { const node = cy.$id(position.nodeId); if (!node.empty()) { node.position({ x: position.x, y: position.y }); applied += 1; } }); const bounds = cy.nodes().filter(':childless').boundingBox(); if (applied === 0 || bounds.w > 10000 || bounds.h > 10000) { runAutoLayout(); return; } cy.resize(); cy.fit(undefined, 36); }).catch(runAutoLayout); }
 document.getElementById('atlas-nav-toggle').addEventListener('click', () => shell.classList.toggle('nav-collapsed'));
 document.getElementById('atlas-fit').addEventListener('click', () => cy.fit(undefined, 36));
 document.getElementById('atlas-auto-layout').addEventListener('click', () => { runAutoLayout(); saveLayout(); });
@@ -816,7 +831,7 @@ document.getElementById('atlas-export-png').addEventListener('click', () => { vo
 document.getElementById('atlas-export-all').addEventListener('click', () => { void exportAllImages(); });
 hideSelected.addEventListener('click', () => { const edge = cy.$(':selected').filter(':edge'); if (!edge.empty()) { hiddenRelationshipIds.add(edge.id()); edge.unselect(); updateHiddenConnections(); saveLayout(); setStatus('Layout saved with hidden connection.'); return; } const node = cy.$(':selected').filter(':node'); if (node.empty()) { return; } const action = node.data('kind') === 'external' ? { type: 'hide-external', value: node.data('label') } : { type: 'hide-source', value: node.data('sourcePath') }; void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action) }).then((response) => { if (response.status === 204) { window.location.reload(); } }); });
 splitExternals.addEventListener('click', () => { if (graph.scope !== 'landscape') { return; } void fetch('/api/config').then((response) => response.ok ? response.json() : undefined).then((summary) => fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'set-external-splitting', enabled: !summary?.splitExternalDependenciesByImporter }) })).then((response) => { if (response.status === 204) { window.location.reload(); } }); });
-createFolderDiagram.addEventListener('click', () => { const node = cy.$(':selected').filter(':node'); const packageName = node.data('packageName'); const sourcePath = node.data('sourcePath'); if (typeof packageName !== 'string' || typeof sourcePath !== 'string') { return; } const path = sourcePath.split('/').slice(0, -1).join('/'); if (!path) { return; } void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'create-folder-diagram', packageName, path }) }).then((response) => { if (response.status === 204) { window.location.reload(); } }); });
+createFolderDiagram.addEventListener('click', () => { const node = cy.$(':selected').filter(':node'); const packageName = node.data('packageName'); const sourcePath = node.data('packageSourcePath'); if (typeof packageName !== 'string' || typeof sourcePath !== 'string') { return; } const path = sourcePath.split('/').slice(0, -1).join('/'); if (!path) { return; } void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'create-folder-diagram', packageName, path }) }).then((response) => { if (response.status === 204) { window.location.reload(); } }); });
 externals.addEventListener('click', () => { externalNodesVisible = !externalNodesVisible; externals.classList.toggle('active', externalNodesVisible); updateFilters(); });
 hiddenConnections.addEventListener('click', () => { showHiddenConnections = !showHiddenConnections; updateHiddenConnections(); });
 excludedToggle.addEventListener('click', () => { const hidden = excludedMenu.hidden; excludedMenu.hidden = !hidden; excludedToggle.setAttribute('aria-expanded', String(hidden)); if (hidden) { void loadExclusions(); } });

@@ -1,11 +1,7 @@
 package dev.atlas.example.app
 
-import com.google.common.collect.ImmutableList
-import dev.atlas.example.library.Catalog
-import org.apache.commons.lang3.StringUtils
-
 /**
- * Composes the executable Kotlin example from catalog and presentation dependencies.
+ * Starts the executable Kotlin catalog through its concrete composition root.
  */
 object ApplicationMain {
     /**
@@ -15,9 +11,6 @@ object ApplicationMain {
      */
     @JvmStatic
     fun main(arguments: Array<String>) {
-        val product = ApplicationCatalogService(Catalog()).loadProduct()
-        val labels = ImmutableList.of(product.identifier, product.displayName)
-
-        println(StringUtils.join(labels, " | "))
+        CatalogApplication.createDefault().run()
     }
 }

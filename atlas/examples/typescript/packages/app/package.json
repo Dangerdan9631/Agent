@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@atlas-example/library": "file:../library",
+    "@atlas-example/application": "file:../application",
+    "@atlas-example/domain": "file:../domain",
+    "@atlas-example/infrastructure": "file:../infrastructure",
     "date-fns": "^4.1.0",
     "lodash-es": "^4.17.21"
   }

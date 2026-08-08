@@ -165,5 +165,20 @@ CLI tools (available after `npm link`):
 - `atlas-cli generate` validates and generates diagram data.
 - `atlas` opens the generated graph selected by `atlas.config.json` in Electron.
 
-Both examples contain `app` and `library` packages. Their normal builds
-generate models, validate architecture, and generate diagrams.
+Both examples implement the same runnable clean-architecture catalog through
+`domain`, `application`, `infrastructure`, and `app` packages/modules. Their
+normal builds compile the catalog, generate portable models, validate every
+supported architecture rule type, and generate the complete diagram artifact
+set. Use `npm run build:example:typescript` or
+`npm run build:example:kotlin` to build one independently.
+
+Run the TypeScript catalog from `examples/typescript` with `npm run demo`. Run
+the Kotlin catalog from the repository root with:
+
+```sh
+node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs --project examples/kotlin :app:run
+```
+
+Each example README documents the model-generation, validation, layout,
+viewer, and cleanup commands plus the configuration options demonstrated by
+that ecosystem.

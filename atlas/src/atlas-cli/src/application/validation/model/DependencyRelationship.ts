@@ -10,12 +10,16 @@ export class DependencyRelationship {
    * @param moduleSpecifier - Import text as it appeared in source code.
    * @param circular - Indicates whether following this relationship returns to its source.
    * @param cyclePath - Ordered workspace-relative cycle path when the relationship is circular.
+   * @param sourceModuleId - Opaque owning module identity when supplied by a federated model.
+   * @param targetModuleId - Opaque target module identity when resolved from a federated model.
    */
   public constructor(
     public readonly sourcePath: string,
     public readonly targetPath: string | undefined,
     public readonly moduleSpecifier: string,
     public readonly circular: boolean,
-    public readonly cyclePath: readonly string[]
+    public readonly cyclePath: readonly string[],
+    public readonly sourceModuleId: string | undefined = undefined,
+    public readonly targetModuleId: string | undefined = undefined
   ) {}
 }

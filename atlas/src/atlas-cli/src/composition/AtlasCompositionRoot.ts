@@ -31,11 +31,75 @@ import { TypeScriptWorkspaceModelGenerator } from '#infrastructure/federation/Ty
 import { NodeAtlasWorkspaceLoader } from '#infrastructure/federation/NodeAtlasWorkspaceLoader.js';
 import { FederatedDeclarationGraphAdapter } from '#application/federation/FederatedDeclarationGraphAdapter.js';
 import { FederatedDependencyAnalysisAdapter } from '#application/federation/FederatedDependencyAnalysisAdapter.js';
+import { ManifestWorkspacePackageResolver } from '#infrastructure/federation/ManifestWorkspacePackageResolver.js';
+import { ViewArtifacts } from '#application/view/ViewArtifacts.js';
+import { NodeArtifactServer } from '#infrastructure/server/NodeArtifactServer.js';
+import { NodeArtifactBrowser } from '#infrastructure/server/NodeArtifactBrowser.js';
+import { AtlasArtifactHost } from '#composition/AtlasArtifactHost.js';
 
 /**
  * Constructs Atlas's concrete runtime dependency graph.
  */
 export class AtlasCompositionRoot {
+  /**
+   * Creates a hosted artifact surface shared by Electron and browser presentation adapters.
+   *
+   * @returns Ready host that owns one constrained local artifact server.
+   */
+  public createArtifactHost(): AtlasArtifactHost {
+    const logger = new TslogAtlasLogger();
+    const policySelector = new PackagePolicySelector();
+    const manifestLoader = new NodeAtlasWorkspaceLoader();
+    const configurationLoader = new JsonAtlasConfigurationLoader();
+    const workspaceLoader = new WorkspaceLoader(
+      new NodeWorkspacePathResolver(),
+      configurationLoader,
+      new NodeWorkspacePackageDiscoverer(policySelector),
+      new ManifestWorkspacePackageResolver(manifestLoader, policySelector),
+      logger
+    );
+    const ownershipResolver = new PackageOwnershipResolver();
+    const selectorMatcher = new RuleSelectorMatcher(ownershipResolver);
+    const architectureValidator = new ArchitectureValidator([
+      new CircularDependencyRuleEvaluator(),
+      new RuntimeToSupportRuleEvaluator(ownershipResolver),
+      new DependencyDirectionRuleEvaluator(selectorMatcher),
+      new ForbiddenImportRuleEvaluator(selectorMatcher),
+      new ForbiddenExternalRuleEvaluator(selectorMatcher)
+    ]);
+    const layoutService = new DeterministicLayoutService();
+    const graphBuilder = new TypeScriptDeclarationGraphBuilder();
+    const modelGenerator = new TypeScriptWorkspaceModelGenerator(graphBuilder);
+    const federatedGraphAdapter = new FederatedDeclarationGraphAdapter();
+    const validationWorkflow = new ValidateArchitecture(
+      workspaceLoader,
+      new DependencyCruiserAnalyzer(),
+      new NodeDependencyAnalysisArtifactWriter(),
+      architectureValidator,
+      manifestLoader,
+      new FederatedDependencyAnalysisAdapter(federatedGraphAdapter)
+    );
+    const generationWorkflow = new GenerateArchitecture(
+      validationWorkflow,
+      graphBuilder,
+      new DiagramProjectionService(),
+      new NodeDiagramArtifactWriter(layoutService),
+      manifestLoader,
+      federatedGraphAdapter,
+      modelGenerator
+    );
+    const artifactServer = new NodeArtifactServer(layoutService, configurationLoader);
+    return new AtlasArtifactHost(
+      new ViewArtifacts(
+        workspaceLoader,
+        artifactServer,
+        new NodeArtifactBrowser(),
+        generationWorkflow
+      ),
+      artifactServer
+    );
+  }
+
   /**
    * Creates the command-line adapter with its concrete runtime dependencies.
    *
@@ -43,10 +107,14 @@ export class AtlasCompositionRoot {
    */
   public createCli(): AtlasCli {
     const logger = new TslogAtlasLogger();
+    const policySelector = new PackagePolicySelector();
+    const manifestLoader = new NodeAtlasWorkspaceLoader();
+    const configurationLoader = new JsonAtlasConfigurationLoader();
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
-      new JsonAtlasConfigurationLoader(),
-      new NodeWorkspacePackageDiscoverer(new PackagePolicySelector()),
+      configurationLoader,
+      new NodeWorkspacePackageDiscoverer(policySelector),
+      new ManifestWorkspacePackageResolver(manifestLoader, policySelector),
       logger
     );
     const ownershipResolver = new PackageOwnershipResolver();
@@ -62,7 +130,6 @@ export class AtlasCompositionRoot {
     const diagramArtifactWriter = new NodeDiagramArtifactWriter(layoutService);
     const graphBuilder = new TypeScriptDeclarationGraphBuilder();
     const modelGenerator = new TypeScriptWorkspaceModelGenerator(graphBuilder);
-    const manifestLoader = new NodeAtlasWorkspaceLoader();
     const federatedGraphAdapter = new FederatedDeclarationGraphAdapter();
     const validationWorkflow = new ValidateArchitecture(
       workspaceLoader,
@@ -103,6 +170,13 @@ export class AtlasCompositionRoot {
     );
     const cleanWorkflow = new CleanArtifacts(workspaceLoader, new NodeArtifactCleaner());
     const federatedModelWorkflow = new GenerateFederatedModels(workspaceLoader, modelGenerator);
+    const artifactServer = new NodeArtifactServer(layoutService, configurationLoader);
+    const viewWorkflow = new ViewArtifacts(
+      workspaceLoader,
+      artifactServer,
+      new NodeArtifactBrowser(),
+      generationWorkflow
+    );
 
     return new AtlasCli(
       logger,
@@ -112,7 +186,8 @@ export class AtlasCompositionRoot {
       diagramWorkflow,
       layoutWorkflow,
       cleanWorkflow,
-      federatedModelWorkflow
+      federatedModelWorkflow,
+      viewWorkflow
     );
   }
 }

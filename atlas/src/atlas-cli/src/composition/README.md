@@ -11,4 +11,6 @@ This directory is the only production location that chooses concrete implementat
 
 ## Contents
 
-- `AtlasCompositionRoot.ts` creates the command-line dependency graph.
+- `AtlasCompositionRoot.ts` creates the command-line and hosted-viewer dependency graphs.
+- `AtlasArtifactHost.ts` exposes the shared viewer lifecycle to desktop and other presentation adapters.
+- `AtlasArtifactHostOptions.ts` defines its presentation-neutral startup contract.

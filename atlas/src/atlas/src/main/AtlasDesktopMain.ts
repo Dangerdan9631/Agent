@@ -1,79 +1,104 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import { existsSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { AtlasArtifactLoader } from '#main/AtlasArtifactLoader.js';
+import { app, BrowserWindow } from 'electron';
+import { AtlasCompositionRoot } from '@starcruisestudios/atlas-cli/composition';
+import type { AtlasArtifactHost } from '@starcruisestudios/atlas-cli/artifact-host';
+import type { AtlasArtifactHostOptions } from '@starcruisestudios/atlas-cli/artifact-host-options';
+import { AtlasDesktopArgumentParser } from '#main/AtlasDesktopArgumentParser.js';
 
 /**
- * Composes the secured Electron desktop process and its narrow artifact-reading IPC boundary.
+ * Owns the Electron window and the constrained local artifact server used by the desktop viewer.
  */
 class AtlasDesktopApplication {
-  /**
-   * Creates the desktop application from an injected filesystem-backed artifact loader.
-   *
-   * @param artifactLoader Resolves configuration and generated graph data for the renderer.
-   */
-  public constructor(private readonly artifactLoader: AtlasArtifactLoader) {}
+  /** Holds the current artifact URL so macOS activation can recreate a closed window. */
+  private artifactUrl: string | undefined;
+
+  /** Prevents the asynchronous server shutdown from recursively intercepting application quit. */
+  private stopped = false;
+
+  /** Retains the in-flight server shutdown so repeated quit requests share one completion. */
+  private stopping: Promise<void> | undefined;
 
   /**
-   * Starts Electron after registering process-local IPC handlers.
+   * Creates the desktop application from its hosted-viewer and command-line boundaries.
+   *
+   * @param artifactHost - Serves generated portable artifacts through the legacy-compatible viewer surface.
+   * @param argumentParser - Validates desktop and legacy view arguments.
    */
-  public async start(): Promise<void> {
+  public constructor(
+    private readonly artifactHost: AtlasArtifactHost,
+    private readonly argumentParser: AtlasDesktopArgumentParser
+  ) {}
+
+  /**
+   * Starts the local artifact host and opens its full interaction surface in a secured Electron window.
+   *
+   * @param argumentsToParse - Arguments supplied after the Electron application directory.
+   * @param invocationDirectoryPath - Absolute working directory selected by the launcher.
+   */
+  public async start(
+    argumentsToParse: readonly string[],
+    invocationDirectoryPath: string
+  ): Promise<void> {
+    const options = this.argumentParser.parse(argumentsToParse);
     await app.whenReady();
-    this.registerHandlers();
+    this.artifactUrl = await this.artifactHost.start(
+      this.toArtifactHostOptions(options, invocationDirectoryPath)
+    );
     await this.createWindow();
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        void this.createWindow();
-      }
+      if (BrowserWindow.getAllWindows().length === 0) void this.createWindow();
     });
     app.on('window-all-closed', () => {
-      if (process.platform !== 'darwin') {
-        app.quit();
-      }
+      if (process.platform !== 'darwin') app.quit();
+    });
+    app.on('before-quit', (event) => {
+      if (this.stopped) return;
+      event.preventDefault();
+      this.stopping ??= this.stopAndQuit();
     });
   }
 
-  /**
-   * Registers renderer requests that expose only parsed generated graph data.
-   */
-  private registerHandlers(): void {
-    ipcMain.handle('atlas:load-landscape', async () =>
-      this.artifactLoader.loadLandscape(this.configurationPath())
-    );
-  }
-
-  /**
-   * Creates one sandboxed desktop window for the built renderer bundle.
-   */
+  /** Opens the currently hosted viewer URL without granting Node.js capabilities to its document. */
   private async createWindow(): Promise<void> {
-    const directoryPath = dirname(fileURLToPath(import.meta.url));
+    if (this.artifactUrl === undefined) {
+      throw new Error('Atlas desktop cannot open a window before its artifact host is ready.');
+    }
     const window = new BrowserWindow({
       width: 1440,
       height: 960,
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: true,
-        preload: resolve(directoryPath, '../preload/AtlasPreload.js')
+        sandbox: true
       }
     });
-    await window.loadFile(resolve(directoryPath, '../../renderer/index.html'));
+    await window.loadURL(this.artifactUrl);
   }
 
-  /**
-   * Resolves the requested config path or the current workspace default.
-   *
-   * @returns Existing user-owned Atlas configuration path.
-   */
-  private configurationPath(): string {
-    const explicitPath = process.argv.slice(1).find((argument) => argument.endsWith('.json'));
-    const path = resolve(explicitPath ?? resolve(process.cwd(), 'atlas.config.json'));
-    if (!existsSync(path)) {
-      throw new Error(`Atlas desktop could not find configuration '${path}'.`);
-    }
-    return path;
+  /** Maps validated presentation arguments to the platform-neutral artifact host contract. */
+  private toArtifactHostOptions(
+    options: ReturnType<AtlasDesktopArgumentParser['parse']>,
+    invocationDirectoryPath: string
+  ): AtlasArtifactHostOptions {
+    return {
+      invocationDirectoryPath,
+      workspacePath: options.workspacePath,
+      configurationPath: options.configurationPath,
+      outputPath: options.outputPath,
+      manifestPath: options.manifestPath,
+      host: options.host,
+      port: options.port
+    };
+  }
+
+  /** Stops the listener exactly once before allowing Electron to complete its quit sequence. */
+  private async stopAndQuit(): Promise<void> {
+    await this.artifactHost.stop();
+    this.stopped = true;
+    app.quit();
   }
 }
 
-void new AtlasDesktopApplication(new AtlasArtifactLoader()).start();
+await new AtlasDesktopApplication(
+  new AtlasCompositionRoot().createArtifactHost(),
+  new AtlasDesktopArgumentParser()
+).start(process.argv.slice(2), process.cwd());

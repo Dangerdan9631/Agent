@@ -6,11 +6,11 @@ package dev.atlas.kt
  * @property id Stable relationship identity.
  * @property sourceElementId Owned source element identity.
  * @property kind Shared relationship category.
- * @property targetLabel Fully qualified unresolved target label.
+ * @property target Owned or unresolved portable relationship target.
  */
 data class KotlinAtlasRelationship(
     val id: String,
     val sourceElementId: String,
     val kind: String,
-    val targetLabel: String
+    val target: KotlinAtlasRelationshipTarget
 )

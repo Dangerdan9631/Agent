@@ -17,6 +17,8 @@ import type { WorkspaceLoadingRequest } from '#application/workspace/model/Works
 import { ResolvedWorkspacePaths } from '#application/workspace/model/ResolvedWorkspacePaths.js';
 import { WorkspacePackage } from '#application/workspace/model/WorkspacePackage.js';
 import { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
+import { ArtifactServerLocation } from '#application/view/model/ArtifactServerLocation.js';
+import type { ViewArtifactsWorkflow } from '#application/view/ports/ViewArtifactsWorkflow.js';
 import { AtlasCli } from '#presentation/cli/AtlasCli.js';
 import { describe, expect, it } from 'vitest';
 
@@ -264,6 +266,43 @@ class RecordingGenerationWorkflow implements ArchitectureGenerationWorkflow {
 }
 
 /**
+ * Captures local viewer dispatch options without opening a network listener.
+ */
+class RecordingViewWorkflow implements ViewArtifactsWorkflow {
+  /** Captures the selected host. */
+  public host: string | undefined;
+
+  /** Captures the selected TCP port. */
+  public port: number | undefined;
+
+  /** Captures whether browser opening was requested. */
+  public openBrowser: boolean | undefined;
+
+  /**
+   * Records viewer command intent and returns a stable ready location.
+   *
+   * @param request - Workspace request accepted without filesystem access.
+   * @param host - Selected local server interface.
+   * @param port - Selected local TCP port.
+   * @param openBrowser - Selected browser-opening behavior.
+   * @returns Stable local viewer location.
+   */
+  public execute(
+    _request: WorkspaceLoadingRequest,
+    host: string,
+    port: number,
+    openBrowser: boolean
+  ): Promise<ArtifactServerLocation> {
+    this.host = host;
+    this.port = port;
+    this.openBrowser = openBrowser;
+    return Promise.resolve(
+      new ArtifactServerLocation('http://127.0.0.1:4321/landscape/index.html')
+    );
+  }
+}
+
+/**
  * Verifies the initial command-line presentation shell.
  */
 describe('AtlasCli', () => {
@@ -407,5 +446,35 @@ describe('AtlasCli', () => {
 
     expect(exitCode).toBe(2);
     expect(outputWriter.errorLines).toEqual(['Atlas --rows must be a positive integer.']);
+  });
+
+  /**
+   * Verifies the restored local viewer command delegates through the neutral hosting workflow.
+   */
+  it('starts the artifact viewer with explicit network and browser options', async () => {
+    const outputWriter = new CapturingOutputWriter();
+    const viewWorkflow = new RecordingViewWorkflow();
+    const cli = new AtlasCli(
+      new SilentAtlasLogger(),
+      outputWriter,
+      new UnreachableValidationWorkflow(),
+      new UnreachableGenerationWorkflow(),
+      new UnreachableDiagramWorkflow(),
+      new UnreachableLayoutWorkflow(),
+      new UnreachableCleanWorkflow(),
+      undefined,
+      viewWorkflow
+    );
+
+    const exitCode = await cli.run(['view', '--host', 'localhost', '--port', '0', '--open']);
+
+    expect(exitCode).toBe(0);
+    expect(viewWorkflow.host).toBe('localhost');
+    expect(viewWorkflow.port).toBe(0);
+    expect(viewWorkflow.openBrowser).toBe(true);
+    expect(outputWriter.lines).toEqual([
+      'Atlas viewer running at http://127.0.0.1:4321/landscape/index.html',
+      'Press Ctrl+C to stop the viewer.'
+    ]);
   });
 });
