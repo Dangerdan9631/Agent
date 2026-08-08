@@ -1,53 +1,165 @@
 {
   "schemaVersion": 1,
   "discovery": {
-    "packageGlobs": [
-      "packages/*"
-    ],
-    "defaultSourceRoots": [
-      "src"
-    ],
+    "packageGlobs": ["packages/*"],
+    "excludePackageGlobs": ["packages/*-fixture"],
+    "defaultSourceRoots": ["src"],
     "packages": [
       {
-        "match": {
-          "name": "@atlas-example/*"
-        },
-        "classification": "runtime"
+        "match": { "name": "@atlas-example/domain" },
+        "classification": "runtime",
+        "classes": ["core", "domain"]
+      },
+      {
+        "match": { "name": "@atlas-example/application" },
+        "classification": "runtime",
+        "classes": ["core", "use-case"]
+      },
+      {
+        "match": { "name": "@atlas-example/infrastructure" },
+        "classification": "runtime",
+        "classes": ["adapter"]
+      },
+      {
+        "match": { "name": "@atlas-example/app" },
+        "classification": "runtime",
+        "classes": ["delivery"]
       }
     ]
+  },
+  "artifacts": { "root": "architecture" },
+  "layout": {
+    "orientation": "horizontal",
+    "rows": 4,
+    "horizontalGap": 140,
+    "verticalGap": 110
   },
   "diagrams": {
     "moduleGroups": [
       {
-        "id": "example",
-        "title": "TypeScript example packages",
+        "id": "catalog-core",
+        "title": "Catalog core",
         "moduleIdPatterns": [
-          "@atlas-example/*"
-        ]
-      }
-    ]
-  },
-  "rules": [
-    {
-      "id": "no-cycles",
-      "type": "no-circular",
-      "severity": "error"
-    },
-    {
-      "id": "library-does-not-depend-on-app",
-      "type": "dependency-direction",
-      "severity": "error",
-      "mode": "forbid",
-      "from": {
-        "packageNames": [
-          "@atlas-example/library"
+          "@atlas-example/domain",
+          "@atlas-example/application"
         ]
       },
-      "to": {
-        "packageNames": [
+      {
+        "id": "catalog-adapters",
+        "title": "Catalog adapters and delivery",
+        "moduleIdPatterns": [
+          "@atlas-example/infrastructure",
           "@atlas-example/app"
         ]
       }
+    ],
+    "excludeSourceGlobs": ["**/*.generated.ts"],
+    "excludeExternalDependencies": ["node:*"],
+    "collapseExternalDependencies": false,
+    "collapseExternalDependencyGlobs": ["date-fns", "zod"],
+    "splitExternalDependenciesByImporter": false,
+    "externalDependencyImporterSplits": [
+      {
+        "dependency": "lodash-es",
+        "packageNames": ["@atlas-example/app", "@atlas-example/infrastructure"]
+      }
+    ],
+    "packages": [
+      {
+        "packageName": "@atlas-example/domain",
+        "excludeSourceGlobs": ["**/internal/**"]
+      },
+      {
+        "packageName": "@atlas-example/infrastructure",
+        "excludeSourceGlobs": ["**/telemetry/**"]
+      }
+    ],
+    "folders": [
+      {
+        "packageName": "@atlas-example/application",
+        "path": "src/catalog",
+        "title": "Application catalog use cases",
+        "collapseExternalDependencies": true,
+        "splitExternalDependenciesByImporter": false
+      },
+      {
+        "packageName": "@atlas-example/infrastructure",
+        "path": "src/catalog",
+        "title": "Catalog infrastructure adapters",
+        "excludeSourceGlobs": ["**/telemetry/**"],
+        "excludeExternalDependencies": ["zod"],
+        "collapseExternalDependencies": false,
+        "splitExternalDependenciesByImporter": false,
+        "externalDependencyImporterSplits": [
+          {
+            "dependency": "lodash-es",
+            "packageNames": ["@atlas-example/infrastructure"]
+          }
+        ]
+      },
+      {
+        "packageName": "@atlas-example/app",
+        "path": "src",
+        "title": "Executable delivery module",
+        "collapseExternalDependencies": true,
+        "splitExternalDependenciesByImporter": true
+      }
+    ]
+  },
+  "layers": [
+    {
+      "name": "domain",
+      "sourceGlobs": ["packages/domain/src/**"],
+      "packageNames": ["@atlas-example/domain"]
+    },
+    {
+      "name": "application",
+      "sourceGlobs": ["packages/application/src/**"],
+      "packageNames": ["@atlas-example/application"]
+    },
+    {
+      "name": "infrastructure",
+      "sourceGlobs": ["packages/infrastructure/src/**"],
+      "packageNames": ["@atlas-example/infrastructure"]
+    },
+    {
+      "name": "delivery",
+      "sourceGlobs": ["packages/app/src/**"],
+      "packageNames": ["@atlas-example/app"]
+    }
+  ],
+  "rules": [
+    { "id": "no-cycles", "type": "no-circular", "severity": "error" },
+    {
+      "id": "runtime-never-depends-on-support",
+      "type": "no-runtime-to-support",
+      "severity": "error"
+    },
+    {
+      "id": "domain-does-not-depend-on-adapters",
+      "type": "dependency-direction",
+      "severity": "error",
+      "mode": "forbid",
+      "from": { "layers": ["domain"] },
+      "to": { "packageClasses": ["adapter", "delivery"] }
+    },
+    {
+      "id": "domain-imports-no-outer-layer",
+      "type": "forbidden-import",
+      "severity": "error",
+      "from": { "layers": ["domain"] },
+      "patterns": [
+        "@atlas-example/app",
+        "@atlas-example/infrastructure",
+        "node:*"
+      ]
+    },
+    {
+      "id": "domain-has-no-framework-dependencies",
+      "type": "forbidden-external",
+      "severity": "error",
+      "from": { "layers": ["domain"] },
+      "packages": ["date-fns", "lodash-es", "zod"]
     }
   ]
 }

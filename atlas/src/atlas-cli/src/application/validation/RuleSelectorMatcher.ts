@@ -20,14 +20,19 @@ export class RuleSelectorMatcher {
    * @param selector - Declared package/class/layer selector.
    * @param sourcePath - Slash-normalized workspace-relative source path.
    * @param workspace - Loaded workspace policy and packages.
+   * @param moduleId - Optional opaque module identity for module-local federated paths.
    * @returns True when the path matches at least one selector branch.
    */
   public matches(
     selector: AtlasRuleSelector,
     sourcePath: string,
-    workspace: WorkspaceSnapshot
+    workspace: WorkspaceSnapshot,
+    moduleId: string | undefined = undefined
   ): boolean {
-    const workspacePackage = this.ownershipResolver.resolve(sourcePath, workspace.packages);
+    const workspacePackage =
+      moduleId === undefined
+        ? this.ownershipResolver.resolve(sourcePath, workspace.packages)
+        : workspace.packages.find((candidate) => candidate.name === moduleId);
     const packageNameMatches =
       workspacePackage !== undefined &&
       [...(selector.packageNames ?? []), ...(selector.moduleIds ?? [])].includes(

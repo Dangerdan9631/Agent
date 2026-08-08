@@ -14,8 +14,10 @@ repositories {
 dependencies {
     implementation(project(":atlas-kt"))
     implementation(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10")
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.2")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.19.2")
     testImplementation(gradleTestKit())
 }
 

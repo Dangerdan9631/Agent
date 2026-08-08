@@ -222,4 +222,79 @@ describe('DiagramProjectionService', () => {
     );
     expect(landscape?.nodes.map((node) => node.id)).not.toContain('external:lodash');
   });
+
+  /**
+   * Projects manifest-classified modules with module-local Kotlin paths into groups and folders.
+   */
+  it('projects classified manifest groups and module-local folder scopes', () => {
+    const applicationModuleId = 'dev.example:app:1.0.0';
+    const supportModuleId = 'dev.example:test-support:1.0.0';
+    const workspace = new WorkspaceSnapshot(
+      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.json', '/workspace/out'),
+      {
+        schemaVersion: 1,
+        discovery: {
+          packages: [
+            { match: { name: 'dev.example:app:*' }, classification: 'runtime' },
+            { match: { name: 'dev.example:test-support:*' }, classification: 'support' }
+          ]
+        },
+        diagrams: {
+          moduleGroups: [
+            {
+              id: 'kotlin-example',
+              title: 'Kotlin Example',
+              moduleIdPatterns: ['dev.example:*']
+            }
+          ],
+          folders: [
+            {
+              packageName: applicationModuleId,
+              path: 'src/main/kotlin/dev/example/app/feature'
+            }
+          ]
+        }
+      },
+      [
+        new WorkspacePackage(applicationModuleId, '/workspace', '.', [], 'runtime', [], undefined),
+        new WorkspacePackage(supportModuleId, '/workspace', '.', [], 'support', [], undefined)
+      ]
+    );
+    const graph = new DeclarationGraph(
+      [
+        new DeclarationNode(
+          'application',
+          'ApplicationService',
+          'class',
+          applicationModuleId,
+          'src/main/kotlin/dev/example/app/feature/ApplicationService.kt',
+          false,
+          'kotlin'
+        ),
+        new DeclarationNode(
+          'support',
+          'TestCatalog',
+          'class',
+          supportModuleId,
+          'src/main/kotlin/dev/example/support/TestCatalog.kt',
+          false,
+          'kotlin'
+        )
+      ],
+      [new DeclarationRelationship('application-support', 'application', 'support', 'reference')]
+    );
+
+    const diagrams = new DiagramProjectionService().project(workspace, graph);
+    const scopes = diagrams.map((diagram) => diagram.scope);
+    const group = diagrams.find((diagram) => diagram.scope === 'group:kotlin-example');
+    const folder = diagrams.find(
+      (diagram) =>
+        diagram.scope === `folder:${applicationModuleId}:src/main/kotlin/dev/example/app/feature`
+    );
+
+    expect(scopes).toContain(`package:${applicationModuleId}`);
+    expect(scopes).not.toContain(`package:${supportModuleId}`);
+    expect(group?.nodes.map((node) => node.id)).toEqual(['application', 'support']);
+    expect(folder?.nodes.map((node) => node.id)).toEqual(['application', 'boundary:support']);
+  });
 });

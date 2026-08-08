@@ -11,5 +11,5 @@ This directory owns the Atlas executable's argument parsing and command dispatch
 
 ## Contents
 
-- `AtlasCli.ts` provides the initial command shell.
+- `AtlasCli.ts` provides validation, generation, layout, cleanup, federation, and interactive viewer commands.
 - `atlas.ts` is the executable entrypoint.

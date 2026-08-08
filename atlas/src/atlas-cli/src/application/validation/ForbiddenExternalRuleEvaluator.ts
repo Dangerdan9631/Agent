@@ -59,7 +59,12 @@ export class ForbiddenExternalRuleEvaluator implements ArchitectureRuleEvaluator
           relationship.targetPath !== undefined ||
           externalPackageName === undefined ||
           (externalRule.from !== undefined &&
-            !this.selectorMatcher.matches(externalRule.from, relationship.sourcePath, workspace)) ||
+            !this.selectorMatcher.matches(
+              externalRule.from,
+              relationship.sourcePath,
+              workspace,
+              relationship.sourceModuleId ?? analysisResult.packageName
+            )) ||
           !this.matchesPackage(externalRule.packages, externalPackageName)
         ) {
           continue;

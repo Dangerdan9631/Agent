@@ -8,6 +8,7 @@ This directory resolves an Atlas workspace and delegates safe local artifact ser
 
 - The application layer selects the configured artifact root but has no HTTP or filesystem implementation detail.
 - A successful view request returns a concrete local URL for the presentation layer to display.
+- Policy mutations regenerate the selected neutral model workspace before the viewer reloads.
 
 ## Contents
 

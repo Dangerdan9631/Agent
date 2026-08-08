@@ -1,0 +1,15 @@
+{
+  "name": "@atlas-example/infrastructure",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@atlas-example/application": "file:../application",
+    "@atlas-example/domain": "file:../domain",
+    "lodash-es": "^4.17.21",
+    "zod": "^3.24.2"
+  }
+}

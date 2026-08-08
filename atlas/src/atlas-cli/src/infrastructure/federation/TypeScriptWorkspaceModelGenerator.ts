@@ -8,9 +8,9 @@ import type {
 import type { AtlasWorkspaceManifest } from '#application/federation/model/AtlasWorkspaceManifest.js';
 import type { AtlasModelGenerator } from '#application/federation/ports/AtlasModelGenerator.js';
 import type { DeclarationGraphBuilder } from '#application/graph/ports/DeclarationGraphBuilder.js';
-import type {
+import {
   DeclarationNode,
-  DeclarationRelationship
+  type DeclarationRelationship
 } from '#application/graph/model/DeclarationGraph.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
@@ -38,11 +38,19 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
     const outputPath = resolve(modelDirectoryPath);
     await mkdir(outputPath, { recursive: true });
     const graph = await this.graphBuilder.build(workspace);
+    const moduleRoots = new Map(
+      workspace.packages.map((workspacePackage) => [
+        workspacePackage.name,
+        workspacePackage.relativeRootPath
+      ])
+    );
     const models = await Promise.all(
       workspace.packages.map(async (workspacePackage) => {
         const model = await this.toModel(
           workspacePackage.name,
           workspacePackage.rootPath,
+          workspacePackage.relativeRootPath,
+          moduleRoots,
           graph.nodes,
           graph.relationships
         );
@@ -70,11 +78,15 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
   private async toModel(
     packageName: string,
     packageRootPath: string,
+    packageRelativeRootPath: string,
+    moduleRoots: ReadonlyMap<string, string>,
     nodes: readonly DeclarationNode[],
     relationships: readonly DeclarationRelationship[]
   ): Promise<AtlasModuleModel> {
     const manifest = await this.readPackageManifest(packageRootPath);
-    const ownedNodes = nodes.filter((node) => node.packageName === packageName);
+    const ownedNodes = nodes
+      .filter((node) => node.packageName === packageName)
+      .map((node) => this.toModuleLocalNode(node, packageRelativeRootPath));
     const elementsByPath = this.toSourceUnitElements(packageName, ownedNodes);
     const elementByNodeId = this.toNodeElements(packageName, ownedNodes, elementsByPath);
     const elements = [
@@ -97,10 +109,16 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
       },
       sourceLanguage: 'typescript',
       elements,
-      relationships: relationships
-        .filter((relationship) => elementByNodeId.has(relationship.sourceId))
-        .map((relationship) => this.toRelationship(relationship, elementByNodeId, nodesById))
-        .sort((left, right) => left.id.localeCompare(right.id))
+      relationships: [
+        ...new Map(
+          relationships
+            .filter((relationship) => elementByNodeId.has(relationship.sourceId))
+            .map((relationship) =>
+              this.toRelationship(relationship, elementByNodeId, nodesById, moduleRoots)
+            )
+            .map((relationship) => [relationship.id, relationship])
+        ).values()
+      ].sort((left, right) => left.id.localeCompare(right.id))
     };
   }
 
@@ -178,7 +196,8 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
   private toRelationship(
     relationship: DeclarationRelationship,
     elementByNodeId: ReadonlyMap<string, AtlasElement>,
-    nodesById: ReadonlyMap<string, DeclarationNode>
+    nodesById: ReadonlyMap<string, DeclarationNode>,
+    moduleRoots: ReadonlyMap<string, string>
   ): AtlasRelationship {
     const sourceElement = elementByNodeId.get(relationship.sourceId);
     if (sourceElement === undefined)
@@ -187,10 +206,10 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
       );
     const localTarget = elementByNodeId.get(relationship.targetId);
     const targetNode = nodesById.get(relationship.targetId);
-    const target = this.toTarget(localTarget, targetNode, relationship.targetId);
+    const target = this.toTarget(localTarget, targetNode, relationship.targetId, moduleRoots);
     const kind = relationship.type === 'inheritance' ? 'inherits' : 'references';
     return {
-      id: `relationship:${encodeURIComponent(sourceElement.id)}>${encodeURIComponent(target.moduleId ?? target.elementId ?? target.label ?? '')}:${kind}`,
+      id: `relationship:${encodeURIComponent(sourceElement.id)}>${this.toTargetIdentity(target)}:${kind}`,
       sourceElementId: sourceElement.id,
       kind,
       target
@@ -201,24 +220,71 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
   private toTarget(
     localTarget: AtlasElement | undefined,
     targetNode: DeclarationNode | undefined,
-    fallbackTargetId: string
+    fallbackTargetId: string,
+    moduleRoots: ReadonlyMap<string, string>
   ): AtlasRelationshipTarget {
     if (localTarget !== undefined) return { elementId: localTarget.id };
     if (targetNode?.packageName === undefined)
       return { label: targetNode?.label ?? fallbackTargetId };
-    const elementId = this.toStableElementId(targetNode);
+    const elementId = this.toStableElementId(targetNode, moduleRoots);
     return elementId === undefined
       ? { moduleId: targetNode.packageName, label: targetNode.label }
       : { moduleId: targetNode.packageName, elementId, label: targetNode.label };
   }
 
   /** Derives the owning module's stable element ID without requiring its model file to be loaded. */
-  private toStableElementId(node: DeclarationNode): string | undefined {
-    if (node.packageName === undefined) return undefined;
-    if (node.sourcePath !== undefined && (node.moduleNode || node.kind === 'module')) {
-      return this.toSourceUnitElement(node.packageName, node.sourcePath).id;
+  private toStableElementId(
+    node: DeclarationNode,
+    moduleRoots: ReadonlyMap<string, string>
+  ): string | undefined {
+    const moduleId = node.packageName;
+    if (moduleId === undefined) return undefined;
+    const moduleNode = this.toModuleLocalNode(node, moduleRoots.get(moduleId) ?? '.');
+    if (moduleNode.sourcePath !== undefined && (moduleNode.moduleNode || moduleNode.kind === 'module')) {
+      return this.toSourceUnitElement(moduleId, moduleNode.sourcePath).id;
     }
-    return this.toElement(node.packageName, node, undefined).id;
+    return this.toElement(moduleId, moduleNode, undefined).id;
+  }
+
+  /** Creates one stable identity from every populated portable target component. */
+  private toTargetIdentity(target: AtlasRelationshipTarget): string {
+    return encodeURIComponent(
+      [target.moduleId ?? '', target.elementId ?? '', target.label ?? ''].join('\u0000')
+    );
+  }
+
+  /** Converts a workspace-relative graph node into its module-local portable path form. */
+  private toModuleLocalNode(node: DeclarationNode, moduleRootPath: string): DeclarationNode {
+    return new DeclarationNode(
+      node.id,
+      node.label,
+      node.kind,
+      node.packageName,
+      this.toModuleSourcePath(node.sourcePath, moduleRootPath),
+      node.moduleNode,
+      node.sourceLanguage
+    );
+  }
+
+  /** Removes the owning package root while preserving normalized module-local source paths. */
+  private toModuleSourcePath(
+    sourcePath: string | undefined,
+    moduleRootPath: string
+  ): string | undefined {
+    if (sourcePath === undefined) return undefined;
+    const normalizedSourcePath = sourcePath.replaceAll('\\', '/').replace(/^\.\//, '');
+    const normalizedRoot = moduleRootPath
+      .replaceAll('\\', '/')
+      .replace(/^\.\//, '')
+      .replace(/\/$/, '');
+    if (normalizedRoot === '' || normalizedRoot === '.') return normalizedSourcePath;
+    const prefix = `${normalizedRoot}/`;
+    if (!normalizedSourcePath.startsWith(prefix)) {
+      throw new Error(
+        `Atlas cannot persist source path '${sourcePath}' outside module root '${moduleRootPath}'.`
+      );
+    }
+    return normalizedSourcePath.slice(prefix.length);
   }
 
   /** Reads package metadata needed for a published npm artifact identity. */

@@ -9,7 +9,10 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.google.devtools.ksp.symbol.Modifier
 
 /**
  * Extracts a target-local portable declaration fragment from KSP's Kotlin semantic symbols.
@@ -59,30 +62,112 @@ class AtlasKspDeclarationVisitor(
 
     /** Records a class-like declaration and recursively visits its nested declarations. */
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-        record(classDeclaration, when {
+        val kind = when {
             classDeclaration.classKind.name == "INTERFACE" -> "interface"
             classDeclaration.classKind.name == "ENUM_CLASS" -> "enum"
             classDeclaration.classKind.name == "ANNOTATION_CLASS" -> "annotation"
+            classDeclaration.classKind.name == "ENUM_ENTRY" -> "constant"
             else -> "class"
-        })
+        }
+        val superTypes = classDeclaration.superTypes.mapNotNull { type -> this.resolvedName(type) }.toList()
+        val inherits = superTypes.filter { target ->
+            val declaration = classDeclaration.superTypes.firstOrNull { type -> this.resolvedName(type) == target }
+                ?.resolve()?.declaration as? KSClassDeclaration
+            kind == "interface" || declaration?.classKind?.name != "INTERFACE"
+        }
+        val implements = if (kind == "interface") emptyList() else superTypes - inherits.toSet()
+        record(
+            classDeclaration,
+            kind,
+            traits = buildList {
+                if (classDeclaration.classKind.name == "OBJECT") add("singleton")
+                if (Modifier.DATA in classDeclaration.modifiers) add("data")
+                if (Modifier.SEALED in classDeclaration.modifiers) add("sealed")
+                if (Modifier.VALUE in classDeclaration.modifiers) add("value")
+            },
+            references = emptyList(),
+            inherits = inherits,
+            implements = implements
+        )
         classDeclaration.declarations.forEach { declaration -> declaration.accept(this, Unit) }
     }
 
     /** Records a function declaration using its KSP signature as an overload discriminator. */
     override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
-        record(function, "function", function.parameters.joinToString(",") { parameter -> parameter.type.resolve().declaration.qualifiedName?.asString().orEmpty() })
+        val parameterTypes = function.parameters.mapNotNull { parameter -> this.resolvedName(parameter.type) }
+        val returnType = function.returnType?.let { type -> this.resolvedName(type) }
+        record(
+            function,
+            if (function.parentDeclaration == null) "function" else "method",
+            "(${parameterTypes.joinToString(",")})${returnType?.let { value -> ":$value" }.orEmpty()}",
+            traits = buildList {
+                if (Modifier.SUSPEND in function.modifiers) add("suspend")
+                if (Modifier.INLINE in function.modifiers) add("inline")
+                if (Modifier.OPERATOR in function.modifiers) add("operator")
+                if (Modifier.INFIX in function.modifiers) add("infix")
+            },
+            references = parameterTypes + listOfNotNull(returnType),
+            inherits = emptyList(),
+            implements = emptyList()
+        )
     }
 
     /** Records a property declaration using the shared property declaration kind. */
     override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
-        record(property, "property")
+        record(
+            property,
+            if (Modifier.CONST in property.modifiers) "constant" else "property",
+            traits = buildList {
+                if (property.isMutable) add("mutable")
+                if (Modifier.CONST in property.modifiers) add("const")
+                if (Modifier.LATEINIT in property.modifiers) add("lateinit")
+            },
+            references = listOfNotNull(this.resolvedName(property.type)),
+            inherits = emptyList(),
+            implements = emptyList()
+        )
+    }
+
+    /** Records a type alias and its resolved target relationship. */
+    override fun visitTypeAlias(typeAlias: KSTypeAlias, data: Unit) {
+        record(
+            typeAlias,
+            "type-alias",
+            references = listOfNotNull(this.resolvedName(typeAlias.type)),
+            inherits = emptyList(),
+            implements = emptyList()
+        )
     }
 
     /** Adds one schema-shaped declaration from a KSP semantic symbol. */
-    private fun record(declaration: KSDeclaration, kind: String, signature: String? = null) {
+    private fun record(
+        declaration: KSDeclaration,
+        kind: String,
+        signature: String? = null,
+        traits: List<String> = emptyList(),
+        references: List<String>? = null,
+        inherits: List<String>? = null,
+        implements: List<String>? = null
+    ) {
         val qualifiedName = declaration.qualifiedName?.asString() ?: return
         val name = declaration.simpleName.asString()
-        elements.add(AtlasKspElement(listOf(artifactId, kind, qualifiedName, signature.orEmpty()).joinToString("|"), name, kind, qualifiedName, signature))
+        elements.add(
+            AtlasKspElement(
+                listOf(artifactId, kind, qualifiedName, signature.orEmpty()).joinToString("|"),
+                name,
+                kind,
+                qualifiedName,
+                signature,
+                traits.distinct().sorted(),
+                references?.distinct()?.sorted(),
+                inherits?.distinct()?.sorted(),
+                implements?.distinct()?.sorted()
+            )
+        )
+    }
+
+    private fun resolvedName(type: KSTypeReference): String? {
+        return type.resolve().declaration.qualifiedName?.asString()
     }
 }
 
@@ -99,5 +184,13 @@ data class AtlasKspElement(
     /** Canonical Kotlin qualified identity. */
     val qualifiedName: String,
     /** Optional callable overload discriminator. */
-    val signature: String?
+    val signature: String?,
+    /** Stable semantic traits supplied by KSP. */
+    val traits: List<String>,
+    /** Resolved type references, or null for legacy/non-authoritative declarations. */
+    val references: List<String>?,
+    /** Resolved inherited types, or null when not supplied. */
+    val inherits: List<String>?,
+    /** Resolved implemented interfaces, or null when not supplied. */
+    val implements: List<String>?
 )

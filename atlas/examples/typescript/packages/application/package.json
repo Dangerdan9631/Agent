@@ -1,0 +1,12 @@
+{
+  "name": "@atlas-example/application",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@atlas-example/domain": "file:../domain"
+  }
+}

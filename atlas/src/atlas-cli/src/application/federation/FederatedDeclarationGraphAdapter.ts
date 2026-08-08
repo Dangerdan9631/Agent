@@ -97,7 +97,9 @@ export class FederatedDeclarationGraphAdapter {
     if (kind === 'interface') return 'interface';
     if (kind === 'type-alias' || kind === 'delegate') return 'type-alias';
     if (kind === 'enum') return 'enum';
-    if (kind === 'function') return 'function';
+    if (kind === 'function' || kind === 'method' || kind === 'constructor') return 'function';
+    if (kind === 'property' || kind === 'field') return 'field';
+    if (kind === 'constant') return 'constant';
     if (kind === 'source-unit' || kind === 'namespace') return 'module';
     return 'class';
   }

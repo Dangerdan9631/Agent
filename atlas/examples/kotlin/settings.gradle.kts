@@ -14,5 +14,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "atlas-kotlin-example"
 
-include(":library")
+include(":domain")
+include(":application")
+include(":infrastructure")
 include(":app")

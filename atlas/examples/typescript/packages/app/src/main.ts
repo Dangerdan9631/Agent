@@ -1,10 +1,8 @@
-import { Catalog } from "@atlas-example/library";
-import { CatalogDemo } from "./CatalogDemo.js";
-import { RuntimeOutputWriter } from "./RuntimeOutputWriter.js";
+import { CatalogApplication } from './composition/CatalogApplication.js';
 
 /**
- * Starts the runnable TypeScript example with concrete composition dependencies.
+ * Starts the runnable TypeScript catalog with its concrete composition dependencies.
  */
-const catalogDemo = new CatalogDemo(new Catalog(), new RuntimeOutputWriter());
+const catalogApplication = CatalogApplication.createDefault();
 
-catalogDemo.run();
+catalogApplication.run();

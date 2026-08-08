@@ -40,6 +40,7 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
     }
     const models = new Map<string, AtlasModuleModel>();
     const ownedElementIds = new Set<string>();
+    const relationshipIds = new Set<string>();
     for (const entry of entries) {
       const modelPath = this.toContainedModelPath(absoluteManifestPath, entry.modelPath);
       const model = this.toModel(await this.readJson(modelPath), modelPath);
@@ -56,6 +57,14 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
           throw new Error(`Atlas workspace contains duplicate owned element ID '${element.id}'.`);
         }
         ownedElementIds.add(element.id);
+      }
+      for (const relationship of model.relationships) {
+        if (relationshipIds.has(relationship.id)) {
+          throw new Error(
+            `Atlas workspace contains duplicate relationship ID '${relationship.id}'.`
+          );
+        }
+        relationshipIds.add(relationship.id);
       }
       models.set(model.module.id, model);
     }
@@ -247,6 +256,11 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
       explicitModule?.elements.some((element) => element.id === explicitElementId)
     ) {
       return new AtlasResolvedTarget(explicitModule, explicitElementId);
+    }
+    if (explicitElementId !== undefined && explicitModule !== undefined) {
+      throw new Error(
+        `Atlas relationship '${relationship.id}' targets unknown element '${explicitElementId}' in selected module '${explicitModule.module.id}'.`
+      );
     }
     if (relationship.target.moduleId !== undefined || relationship.target.label === undefined) {
       return new AtlasResolvedTarget(explicitModule, undefined);

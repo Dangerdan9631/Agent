@@ -11,6 +11,7 @@ import { LayoutOverrides } from '#application/layout/model/LayoutDocument.js';
 import type { ArchitectureLayoutWorkflow } from '#application/layout/ports/ArchitectureLayoutWorkflow.js';
 import type { CleanArtifactsWorkflow } from '#application/clean/ports/CleanArtifactsWorkflow.js';
 import type { GenerateFederatedModels } from '#application/federation/GenerateFederatedModels.js';
+import type { ViewArtifactsWorkflow } from '#application/view/ports/ViewArtifactsWorkflow.js';
 import { Command, CommanderError } from 'commander';
 
 /**
@@ -31,7 +32,8 @@ export class AtlasCli {
     private readonly diagramWorkflow: ArchitectureDiagramWorkflow,
     private readonly layoutWorkflow: ArchitectureLayoutWorkflow,
     private readonly cleanWorkflow: CleanArtifactsWorkflow,
-    private readonly federatedModelWorkflow?: GenerateFederatedModels
+    private readonly federatedModelWorkflow?: GenerateFederatedModels,
+    private readonly viewWorkflow?: ViewArtifactsWorkflow
   ) {}
 
   /**
@@ -119,6 +121,13 @@ export class AtlasCli {
         'Generate one language-neutral model per selected package and a workspace manifest.'
       )
       .action(this.generateFederatedModels.bind(this, program));
+    program
+      .command('view')
+      .description('Serve generated diagrams and persist viewer changes.')
+      .option('--host <host>', 'Host interface for the local viewer.', '127.0.0.1')
+      .option('--port <port>', 'Port for the local viewer. Use 0 for an available port.', '4173')
+      .option('--open', 'Open the viewer in the default browser.')
+      .action(this.viewArtifacts.bind(this, program));
 
     return program;
   }
@@ -389,6 +398,49 @@ export class AtlasCli {
   }
 
   /**
+   * Starts the local artifact viewer through the application-owned hosting workflow.
+   *
+   * @param rootCommand - Root Commander program carrying global workspace options.
+   * @param options - Viewer host, port, and browser options parsed by Commander.
+   * @returns A promise that resolves once the server is listening.
+   */
+  private async viewArtifacts(rootCommand: Command, options: AtlasViewOptions): Promise<void> {
+    this.applyLogLevel(rootCommand);
+    if (this.viewWorkflow === undefined) {
+      throw new Error('Atlas artifact viewing is not configured for this command host.');
+    }
+    const globalOptions = rootCommand.opts<AtlasGlobalOptions>();
+    const location = await this.viewWorkflow.execute(
+      {
+        invocationDirectoryPath: process.cwd(),
+        workspaceOption: globalOptions.workspace,
+        configurationOption: globalOptions.config,
+        outputOption: globalOptions.output,
+        manifestOption: globalOptions.manifest
+      },
+      options.host,
+      this.toPort(options.port),
+      options.open ?? false
+    );
+    this.outputWriter.writeLine(`Atlas viewer running at ${location.url}`);
+    this.outputWriter.writeLine('Press Ctrl+C to stop the viewer.');
+  }
+
+  /**
+   * Parses and validates a local TCP port argument.
+   *
+   * @param value - Commander-provided port string.
+   * @returns Integer port from zero through 65535.
+   */
+  private toPort(value: string): number {
+    const port = Number(value);
+    if (!Number.isInteger(port) || port < 0 || port > 65_535) {
+      throw new Error('Atlas --port must be an integer from 0 through 65535.');
+    }
+    return port;
+  }
+
+  /**
    * Applies one validated global log-level option when the injected logger exposes control capability.
    *
    * @param rootCommand - Root Commander program carrying global options.
@@ -526,6 +578,20 @@ interface AtlasCleanOptions {
    * Explicitly authorizes removal of regenerable artifact-root children.
    */
   readonly confirm?: boolean;
+}
+
+/**
+ * Represents viewer-command network and browser options after Commander parsing.
+ */
+interface AtlasViewOptions {
+  /** Interface hostname or address for the constrained local server. */
+  readonly host: string;
+
+  /** TCP port string, where zero requests an operating-system-selected port. */
+  readonly port: string;
+
+  /** Determines whether the default browser opens after the server is ready. */
+  readonly open?: boolean;
 }
 
 /**

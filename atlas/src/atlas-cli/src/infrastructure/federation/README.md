@@ -12,3 +12,4 @@ This directory contains filesystem adapters for independently generated Atlas mo
 ## Contents
 
 - `NodeAtlasWorkspaceLoader.ts` reads, validates, and identity-links manifest-selected models.
+- `ManifestWorkspacePackageResolver.ts` applies explicit package policy to opaque module IDs.

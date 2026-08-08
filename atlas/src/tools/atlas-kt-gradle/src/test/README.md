@@ -6,4 +6,8 @@ This test tree verifies the Gradle plugin through TestKit builds rather than onl
 
 ## Conventions
 
-Use isolated temporary Gradle projects and assert portable JSON artifacts. Cover behavior visible to plugin users, including multi-project aggregation and task lifecycle hooks.
+Use isolated temporary Gradle projects and parse the resulting portable JSON.
+Cover behavior visible to plugin users, including multi-project aggregation,
+nested declaration hierarchy, kind and relationship parity, module-relative
+source paths, semantic-fragment consumption, subprocess classpaths, and task
+lifecycle hooks.

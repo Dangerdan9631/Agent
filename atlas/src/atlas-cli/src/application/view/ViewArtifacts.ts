@@ -5,6 +5,7 @@ import type { ViewArtifactsWorkflow } from '#application/view/ports/ViewArtifact
 import type { WorkspaceLoadingRequest } from '#application/workspace/model/WorkspaceLoadingRequest.js';
 import type { WorkspaceLoadingWorkflow } from '#application/workspace/ports/WorkspaceLoadingWorkflow.js';
 import type { ArchitectureGenerationWorkflow } from '#application/diagram/ports/ArchitectureGenerationWorkflow.js';
+import type { ArtifactConfigurationChangeHandler } from '#application/view/ports/ArtifactConfigurationChangeHandler.js';
 
 /**
  * Resolves a workspace and starts a constrained local server for its generated artifacts.
@@ -47,7 +48,8 @@ export class ViewArtifacts implements ViewArtifactsWorkflow {
       workspace.paths.artifactRootPath,
       host,
       port,
-      workspace.paths.configurationPath
+      workspace.paths.configurationPath,
+      this.configurationChangeHandler(request)
     );
     if (openBrowser) {
       await this.artifactBrowser.open(location.url);
@@ -64,5 +66,21 @@ export class ViewArtifacts implements ViewArtifactsWorkflow {
         'Atlas cannot serve a federated manifest while architecture validation has errors.'
       );
     }
+  }
+
+  /** Creates the application-owned refresh callback used after viewer policy changes. */
+  private configurationChangeHandler(
+    request: WorkspaceLoadingRequest
+  ): ArtifactConfigurationChangeHandler | undefined {
+    const generationWorkflow = this.generationWorkflow;
+    if (generationWorkflow === undefined) return undefined;
+    return {
+      execute: async () => {
+        const result = await generationWorkflow.execute(request, true);
+        if (!result.generated()) {
+          throw new Error('Atlas could not refresh diagram artifacts after changing policy.');
+        }
+      }
+    };
   }
 }

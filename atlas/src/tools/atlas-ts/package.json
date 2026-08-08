@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests --configLoader runner"
   },
   "dependencies": {
     "@starcruisestudios/atlas-cli": "file:../../atlas-cli",

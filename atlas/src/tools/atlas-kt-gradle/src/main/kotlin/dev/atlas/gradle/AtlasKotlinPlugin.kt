@@ -4,6 +4,7 @@ import dev.atlas.kt.AtlasKotlinCliMain
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Exec
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 
 /**
  * Registers Kotlin JVM artifact model generation and canonical workspace-manifest tasks.
@@ -23,8 +24,19 @@ class AtlasKotlinPlugin : Plugin<Project> {
             it.generatorClasspath.from(
                 project.files(
                     AtlasKotlinCliMain::class.java.protectionDomain.codeSource.location,
-                    Unit::class.java.protectionDomain.codeSource.location
+                    Unit::class.java.protectionDomain.codeSource.location,
+                    KotlinCoreEnvironment::class.java.protectionDomain.codeSource.location,
+                    this.runtimeLocation("org.jetbrains.kotlin.buildtools.api.CompilationService"),
+                    this.runtimeLocation("kotlin.script.templates.standard.ScriptTemplateWithArgs"),
+                    this.runtimeLocation("kotlin.reflect.jvm.internal.KClassImpl"),
+                    this.runtimeLocation("org.jetbrains.kotlin.daemon.common.CompileService"),
+                    this.runtimeLocation("kotlinx.coroutines.CoroutineScope")
                 )
+            )
+            it.semanticFragmentFiles.from(
+                project.layout.buildDirectory.dir("generated/ksp").map { directory ->
+                    project.fileTree(directory).matching { pattern -> pattern.include("**/*.atlas-fragment.json") }
+                }
             )
             it.generatorMainClass.set("dev.atlas.kt.AtlasKotlinCliMain")
             it.outputFile.set(
@@ -118,7 +130,10 @@ class AtlasKotlinPlugin : Plugin<Project> {
             it.doFirst { task ->
                 (task as Exec).commandLine(
                     extension.viewerExecutable,
-                    project.file("atlas.config.json").absolutePath
+                    "view",
+                    "--config", project.file("atlas.config.json").absolutePath,
+                    "--workspace", project.projectDir.absolutePath,
+                    "--manifest", project.layout.buildDirectory.file("atlas/models/atlas-workspace.json").get().asFile.absolutePath
                 )
             }
         }
@@ -153,5 +168,11 @@ class AtlasKotlinPlugin : Plugin<Project> {
         val included = extension.includedTargets.any { pattern -> Regex("^" + Regex.escape(pattern).replace("\\*", ".*") + "$", RegexOption.IGNORE_CASE).matches(target) }
         val excluded = extension.excludedTargets.any { pattern -> Regex("^" + Regex.escape(pattern).replace("\\*", ".*") + "$", RegexOption.IGNORE_CASE).matches(target) }
         return included && !excluded
+    }
+
+    /** Resolves one transitive generator dependency without exposing that implementation type in this plugin API. */
+    private fun runtimeLocation(className: String): java.net.URL {
+        return Class.forName(className, false, AtlasKotlinPlugin::class.java.classLoader)
+            .protectionDomain.codeSource.location
     }
 }

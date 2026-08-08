@@ -4,10 +4,12 @@
   "type": "module",
   "scripts": {
     "demo": "tsx packages/app/src/main.ts",
-    "architecture:models": "atlas-ts generate",
-    "architecture:validate": "atlas-cli validate",
-    "architecture:generate": "atlas-cli generate --no-validate",
+    "architecture:models": "node ../../src/tools/atlas-ts/dist/presentation/AtlasTypeScriptCliMain.js generate",
+    "architecture:validate": "atlas-cli validate --manifest architecture/models/atlas-workspace.json",
+    "architecture:generate": "atlas-cli generate --manifest architecture/models/atlas-workspace.json --no-validate",
+    "architecture:layout": "atlas-cli layout landscape --manifest architecture/models/atlas-workspace.json --generate --force",
     "architecture:view": "atlas atlas.config.json",
+    "architecture:clean": "atlas-cli clean --confirm",
     "build": "tsc --noEmit && npm run architecture:models && npm run architecture:validate && npm run architecture:generate"
   },
   "devDependencies": {

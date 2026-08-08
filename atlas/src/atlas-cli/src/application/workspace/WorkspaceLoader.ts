@@ -5,6 +5,7 @@ import type { WorkspacePackage } from '#application/workspace/model/WorkspacePac
 import { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import type { WorkspacePackageDiscoverer } from '#application/workspace/ports/WorkspacePackageDiscoverer.js';
 import type { WorkspaceLoadingWorkflow } from '#application/workspace/ports/WorkspaceLoadingWorkflow.js';
+import type { ManifestWorkspacePackageResolver } from '#application/workspace/ports/ManifestWorkspacePackageResolver.js';
 import type { WorkspacePathResolver } from '#application/workspace/ports/WorkspacePathResolver.js';
 
 /**
@@ -17,12 +18,14 @@ export class WorkspaceLoader implements WorkspaceLoadingWorkflow {
    * @param pathResolver - Resolves command-line workspace, configuration, and output paths.
    * @param configurationLoader - Loads the canonical user-owned configuration document.
    * @param packageDiscoverer - Discovers explicitly classified workspace packages.
+   * @param manifestPackageResolver - Classifies manifest-selected portable modules.
    * @param logger - Records resolved workspace decisions for diagnostics.
    */
   public constructor(
     private readonly pathResolver: WorkspacePathResolver,
     private readonly configurationLoader: AtlasConfigurationLoader,
     private readonly packageDiscoverer: WorkspacePackageDiscoverer,
+    private readonly manifestPackageResolver: ManifestWorkspacePackageResolver,
     private readonly logger: AtlasLogger
   ) {}
 
@@ -67,7 +70,13 @@ export class WorkspaceLoader implements WorkspaceLoadingWorkflow {
     workspaceRootPath: string,
     configuration: Awaited<ReturnType<AtlasConfigurationLoader['load']>>
   ): Promise<readonly WorkspacePackage[]> {
-    if (request.manifestOption !== undefined) return [];
+    if (request.manifestOption !== undefined) {
+      return this.manifestPackageResolver.resolve(
+        request.manifestOption,
+        workspaceRootPath,
+        configuration
+      );
+    }
     return this.packageDiscoverer.discover(workspaceRootPath, configuration);
   }
 }

@@ -8,8 +8,9 @@ package dev.atlas.kt
  * @property kind Shared declaration category.
  * @property qualifiedName Fully qualified declaration identity.
  * @property parentId Optional owning namespace or source-unit identity.
- * @property sourcePath Project-relative normalized Kotlin source path.
+ * @property sourcePath Optional module-relative normalized Kotlin source path.
  * @property signature Optional callable overload signature.
+ * @property traits Shared declaration traits in deterministic order.
  */
 data class KotlinAtlasElement(
     val id: String,
@@ -17,6 +18,7 @@ data class KotlinAtlasElement(
     val kind: String,
     val qualifiedName: String,
     val parentId: String?,
-    val sourcePath: String,
-    val signature: String?
+    val sourcePath: String?,
+    val signature: String?,
+    val traits: List<String> = emptyList()
 )

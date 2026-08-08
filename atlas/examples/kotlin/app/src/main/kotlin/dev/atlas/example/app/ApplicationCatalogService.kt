@@ -1,19 +1,28 @@
 package dev.atlas.example.app
 
-import dev.atlas.example.library.Catalog
+import dev.atlas.example.application.catalog.CatalogImportReport
+import dev.atlas.example.application.catalog.CatalogQueryService
+import dev.atlas.example.application.catalog.ImportCatalog
+import dev.atlas.example.domain.catalog.CatalogItem
 
 /**
- * Coordinates application behavior through the library-owned catalog type.
+ * Exposes the catalog use cases needed by the delivery workflow.
  */
 class ApplicationCatalogService(
-    private val catalog: Catalog
+    private val importCatalog: ImportCatalog,
+    private val catalogQueries: CatalogQueryService
 ) {
     /**
-     * Loads one example product through the library dependency.
+     * Imports the configured seed through the application use case.
      *
-     * @return Parsed product exposed by the library package.
+     * @return Immutable import report.
      */
-    fun loadProduct(): Catalog.Product {
-        return catalog.parseProduct("""{"id":"atlas-guide","name":"Atlas architecture guide"}""")
-    }
+    fun importCatalog(): CatalogImportReport = importCatalog.execute()
+
+    /**
+     * Lists the imported domain items through the application query service.
+     *
+     * @return Deterministically ordered catalog items.
+     */
+    fun listItems(): List<CatalogItem> = catalogQueries.list()
 }

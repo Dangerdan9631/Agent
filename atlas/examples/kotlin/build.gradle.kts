@@ -6,6 +6,11 @@ plugins {
 group = "dev.atlas.example"
 version = "1.0.0"
 
+atlas {
+    cliExecutable = file("../../node_modules/.bin/atlas-cli.cmd").absolutePath
+    viewerExecutable = file("../../node_modules/.bin/atlas.cmd").absolutePath
+}
+
 subprojects {
     group = rootProject.group
     version = rootProject.version

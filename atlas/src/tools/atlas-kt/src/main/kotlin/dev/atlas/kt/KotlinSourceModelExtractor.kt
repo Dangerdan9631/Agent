@@ -20,12 +20,14 @@ class KotlinSourceModelExtractor(
                 this.relativePath(sourceFile)
             ).build(sourceFile.readText())
         }
-        return KotlinSourceExtraction(
+        val source = KotlinSourceExtraction(
             results.flatMap { result -> result.elements }.distinctBy { element -> element.id }
                 .sortedBy { element -> element.id },
             results.flatMap { result -> result.relationships }.distinctBy { relationship -> relationship.id }
                 .sortedBy { relationship -> relationship.id }
         )
+        val fragments = KotlinSemanticFragmentReader().read(this.request.semanticFragments)
+        return KotlinSemanticModelMerger(this.request.moduleId).merge(source, fragments)
     }
 
     /**
@@ -49,7 +51,10 @@ class KotlinSourceModelExtractor(
      * @return Slash-normalized project-relative source path.
      */
     private fun relativePath(file: File): String {
-        return this.request.projectRoot.toPath().relativize(file.toPath()).toString()
-            .replace(File.separatorChar, '/')
+        val relativePath = this.request.projectRoot.toPath().relativize(file.toPath())
+        require(!relativePath.startsWith("..")) {
+            "Atlas Kotlin sources must remain inside the configured project root: ${file.path}"
+        }
+        return relativePath.toString().replace(File.separatorChar, '/')
     }
 }
