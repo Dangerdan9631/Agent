@@ -521,7 +521,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
         compound: true
       }
     }));
-    const directoryNodes = this.createDirectoryCompoundNodes(workspace, diagram.nodes);
+    const directoryHierarchy = this.createDirectoryCompoundNodes(workspace, diagram.nodes);
     const declarationNodes = diagram.nodes.map((node) => ({
       data: {
         id: node.id,
@@ -532,7 +532,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
         packageSourcePath: this.toPackageRootRelativeSourcePath(workspace, node),
         moduleNode: node.moduleNode,
         sourceLanguage: node.sourceLanguage,
-        parent: this.toCompoundParentId(workspace, node)
+        parent: directoryHierarchy.parentIdsByDeclarationNodeId.get(node.id)
       }
     }));
     const edges = diagram.relationships.map((relationship) => ({
@@ -549,7 +549,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
       scope: diagram.scope,
       title: diagram.title,
       elements: {
-        nodes: [...packageNodes, ...directoryNodes, ...declarationNodes],
+        nodes: [...packageNodes, ...directoryHierarchy.nodes, ...declarationNodes],
         edges
       }
     };
@@ -568,7 +568,9 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
       return node.sourcePath;
     }
     const prefix = `${workspacePackage.relativeRootPath}/`;
-    return node.sourcePath.startsWith(prefix) ? node.sourcePath.slice(prefix.length) : node.sourcePath;
+    return node.sourcePath.startsWith(prefix)
+      ? node.sourcePath.slice(prefix.length)
+      : node.sourcePath;
   }
 
   /**
@@ -581,8 +583,16 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
   private createDirectoryCompoundNodes(
     workspace: WorkspaceSnapshot,
     nodes: readonly DeclarationNode[]
-  ): readonly Record<string, unknown>[] {
-    const directories = new Map<string, { readonly packageName: string; readonly path: string }>();
+  ): {
+    readonly nodes: readonly Record<string, unknown>[];
+    readonly parentIdsByDeclarationNodeId: ReadonlyMap<string, string | undefined>;
+  } {
+    const directories = new Map<
+      string,
+      { readonly packageName: string; readonly path: string; readonly sourceLanguages: Set<string> }
+    >();
+    const directFileDirectoryIds = new Set<string>();
+    const directoryIdByDeclarationNodeId = new Map<string, string | undefined>();
     for (const node of nodes) {
       if (node.packageName === undefined || node.sourcePath === undefined) {
         continue;
@@ -591,57 +601,130 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
         .split('/')
         .filter((segment) => segment.length > 0);
       segments.pop();
+      const declarationDirectoryPath = segments.join('/');
+      directoryIdByDeclarationNodeId.set(
+        node.id,
+        declarationDirectoryPath.length === 0
+          ? `package:${encodeURIComponent(node.packageName)}`
+          : this.toDirectoryCompoundId(node.packageName, declarationDirectoryPath)
+      );
+      if (declarationDirectoryPath.length > 0) {
+        directFileDirectoryIds.add(
+          this.toDirectoryCompoundId(node.packageName, declarationDirectoryPath)
+        );
+      }
       for (let depth = 1; depth <= segments.length; depth += 1) {
         const path = segments.slice(0, depth).join('/');
-        directories.set(this.toDirectoryCompoundId(node.packageName, path), {
+        const id = this.toDirectoryCompoundId(node.packageName, path);
+        const directory = directories.get(id) ?? {
           packageName: node.packageName,
-          path
-        });
+          path,
+          sourceLanguages: new Set<string>()
+        };
+        directory.sourceLanguages.add(
+          node.sourceLanguage === 'kotlin' || node.sourcePath.endsWith('.kt') ? 'kotlin' : 'unknown'
+        );
+        directories.set(id, directory);
       }
     }
-    return [...directories.entries()]
+    const childrenByDirectoryId = new Map<string, string[]>();
+    for (const [id, directory] of directories) {
+      const parentPath = directory.path.includes('/')
+        ? directory.path.slice(0, directory.path.lastIndexOf('/'))
+        : undefined;
+      if (parentPath !== undefined) {
+        const parentId = this.toDirectoryCompoundId(directory.packageName, parentPath);
+        const children = childrenByDirectoryId.get(parentId) ?? [];
+        children.push(id);
+        childrenByDirectoryId.set(parentId, children);
+      }
+    }
+    const isKotlinNamespace = (id: string): boolean => {
+      const languages = directories.get(id)?.sourceLanguages;
+      return languages?.size === 1 && languages.has('kotlin');
+    };
+    const compactedDirectoryIds = new Map<string, string>();
+    const compactedLabels = new Map<string, string>();
+    for (const [id, directory] of directories) {
+      if (!isKotlinNamespace(id) || compactedDirectoryIds.has(id)) {
+        continue;
+      }
+      const parentPath = directory.path.includes('/')
+        ? directory.path.slice(0, directory.path.lastIndexOf('/'))
+        : undefined;
+      const parentId =
+        parentPath === undefined
+          ? undefined
+          : this.toDirectoryCompoundId(directory.packageName, parentPath);
+      if (
+        parentId !== undefined &&
+        isKotlinNamespace(parentId) &&
+        (childrenByDirectoryId.get(parentId)?.length ?? 0) === 1 &&
+        !directFileDirectoryIds.has(parentId)
+      ) {
+        continue;
+      }
+      const compactedSegments = [directory.path.split('/').at(-1) ?? directory.path];
+      const compactedPathIds = [id];
+      let currentId = id;
+      while (
+        (childrenByDirectoryId.get(currentId)?.length ?? 0) === 1 &&
+        !directFileDirectoryIds.has(currentId)
+      ) {
+        const childId = childrenByDirectoryId.get(currentId)?.[0];
+        if (childId === undefined || !isKotlinNamespace(childId)) {
+          break;
+        }
+        const child = directories.get(childId);
+        if (child === undefined) {
+          break;
+        }
+        compactedSegments.push(child.path.split('/').at(-1) ?? child.path);
+        currentId = childId;
+        compactedPathIds.push(childId);
+      }
+      compactedPathIds.forEach((pathId) => compactedDirectoryIds.set(pathId, currentId));
+      compactedLabels.set(currentId, compactedSegments.join('.'));
+    }
+    const parentIdsByDeclarationNodeId = new Map<string, string | undefined>();
+    for (const node of nodes) {
+      const directoryId = directoryIdByDeclarationNodeId.get(node.id);
+      parentIdsByDeclarationNodeId.set(
+        node.id,
+        directoryId === undefined || directoryId.startsWith('package:')
+          ? directoryId
+          : (compactedDirectoryIds.get(directoryId) ?? directoryId)
+      );
+    }
+    const compoundNodes = [...directories.entries()]
+      .filter(
+        ([id]) =>
+          compactedDirectoryIds.get(id) === undefined || compactedDirectoryIds.get(id) === id
+      )
       .sort(([leftId], [rightId]) => leftId.localeCompare(rightId))
       .map(([id, directory]) => {
         const parentPath = directory.path.includes('/')
           ? directory.path.slice(0, directory.path.lastIndexOf('/'))
           : undefined;
+        const parentId =
+          parentPath === undefined
+            ? `package:${encodeURIComponent(directory.packageName)}`
+            : this.toDirectoryCompoundId(directory.packageName, parentPath);
+        const compactedParentId = compactedDirectoryIds.get(parentId) ?? parentId;
         return {
           data: {
             id,
-            label: directory.path.split('/').at(-1),
+            label: compactedLabels.get(id) ?? directory.path.split('/').at(-1),
             kind: 'directory',
             compound: true,
             parent:
-              parentPath === undefined
+              compactedParentId === id
                 ? `package:${encodeURIComponent(directory.packageName)}`
-                : this.toDirectoryCompoundId(directory.packageName, parentPath)
+                : compactedParentId
           }
         };
       });
-  }
-
-  /**
-   * Selects the deepest available compound parent for one declaration node.
-   *
-   * @param workspace - Loaded package roots used to make source paths package-relative.
-   * @param node - Declaration whose package and source directory determine containment.
-   * @returns Stable directory or package parent ID, or undefined for non-local dependencies.
-   */
-  private toCompoundParentId(
-    workspace: WorkspaceSnapshot,
-    node: DeclarationNode
-  ): string | undefined {
-    if (node.packageName === undefined) {
-      return undefined;
-    }
-    const sourcePath = this.toPackageRelativeSourcePath(workspace, node);
-    if (sourcePath.length === 0 || !sourcePath.includes('/')) {
-      return `package:${encodeURIComponent(node.packageName)}`;
-    }
-    const directoryPath = sourcePath.slice(0, sourcePath.lastIndexOf('/'));
-    return directoryPath.length === 0
-      ? `package:${encodeURIComponent(node.packageName)}`
-      : this.toDirectoryCompoundId(node.packageName, directoryPath);
+    return { nodes: compoundNodes, parentIdsByDeclarationNodeId };
   }
 
   /**
@@ -720,7 +803,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
 <div class="toolbar-row toolbar-row-secondary"><button class="toolbar-button" id="atlas-fit" type="button">Fit</button><span class="toolbar-separator">|</span><button class="toolbar-button" id="atlas-collapse-group" type="button" disabled>Collapse</button><button class="toolbar-button" id="atlas-hide-selected" type="button" disabled>Hide</button><button class="toolbar-button" id="atlas-split-externals" type="button" disabled>Split</button><span class="toolbar-separator">|</span><button class="toolbar-button" id="atlas-auto-layout" type="button">Auto layout</button><button class="toolbar-button" id="atlas-orientation" type="button" aria-pressed="false">Vertical</button><label class="layout-control">Layout Rows <input id="atlas-rows" type="range" min="3" max="8" value="5"><output id="atlas-rows-value">5</output></label><label class="layout-control">Horizontal Gap <input id="atlas-horizontal-gap" type="range" min="80" max="200" step="5" value="120"><output id="atlas-horizontal-gap-value">120</output></label><label class="layout-control">Vertical Gap <input id="atlas-vertical-gap" type="range" min="80" max="200" step="5" value="120"><output id="atlas-vertical-gap-value">120</output></label><span class="toolbar-separator">|</span><button class="toolbar-button" id="atlas-snap" type="button" aria-pressed="false">Snap</button><label class="layout-control">Snap grid <input id="atlas-snap-grid" type="range" min="5" max="100" step="5" value="20"><output id="atlas-snap-grid-value">20</output></label><div class="exclusion-control"><button class="toolbar-button" id="atlas-excluded-toggle" type="button" aria-expanded="false">Excluded</button><div class="exclusion-menu" id="atlas-excluded-menu" hidden></div></div></div></div>
 <div id="cy" role="img" aria-label="Interactive declaration relationship diagram"></div><div class="status-bar"><span class="layout-status" id="atlas-selection">Select a node to inspect direct dependencies.</span></div><section class="atlas-accessibility"><div id="atlas-packages"></div><ul id="atlas-nodes"></ul><ul id="atlas-relationships"></ul><input id="atlas-folder-package" type="hidden"><input id="atlas-folder-path" type="hidden"></section></main></div>
 <script id="atlas-graph" type="application/json">${embeddedGraph}</script>
-<style>${this.createLegacyViewerStyles()}</style>
+<style>${this.createLegacyViewerStyles()}</style><style>.navigation{overflow-x:hidden;overflow-y:auto}</style>
 <script src="${this.createViewerAssetPath(diagram, isArtifactRoot)}"></script>
 <script>${this.createCytoscapeViewerScript()}</script>
 </body></html>\n`;
@@ -815,8 +898,9 @@ const autoLayout = new DiagramAutoLayout(cy);
 function runAutoLayout() { autoLayout.configure(Number(document.getElementById('atlas-rows').value) || 5, Number(document.getElementById('atlas-horizontal-gap').value) || 120, Number(document.getElementById('atlas-vertical-gap').value) || 120, verticalLayoutEnabled); const selected = cy.$(':selected').filter(':node'); if (selected.empty()) { autoLayout.layout(); } else { autoLayout.layoutGroup(selected); } cy.resize(); cy.fit(undefined, 36); }
 function setStatus(text) { status.textContent = text; }
 function focus(selected) { cy.elements().removeClass('faded inbound outbound'); const selectedEdge = cy.$(':selected').filter(':edge'); const hasNodeSelection = selected && !selected.empty(); const proxySelected = hasNodeSelection && isCollapsedProxy(selected); hideSelected.disabled = !hasNodeSelection && selectedEdge.empty(); collapseGroup.disabled = !hasNodeSelection || (!proxySelected && selected.children().empty()); collapseGroup.textContent = proxySelected ? 'Expand' : 'Collapse'; splitExternals.disabled = !hasNodeSelection || proxySelected || selected.data('kind') !== 'external' || graph.scope !== 'landscape'; createFolderDiagram.disabled = !hasNodeSelection || proxySelected || typeof selected.data('packageName') !== 'string' || typeof selected.data('packageSourcePath') !== 'string'; if (!hasNodeSelection) { setStatus(selectedEdge.empty() ? 'Select a node to inspect direct dependencies.' : 'Select Hide to conceal this connection.'); return; } const inbound = selected.incomers('edge'); const outbound = selected.outgoers('edge'); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : inbound.union(outbound); const selectedContents = selected.union(selected.descendants()); cy.elements().difference(selectedContents.union(shown).union(shown.connectedNodes())).addClass('faded'); if (relationshipFilter === 'none') { cy.edges().addClass('hidden-by-filter'); } else { inbound.addClass('inbound'); outbound.addClass('outbound'); } setStatus(selected.data('label') + ': ' + outbound.length + ' outbound, ' + inbound.length + ' inbound direct relationship(s).'); }
-function updateFilters() { const query = search.value.trim().toLocaleLowerCase(); synchronizeCollapsedGroups(); cy.elements().removeClass('hidden-by-filter search-match'); hideCollapsedGroups(); cy.nodes('[kind = "external"]').toggleClass('hidden-by-filter', !externalNodesVisible); if (query) { const matches = cy.nodes().filter((node) => String(node.data('label')).toLocaleLowerCase().includes(query)); matches.addClass('search-match'); cy.nodes().difference(matches).addClass('hidden-by-filter'); } if (relationshipFilter === 'none') { cy.edges().not('.collapsed-proxy').addClass('hidden-by-filter'); } updateHiddenConnections(); hideEmptyGroups(); focus(cy.$(':selected').filter(':node')); }
-function updateTheme() { const dark = darkMode.classList.contains('active'); document.body.classList.toggle('dark-mode', dark); cy.style().selector(':parent').style('background-color', dark ? '#111827' : '#f8fafc').update(); localStorage.setItem('atlas-dark-mode', String(dark)); }
+function selectedNodesToKeepVisible() { const selected = cy.$(':selected').filter(':node'); if (selected.empty()) { return cy.collection(); } const inbound = selected.incomers('edge'); const outbound = selected.outgoers('edge'); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : inbound.union(outbound); const relatedNodes = shown.connectedNodes(); return selected.union(selected.descendants()).union(relatedNodes).union(selected.ancestors()).union(relatedNodes.ancestors()); }
+function updateFilters() { const query = search.value.trim().toLocaleLowerCase(); synchronizeCollapsedGroups(); cy.elements().removeClass('hidden-by-filter search-match'); hideCollapsedGroups(); cy.nodes('[kind = "external"]').toggleClass('hidden-by-filter', !externalNodesVisible); if (query) { const matches = cy.nodes().filter((node) => String(node.data('label')).toLocaleLowerCase().includes(query)); matches.addClass('search-match'); cy.nodes().difference(matches).addClass('hidden-by-filter'); } if (relationshipFilter === 'none') { cy.edges().not('.collapsed-proxy').addClass('hidden-by-filter'); } updateHiddenConnections(); hideEmptyGroups(); selectedNodesToKeepVisible().removeClass('hidden-by-filter'); focus(cy.$(':selected').filter(':node')); }
+function updateTheme() { const dark = darkMode.classList.contains('active'); const foreground = dark ? '#e5e7eb' : '#111827'; document.body.classList.toggle('dark-mode', dark); cy.style().selector('node').style('color', foreground).selector(':parent').style('background-color', dark ? '#111827' : '#f8fafc').style('color', foreground).selector('node.collapsed-proxy').style('color', foreground).update(); localStorage.setItem('atlas-dark-mode', String(dark)); }
 function renderExclusionSection(title, values, removeType, addType) { const section = document.createElement('section'); section.className = 'exclusion-section'; const label = document.createElement('div'); label.className = 'exclusion-label'; label.textContent = title; section.append(label); values.forEach((value) => { const rule = document.createElement('label'); rule.className = 'exclusion-rule'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = true; checkbox.addEventListener('change', () => { if (!checkbox.checked) { void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: removeType, value }) }).then(() => window.location.reload()); } }); const text = document.createElement('span'); text.textContent = value; rule.append(checkbox, text); section.append(rule); }); const add = document.createElement('div'); add.className = 'exclusion-add'; const input = document.createElement('input'); input.placeholder = 'Node name or glob'; const button = document.createElement('button'); button.className = 'toolbar-button'; button.type = 'button'; button.textContent = '+'; const submit = () => { const value = input.value.trim(); if (value) { void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: addType, value }) }).then(() => window.location.reload()); } }; button.addEventListener('click', submit); input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); submit(); } }); add.append(input, button); section.append(add); return section; }
 function loadExclusions() { return fetch('/api/config').then((response) => response.ok ? response.json() : { externalDependencies: [], sourceGlobs: [] }).then((summary) => { excludedMenu.replaceChildren(renderExclusionSection('All packages', Array.isArray(summary.sourceGlobs) ? summary.sourceGlobs : [], 'remove-source-exclusion', 'hide-source'), renderExclusionSection(graph.title, Array.isArray(summary.externalDependencies) ? summary.externalDependencies : [], 'remove-external-exclusion', 'hide-external')); }).catch(() => { excludedMenu.textContent = 'Exclusions unavailable'; status.classList.add('error'); }); }
 function activateFilter(mode) { relationshipFilter = mode; Object.entries(filterButtons).forEach(([key, button]) => button.classList.toggle('active', key === mode)); updateFilters(); }

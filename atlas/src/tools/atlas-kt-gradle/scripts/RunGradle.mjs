@@ -1,9 +1,10 @@
+import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 /**
- * Invokes the repository-owned Gradle wrapper consistently from npm workspace scripts.
+ * Invokes a repository-owned Gradle wrapper consistently from npm workspace scripts.
  */
 class GradleWorkspaceRunner {
   /**
@@ -33,30 +34,30 @@ class GradleWorkspaceRunner {
   }
 
   /**
-   * Selects the platform wrapper and an optional Gradle project directory.
+   * Selects the platform wrapper for the tools build or an optional project root.
    *
    * @returns {{ readonly executable: string; readonly arguments: readonly string[]; readonly workingDirectory: string }} Resolved process invocation.
    */
   createInvocation() {
     const directoryPath = dirname(fileURLToPath(import.meta.url));
-    const wrapperRootPath = resolve(directoryPath, '..', '..');
+    const toolsRootPath = resolve(directoryPath, '..', '..');
     const selection = this.createSelection();
+    const wrapperRootPath = selection.projectPath ?? toolsRootPath;
     const wrapperName = process.platform === 'win32' ? 'gradlew.bat' : 'gradlew';
     const wrapperPath = resolve(wrapperRootPath, wrapperName);
-    const gradleArguments = [
-      ...(selection.projectPath === undefined ? [] : ['-p', selection.projectPath]),
-      ...selection.taskArguments
-    ];
+    if (!existsSync(wrapperPath)) {
+      throw new Error(`Gradle wrapper not found at ${wrapperPath}.`);
+    }
     if (process.platform !== 'win32') {
       return {
         executable: wrapperPath,
-        arguments: gradleArguments,
+        arguments: selection.taskArguments,
         workingDirectory: wrapperRootPath
       };
     }
     return {
       executable: 'cmd.exe',
-      arguments: ['/d', '/c', 'call', wrapperPath, ...gradleArguments],
+      arguments: ['/d', '/c', 'call', wrapperPath, ...selection.taskArguments],
       workingDirectory: wrapperRootPath
     };
   }

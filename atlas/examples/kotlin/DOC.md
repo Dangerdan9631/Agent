@@ -11,11 +11,17 @@ Dependencies point inward: `application -> domain`, `infrastructure -> applicati
 
 ## Run and build
 
+From this directory:
+
+```text
+./gradlew build
+./gradlew :app:run
+```
+
 From the repository root:
 
 ```text
 npm run build:example:kotlin
-node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs --project examples/kotlin :app:run
 ```
 
 The local `dev.atlas.kotlin` plugin invokes `atlas-kt`, produces one portable model per Gradle artifact, aggregates the workspace manifest, validates it through `atlas-cli`, and writes graph, matrix, layout, navigation, and viewer artifacts under `architecture/`.

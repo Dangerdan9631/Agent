@@ -37,7 +37,12 @@ class KotlinSourceFileModelBuilder(
             this.sourcePath,
             null
         )
-        val provisionalElements = syntax.declarations.associateWith { declaration ->
+        val fileOwnedDeclarations = syntax.declarations.filter { declaration ->
+            declaration.parentQualifiedName == null && declaration.kind in FILE_OWNED_DECLARATION_KINDS
+        }.toSet()
+        val provisionalElements = syntax.declarations.filterNot { declaration ->
+            declaration in fileOwnedDeclarations
+        }.associateWith { declaration ->
             KotlinAtlasElement(
                 identity.elementId(declaration.kind, declaration.qualifiedName, declaration.signature),
                 declaration.name,
@@ -51,11 +56,17 @@ class KotlinSourceFileModelBuilder(
         }
         val elementsByQualifiedName = provisionalElements.entries
             .groupBy({ entry -> entry.key.qualifiedName }, { entry -> entry.value })
-        val elementsByDeclaration = provisionalElements.mapValues { (declaration, element) ->
+        val elementsByDeclaration = syntax.declarations.associateWith { declaration ->
+            if (declaration in fileOwnedDeclarations) {
+                sourceUnit
+            } else {
+                provisionalElements.getValue(declaration)
+            }
+        }.mapValues { (declaration, element) ->
             val parentId = declaration.parentQualifiedName?.let { parentName ->
                 elementsByQualifiedName[parentName]?.singleOrNull()?.id
             } ?: sourceUnit.id
-            element.copy(parentId = parentId)
+            if (element == sourceUnit) element else element.copy(parentId = parentId)
         }
         val relationships = KotlinSourceRelationshipResolver(identity).resolve(
             syntax,
@@ -63,9 +74,14 @@ class KotlinSourceFileModelBuilder(
             elementsByDeclaration
         )
         return KotlinSourceExtraction(
-            listOfNotNull(namespace, sourceUnit) + elementsByDeclaration.values,
+            listOfNotNull(namespace, sourceUnit) + provisionalElements.keys.map { declaration ->
+                elementsByDeclaration.getValue(declaration)
+            },
             relationships
         )
     }
 
+    private companion object {
+        val FILE_OWNED_DECLARATION_KINDS = setOf("function", "constant")
+    }
 }

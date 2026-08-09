@@ -117,11 +117,11 @@ export function isExecutable(filePath: string): boolean {
 }
 ```
 
-### README.md
+### DOC.md
 
-Each `src/` subdirectory should have a `README.md` with a high level
+Each `src/` subdirectory should have a `DOC.md` with a high level
 overview of the purpose, conventions, and contents of the directory.
-[README.template.md](.docs\README.template.md) includes the format and
+[DOC.template.md](.docs\DOC.template.md) includes the format and
 conventions for these files. Refer to that when making edits to them.
 
-When creating or modifying files in a directory, reference that directory's `README.md` to understand the purpose and conventions of the files in it.
+When creating or modifying files in a directory, reference that directory's `DOC.md` to understand the purpose and conventions of the files in it.

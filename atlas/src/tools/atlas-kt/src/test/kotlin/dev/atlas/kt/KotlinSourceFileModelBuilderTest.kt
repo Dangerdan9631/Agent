@@ -38,6 +38,7 @@ interface Contract
 open class Base
 annotation class Marker
 typealias Label = String
+const val CATALOG_SCHEMA_VERSION = 1
 
 enum class Status { READY }
 
@@ -76,7 +77,12 @@ val remote: Remote? = null
         assertEquals("constant", byName.getValue("sample.Registry.NAME").single().kind)
         assertEquals("constant", byName.getValue("sample.Status.READY").single().kind)
         assertEquals("type-alias", byName.getValue("sample.Label").single().kind)
-        assertEquals("function", byName.getValue("sample.top").single().kind)
+        assertEquals(sourceUnit.id, model.relationships.single { relationship ->
+            relationship.sourceElementId == sourceUnit.id && relationship.kind == "references" &&
+                relationship.target.elementId == nested.id
+        }.sourceElementId)
+        assertTrue("sample.top" !in byName)
+        assertTrue("sample.CATALOG_SCHEMA_VERSION" !in byName)
         assertEquals("property", byName.getValue("sample.remote").single().kind)
 
         val base = byName.getValue("sample.Base").single()

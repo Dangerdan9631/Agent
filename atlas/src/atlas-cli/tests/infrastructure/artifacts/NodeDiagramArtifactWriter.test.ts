@@ -143,6 +143,47 @@ describe('NodeDiagramArtifactWriter', () => {
     });
   });
 
+  /** Collapses an unbranched Kotlin source namespace relative to its configured source root. */
+  it('writes Kotlin namespace compounds relative to the source root', async () => {
+    const root = await TemporaryWriterRoot.create();
+    const workspace = root.createWorkspace();
+    const diagram = new DiagramGraph(
+      'landscape',
+      'Landscape',
+      [
+        new DeclarationNode(
+          'catalog',
+          'Catalog.kt',
+          'module',
+          '@demo/app',
+          'src/demo-app/src/dev/atlas/example/app/Catalog.kt',
+          true,
+          'kotlin'
+        )
+      ],
+      []
+    );
+    const writer = new NodeDiagramArtifactWriter(new DeterministicLayoutService());
+
+    await writer.write(workspace, [diagram]);
+
+    const graph = JSON.parse(
+      await readFile(join(root.rootPath, 'landscape', 'graph.json'), 'utf8')
+    ) as {
+      readonly elements: { readonly nodes: readonly { readonly data: Record<string, unknown> }[] };
+    };
+    const nodes = new Map(graph.elements.nodes.map((node) => [node.data.id, node.data]));
+
+    expect(nodes.get('directory:%40demo%2Fapp:dev%2Fatlas%2Fexample%2Fapp')).toMatchObject({
+      label: 'dev.atlas.example.app',
+      parent: 'package:%40demo%2Fapp'
+    });
+    expect(nodes.get('catalog')).toMatchObject({
+      parent: 'directory:%40demo%2Fapp:dev%2Fatlas%2Fexample%2Fapp',
+      packageSourcePath: 'src/dev/atlas/example/app/Catalog.kt'
+    });
+  });
+
   /**
    * Restores the complete graph and matrix interaction surfaces with a copied offline runtime.
    */
