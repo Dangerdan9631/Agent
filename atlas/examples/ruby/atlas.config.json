@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "discovery": {
+    "packageGlobs": ["gems/*"],
+    "packages": [
+      {
+        "match": { "name": "atlas-example-domain" },
+        "classification": "runtime",
+        "classes": ["core", "domain"],
+        "sourceRoots": ["lib"]
+      },
+      {
+        "match": { "name": "atlas-example-application" },
+        "classification": "runtime",
+        "classes": ["use-case"],
+        "sourceRoots": ["lib"]
+      },
+      {
+        "match": { "name": "atlas-example-web" },
+        "classification": "runtime",
+        "classes": ["delivery"],
+        "sourceRoots": ["app"]
+      }
+    ]
+  },
+  "artifacts": { "root": "architecture" },
+  "layout": {
+    "orientation": "horizontal",
+    "rows": 3,
+    "horizontalGap": 140,
+    "verticalGap": 110
+  },
+  "diagrams": {
+    "moduleGroups": [
+      {
+        "id": "ruby-catalog",
+        "title": "Ruby catalog",
+        "moduleIdPatterns": ["atlas-example-*"]
+      }
+    ],
+    "folders": [
+      {
+        "packageName": "atlas-example-web",
+        "path": "app/controllers",
+        "title": "Ruby web delivery"
+      }
+    ]
+  },
+  "layers": [
+    {
+      "name": "domain",
+      "sourceGlobs": ["lib/atlas_example/domain/**"],
+      "packageNames": ["atlas-example-domain"]
+    },
+    {
+      "name": "application",
+      "sourceGlobs": ["lib/atlas_example/application/**"],
+      "packageNames": ["atlas-example-application"]
+    },
+    {
+      "name": "delivery",
+      "sourceGlobs": ["app/**", "config/routes.rb"],
+      "packageNames": ["atlas-example-web"]
+    }
+  ],
+  "rules": [
+    { "id": "no-cycles", "type": "no-circular", "severity": "error" },
+    {
+      "id": "domain-does-not-depend-on-outer-layers",
+      "type": "dependency-direction",
+      "severity": "error",
+      "mode": "forbid",
+      "from": { "layers": ["domain"] },
+      "to": { "packageClasses": ["use-case", "delivery"] }
+    }
+  ]
+}

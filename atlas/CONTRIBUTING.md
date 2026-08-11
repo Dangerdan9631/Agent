@@ -1,4 +1,3 @@
-
 ## Repository layout
 
 ```text
@@ -6,6 +5,8 @@
 ├── .docs
 ├── examples
 │   ├── kotlin
+│   ├── csharp
+│   ├── ruby
 │   └── typescript
 ├── src
 │   ├── atlas-cli
@@ -13,7 +14,9 @@
 │   └── tools
 │       ├── atlas-ts
 │       ├── atlas-kt
-│       └── atlas-kt-gradle
+│       ├── atlas-kt-gradle
+│       ├── atlas-cs
+│       └── atlas-rb
 ├── package.json
 ├── AGENTS.md
 └── README.md
@@ -24,6 +27,8 @@
 - Node.js 22 or newer
 - A JDK (required for the Kotlin toolchain and Kotlin example; Gradle is provided
   by each package's wrapper)
+- Ruby 3.1 or newer with Bundler (required for `atlas-rb` and the Ruby example)
+- .NET SDK 8 or newer (required for `atlas-cs` and the C# example)
 
 ## Getting started
 
@@ -38,12 +43,13 @@ cd Agent/atlas
 
 ```sh
 npm install
+npm run install:ruby
 ```
 
 ### 3. Build Atlas
 
-Build the Node packages (`atlas-cli`, `atlas`, `atlas-ts`) and the Kotlin toolchain
-(`atlas-kt`, Gradle plugin):
+Build the Node packages, Kotlin toolchain, Ruby and C# generators, and examples:
+
 ```sh
 npm run build
 ```
@@ -53,9 +59,13 @@ Or build node, kotlin, and example packages separately:
 ```sh
 npm run build:node
 npm run build:kotlin
+npm run build:ruby
+npm run build:csharp
 npm run build:examples
 # npm run build:example:typescript
 # npm run build:example:kotlin
+# npm run build:example:ruby
+# npm run build:example:csharp
 ```
 
 Confirm the links:
@@ -63,6 +73,8 @@ Confirm the links:
 ```sh
 atlas-cli --help
 atlas-ts --help
+(cd src/tools/atlas-rb && bundle exec atlas-rb generate --help)
+dotnet run --project src/tools/atlas-cs/src/Atlas.Cs -- --help
 atlas --help
 ```
 
@@ -82,6 +94,10 @@ npm run view:examples
 # npm run view:example:typescript
 # npm run build:example:kotlin
 # npm run view:example:kotlin
+# npm run build:example:ruby
+# npm run view:example:ruby
+# npm run build:example:csharp
+# npm run view:example:csharp
 ```
 
 #### TypeScript
@@ -131,26 +147,65 @@ Open the generated diagrams in Electron:
 ./gradlew atlasView
 ```
 
+#### Ruby
+
+From the Ruby example workspace:
+
+```sh
+cd examples/ruby
+bundle exec rake build
+```
+
+The build discovers gemspec-backed modules, runs `atlas-rb generate`, validates
+with the shared CLI, writes diagrams under `architecture/`, and checks graph,
+layout, Ruby metadata, and expected semantic-edge integrity.
+
+```sh
+bundle exec rake view
+```
+
+#### C#
+
+The C# solution has an ordinary application build and a designated Atlas
+orchestration project:
+
+```sh
+dotnet build examples/csharp/Atlas.Example.slnx --configuration Release
+dotnet build examples/csharp/build/Atlas.Example.Architecture.csproj --configuration Release
+```
+
+The orchestration build uses the opt-in MSBuild targets to generate compiler-backed
+models, validate policy, create diagrams, and verify the persisted graph and layout data.
+
 ## Commands
 
 Root scripts:
 
-| Script | Purpose |
-| --- | --- |
-| `npm run build` | Build Node packages, Kotlin toolchain, and both examples |
-| `npm run build:node` | Build `atlas-cli`, `atlas`, and `atlas-ts`, then link their CLIs globally |
-| `npm run link:node` | Link `atlas-cli`, `atlas`, and `atlas-ts` binaries globally |
-| `npm run build:kotlin` | Build the Kotlin toolchain and Gradle plugin |
-| `npm run build:examples` | Build both integrated examples |
-| `npm run build:example:typescript` | Build only the TypeScript example |
-| `npm run build:example:kotlin` | Build only the Kotlin example |
-| `npm run view:examples` | Build and open both example architecture viewers |
-| `npm run view:example:typescript` | Build and open the TypeScript example architecture viewer |
-| `npm run view:example:kotlin` | Build and open the Kotlin example architecture viewer |
-| `npm run test` | Run Node workspace tests and Kotlin toolchain tests |
-| `npm run test:node` | Run tests in every Node workspace that defines them |
-| `npm run test:kotlin` | Run Kotlin toolchain tests through the Gradle wrapper |
-| `npm run typecheck` | Typecheck every Node workspace that defines the script |
-| `npm run lint` | Lint every Node workspace that defines the script |
-| `npm run format:check` | Check formatting in every Node workspace that defines the script |
-| `npm run verify` | Build, typecheck, lint, format-check, and test |
+| Script                             | Purpose                                                                   |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `npm run build`                    | Build Node, Kotlin, Ruby, C#, and all examples                            |
+| `npm run build:node`               | Build `atlas-cli`, `atlas`, and `atlas-ts`, then link their CLIs globally |
+| `npm run link:node`                | Link `atlas-cli`, `atlas`, and `atlas-ts` binaries globally               |
+| `npm run build:kotlin`             | Build the Kotlin toolchain and Gradle plugin                              |
+| `npm run build:ruby`               | Build the Ruby generator gem                                              |
+| `npm run build:csharp`             | Build the C# generator, MSBuild package, and tests                        |
+| `npm run install:ruby`             | Install the Ruby generator and example bundles                            |
+| `npm run build:examples`           | Build all integrated examples                                             |
+| `npm run build:example:typescript` | Build only the TypeScript example                                         |
+| `npm run build:example:kotlin`     | Build only the Kotlin example                                             |
+| `npm run build:example:ruby`       | Build only the Ruby example                                               |
+| `npm run build:example:csharp`     | Generate and verify the C# example diagrams                               |
+| `npm run view:examples`            | Build and open all example architecture viewers                           |
+| `npm run view:example:typescript`  | Build and open the TypeScript example architecture viewer                 |
+| `npm run view:example:kotlin`      | Build and open the Kotlin example architecture viewer                     |
+| `npm run view:example:ruby`        | Build and open the Ruby example architecture viewer                       |
+| `npm run view:example:csharp`      | Build and open the C# example architecture viewer                         |
+| `npm run test`                     | Run Node, Kotlin, Ruby, and C# tests                                      |
+| `npm run test:node`                | Run tests in every Node workspace that defines them                       |
+| `npm run test:kotlin`              | Run Kotlin toolchain tests through the Gradle wrapper                     |
+| `npm run test:ruby`                | Run Ruby generator tests through Bundler                                  |
+| `npm run test:csharp`              | Run C# generator and integration tests                                    |
+| `npm run typecheck`                | Typecheck every Node workspace that defines the script                    |
+| `npm run lint`                     | Lint every Node workspace that defines the script                         |
+| `npm run format:check`             | Check formatting in every Node workspace that defines the script          |
+| `npm run verify`                   | Build, typecheck, lint, format-check, and test                            |

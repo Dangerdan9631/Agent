@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.dev/schema/atlas-module.schema.json",
+  "title": "Atlas Module Model",
+  "description": "Defines one independently regenerable, language-neutral published artifact model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatorVersion",
+    "module",
+    "sourceLanguage",
+    "elements",
+    "relationships"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "description": "Identifies the supported independently versioned module schema.",
+      "const": 1
+    },
+    "generatorVersion": {
+      "description": "Identifies the generator version that produced this model.",
+      "type": "string",
+      "minLength": 1
+    },
+    "module": { "$ref": "#/$defs/artifact" },
+    "sourceLanguage": {
+      "description": "Provides presentation-only generator language metadata.",
+      "type": "string",
+      "minLength": 1
+    },
+    "elements": {
+      "description": "Lists declarations owned by this artifact.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/element" }
+    },
+    "relationships": {
+      "description": "Lists relationships sourced by owned declarations.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/relationship" }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "description": "Identifies one published artifact.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "displayName", "version", "category"],
+      "properties": {
+        "id": { "description": "Opaque stable artifact ID.", "type": "string", "minLength": 1 },
+        "displayName": {
+          "description": "Readable artifact name.",
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "description": "Published artifact version.",
+          "type": "string",
+          "minLength": 1
+        },
+        "variant": {
+          "description": "Optional build target or variant.",
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "description": "Published artifact category.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "element": {
+      "description": "Defines one owned declaration.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "qualifiedName"],
+      "properties": {
+        "id": { "description": "Stable declaration identity.", "type": "string", "minLength": 1 },
+        "name": { "description": "Display declaration name.", "type": "string", "minLength": 1 },
+        "kind": {
+          "description": "Common declaration category.",
+          "enum": [
+            "namespace",
+            "source-unit",
+            "class",
+            "interface",
+            "struct",
+            "record",
+            "enum",
+            "annotation",
+            "delegate",
+            "type-alias",
+            "function",
+            "constructor",
+            "method",
+            "property",
+            "field",
+            "constant"
+          ]
+        },
+        "qualifiedName": {
+          "description": "Normalized qualified declaration name.",
+          "type": "string",
+          "minLength": 1
+        },
+        "signature": {
+          "description": "Optional overload signature.",
+          "type": "string",
+          "minLength": 1
+        },
+        "parentId": {
+          "description": "Optional owned parent declaration identity.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePath": {
+          "description": "Optional workspace-relative source path.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "traits": {
+          "description": "Shared declaration traits.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "relationship": {
+      "description": "Defines one semantic relationship.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceElementId", "kind", "target"],
+      "properties": {
+        "id": { "description": "Stable relationship identity.", "type": "string", "minLength": 1 },
+        "sourceElementId": {
+          "description": "Owned source element identity.",
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "description": "Common semantic relationship category.",
+          "enum": ["imports", "references", "inherits", "implements", "calls", "contains"]
+        },
+        "target": { "$ref": "#/$defs/target" }
+      }
+    },
+    "target": {
+      "description": "Identifies an owned or external relationship target.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "moduleId": { "description": "External artifact ID.", "type": "string", "minLength": 1 },
+        "elementId": {
+          "description": "Optional target declaration ID.",
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "description": "Unresolved target display label.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+# frozen_string_literal: true
+
+require "bundler/gem_tasks"
+require "fileutils"
+require "rake/testtask"
+
+# Names of the canonical Atlas contracts packaged with the Ruby gem.
+# The list is also used to verify package parity during tests and builds.
+SCHEMA_NAMES = %w[atlas.schema.json atlas-module.schema.json atlas-workspace.schema.json].freeze
+
+desc "Copy the canonical Atlas schemas into the Ruby gem package"
+task :prepare_schemas do
+  schema_source = File.expand_path("../../atlas-cli/src/config", __dir__)
+  schema_target = File.expand_path("schemas", __dir__)
+  FileUtils.mkdir_p(schema_target)
+  SCHEMA_NAMES.each { |name| FileUtils.cp(File.join(schema_source, name), File.join(schema_target, name)) }
+end
+
+Rake::TestTask.new(test: :prepare_schemas) do |task|
+  task.libs << "lib"
+  task.libs << "test"
+  task.pattern = "test/**/*_test.rb"
+end
+
+task build: :prepare_schemas
+task default: :test

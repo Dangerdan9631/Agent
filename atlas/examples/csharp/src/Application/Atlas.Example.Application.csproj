@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Atlas.Example.Application</PackageId>
+    <AssemblyName>Atlas.Example.Application</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Domain/Atlas.Example.Domain.csproj" />
+  </ItemGroup>
+</Project>
+

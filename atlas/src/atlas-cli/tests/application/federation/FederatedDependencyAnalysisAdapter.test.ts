@@ -205,10 +205,9 @@ class CyclicFederatedWorkspaceFixture {
       ],
       relationships: [relationship]
     };
-    return new ResolvedAtlasWorkspace(
-      new Map([[model.module.id, model]]),
-      [new ResolvedAtlasRelationship(model.module.id, relationship, model, 'application-service')]
-    );
+    return new ResolvedAtlasWorkspace(new Map([[model.module.id, model]]), [
+      new ResolvedAtlasRelationship(model.module.id, relationship, model, 'application-service')
+    ]);
   }
 
   /**

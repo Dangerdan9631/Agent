@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Atlas.Example.Infrastructure</PackageId>
+    <AssemblyName>Atlas.Example.Infrastructure</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Application/Atlas.Example.Application.csproj" />
+    <ProjectReference Include="../Domain/Atlas.Example.Domain.csproj" />
+  </ItemGroup>
+</Project>
+

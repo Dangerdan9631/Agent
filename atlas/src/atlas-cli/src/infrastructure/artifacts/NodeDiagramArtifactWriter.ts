@@ -868,8 +868,8 @@ let showHiddenConnections = false;
 const hiddenRelationshipIds = new Set();
 const collapsedGroupIds = new Set();
 const cy = cytoscape({ container: document.getElementById('cy'), userZoomingEnabled: false, elements: graph.elements, style: [
-  { selector: 'node', style: { label: 'data(label)', 'background-color': '#f59e0b', color: '#111827', 'font-size': 25, 'text-wrap': 'wrap', 'text-max-width': 180 } },
-  { selector: ':parent', style: { label: 'data(label)', 'background-color': '#f8fafc', 'border-color': '#64748b', 'border-width': 1, padding: 24, 'text-valign': 'top', 'text-halign': 'center' } },
+  { selector: 'node', style: { label: 'data(label)', shape: 'round-rectangle', width: (node) => Math.min(320, Math.max(140, 48 + Math.min(String(node.data('label') ?? '').length, 34) * 8)), height: (node) => node.data('kind') === 'module' || node.data('kind') === 'external' ? 48 : 56, 'background-color': '#f59e0b', color: '#ffffff', 'font-size': 12, 'font-weight': 600, 'text-wrap': 'wrap', 'text-max-width': 280, 'text-valign': 'center', 'text-halign': 'center' } },
+  { selector: ':parent', style: { label: 'data(label)', 'background-color': '#f8fafc', 'border-color': '#64748b', 'border-width': 1, padding: 24, color: '#334155', 'font-size': 14, 'font-weight': 600, 'text-wrap': 'wrap', 'text-max-width': 260, 'text-valign': 'top', 'text-halign': 'center' } },
   { selector: 'node[kind = "class"]', style: { 'background-color': '#3b82f6' } },
   { selector: 'node[kind = "interface"]', style: { 'background-color': '#14b8a6' } },
   { selector: 'node[kind = "external"]', style: { 'background-color': '#6b7280' } },
@@ -908,7 +908,7 @@ function restoreLayout() { return fetch(typeof graph.layoutPath === 'string' ? g
 document.getElementById('atlas-nav-toggle').addEventListener('click', () => shell.classList.toggle('nav-collapsed'));
 document.getElementById('atlas-fit').addEventListener('click', () => cy.fit(undefined, 36));
 document.getElementById('atlas-auto-layout').addEventListener('click', () => { runAutoLayout(); saveLayout(); });
-function exportImage() { const image = cy.png({ bg: darkMode.classList.contains('active') ? '#0f172a' : '#ffffff', full: true, output: 'blob', scale: 2 }); return fetch('/api/png?scope=' + encodeURIComponent(graph.scope), { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: image }).then((response) => { if (!response.ok) { throw new Error('Image export failed.'); } return true; }); }
+function exportImage() { return layoutReady.then(() => { const image = cy.png({ bg: darkMode.classList.contains('active') ? '#0f172a' : '#ffffff', full: false, output: 'blob', scale: 1 }); return fetch('/api/png?scope=' + encodeURIComponent(graph.scope), { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: image }).then((response) => { if (!response.ok) { throw new Error('Image export failed.'); } return true; }); }); }
 function exportAllImages() { const pagePaths = Array.isArray(graph.pagePaths) ? graph.pagePaths : []; return pagePaths.reduce((chain, pagePath, index) => chain.then(() => new Promise((resolve, reject) => { setStatus('Exporting image ' + (index + 1) + ' of ' + pagePaths.length); const frame = document.createElement('iframe'); frame.style.cssText = 'position:fixed;left:-10000px;width:1280px;height:720px;border:0'; const exportWhenReady = (attempts) => { const exportPageImage = frame.contentWindow && frame.contentWindow.exportDiagramImage; if (typeof exportPageImage === 'function') { Promise.resolve(exportPageImage()).then(resolve, reject).finally(() => frame.remove()); return; } if (attempts === 0) { frame.remove(); reject(new Error('Diagram image exporter was unavailable.')); return; } window.setTimeout(() => exportWhenReady(attempts - 1), 100); }; frame.addEventListener('load', () => exportWhenReady(100), { once: true }); frame.addEventListener('error', () => { frame.remove(); reject(new Error('Diagram page failed to load.')); }, { once: true }); frame.src = pagePath; document.body.append(frame); })), Promise.resolve()).then(() => { setStatus('All images exported: ' + pagePaths.length); }).catch(() => { status.classList.add('error'); setStatus('Export all failed'); }); }
 window.exportDiagramImage = exportImage;
 document.getElementById('atlas-export-png').addEventListener('click', () => { void exportImage(); });
@@ -927,7 +927,7 @@ Object.entries(filterButtons).forEach(([mode, button]) => button.addEventListene
 ['atlas-rows', 'atlas-horizontal-gap', 'atlas-vertical-gap', 'atlas-snap-grid'].forEach((id) => { const input = document.getElementById(id); const output = document.getElementById(id + '-value'); input.addEventListener('input', () => { output.textContent = input.value; }); });
 search.addEventListener('input', updateFilters);
 cy.on('select unselect', () => focus(cy.$(':selected').filter(':node'))); cy.on('dragfree', 'node', () => { if (snapEnabled) { const grid = Number(document.getElementById('atlas-snap-grid').value) || 20; const selected = cy.$(':selected').filter(':node'); const position = selected.position(); selected.position({ x: Math.round(position.x / grid) * grid, y: Math.round(position.y / grid) * grid }); } saveLayout(); });
-darkMode.classList.toggle('active', localStorage.getItem('atlas-dark-mode') === 'true'); updateTheme(); void restoreLayout();
+darkMode.classList.toggle('active', localStorage.getItem('atlas-dark-mode') === 'true'); updateTheme(); const layoutReady = restoreLayout();
 })();`;
   }
 

@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "atlas/rb"
+
+exit(Atlas::Rb::CliHost.new.run(ARGV))

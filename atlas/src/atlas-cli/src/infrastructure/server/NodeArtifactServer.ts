@@ -1131,10 +1131,12 @@ export class NodeArtifactServer implements ArtifactServer {
     try {
       const pathname = new URL(requestUrl, 'http://atlas.local').pathname;
       const decodedPath = decodeURIComponent(pathname);
-      const relativePath = decodedPath === '/' ? 'landscape/index.html' : decodedPath.slice(1);
-      if (relativePath.split('/').some((segment) => segment === '..' || segment.length === 0)) {
+      const decodedRelativePath =
+        decodedPath === '/' ? 'landscape/index.html' : decodedPath.slice(1);
+      if (decodedRelativePath.split('/').some((segment) => segment === '..' || segment.length === 0)) {
         return undefined;
       }
+      const relativePath = pathname === '/' ? 'landscape/index.html' : pathname.slice(1);
       const resolvedPath = resolve(rootPath, relativePath);
       const containedPath = relative(rootPath, resolvedPath);
       if (

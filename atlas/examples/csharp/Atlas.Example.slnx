@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Domain/Atlas.Example.Domain.csproj" />
+    <Project Path="src/Application/Atlas.Example.Application.csproj" />
+    <Project Path="src/Infrastructure/Atlas.Example.Infrastructure.csproj" />
+    <Project Path="src/App/Atlas.Example.App.csproj" />
+  </Folder>
+  <Folder Name="/verification/">
+    <Project Path="verification/Atlas.Example.Verification.csproj" />
+  </Folder>
+</Solution>
+

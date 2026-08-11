@@ -80,6 +80,9 @@ class TemporaryArtifactRoot {
       JSON.stringify({ schemaVersion: 1, positions: [], hiddenRelationshipIds: [] }),
       'utf8'
     );
+    const folderPath = join(rootPath, 'folders', 'demo%3Asrc%2Ffeature');
+    await mkdir(folderPath, { recursive: true });
+    await writeFile(join(folderPath, 'index.html'), '<main>folder</main>', 'utf8');
     return new TemporaryArtifactRoot(rootPath);
   }
 
@@ -163,6 +166,9 @@ describe('NodeArtifactServer', () => {
 
     try {
       const pageResponse = await fetch(`${origin}/`);
+      const folderPageResponse = await fetch(
+        `${origin}/folders/demo%3Asrc%2Ffeature/index.html`
+      );
       const traversalResponse = await fetch(`${origin}/%2e%2e%2fsecret.txt`);
       const layoutResponse = await fetch(`${origin}/api/layout?scope=landscape`, {
         method: 'POST',
@@ -226,6 +232,7 @@ describe('NodeArtifactServer', () => {
       });
 
       expect(pageResponse.status).toBe(200);
+      expect(folderPageResponse.status).toBe(200);
       expect(traversalResponse.status).toBe(400);
       expect(layoutResponse.status).toBe(204);
       expect(generatedLayoutResponse.status).toBe(200);

@@ -240,7 +240,10 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
     const moduleId = node.packageName;
     if (moduleId === undefined) return undefined;
     const moduleNode = this.toModuleLocalNode(node, moduleRoots.get(moduleId) ?? '.');
-    if (moduleNode.sourcePath !== undefined && (moduleNode.moduleNode || moduleNode.kind === 'module')) {
+    if (
+      moduleNode.sourcePath !== undefined &&
+      (moduleNode.moduleNode || moduleNode.kind === 'module')
+    ) {
       return this.toSourceUnitElement(moduleId, moduleNode.sourcePath).id;
     }
     return this.toElement(moduleId, moduleNode, undefined).id;
