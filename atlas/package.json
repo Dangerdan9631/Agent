@@ -30,7 +30,7 @@
     "view:example:typescript": "npm run build:example:typescript && npm run architecture:view --workspace=@atlas-example/typescript-workspace",
     "view:example:kotlin": "npm run build:example:kotlin && node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs --project examples/kotlin atlasView",
     "view:example:ruby": "node ./src/tools/atlas-rb/scripts/RunBundler.mjs --project examples/ruby exec rake view",
-    "view:example:csharp": "npm run build:example:csharp && atlas --workspace ./examples/csharp --config ./examples/csharp/atlas.config.json --manifest ./examples/csharp/architecture/models/atlas-workspace.json",
+    "view:example:csharp": "dotnet build ./examples/csharp/build/Atlas.Example.Architecture.csproj --configuration Release --target:AtlasView",
     "test": "npm run test:node && npm run test:kotlin && npm run test:ruby && npm run test:csharp",
     "test:node": "npm run test --workspaces --if-present --include-workspace-root=false",
     "test:kotlin": "node ./src/tools/atlas-kt-gradle/scripts/RunGradle.mjs test",
