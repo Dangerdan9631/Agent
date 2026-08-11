@@ -1,0 +1,23 @@
+{
+  "name": "@starcruisestudios/atlas-ts-npm",
+  "version": "0.1.0",
+  "description": "npm workspace command wrapper for Atlas TypeScript generation.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "atlas-ts-npm": "./dist/AtlasTypeScriptNpmMain.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests --configLoader runner"
+  },
+  "dependencies": {
+    "@starcruisestudios/atlas-ts-cli": "file:../atlas-ts-cli"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

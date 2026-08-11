@@ -1,15 +1,10 @@
-# Atlas TypeScript Clean-Architecture Example
+# Atlas TypeScript Reading-List Example
 
-This runnable npm workspace implements a small catalog through four packages:
+This maintained npm workspace contains exactly two application modules: reusable `@atlas-example/lib` and executable `@atlas-example/app`. The app directly consumes the library's public `ReadingListItem` type; the library never depends on the app.
 
-- `domain` owns catalog identities, item inheritance, title policy, an enum, a type alias, a top-level factory function, and a schema-version constant.
-- `application` owns repository, seed-reader, and clock ports plus import and query use cases.
-- `infrastructure` implements the ports with in-memory persistence, JSON/Zod validation, and a deterministic clock.
-- `app` composes the dependency graph and renders the catalog through a narrow output boundary.
+Both modules declare and use Zod. The library uniquely uses lodash for title normalization and stable slug creation, while the app uniquely uses date-fns at its delivery boundary.
 
-Dependencies point inward: `application -> domain`, `infrastructure -> application + domain`, and `app -> all three`. `lodash-es` is intentionally shared by infrastructure and delivery, while `zod` and `date-fns` remain unique adapter dependencies. The declarations exercise classes, abstract inheritance, interfaces and implementations, an enum, a type alias, constants, functions, method overrides, and cross-package references.
-
-## Run the catalog
+## Run the reading list
 
 From this directory:
 
@@ -17,7 +12,7 @@ From this directory:
 npm run demo
 ```
 
-The deterministic output reports two imported catalog items.
+The command prints the normalized title, stable slug, and current ISO date.
 
 ## Exercise Atlas
 
@@ -32,4 +27,4 @@ npm run architecture:clean
 
 `npm run build` typechecks the complete workspace, generates portable TypeScript module models, validates every declared architecture rule, and writes graph, matrix, layout, navigation, and viewer artifacts under `architecture/`. From the repository root, use `npm run build:example:typescript`.
 
-The configuration demonstrates every artifact and layout setting, presentation-only module groups, global and package exclusions, selective external collapsing and importer splitting, package diagrams, three folder diagrams, named layers, and every supported rule type. All policies pass for the supplied dependency graph.
+`atlas.config.yml` declares the two modules and enforces the one-way `app -> lib` dependency.

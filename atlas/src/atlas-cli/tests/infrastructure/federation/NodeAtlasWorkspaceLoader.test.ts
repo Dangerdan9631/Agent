@@ -1,4 +1,5 @@
 import { NodeAtlasWorkspaceLoader } from '#infrastructure/federation/NodeAtlasWorkspaceLoader.js';
+import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -25,9 +26,10 @@ describe('NodeAtlasWorkspaceLoader', () => {
     const directory = await mkdtemp(resolve(tmpdir(), 'atlas-federation-'));
     temporaryDirectories.push(directory);
     const fixture = new FederationModelFixture();
+    const codec = new YamlDocumentCodec();
     await writeFile(
-      resolve(directory, 'one.json'),
-      JSON.stringify(
+      resolve(directory, 'one.atlas.module.yml'),
+      codec.stringify(
         fixture.create('one', 'future-language', 'one-element', {
           moduleId: 'two',
           elementId: 'two-element'
@@ -36,8 +38,8 @@ describe('NodeAtlasWorkspaceLoader', () => {
       'utf8'
     );
     await writeFile(
-      resolve(directory, 'two.json'),
-      JSON.stringify(
+      resolve(directory, 'two.atlas.module.yml'),
+      codec.stringify(
         fixture.create('two', 'kotlin', 'two-element', {
           moduleId: 'missing',
           label: 'Missing Artifact'
@@ -46,19 +48,19 @@ describe('NodeAtlasWorkspaceLoader', () => {
       'utf8'
     );
     await writeFile(
-      resolve(directory, 'workspace.json'),
-      JSON.stringify({
+      resolve(directory, 'atlas.manifest.yml'),
+      codec.stringify({
         schemaVersion: 1,
         modules: [
-          { moduleId: 'one', modelPath: 'one.json' },
-          { moduleId: 'two', modelPath: 'two.json' }
+          { moduleId: 'one', modelPath: 'one.atlas.module.yml' },
+          { moduleId: 'two', modelPath: 'two.atlas.module.yml' }
         ]
       }),
       'utf8'
     );
 
-    const workspace = await new NodeAtlasWorkspaceLoader().load(
-      resolve(directory, 'workspace.json')
+    const workspace = await new NodeAtlasWorkspaceLoader(codec).load(
+      resolve(directory, 'atlas.manifest.yml')
     );
 
     expect(workspace.modules.size).toBe(2);
@@ -75,9 +77,10 @@ describe('NodeAtlasWorkspaceLoader', () => {
     const directory = await mkdtemp(resolve(tmpdir(), 'atlas-federation-'));
     temporaryDirectories.push(directory);
     const fixture = new FederationModelFixture();
+    const codec = new YamlDocumentCodec();
     await writeFile(
-      resolve(directory, 'one.json'),
-      JSON.stringify(
+      resolve(directory, 'one.atlas.module.yml'),
+      codec.stringify(
         fixture.create('one', 'typescript', 'one-element', {
           moduleId: 'two',
           elementId: 'stale-two-element'
@@ -86,24 +89,24 @@ describe('NodeAtlasWorkspaceLoader', () => {
       'utf8'
     );
     await writeFile(
-      resolve(directory, 'two.json'),
-      JSON.stringify(fixture.create('two', 'kotlin', 'two-element', { label: 'external' })),
+      resolve(directory, 'two.atlas.module.yml'),
+      codec.stringify(fixture.create('two', 'kotlin', 'two-element', { label: 'external' })),
       'utf8'
     );
     await writeFile(
-      resolve(directory, 'workspace.json'),
-      JSON.stringify({
+      resolve(directory, 'atlas.manifest.yml'),
+      codec.stringify({
         schemaVersion: 1,
         modules: [
-          { moduleId: 'one', modelPath: 'one.json' },
-          { moduleId: 'two', modelPath: 'two.json' }
+          { moduleId: 'one', modelPath: 'one.atlas.module.yml' },
+          { moduleId: 'two', modelPath: 'two.atlas.module.yml' }
         ]
       }),
       'utf8'
     );
 
     await expect(
-      new NodeAtlasWorkspaceLoader().load(resolve(directory, 'workspace.json'))
+      new NodeAtlasWorkspaceLoader(codec).load(resolve(directory, 'atlas.manifest.yml'))
     ).rejects.toThrow("targets unknown element 'stale-two-element'");
   });
 
@@ -114,34 +117,35 @@ describe('NodeAtlasWorkspaceLoader', () => {
     const directory = await mkdtemp(resolve(tmpdir(), 'atlas-federation-'));
     temporaryDirectories.push(directory);
     const fixture = new FederationModelFixture();
+    const codec = new YamlDocumentCodec();
     await writeFile(
-      resolve(directory, 'one.json'),
-      JSON.stringify(
+      resolve(directory, 'one.atlas.module.yml'),
+      codec.stringify(
         fixture.create('one', 'typescript', 'one-element', { label: 'external' }, 'shared')
       ),
       'utf8'
     );
     await writeFile(
-      resolve(directory, 'two.json'),
-      JSON.stringify(
+      resolve(directory, 'two.atlas.module.yml'),
+      codec.stringify(
         fixture.create('two', 'kotlin', 'two-element', { label: 'external' }, 'shared')
       ),
       'utf8'
     );
     await writeFile(
-      resolve(directory, 'workspace.json'),
-      JSON.stringify({
+      resolve(directory, 'atlas.manifest.yml'),
+      codec.stringify({
         schemaVersion: 1,
         modules: [
-          { moduleId: 'one', modelPath: 'one.json' },
-          { moduleId: 'two', modelPath: 'two.json' }
+          { moduleId: 'one', modelPath: 'one.atlas.module.yml' },
+          { moduleId: 'two', modelPath: 'two.atlas.module.yml' }
         ]
       }),
       'utf8'
     );
 
     await expect(
-      new NodeAtlasWorkspaceLoader().load(resolve(directory, 'workspace.json'))
+      new NodeAtlasWorkspaceLoader(codec).load(resolve(directory, 'atlas.manifest.yml'))
     ).rejects.toThrow("duplicate relationship ID 'shared'");
   });
 });
@@ -158,7 +162,7 @@ class FederationModelFixture {
    * @param elementId - Stable owned element ID.
    * @param target - Internal or external relationship target identity.
    * @param relationshipId - Optional stable relationship identity override.
-   * @returns JSON-compatible module model value.
+   * @returns YAML-compatible module model value.
    */
   public create(
     moduleId: string,

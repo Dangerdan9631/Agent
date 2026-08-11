@@ -1,0 +1,34 @@
+<Project>
+  <PropertyGroup>
+    <AtlasWorkspace Condition="'$(AtlasWorkspace)' == ''">$(MSBuildProjectDirectory)</AtlasWorkspace>
+    <AtlasConfiguration Condition="'$(AtlasConfiguration)' == ''">$(AtlasWorkspace)/atlas.config.yml</AtlasConfiguration>
+    <AtlasArtifactRoot Condition="'$(AtlasArtifactRoot)' == ''">$(AtlasWorkspace)/architecture</AtlasArtifactRoot>
+    <AtlasManifest Condition="'$(AtlasManifest)' == ''">$(AtlasArtifactRoot)/models/atlas.manifest.yml</AtlasManifest>
+    <AtlasCsCommand Condition="'$(AtlasCsCommand)' == ''">atlas-cs</AtlasCsCommand>
+    <AtlasCliCommand Condition="'$(AtlasCliCommand)' == ''">atlas-cli</AtlasCliCommand>
+    <AtlasViewerCommand Condition="'$(AtlasViewerCommand)' == ''">atlas</AtlasViewerCommand>
+    <AtlasGenerateOnBuild Condition="'$(AtlasGenerateOnBuild)' == ''">false</AtlasGenerateOnBuild>
+    <_AtlasSolutionArgument Condition="'$(AtlasSolution)' != ''"> --solution &quot;$(AtlasSolution)&quot;</_AtlasSolutionArgument>
+  </PropertyGroup>
+
+  <Target Name="AtlasGenerateModels">
+    <Exec Command="&quot;$(AtlasCsCommand)&quot; $(AtlasCsCommandArguments) generate --workspace &quot;$(AtlasWorkspace)&quot; --config &quot;$(AtlasConfiguration)&quot; --output &quot;$(AtlasArtifactRoot)&quot;$(_AtlasSolutionArgument)" />
+  </Target>
+
+  <Target Name="AtlasValidate" DependsOnTargets="AtlasGenerateModels">
+    <Exec Command="&quot;$(AtlasCliCommand)&quot; $(AtlasCliCommandArguments) validate --workspace &quot;$(AtlasWorkspace)&quot; --config &quot;$(AtlasConfiguration)&quot; --manifest &quot;$(AtlasManifest)&quot;" />
+  </Target>
+
+  <Target Name="AtlasGenerate" DependsOnTargets="AtlasValidate">
+    <Exec Command="&quot;$(AtlasCliCommand)&quot; $(AtlasCliCommandArguments) generate --workspace &quot;$(AtlasWorkspace)&quot; --config &quot;$(AtlasConfiguration)&quot; --manifest &quot;$(AtlasManifest)&quot; --no-validate" />
+  </Target>
+
+  <Target Name="AtlasView" DependsOnTargets="AtlasGenerate">
+    <Exec Command="&quot;$(AtlasViewerCommand)&quot; $(AtlasViewerCommandArguments) --workspace &quot;$(AtlasWorkspace)&quot; --config &quot;$(AtlasConfiguration)&quot; --manifest &quot;$(AtlasManifest)&quot;" />
+  </Target>
+
+  <Target Name="AtlasGenerateAfterBuild"
+          AfterTargets="Build"
+          DependsOnTargets="AtlasGenerate"
+          Condition="'$(AtlasGenerateOnBuild)' == 'true'" />
+</Project>

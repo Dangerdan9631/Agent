@@ -227,7 +227,7 @@ class FixedValidationWorkflow implements ArchitectureValidationWorkflow {
     const workspace = new WorkspaceSnapshot(
       new ResolvedWorkspacePaths(
         '/workspace',
-        '/workspace/atlas.config.json',
+        '/workspace/atlas.config.yml',
         '/workspace/architecture'
       ),
       configuration,

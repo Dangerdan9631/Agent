@@ -2,5 +2,9 @@
 
 source "https://rubygems.org"
 
+gem "atlas-example-app", path: "gems/app"
+gem "atlas-example-lib", path: "gems/lib"
 gem "rake", "~> 13.0"
-gem "starcruisestudios-atlas-rb", path: "../../src/tools/atlas-rb"
+gem "starcruisestudios-atlas-rb-cli", path: "../../src/tools/rb/atlas-rb-cli"
+gem "starcruisestudios-atlas-rb-rake", path: "../../src/tools/rb/atlas-rb-rake"
+gem "starcruisestudios-atlas-rb-sdk", path: "../../src/tools/rb/atlas-rb-sdk"

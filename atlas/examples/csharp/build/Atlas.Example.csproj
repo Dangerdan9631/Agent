@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AtlasGenerateOnBuild>false</AtlasGenerateOnBuild>
+    <AtlasWorkspace>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/..'))</AtlasWorkspace>
+    <AtlasSolution>$(AtlasWorkspace)/Atlas.Example.slnx</AtlasSolution>
+    <AtlasArtifactRoot>$(AtlasWorkspace)/architecture</AtlasArtifactRoot>
+    <AtlasCsCommand>dotnet</AtlasCsCommand>
+    <AtlasCsCommandArguments>&quot;$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../../src/tools/cs/atlas-cs-cli/bin/$(Configuration)/net8.0/Atlas.Cs.Cli.dll'))&quot;</AtlasCsCommandArguments>
+    <AtlasCliCommand>node</AtlasCliCommand>
+    <AtlasCliCommandArguments>&quot;$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../../src/atlas-cli/dist/presentation/cli/atlas-cli.js'))&quot;</AtlasCliCommandArguments>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../src/app/App.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../../src/tools/cs/atlas-cs-cli/Atlas.Cs.Cli.csproj" ReferenceOutputAssembly="false" AdditionalProperties="Configuration=$(Configuration)" />
+  </ItemGroup>
+  <Import Project="../../../src/tools/cs/atlas-cs-msbuild/build/StarCruiseStudios.Atlas.Cs.MSBuild.targets" />
+</Project>

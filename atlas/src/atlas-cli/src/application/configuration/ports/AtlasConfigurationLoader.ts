@@ -7,7 +7,7 @@ export interface AtlasConfigurationLoader {
   /**
    * Loads one configuration document from an absolute file path.
    *
-   * @param configurationPath - Absolute JSON configuration file path. Must point to a regular readable file.
+   * @param configurationPath - Absolute YAML configuration file path. Must point to a regular readable file.
    * @returns Validated Atlas configuration model.
    */
   load(configurationPath: string): Promise<AtlasConfiguration>;

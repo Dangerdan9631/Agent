@@ -11,7 +11,8 @@ import { PackageOwnershipResolver } from '#application/validation/PackageOwnersh
 import { RuleSelectorMatcher } from '#application/validation/RuleSelectorMatcher.js';
 import { RuntimeToSupportRuleEvaluator } from '#application/validation/RuntimeToSupportRuleEvaluator.js';
 import { ValidateArchitecture } from '#application/validation/ValidateArchitecture.js';
-import { JsonAtlasConfigurationLoader } from '#infrastructure/configuration/JsonAtlasConfigurationLoader.js';
+import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
+import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { TslogAtlasLogger } from '#infrastructure/logging/TslogAtlasLogger.js';
 import { ProcessRuntimeOutputWriter } from '#infrastructure/output/ProcessRuntimeOutputWriter.js';
 import { DependencyCruiserAnalyzer } from '#infrastructure/validation/DependencyCruiserAnalyzer.js';
@@ -49,8 +50,9 @@ export class AtlasCompositionRoot {
   public createArtifactHost(): AtlasArtifactHost {
     const logger = new TslogAtlasLogger();
     const policySelector = new PackagePolicySelector();
-    const manifestLoader = new NodeAtlasWorkspaceLoader();
-    const configurationLoader = new JsonAtlasConfigurationLoader();
+    const documentCodec = new YamlDocumentCodec();
+    const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
+    const configurationLoader = new YamlAtlasConfigurationLoader(documentCodec);
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
       configurationLoader,
@@ -69,7 +71,7 @@ export class AtlasCompositionRoot {
     ]);
     const layoutService = new DeterministicLayoutService();
     const graphBuilder = new TypeScriptDeclarationGraphBuilder();
-    const modelGenerator = new TypeScriptWorkspaceModelGenerator(graphBuilder);
+    const modelGenerator = new TypeScriptWorkspaceModelGenerator(graphBuilder, documentCodec);
     const federatedGraphAdapter = new FederatedDeclarationGraphAdapter();
     const validationWorkflow = new ValidateArchitecture(
       workspaceLoader,
@@ -88,7 +90,11 @@ export class AtlasCompositionRoot {
       federatedGraphAdapter,
       modelGenerator
     );
-    const artifactServer = new NodeArtifactServer(layoutService, configurationLoader);
+    const artifactServer = new NodeArtifactServer(
+      layoutService,
+      configurationLoader,
+      documentCodec
+    );
     return new AtlasArtifactHost(
       new ViewArtifacts(
         workspaceLoader,
@@ -108,8 +114,9 @@ export class AtlasCompositionRoot {
   public createCli(): AtlasCli {
     const logger = new TslogAtlasLogger();
     const policySelector = new PackagePolicySelector();
-    const manifestLoader = new NodeAtlasWorkspaceLoader();
-    const configurationLoader = new JsonAtlasConfigurationLoader();
+    const documentCodec = new YamlDocumentCodec();
+    const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
+    const configurationLoader = new YamlAtlasConfigurationLoader(documentCodec);
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
       configurationLoader,
@@ -129,7 +136,7 @@ export class AtlasCompositionRoot {
     const layoutService = new DeterministicLayoutService();
     const diagramArtifactWriter = new NodeDiagramArtifactWriter(layoutService);
     const graphBuilder = new TypeScriptDeclarationGraphBuilder();
-    const modelGenerator = new TypeScriptWorkspaceModelGenerator(graphBuilder);
+    const modelGenerator = new TypeScriptWorkspaceModelGenerator(graphBuilder, documentCodec);
     const federatedGraphAdapter = new FederatedDeclarationGraphAdapter();
     const validationWorkflow = new ValidateArchitecture(
       workspaceLoader,
@@ -170,7 +177,11 @@ export class AtlasCompositionRoot {
     );
     const cleanWorkflow = new CleanArtifacts(workspaceLoader, new NodeArtifactCleaner());
     const federatedModelWorkflow = new GenerateFederatedModels(workspaceLoader, modelGenerator);
-    const artifactServer = new NodeArtifactServer(layoutService, configurationLoader);
+    const artifactServer = new NodeArtifactServer(
+      layoutService,
+      configurationLoader,
+      documentCodec
+    );
     const viewWorkflow = new ViewArtifacts(
       workspaceLoader,
       artifactServer,

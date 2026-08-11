@@ -1,24 +1,23 @@
-# Atlas C# Clean-Architecture Example
+# Atlas C# Reading-List Example
 
 ## Purpose
 
-This runnable solution demonstrates compiler-resolved C# models, source-generated
-documents, cross-project linking, architecture validation, and diagram generation.
+This maintained reference workspace demonstrates the C# SDK, CLI, and MSBuild
+integration with a two-module reading-list command-line application.
 
 ## Conventions
 
-- Dependencies point inward from delivery and adapters to application and domain.
-- The ordinary solution build remains independent of Atlas.
-- The architecture project opts into the MSBuild hook and verifies persisted artifacts.
+- `App` depends on `Lib`; the library never depends on the executable.
+- Both modules use FluentValidation and each uses one distinct direct dependency.
+- The build-only project owns Atlas generation, validation, and viewer targets.
 
 ## Contents
 
-- `src/` contains domain, application, infrastructure, and app projects.
-- `build/` contains the designated Atlas orchestration project.
-- `verification/` validates generated model and diagram contracts.
+- `src/lib/` owns `ReadingListItem` and `ReadingList`.
+- `src/app/` owns `ReadingListCommand` and `Program`.
+- `build/` contains the designated Atlas MSBuild orchestration project.
 
 ## Commands
 
-Run `dotnet build Atlas.Example.slnx`, then build `build/Atlas.Example.Architecture.csproj`
-to generate, validate, and verify the complete Atlas output.
-
+Run `dotnet build Atlas.Example.slnx` for the application or
+`dotnet build build/Atlas.Example.csproj --target:AtlasGenerate` for Atlas output.

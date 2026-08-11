@@ -1,0 +1,48 @@
+schemaVersion: 1
+discovery:
+  packageGlobs:
+    - "src/*"
+  defaultSourceRoots:
+    - "."
+  packages:
+    - match:
+        name: "Lib@*"
+      classification: runtime
+      classes:
+        - library
+    - match:
+        name: "App@*"
+      classification: runtime
+      classes:
+        - executable
+artifacts:
+  root: architecture
+diagrams:
+  packages:
+    - packageName: "Lib@net8.0"
+    - packageName: "App@net8.0"
+layers:
+  - name: library
+    sourceGlobs:
+      - "**"
+    packageNames:
+      - "Lib@net8.0"
+  - name: executable
+    sourceGlobs:
+      - "**"
+    packageNames:
+      - "App@net8.0"
+rules:
+  - id: no-cycles
+    type: no-circular
+    severity: error
+  - id: library-does-not-depend-on-app
+    type: dependency-direction
+    severity: error
+    mode: forbid
+    from:
+      layers:
+        - library
+    to:
+      layers:
+        - executable

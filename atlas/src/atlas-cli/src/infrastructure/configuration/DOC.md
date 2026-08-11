@@ -2,14 +2,15 @@
 
 ## Purpose
 
-This directory parses, validates, and reports errors for the canonical Atlas JSON configuration file.
+This directory parses, serializes, validates, and reports errors for canonical Atlas YAML documents.
 
 ## Conventions
 
-- Keep Ajv and Node filesystem details within this directory.
-- Report JSON pointer locations and do not silently repair invalid policy.
+- Keep YAML, Ajv, and Node filesystem details within this directory.
+- Report schema pointer locations and do not silently repair invalid policy.
 
 ## Contents
 
-- `JsonAtlasConfigurationLoader.ts` loads and validates configuration files.
+- `YamlAtlasConfigurationLoader.ts` loads and validates configuration files.
+- `YamlDocumentCodec.ts` owns deterministic YAML parsing and serialization.
 - `AtlasConfigurationError.ts` represents actionable configuration failures.

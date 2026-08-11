@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <PackageId>Atlas.Example.Domain</PackageId>
-    <AssemblyName>Atlas.Example.Domain</AssemblyName>
-  </PropertyGroup>
-</Project>
-

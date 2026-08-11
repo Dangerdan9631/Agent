@@ -3,13 +3,11 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":application"))
-    implementation(project(":domain"))
-    implementation(project(":infrastructure"))
+    implementation(project(":lib"))
     implementation("org.apache.commons:commons-lang3:3.17.0")
-    implementation("com.google.guava:guava:33.4.0-jre")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.3")
 }
 
 application {
-    mainClass.set("dev.atlas.example.app.ApplicationMain")
+    mainClass.set("dev.atlas.example.app.Program")
 }

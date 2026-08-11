@@ -33,7 +33,7 @@ describe('TypeScriptDeclarationGraphBuilder', () => {
     const workspace = new WorkspaceSnapshot(
       new ResolvedWorkspacePaths(
         workspaceRootPath,
-        resolve(workspaceRootPath, 'atlas.config.json'),
+        resolve(workspaceRootPath, 'atlas.config.yml'),
         resolve(workspaceRootPath, 'architecture')
       ),
       configuration,

@@ -59,7 +59,7 @@ class ValidationWorkspaceFactory {
     return new WorkspaceSnapshot(
       new ResolvedWorkspacePaths(
         '/workspace',
-        '/workspace/atlas.config.json',
+        '/workspace/atlas.config.yml',
         '/workspace/architecture'
       ),
       configuration,

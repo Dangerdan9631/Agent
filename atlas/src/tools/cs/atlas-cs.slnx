@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/tools/">
+    <Project Path="atlas-cs-sdk/Atlas.Cs.Sdk.csproj" />
+    <Project Path="atlas-cs-cli/Atlas.Cs.Cli.csproj" />
+    <Project Path="atlas-cs-msbuild/Atlas.Cs.MSBuild.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Atlas.Cs.Tests/Atlas.Cs.Tests.csproj" />
+  </Folder>
+</Solution>

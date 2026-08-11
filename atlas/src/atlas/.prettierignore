@@ -1,12 +1,3 @@
 dist/
 node_modules/
 coverage/
-*** Add File: src/tools/atlas-ts/prettier.config.js
-/**
- * Defines the source-formatting rules for the TypeScript model generator.
- */
-export default {
-  singleQuote: true,
-  trailingComma: 'none',
-  printWidth: 100
-};

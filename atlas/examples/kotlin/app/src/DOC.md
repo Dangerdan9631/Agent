@@ -1,15 +1,9 @@
-# Delivery application source tree
+# Kotlin Reading List Application Source
 
 ## Purpose
 
-This source tree contains the executable Kotlin delivery artifact and its concrete catalog composition root.
-
-## Conventions
-
-- Compose external and catalog dependencies at the delivery boundary.
-- Keep executable startup behavior in a dedicated composition root.
-- Keep user-facing output behind the runtime output writer.
+This directory contains the executable reading-list source set and its direct dependency on the library module.
 
 ## Contents
 
-- `main/kotlin` contains delivery, composition, and executable production code.
+- `main/kotlin/dev/atlas/example/app` contains `ReadingListCommand` and `Program`.

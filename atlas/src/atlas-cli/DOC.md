@@ -15,8 +15,8 @@ atlas-cli view --open
 atlas-cli clean --confirm
 ```
 
-All commands read `atlas.config.json` from the current directory by default and
+All commands read `atlas.config.yml` from the current directory by default and
 accept `--workspace`, `--config`, `--manifest`, and `--output` overrides.
 Generate models with `atlas-ts` or `atlas-kt` first. Use `atlas-cli view` for
-the browser-hosted interactive viewer or `atlas atlas.config.json` for the
+the browser-hosted interactive viewer or `atlas atlas.config.yml` for the
 Electron host. Both hosts serve the same generated, language-neutral artifacts.

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Atlas.Cs.Sdk</AssemblyName>
+    <RootNamespace>StarCruiseStudios.Atlas.Cs</RootNamespace>
+    <PackageId>StarCruiseStudios.Atlas.Cs.Sdk</PackageId>
+    <Description>Pure Roslyn-backed C# model-generation SDK for Atlas.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.6.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DOC.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

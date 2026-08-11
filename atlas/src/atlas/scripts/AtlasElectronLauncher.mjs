@@ -78,7 +78,17 @@ class AtlasElectronLauncher {
         process.platform === 'win32'
           ? spawn(
               process.env.ComSpec ?? 'cmd.exe',
-              ['/d', '/s', '/c', 'start', '""', `/d`, process.cwd(), electronPath, ...electronArguments],
+              [
+                '/d',
+                '/s',
+                '/c',
+                'start',
+                '""',
+                `/d`,
+                process.cwd(),
+                electronPath,
+                ...electronArguments
+              ],
               {
                 detached: true,
                 stdio: 'ignore',
@@ -118,7 +128,7 @@ class AtlasElectronLauncher {
         'Open generated Atlas diagrams in the Electron desktop application.',
         '',
         'Arguments:',
-        '  configPath      Path to atlas.config.json. Defaults to ./atlas.config.json.',
+        '  configPath      Path to atlas.config.yml. Defaults to ./atlas.config.yml.',
         '',
         'Options:',
         '  -h, --help      Show this help message and exit.',

@@ -1,13 +1,8 @@
-# Atlas Kotlin Clean-Architecture Example
+# Atlas Kotlin Reading-List Example
 
-This runnable Gradle build mirrors the TypeScript catalog through four modules:
+This maintained Gradle workspace contains exactly two application modules: reusable `:lib` and executable `:app`. The app directly consumes `ReadingListItem`; the library never depends on the app.
 
-- `domain` owns catalog identities, item inheritance, title policy, an enum, a type alias, a top-level function, and a top-level schema constant.
-- `application` owns repository, seed-reader, and clock ports plus import and query use cases.
-- `infrastructure` implements the ports with in-memory persistence, Jackson validation, and a deterministic clock.
-- `app` composes the dependency graph and renders the catalog through a narrow output boundary.
-
-Dependencies point inward: `application -> domain`, `infrastructure -> application + domain`, and `app -> all three`. Apache Commons Lang is intentionally shared by infrastructure and delivery, while Jackson Databind and Guava remain unique adapter dependencies. The declarations exercise classes, abstract inheritance, interfaces and implementations, an enum, a type alias, data classes, constants, functions, method overrides, companions, an object composition entry point, and cross-module references.
+Both modules declare and use Apache Commons Lang. The library uniquely uses Guava for slug normalization, while the app uniquely uses Jackson for command output. The build applies both the Atlas Gradle plugin and KSP processor integration.
 
 ## Run and build
 
@@ -24,8 +19,8 @@ From the repository root:
 npm run build:example:kotlin
 ```
 
-The local `dev.atlas.kotlin` plugin invokes `atlas-kt`, produces one portable model per Gradle artifact, aggregates the workspace manifest, validates it through `atlas-cli`, and writes graph, matrix, layout, navigation, and viewer artifacts under `architecture/`.
+The local `dev.atlas.kotlin` plugin invokes `atlas-kt-cli`, produces YAML models through `atlas-kt-sdk`, consumes KSP fragments, aggregates `atlas.manifest.yml`, and bridges validation and viewing to the root Atlas applications.
 
 Useful Gradle tasks include `atlasGenerateModels`, `atlasGenerateManifest`, `atlasValidate`, `atlasGenerate`, and `atlasView`.
 
-The configuration demonstrates every artifact and layout setting, presentation-only module groups, global and module exclusions, selective external collapsing and importer splitting, package diagrams, three folder diagrams, named layers, and every supported rule type. All policies pass for the supplied dependency graph.
+`atlas.config.yml` declares the two modules and enforces the one-way `app -> lib` dependency.

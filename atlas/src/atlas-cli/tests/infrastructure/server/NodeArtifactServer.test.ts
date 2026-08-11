@@ -1,6 +1,7 @@
 import { NodeArtifactServer } from '#infrastructure/server/NodeArtifactServer.js';
 import { DeterministicLayoutService } from '#application/layout/DeterministicLayoutService.js';
-import { JsonAtlasConfigurationLoader } from '#infrastructure/configuration/JsonAtlasConfigurationLoader.js';
+import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
+import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -32,8 +33,8 @@ class TemporaryArtifactRoot {
     this.roots.push(rootPath);
     const landscapePath = join(rootPath, 'landscape');
     await writeFile(
-      join(rootPath, 'atlas.config.json'),
-      JSON.stringify({
+      join(rootPath, 'atlas.config.yml'),
+      new YamlDocumentCodec().stringify({
         schemaVersion: 1,
         discovery: { packages: [{ match: { name: 'demo' }, classification: 'runtime' }] }
       }),
@@ -122,15 +123,14 @@ class TemporaryArtifactRoot {
    * @returns Parsed current Atlas policy document.
    */
   public async readConfiguration(): Promise<Record<string, unknown>> {
-    return JSON.parse(await readFile(join(this.rootPath, 'atlas.config.json'), 'utf8')) as Record<
-      string,
-      unknown
-    >;
+    return new YamlDocumentCodec().parse(
+      await readFile(join(this.rootPath, 'atlas.config.yml'), 'utf8')
+    ) as Record<string, unknown>;
   }
 
   /** Reads the exact user-owned configuration text for rollback assertions. */
   public readConfigurationText(): Promise<string> {
-    return readFile(join(this.rootPath, 'atlas.config.json'), 'utf8');
+    return readFile(join(this.rootPath, 'atlas.config.yml'), 'utf8');
   }
 }
 
@@ -148,13 +148,14 @@ describe('NodeArtifactServer', () => {
     let configurationRefreshCount = 0;
     const server = new NodeArtifactServer(
       new DeterministicLayoutService(),
-      new JsonAtlasConfigurationLoader()
+      new YamlAtlasConfigurationLoader(new YamlDocumentCodec()),
+      new YamlDocumentCodec()
     );
     const location = await server.start(
       root.rootPath,
       '127.0.0.1',
       0,
-      join(root.rootPath, 'atlas.config.json'),
+      join(root.rootPath, 'atlas.config.yml'),
       {
         execute: () => {
           configurationRefreshCount += 1;
@@ -166,9 +167,7 @@ describe('NodeArtifactServer', () => {
 
     try {
       const pageResponse = await fetch(`${origin}/`);
-      const folderPageResponse = await fetch(
-        `${origin}/folders/demo%3Asrc%2Ffeature/index.html`
-      );
+      const folderPageResponse = await fetch(`${origin}/folders/demo%3Asrc%2Ffeature/index.html`);
       const traversalResponse = await fetch(`${origin}/%2e%2e%2fsecret.txt`);
       const layoutResponse = await fetch(`${origin}/api/layout?scope=landscape`, {
         method: 'POST',
@@ -268,13 +267,14 @@ describe('NodeArtifactServer', () => {
     const originalText = await root.readConfigurationText();
     const server = new NodeArtifactServer(
       new DeterministicLayoutService(),
-      new JsonAtlasConfigurationLoader()
+      new YamlAtlasConfigurationLoader(new YamlDocumentCodec()),
+      new YamlDocumentCodec()
     );
     const location = await server.start(
       root.rootPath,
       '127.0.0.1',
       0,
-      join(root.rootPath, 'atlas.config.json'),
+      join(root.rootPath, 'atlas.config.yml'),
       { execute: () => Promise.reject(new Error('regeneration failed')) }
     );
 

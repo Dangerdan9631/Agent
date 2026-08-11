@@ -43,7 +43,7 @@ describe('ManifestWorkspacePackageResolver', () => {
     const packages = await new ManifestWorkspacePackageResolver(
       new FixedAtlasWorkspaceLoader(workspace),
       new PackagePolicySelector()
-    ).resolve('/workspace/models/atlas-workspace.json', '/workspace', configuration);
+    ).resolve('/workspace/models/atlas.manifest.yml', '/workspace', configuration);
 
     expect(packages.map((workspacePackage) => workspacePackage.name)).toEqual([
       'dev.example:app:1.0.0',

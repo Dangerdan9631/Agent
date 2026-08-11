@@ -24,7 +24,7 @@ class FixedWorkspaceLoader implements WorkspaceLoadingWorkflow {
   /** Creates the stable workspace shared with successful generation results. */
   public workspace(): WorkspaceSnapshot {
     return new WorkspaceSnapshot(
-      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.json', '/workspace/output'),
+      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.yml', '/workspace/output'),
       {
         schemaVersion: 1,
         discovery: { packages: [{ match: { name: '@demo/app' }, classification: 'runtime' }] }
@@ -115,7 +115,7 @@ describe('ViewArtifacts', () => {
     );
 
     expect(location.url).toBe('http://127.0.0.1:4321/landscape/index.html');
-    expect(server.configurationPath).toBe('/workspace/atlas.config.json');
+    expect(server.configurationPath).toBe('/workspace/atlas.config.yml');
     expect(generation.skipValidationValues).toEqual([true]);
     expect(browser.urls).toEqual([location.url]);
   });

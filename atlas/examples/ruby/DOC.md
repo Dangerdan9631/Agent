@@ -1,19 +1,22 @@
-# Atlas Ruby Example
+# Atlas Ruby Reading-List Example
 
 ## Purpose
 
-This workspace demonstrates Ruby gem discovery, Rails conventions, cross-gem
-linking, validation, and diagram generation through the portable Atlas manifest.
+This maintained reference workspace demonstrates the Ruby SDK, CLI, and Rake
+integration with a two-gem reading-list command-line application.
 
 ## Conventions
 
-- Domain declarations remain independent of Rails behavior.
-- Application and web gems depend inward through explicit Ruby constants.
-- Source files are analyzed but are not executed by the example build.
+- `atlas-example-app` depends on `atlas-example-lib`; dependency flow is one-way.
+- Both gems use Active Support and each uses one distinct direct dependency.
+- Atlas commands are supplied by `starcruisestudios-atlas-rb-rake`.
 
 ## Contents
 
-- `gems/` contains domain, application, and web artifacts.
-- `atlas.config.json` defines package policy, layers, diagrams, and rules.
-- `Rakefile` generates models, final Atlas artifacts, and verifies every graph.
-- `scripts/` validates graph structure, layout coverage, and expected semantic edges.
+- `gems/lib/` owns `ReadingListItem` and `ReadingList`.
+- `gems/app/` owns `ReadingListCommand` and `Program`.
+
+## Commands
+
+Run `bundle exec rake app` for the application, `bundle exec rake build` to
+generate Atlas artifacts, or `bundle exec rake atlas:view` to open the viewer.

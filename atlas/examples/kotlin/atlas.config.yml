@@ -1,0 +1,48 @@
+schemaVersion: 1
+discovery:
+  packageGlobs:
+    - "*"
+  defaultSourceRoots:
+    - src/main/kotlin
+  packages:
+    - match:
+        name: "dev.atlas.example:lib:1.0.0"
+      classification: runtime
+      classes:
+        - library
+    - match:
+        name: "dev.atlas.example:app:1.0.0"
+      classification: runtime
+      classes:
+        - executable
+artifacts:
+  root: architecture
+diagrams:
+  packages:
+    - packageName: "dev.atlas.example:lib:1.0.0"
+    - packageName: "dev.atlas.example:app:1.0.0"
+layers:
+  - name: library
+    sourceGlobs:
+      - "**"
+    packageNames:
+      - "dev.atlas.example:lib:1.0.0"
+  - name: executable
+    sourceGlobs:
+      - "**"
+    packageNames:
+      - "dev.atlas.example:app:1.0.0"
+rules:
+  - id: no-cycles
+    type: no-circular
+    severity: error
+  - id: library-does-not-depend-on-app
+    type: dependency-direction
+    severity: error
+    mode: forbid
+    from:
+      layers:
+        - library
+    to:
+      layers:
+        - executable

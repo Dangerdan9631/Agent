@@ -8,7 +8,7 @@ export interface AtlasModelGenerator {
    * Generates all selected artifact models into a dedicated model directory.
    *
    * @param workspace - Loaded workspace containing source-ecosystem package selection.
-   * @param modelDirectoryPath - Absolute output directory for model JSON documents.
+   * @param modelDirectoryPath - Absolute output directory for module-model YAML documents.
    * @returns Absolute generated manifest path.
    */
   generate(workspace: WorkspaceSnapshot, modelDirectoryPath: string): Promise<string>;

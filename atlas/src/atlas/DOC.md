@@ -10,8 +10,8 @@ Build the workspace, then provide an Atlas configuration directly or through
 the legacy-compatible `view` prefix:
 
 ```sh
-atlas atlas.config.json
-atlas view --config atlas.config.json --workspace .
+atlas atlas.config.yml
+atlas view --config atlas.config.yml --workspace .
 ```
 
 The desktop process starts the same path-contained local artifact server used

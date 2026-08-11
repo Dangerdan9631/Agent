@@ -1,0 +1,55 @@
+schemaVersion: 1
+discovery:
+  packages:
+    - match:
+        name: dev.example:app:*
+      classification: runtime
+      classes:
+        - application
+    - match:
+        name: dev.example:test-support:*
+      classification: support
+      classes:
+        - support-tooling
+diagrams:
+  moduleGroups:
+    - id: kotlin-example
+      title: Kotlin Example
+      moduleIdPatterns:
+        - dev.example:*
+  folders:
+    - packageName: dev.example:app:1.0.0
+      path: src/main/kotlin/dev/example/app/feature
+layers:
+  - name: application-feature
+    sourceGlobs:
+      - src/main/kotlin/dev/example/app/feature/**
+    packageNames:
+      - dev.example:app:1.0.0
+rules:
+  - id: application-no-support-class
+    type: dependency-direction
+    severity: error
+    mode: forbid
+    from:
+      moduleIds:
+        - dev.example:app:1.0.0
+    to:
+      packageClasses:
+        - support-tooling
+  - id: feature-no-support-package
+    type: dependency-direction
+    severity: error
+    mode: forbid
+    from:
+      layers:
+        - application-feature
+    to:
+      packageNames:
+        - dev.example:test-support:1.0.0
+  - id: no-cycles
+    type: no-circular
+    severity: error
+  - id: runtime-no-support
+    type: no-runtime-to-support
+    severity: error

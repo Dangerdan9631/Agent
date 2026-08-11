@@ -22,6 +22,8 @@ import { access, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
+import type { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
+
 /**
  * Serves generated artifacts through a static HTTP server constrained to one resolved root directory.
  */
@@ -46,10 +48,12 @@ export class NodeArtifactServer implements ArtifactServer {
    *
    * @param layoutService - Deterministic layout service shared with command-line layout generation.
    * @param configurationLoader - Validates changed policy documents before they replace the user-owned file.
+   * @param documentCodec - Parses and serializes YAML policy documents.
    */
   public constructor(
     private readonly layoutService: DeterministicLayoutService,
-    private readonly configurationLoader: AtlasConfigurationLoader
+    private readonly configurationLoader: AtlasConfigurationLoader,
+    private readonly documentCodec: YamlDocumentCodec
   ) {}
 
   /**
@@ -263,7 +267,7 @@ export class NodeArtifactServer implements ArtifactServer {
         JSON.parse((await this.readBody(request)).toString('utf8'))
       );
       const originalText = await readFile(configurationPath, 'utf8');
-      const configuration = JSON.parse(originalText) as unknown;
+      const configuration = this.documentCodec.parse(originalText);
       if (action === undefined || !this.isConfigurationDocument(configuration)) {
         this.writeStatus(response, 400);
         return;
@@ -297,7 +301,7 @@ export class NodeArtifactServer implements ArtifactServer {
       return;
     }
     try {
-      const configuration = JSON.parse(await readFile(configurationPath, 'utf8')) as unknown;
+      const configuration = this.documentCodec.parse(await readFile(configurationPath, 'utf8'));
       if (!this.isConfigurationDocument(configuration)) {
         this.writeStatus(response, 400);
         return;
@@ -485,7 +489,7 @@ export class NodeArtifactServer implements ArtifactServer {
   ): Promise<void> {
     const temporaryPath = `${configurationPath}.tmp-${process.pid}`;
     try {
-      await writeFile(temporaryPath, `${JSON.stringify(configuration, undefined, 2)}\n`, 'utf8');
+      await writeFile(temporaryPath, this.documentCodec.stringify(configuration), 'utf8');
       await this.configurationLoader.load(temporaryPath);
       await rename(temporaryPath, configurationPath);
     } catch (error: unknown) {
@@ -1133,7 +1137,9 @@ export class NodeArtifactServer implements ArtifactServer {
       const decodedPath = decodeURIComponent(pathname);
       const decodedRelativePath =
         decodedPath === '/' ? 'landscape/index.html' : decodedPath.slice(1);
-      if (decodedRelativePath.split('/').some((segment) => segment === '..' || segment.length === 0)) {
+      if (
+        decodedRelativePath.split('/').some((segment) => segment === '..' || segment.length === 0)
+      ) {
         return undefined;
       }
       const relativePath = pathname === '/' ? 'landscape/index.html' : pathname.slice(1);

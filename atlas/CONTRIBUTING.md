@@ -73,8 +73,8 @@ Confirm the links:
 ```sh
 atlas-cli --help
 atlas-ts --help
-(cd src/tools/atlas-rb && bundle exec atlas-rb generate --help)
-dotnet run --project src/tools/atlas-cs/src/Atlas.Cs -- --help
+(cd src/tools/rb && bundle exec atlas-rb generate --help)
+dotnet run --project src/tools/cs/atlas-cs-cli -- --help
 atlas --help
 ```
 
@@ -156,12 +156,12 @@ cd examples/ruby
 bundle exec rake build
 ```
 
-The build discovers gemspec-backed modules, runs `atlas-rb generate`, validates
-with the shared CLI, writes diagrams under `architecture/`, and checks graph,
-layout, Ruby metadata, and expected semantic-edge integrity.
+The build runs the reading-list application, discovers both gemspec-backed
+modules, generates YAML models, validates them with the shared CLI, and writes
+diagrams under `architecture/`.
 
 ```sh
-bundle exec rake view
+bundle exec rake atlas:view
 ```
 
 #### C#
@@ -171,11 +171,11 @@ orchestration project:
 
 ```sh
 dotnet build examples/csharp/Atlas.Example.slnx --configuration Release
-dotnet build examples/csharp/build/Atlas.Example.Architecture.csproj --configuration Release
+dotnet build examples/csharp/build/Atlas.Example.csproj --configuration Release --target:AtlasGenerate
 ```
 
-The orchestration build uses the opt-in MSBuild targets to generate compiler-backed
-models, validate policy, create diagrams, and verify the persisted graph and layout data.
+The orchestration build uses the opt-in MSBuild targets to generate two
+compiler-backed YAML models, validate policy, and create diagrams.
 
 ## Commands
 

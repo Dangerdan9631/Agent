@@ -3,8 +3,8 @@ import { AtlasDesktopArgumentParser } from '../../src/main/AtlasDesktopArgumentP
 
 describe('AtlasDesktopArgumentParser', () => {
   it('accepts a direct configuration path used by the Atlas desktop command', () => {
-    expect(new AtlasDesktopArgumentParser().parse(['examples/atlas.config.json'])).toEqual({
-      configurationPath: 'examples/atlas.config.json'
+    expect(new AtlasDesktopArgumentParser().parse(['examples/atlas.config.yml'])).toEqual({
+      configurationPath: 'examples/atlas.config.yml'
     });
   });
 
@@ -15,11 +15,11 @@ describe('AtlasDesktopArgumentParser', () => {
         '--workspace',
         'examples/typescript',
         '--config',
-        'atlas.config.json',
+        'atlas.config.yml',
         '--output',
         'architecture',
         '--manifest',
-        'build/atlas/atlas-workspace.json',
+        'build/atlas/atlas.manifest.yml',
         '--host',
         '127.0.0.1',
         '--port',
@@ -28,9 +28,9 @@ describe('AtlasDesktopArgumentParser', () => {
       ])
     ).toEqual({
       workspacePath: 'examples/typescript',
-      configurationPath: 'atlas.config.json',
+      configurationPath: 'atlas.config.yml',
       outputPath: 'architecture',
-      manifestPath: 'build/atlas/atlas-workspace.json',
+      manifestPath: 'build/atlas/atlas.manifest.yml',
       host: '127.0.0.1',
       port: 4173
     });

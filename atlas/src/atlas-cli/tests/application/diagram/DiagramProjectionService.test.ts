@@ -38,7 +38,7 @@ describe('DiagramProjectionService', () => {
     const workspace = new WorkspaceSnapshot(
       new ResolvedWorkspacePaths(
         '/workspace',
-        '/workspace/atlas.config.json',
+        '/workspace/atlas.config.yml',
         '/workspace/architecture'
       ),
       configuration,
@@ -105,7 +105,7 @@ describe('DiagramProjectionService', () => {
    */
   it('expands external dependencies when collapsing is disabled', () => {
     const workspace = new WorkspaceSnapshot(
-      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.json', '/workspace/out'),
+      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.yml', '/workspace/out'),
       {
         schemaVersion: 1,
         discovery: { packages: [{ match: { name: '@demo/app' }, classification: 'runtime' }] },
@@ -150,7 +150,7 @@ describe('DiagramProjectionService', () => {
    */
   it('applies selective external collapse and importer splitting', () => {
     const workspace = new WorkspaceSnapshot(
-      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.json', '/workspace/out'),
+      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.yml', '/workspace/out'),
       {
         schemaVersion: 1,
         discovery: {
@@ -230,7 +230,7 @@ describe('DiagramProjectionService', () => {
     const applicationModuleId = 'dev.example:app:1.0.0';
     const supportModuleId = 'dev.example:test-support:1.0.0';
     const workspace = new WorkspaceSnapshot(
-      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.json', '/workspace/out'),
+      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.yml', '/workspace/out'),
       {
         schemaVersion: 1,
         discovery: {

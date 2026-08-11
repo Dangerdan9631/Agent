@@ -6,7 +6,7 @@ Atlas answers two related questions about a codebase:
    matrices project declarations and their static relationships into scopes that
    are easier to explore.
 2. **Which of those relationships violate declared policy?** Validation evaluates
-   the normalized dependency facts against the rules in `atlas.config.json`.
+   the normalized dependency facts against the rules in `atlas.config.yml`.
 
 Those answers come from the same language-neutral input, but they are not the
 same operation. Diagram exclusions, collapsed groups, hidden connections, and
@@ -44,7 +44,7 @@ used, or that Atlas inferred the business significance of the relationship.
 ## The portable architecture model
 
 The intermediate abstraction is the version-one **Atlas module model**. It is a
-deterministic JSON document describing one independently generated artifact.
+deterministic YAML document describing one independently generated artifact.
 The workspace manifest lists the models selected for one Atlas run.
 
 ### Artifact identity
@@ -124,7 +124,7 @@ It should not guess across ambiguous imports or declarations.
 
 ### Manifest linking and model validation
 
-`atlas-workspace.json` is deliberately small: each entry pairs the expected
+`atlas.manifest.yml` is deliberately small: each entry pairs the expected
 `moduleId` with a manifest-relative model path. When Atlas loads it, it validates
 the model and linking contract before architecture rules run. Among other
 checks, Atlas rejects escaping model paths, mismatched module identities,
@@ -457,7 +457,7 @@ Some actions persist beyond the browser session:
   intentionally hidden connection in `layout.json`. **Hidden** can reveal it
   again without forgetting the choice.
 - Select an external node and choose **Hide** to add an external exclusion to
-  `atlas.config.json` and regenerate.
+  `atlas.config.yml` and regenerate.
 - Select a local declaration and choose **Hide** to add its source path to the
   configured source exclusions and regenerate.
 - Open **Excluded** to inspect, add, or remove global source and external

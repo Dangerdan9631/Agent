@@ -9,6 +9,7 @@ import { WorkspacePackage } from '#application/workspace/model/WorkspacePackage.
 import { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import { TypeScriptWorkspaceModelGenerator } from '#infrastructure/federation/TypeScriptWorkspaceModelGenerator.js';
 import { NodeAtlasWorkspaceLoader } from '#infrastructure/federation/NodeAtlasWorkspaceLoader.js';
+import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -44,7 +45,7 @@ describe('TypeScriptWorkspaceModelGenerator', () => {
     const workspace = new WorkspaceSnapshot(
       new ResolvedWorkspacePaths(
         directory,
-        resolve(directory, 'atlas.config.json'),
+        resolve(directory, 'atlas.config.yml'),
         resolve(directory, 'out')
       ),
       {
@@ -87,14 +88,16 @@ describe('TypeScriptWorkspaceModelGenerator', () => {
       ]
     );
 
+    const documentCodec = new YamlDocumentCodec();
     const manifestPath = await new TypeScriptWorkspaceModelGenerator(
-      new FixedGraphBuilder(graph)
+      new FixedGraphBuilder(graph),
+      documentCodec
     ).generate(workspace, resolve(directory, 'models'));
-    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
+    const manifest = documentCodec.parse(await readFile(manifestPath, 'utf8')) as {
       readonly modules: readonly { readonly moduleId: string; readonly modelPath: string }[];
     };
     const firstModelPath = manifest.modules.find((entry) => entry.moduleId === 'first')?.modelPath;
-    const firstModel = JSON.parse(
+    const firstModel = documentCodec.parse(
       await readFile(resolve(directory, 'models', firstModelPath ?? ''), 'utf8')
     ) as {
       readonly relationships: readonly {
@@ -103,7 +106,7 @@ describe('TypeScriptWorkspaceModelGenerator', () => {
       }[];
       readonly elements: readonly { readonly sourcePath?: string }[];
     };
-    const resolvedWorkspace = await new NodeAtlasWorkspaceLoader().load(manifestPath);
+    const resolvedWorkspace = await new NodeAtlasWorkspaceLoader(documentCodec).load(manifestPath);
 
     expect(firstModel.relationships.map((relationship) => relationship.target)).toEqual([
       {

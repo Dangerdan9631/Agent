@@ -49,7 +49,7 @@ class TemporaryWriterRoot {
     return new WorkspaceSnapshot(
       new ResolvedWorkspacePaths(
         this.rootPath,
-        join(this.rootPath, 'atlas.config.json'),
+        join(this.rootPath, 'atlas.config.yml'),
         this.rootPath
       ),
       {

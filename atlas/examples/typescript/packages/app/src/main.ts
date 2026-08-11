@@ -1,8 +1,5 @@
-import { CatalogApplication } from './composition/CatalogApplication.js';
+#!/usr/bin/env node
 
-/**
- * Starts the runnable TypeScript catalog with its concrete composition dependencies.
- */
-const catalogApplication = CatalogApplication.createDefault();
+import { Program } from "./Program.js";
 
-catalogApplication.run();
+process.exitCode = new Program().run(process.argv.slice(2));

@@ -1,4 +1,5 @@
 import { AtlasCompositionRoot } from '#composition/AtlasCompositionRoot.js';
+import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -108,8 +109,8 @@ describe('Atlas generation integration', () => {
       .run(['--workspace', fixturePath, '--output', output.path, 'generate']);
 
     expect(exitCode).toBe(0);
-    const manifest = JSON.parse(
-      await readFile(join(output.path, 'models', 'atlas-workspace.json'), 'utf8')
+    const manifest = new YamlDocumentCodec().parse(
+      await readFile(join(output.path, 'models', 'atlas.manifest.yml'), 'utf8')
     ) as { readonly modules: readonly { readonly moduleId: string; readonly modelPath: string }[] };
     expect(manifest.modules).toHaveLength(4);
     await expect(access(join(output.path, 'landscape', 'graph.json'))).resolves.toBeUndefined();

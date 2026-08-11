@@ -1,72 +1,14 @@
 # frozen_string_literal: true
 
-require "rake"
-require_relative "scripts/ruby_example_graph_verifier"
+require "atlas/rb/rake"
+require "atlas_example/program"
 
-# Runs the Ruby example's model, validation, and diagram commands.
-class RubyExampleBuild
-  # Creates the example command boundary with one user-facing output stream.
-  def initialize(output = $stdout)
-    @output = output
-  end
-
-  # Executes one command and fails the task when it returns non-zero.
-  def run(*arguments)
-    success = Kernel.system(*arguments)
-    raise "Ruby example command failed: #{arguments.join(' ')}" unless success
-  end
-
-  # Returns the platform-specific repository Atlas CLI executable.
-  def atlas_cli
-    suffix = Gem.win_platform? ? ".cmd" : ""
-    File.expand_path("../../node_modules/.bin/atlas-cli#{suffix}", __dir__)
-  end
-
-  # Returns the platform-specific repository Atlas viewer executable.
-  def atlas_viewer
-    suffix = Gem.win_platform? ? ".cmd" : ""
-    File.expand_path("../../node_modules/.bin/atlas#{suffix}", __dir__)
-  end
-
-  # Writes one successful verification result to the example's output stream.
-  def report(message)
-    @output.puts(message)
-  end
+desc "Run the reading-list example"
+task :app do
+  AtlasExample::Program.new.run(%w[Domain-Driven Design])
 end
 
-# Shared command boundary for the Ruby example's Rake tasks.
-# It keeps platform-specific executable resolution in one object.
-EXAMPLE_BUILD = RubyExampleBuild.new
-
-desc "Generate portable Ruby module models"
-task :models do
-  EXAMPLE_BUILD.run("bundle", "exec", "atlas-rb", "generate", "--workspace", __dir__)
-end
-
-desc "Validate the Ruby architecture manifest"
-task validate: :models do
-  EXAMPLE_BUILD.run(EXAMPLE_BUILD.atlas_cli, "validate", "--workspace", __dir__,
-                    "--manifest", "architecture/models/atlas-workspace.json")
-end
-
-desc "Generate final Ruby architecture artifacts"
-task generate: :validate do
-  EXAMPLE_BUILD.run(EXAMPLE_BUILD.atlas_cli, "generate", "--workspace", __dir__, "--no-validate",
-                    "--manifest", "architecture/models/atlas-workspace.json")
-end
-
-desc "Verify graph, layout, and semantic relationship integrity"
-task verify_graphs: :generate do
-  count = RubyExampleGraphVerifier.new(File.join(__dir__, "architecture")).verify
-  EXAMPLE_BUILD.report("Verified #{count} generated Ruby diagram scope(s).")
-end
-
-task build: :verify_graphs
-
-desc "Open the generated Ruby architecture in Atlas"
-task view: :build do
-  EXAMPLE_BUILD.run(EXAMPLE_BUILD.atlas_viewer, "--workspace", __dir__,
-                    "--manifest", "architecture/models/atlas-workspace.json")
-end
+desc "Build the application and generate Atlas artifacts"
+task build: [:app, "atlas:generate"]
 
 task default: :build

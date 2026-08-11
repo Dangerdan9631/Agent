@@ -1,18 +1,19 @@
-using Atlas.Example.App.Composition;
+using Atlas.Example.Lib;
 
 namespace Atlas.Example.App;
 
 /// <summary>
-/// Hosts the C# example process entry point.
+/// Composes and starts the reading-list command-line application.
 /// </summary>
 public static class Program
 {
     /// <summary>
-    /// Runs the deterministic catalog example.
+    /// Executes the application with the title provided by the command line.
     /// </summary>
-    public static async Task Main()
+    /// <param name="args">Command-line arguments whose joined value forms the title.</param>
+    public static void Main(string[] args)
     {
-        await new CatalogApplication().CreateDemo().RunAsync(CancellationToken.None).ConfigureAwait(false);
+        var title = args.Length == 0 ? "Domain-Driven Design" : string.Join(' ', args);
+        new ReadingListCommand(new ReadingList()).Execute(title);
     }
 }
-

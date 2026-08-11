@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory defines JSON-compatible language-neutral module, manifest, and resolved-workspace values.
+This directory defines YAML-compatible language-neutral module, manifest, and resolved-workspace values.
 
 ## Conventions
 

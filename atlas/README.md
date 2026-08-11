@@ -36,7 +36,7 @@ controls, see [Understanding Atlas output](docs/understanding-atlas.md).
 
 ## Set up
 
-1. Add an `atlas.config.json` at your workspace root (see
+1. Add an `atlas.config.yml` at your workspace root (see
    [Configuring the build toolkit](#configuring-the-build-toolkit)).
 2. Generate module models per package (`atlas-ts`, `atlas-kt`, `atlas-rb`,
    `atlas-cs`, or an ecosystem build integration).
@@ -48,17 +48,17 @@ controls, see [Understanding Atlas output](docs/understanding-atlas.md).
 
 1. Add the Atlas packages as dependencies (use `file:` links to this checkout
    if you're working from source).
-2. Add `atlas.config.json` at the workspace root. Start from
-   `examples/typescript/atlas.config.json`.
+2. Add `atlas.config.yml` at the workspace root. Start from
+   `examples/typescript/atlas.config.yml`.
 3. Add these scripts to `package.json`:
 
 ```json
 {
   "scripts": {
     "architecture:models": "atlas-ts generate",
-    "architecture:validate": "atlas-cli validate --manifest architecture/models/atlas-workspace.json",
-    "architecture:generate": "atlas-cli generate --manifest architecture/models/atlas-workspace.json",
-    "architecture:view": "atlas --config atlas.config.json --manifest architecture/models/atlas-workspace.json",
+    "architecture:validate": "atlas-cli validate --manifest architecture/models/atlas.manifest.yml",
+    "architecture:generate": "atlas-cli generate --manifest architecture/models/atlas.manifest.yml",
+    "architecture:view": "atlas --config atlas.config.yml --manifest architecture/models/atlas.manifest.yml",
     "build": "tsc --noEmit && npm run architecture:models && npm run architecture:validate && npm run architecture:generate"
   }
 }
@@ -70,7 +70,7 @@ controls, see [Understanding Atlas output](docs/understanding-atlas.md).
 
 ```kotlin
  pluginManagement {
-     includeBuild("../path/to/atlas/src/tools") // path to atlas/src/tools
+     includeBuild("../path/to/atlas/src/tools/kt") // path to atlas/src/tools/kt
  }
 ```
 
@@ -89,9 +89,9 @@ controls, see [Understanding Atlas output](docs/understanding-atlas.md).
  }
 ```
 
-3. Add `atlas.config.json` at the Gradle root, using
+3. Add `atlas.config.yml` at the Gradle root, using
    `group:name:version` module identities. Start from
-   `examples/kotlin/atlas.config.json`.
+   `examples/kotlin/atlas.config.yml`.
 
 Skip the Gradle plugin if you'd rather script it yourself: call
 `atlas-ts generate`, `atlas-kt generate`, or `atlas-rb generate` directly, then drive `atlas-cli`
@@ -99,38 +99,38 @@ from your own build steps.
 
 ### Ruby project
 
-1. Add `starcruisestudios-atlas-rb` to the development group in your `Gemfile`
-   and run `bundle install`.
-2. Add `atlas.config.json`. Each configured package directory may contain one
+1. Add the `starcruisestudios-atlas-rb-sdk`, `starcruisestudios-atlas-rb-cli`,
+   and `starcruisestudios-atlas-rb-rake` gems, then run `bundle install`.
+2. Add `atlas.config.yml`. Each configured package directory may contain one
    gemspec; a gemless workspace root is treated as one Ruby application.
 3. Generate models and then drive the language-neutral CLI:
 
    ```sh
    bundle exec atlas-rb generate
-   atlas-cli validate --manifest architecture/models/atlas-workspace.json
-   atlas-cli generate --manifest architecture/models/atlas-workspace.json
+   atlas-cli validate --manifest architecture/models/atlas.manifest.yml
+   atlas-cli generate --manifest architecture/models/atlas.manifest.yml
    ```
 
-Start from `examples/ruby/atlas.config.json`. Ruby generation requires Ruby 3.1
+Start from `examples/ruby/atlas.config.yml`. Ruby generation requires Ruby 3.1
 or newer and analyzes source without loading application or Rails classes.
 
 ### C# project
 
-1. Install the `StarCruiseStudios.Atlas.Cs` .NET tool and reference the
+1. Install the `StarCruiseStudios.Atlas.Cs.Cli` .NET tool and reference the
    `StarCruiseStudios.Atlas.Cs.MSBuild` package from one orchestration project.
-2. Add `atlas.config.json` at the solution root. C# module IDs use
+2. Add `atlas.config.yml` at the solution root. C# module IDs use
    `<PackageId>@<TargetFramework>` so multi-target projects remain distinct.
 3. Run `atlas-cs generate`, then validate and generate diagrams with
    `atlas-cli`. Importing the MSBuild package provides `AtlasGenerateModels`,
    `AtlasValidate`, `AtlasGenerate`, and `AtlasView`; set
    `AtlasGenerateOnBuild` to `true` only in the designated orchestration project.
 
-See `examples/csharp` for a complete clean-architecture solution. Building its
-architecture project also verifies the generated models, graphs, and layouts.
+See `examples/csharp` for a complete two-module reading-list solution. Run the
+orchestration project's `AtlasGenerate` target to generate and validate output.
 
 ## Configuring the build toolkit
 
-`atlas.config.json` is the single policy file shared by the generators,
+`atlas.config.yml` is the single policy file shared by the generators,
 `atlas-cli`, and the viewer. It is validated against the schema published at
 `@starcruisestudios/atlas-cli/schema`. Top-level sections:
 
@@ -149,11 +149,10 @@ excluded from those checks. `classes` are free-form labels (`core`, `domain`,
 `adapter`, `delivery`, and so on) that rules can target with
 `packageClasses`.
 
-See `examples/typescript/atlas.config.json`, `examples/kotlin/atlas.config.json`,
-`examples/ruby/atlas.config.json`, and `examples/csharp/atlas.config.json` for complete, working policy files,
-including layered dependency-direction rules, forbidden-import rules that keep
-the domain free of outer-layer and framework imports, and diagram grouping
-and folding for large workspaces.
+See `examples/typescript/atlas.config.yml`, `examples/kotlin/atlas.config.yml`,
+`examples/ruby/atlas.config.yml`, and `examples/csharp/atlas.config.yml` for complete, working policy files,
+including dependency-direction rules that keep each reusable library independent
+from its executable and focused diagram policy for the two-module workspaces.
 
 ## Using the CLI tools
 
@@ -165,7 +164,7 @@ build diagrams; hand the manifest to `atlas-cli` for those steps.
 
 ```sh
 atlas-ts generate
-atlas-ts generate --workspace . --config atlas.config.json --output architecture
+atlas-ts generate --workspace . --config atlas.config.yml --output architecture
 ```
 
 | Option               | Description                                                       |
@@ -188,19 +187,19 @@ atlas-kt generate \
   --version 1.0.0 \
   --category jvm \
   --source-root src/main/kotlin \
-  --output build/atlas/models/name.atlas-module.json
+  --output build/atlas/models/name.atlas.module.yml
 ```
 
-| Option                       | Required         | Description                                                    |
-| ---------------------------- | ---------------- | -------------------------------------------------------------- |
-| `--project-root <path>`      | Yes              | Project directory used to normalize source paths               |
-| `--module-id <id>`           | Yes              | Stable published artifact identity                             |
-| `--display-name <name>`      | Yes              | Readable artifact name                                         |
-| `--version <version>`        | Yes              | Published artifact version                                     |
-| `--category <category>`      | Yes              | Portable artifact family label (for example `jvm`)             |
-| `--source-root <path>`       | Yes (repeatable) | Kotlin source directory relative to `--project-root`           |
-| `--semantic-fragment <path>` | No (repeatable)  | KSP `*.atlas-fragment.json` file that refines source semantics |
-| `--output <path>`            | Yes              | Destination module-model JSON file                             |
+| Option                       | Required         | Description                                                   |
+| ---------------------------- | ---------------- | ------------------------------------------------------------- |
+| `--project-root <path>`      | Yes              | Project directory used to normalize source paths              |
+| `--module-id <id>`           | Yes              | Stable published artifact identity                            |
+| `--display-name <name>`      | Yes              | Readable artifact name                                        |
+| `--version <version>`        | Yes              | Published artifact version                                    |
+| `--category <category>`      | Yes              | Portable artifact family label (for example `jvm`)            |
+| `--source-root <path>`       | Yes (repeatable) | Kotlin source directory relative to `--project-root`          |
+| `--semantic-fragment <path>` | No (repeatable)  | KSP `*.atlas.fragment.yml` file that refines source semantics |
+| `--output <path>`            | Yes              | Destination module-model YAML file                            |
 
 ### `atlas-rb`
 
@@ -210,7 +209,7 @@ workspace directory unless identity flags override it.
 
 ```sh
 bundle exec atlas-rb generate
-bundle exec atlas-rb generate --workspace . --config atlas.config.json --output architecture
+bundle exec atlas-rb generate --workspace . --config atlas.config.yml --output architecture
 ```
 
 | Option                  | Description                                                 |
@@ -237,7 +236,7 @@ relationships, including source-generated documents.
 
 ```sh
 atlas-cs generate
-atlas-cs generate --workspace . --config atlas.config.json --solution MySolution.slnx --output architecture
+atlas-cs generate --workspace . --config atlas.config.yml --solution MySolution.slnx --output architecture
 ```
 
 | Option               | Description                                                             |
@@ -260,7 +259,7 @@ apply to every command:
 | Option                | Description                                                      |
 | --------------------- | ---------------------------------------------------------------- |
 | `--workspace <path>`  | Workspace root, absolute or relative to the invocation directory |
-| `--config <path>`     | Atlas configuration file path (defaults to `atlas.config.json`)  |
+| `--config <path>`     | Atlas configuration file path (defaults to `atlas.config.yml`)   |
 | `--manifest <path>`   | Federated workspace manifest produced by a language generator    |
 | `--output <path>`     | Artifact output root override                                    |
 | `--log-level <level>` | Diagnostic level: `trace`, `debug`, `info`, `warn`, or `error`   |
@@ -272,7 +271,7 @@ architecture rules, prints violations, and exits non-zero on error-severity
 failures. Does not rewrite diagrams or layouts.
 
 ```sh
-atlas-cli validate --manifest architecture/models/atlas-workspace.json
+atlas-cli validate --manifest architecture/models/atlas.manifest.yml
 ```
 
 #### `atlas-cli generate`
@@ -281,7 +280,7 @@ Validates by default, then writes all configured diagram, matrix, layout, and
 viewer artifacts under the artifact root.
 
 ```sh
-atlas-cli generate --manifest architecture/models/atlas-workspace.json
+atlas-cli generate --manifest architecture/models/atlas.manifest.yml
 atlas-cli generate --no-validate
 ```
 
@@ -296,7 +295,7 @@ Generates one diagram scope. Scope is `landscape`, `package:<name>`, or
 
 ```sh
 atlas-cli diagram landscape
-atlas-cli diagram package:@atlas-example/domain --no-validate
+atlas-cli diagram package:@atlas-example/lib --no-validate
 ```
 
 | Option          | Description                                 |
@@ -310,7 +309,7 @@ Computes and persists deterministic layout for one diagram scope. Without
 
 ```sh
 atlas-cli layout landscape --rows 6 --horizontal-gap 80 --vertical-gap 60
-atlas-cli layout package:@atlas-example/domain --force --generate
+atlas-cli layout package:@atlas-example/lib --force --generate
 ```
 
 | Option                        | Description                                             |
@@ -342,7 +341,7 @@ manifest. Prefer `atlas-ts generate` for TypeScript workspaces; this command
 is the shared implementation those tools invoke.
 
 ```sh
-atlas-cli generate-models --workspace . --config atlas.config.json
+atlas-cli generate-models --workspace . --config atlas.config.yml
 ```
 
 #### `atlas-cli view`
@@ -368,23 +367,23 @@ keep the terminal attached until the window closes.
 
 ```sh
 atlas
-atlas atlas.config.json --foreground
-atlas --config atlas.config.json --manifest architecture/models/atlas-workspace.json
-atlas view --workspace . --config atlas.config.json --manifest build/atlas/models/atlas-workspace.json
+atlas atlas.config.yml --foreground
+atlas --config atlas.config.yml --manifest architecture/models/atlas.manifest.yml
+atlas view --workspace . --config atlas.config.yml --manifest build/atlas/models/atlas.manifest.yml
 ```
 
-| Argument / option    | Description                                                                |
-| -------------------- | -------------------------------------------------------------------------- |
-| `[configPath]`       | Positional path to `atlas.config.json` (defaults to `./atlas.config.json`) |
-| `view`               | Optional legacy subcommand prefix; ignored aside from compatibility        |
-| `--config <path>`    | Atlas configuration file path                                              |
-| `--workspace <path>` | Workspace root override                                                    |
-| `--output <path>`    | Artifact output root override                                              |
-| `--manifest <path>`  | Federated workspace manifest path                                          |
-| `--host <host>`      | Local artifact-host interface                                              |
-| `--port <port>`      | Local artifact-host port (`0` for an available port)                       |
-| `--foreground`       | Keep this process attached until the viewer closes                         |
-| `-h`, `--help`       | Print launcher usage and exit                                              |
+| Argument / option    | Description                                                              |
+| -------------------- | ------------------------------------------------------------------------ |
+| `[configPath]`       | Positional path to `atlas.config.yml` (defaults to `./atlas.config.yml`) |
+| `view`               | Optional legacy subcommand prefix; ignored aside from compatibility      |
+| `--config <path>`    | Atlas configuration file path                                            |
+| `--workspace <path>` | Workspace root override                                                  |
+| `--output <path>`    | Artifact output root override                                            |
+| `--manifest <path>`  | Federated workspace manifest path                                        |
+| `--host <host>`      | Local artifact-host interface                                            |
+| `--port <port>`      | Local artifact-host port (`0` for an available port)                     |
+| `--foreground`       | Keep this process attached until the viewer closes                       |
+| `-h`, `--help`       | Print launcher usage and exit                                            |
 
 ## Example integrations
 
@@ -420,14 +419,14 @@ The Gradle build generates models with `atlas-kt`, validates them through
 
 Gradle tasks registered by the plugin:
 
-| Task                       | Purpose                                                         |
-| -------------------------- | --------------------------------------------------------------- |
-| `atlasGenerateModuleModel` | Generate this module's portable model via `atlas-kt`            |
-| `atlasGenerateModels`      | Generate models for every selected module                       |
-| `atlasGenerateManifest`    | Aggregate models into `build/atlas/models/atlas-workspace.json` |
-| `atlasValidate`            | Run `atlas-cli validate` against the manifest                   |
-| `atlasGenerate`            | Run `atlas-cli generate` against the manifest                   |
-| `atlasView`                | Open diagrams in Electron via `atlas`                           |
+| Task                       | Purpose                                                       |
+| -------------------------- | ------------------------------------------------------------- |
+| `atlasGenerateModuleModel` | Generate this module's portable model via `atlas-kt`          |
+| `atlasGenerateModels`      | Generate models for every selected module                     |
+| `atlasGenerateManifest`    | Aggregate models into `build/atlas/models/atlas.manifest.yml` |
+| `atlasValidate`            | Run `atlas-cli validate` against the manifest                 |
+| `atlasGenerate`            | Run `atlas-cli generate` against the manifest                 |
+| `atlasView`                | Open diagrams in Electron via `atlas`                         |
 
 When `generateOnBuild` is `true` (default), `build` depends on
 `atlasGenerate`. Useful extension fields: `includeTests`, `includedTargets`,
@@ -442,28 +441,24 @@ bundle install
 bundle exec rake build
 ```
 
-The Ruby build discovers three gemspec-backed modules, extracts Ruby and Rails
-relationships with `atlas-rb`, validates the manifest, and writes diagrams
-under `architecture/`. The build also verifies graph identifiers, edge
-endpoints, layout coverage, Ruby source metadata, and the example's expected
-cross-gem and route relationships.
+The Ruby build runs the reading-list application, discovers the `app` and `lib`
+gems, generates YAML models with `atlas-rb`, validates the manifest, and writes
+diagrams under `architecture/`.
 
 ```sh
-bundle exec rake view  # build and open the generated diagrams in Electron
+bundle exec rake atlas:view  # build and open the generated diagrams in Electron
 ```
 
 ### C# example
 
 ```sh
 dotnet build examples/csharp/Atlas.Example.slnx --configuration Release
-dotnet build examples/csharp/build/Atlas.Example.Architecture.csproj --configuration Release
+dotnet build examples/csharp/build/Atlas.Example.csproj --configuration Release --target:AtlasGenerate
 ```
 
 The ordinary solution build remains independent of Atlas. The second command
-opts into the MSBuild targets, generates four compiler-backed module models,
-validates the architecture, creates ten diagram scopes, and runs a verifier
-over graph endpoints, layouts, source-generated documents, and representative
-semantic relationships.
+opts into the MSBuild targets, generates two compiler-backed YAML module models,
+validates the architecture, and creates the configured diagram scopes.
 
 ## Working on Atlas itself
 
@@ -482,7 +477,7 @@ Root scripts for building, testing, and verifying this repository:
 | `npm run build:example:typescript` | Build only the TypeScript example                                         |
 | `npm run build:example:kotlin`     | Build only the Kotlin example                                             |
 | `npm run build:example:ruby`       | Build only the Ruby example                                               |
-| `npm run build:example:csharp`     | Generate and verify the C# example diagrams                               |
+| `npm run build:example:csharp`     | Generate and validate the C# example diagrams                             |
 | `npm run view:examples`            | Build and open all example architecture viewers                           |
 | `npm run view:example:typescript`  | Build and open the TypeScript example architecture viewer                 |
 | `npm run view:example:kotlin`      | Build and open the Kotlin example architecture viewer                     |

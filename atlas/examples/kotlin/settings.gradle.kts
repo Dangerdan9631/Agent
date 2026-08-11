@@ -1,10 +1,12 @@
 pluginManagement {
-    includeBuild("../../src/tools")
+    includeBuild("../../src/tools/kt")
     repositories {
         gradlePluginPortal()
         mavenCentral()
     }
 }
+
+includeBuild("../../src/tools/kt")
 
 dependencyResolutionManagement {
     repositories {
@@ -14,7 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "atlas-kotlin-example"
 
-include(":domain")
-include(":application")
-include(":infrastructure")
 include(":app")
+include(":lib")

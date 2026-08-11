@@ -33,7 +33,7 @@ export class NodeWorkspacePathResolver implements WorkspacePathResolver {
     );
     const configurationPath = this.resolveFrom(
       workspaceRootPath,
-      configurationOption ?? 'atlas.config.json'
+      configurationOption ?? 'atlas.config.yml'
     );
 
     return new ResolvedWorkspacePaths(workspaceRootPath, configurationPath, undefined);

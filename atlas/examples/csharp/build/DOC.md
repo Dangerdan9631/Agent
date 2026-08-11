@@ -1,17 +1,17 @@
-# C# Example Architecture Build
+# C# Atlas Build Project
 
 ## Purpose
 
-This directory contains the single orchestration project that opts into the
-Atlas MSBuild hook after all example and verification binaries are built.
+This directory contains the designated orchestration project that exposes Atlas
+generation, validation, and viewing targets for the C# example workspace.
 
 ## Conventions
 
-- Keep `AtlasGenerateOnBuild` scoped to this project.
-- Delegate generation and diagram behavior to the shipped targets and tools.
-- Run verification only after final diagram generation succeeds.
+- Keep application behavior in `src/app` and `src/lib`.
+- Keep this project limited to workspace build and Atlas target wiring.
+- Reference the packaged MSBuild integration instead of duplicating its tasks.
 
 ## Contents
 
-- `Atlas.Example.Architecture.csproj` composes build, Atlas, and verification targets.
-
+- `Atlas.Example.csproj` imports the Atlas MSBuild targets and coordinates the
+  two application modules.

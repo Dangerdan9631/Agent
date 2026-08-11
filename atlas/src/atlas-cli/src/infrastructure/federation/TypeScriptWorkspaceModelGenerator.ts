@@ -16,6 +16,8 @@ import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSn
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 
+import type { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
+
 /**
  * Generates one deterministic language-neutral model per selected npm package and one manifest.
  */
@@ -25,7 +27,10 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
    *
    * @param graphBuilder - Builds language-specific facts before they are mapped to common model concepts.
    */
-  public constructor(private readonly graphBuilder: DeclarationGraphBuilder) {}
+  public constructor(
+    private readonly graphBuilder: DeclarationGraphBuilder,
+    private readonly documentCodec: YamlDocumentCodec
+  ) {}
 
   /**
    * Generates package model files and a manifest below the supplied model directory.
@@ -56,9 +61,9 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
         );
         const modelPath = resolve(
           outputPath,
-          `${this.toFileName(workspacePackage.name)}.atlas-module.json`
+          `${this.toFileName(workspacePackage.name)}.atlas.module.yml`
         );
-        await this.writeJson(modelPath, model);
+        await this.writeYaml(modelPath, model);
         return {
           moduleId: model.module.id,
           modelPath: relative(outputPath, modelPath).replaceAll('\\', '/')
@@ -69,8 +74,8 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
       schemaVersion: 1,
       modules: models.sort((left, right) => left.moduleId.localeCompare(right.moduleId))
     };
-    const manifestPath = resolve(outputPath, 'atlas-workspace.json');
-    await this.writeJson(manifestPath, manifest);
+    const manifestPath = resolve(outputPath, 'atlas.manifest.yml');
+    await this.writeYaml(manifestPath, manifest);
     return manifestPath;
   }
 
@@ -309,11 +314,11 @@ export class TypeScriptWorkspaceModelGenerator implements AtlasModelGenerator {
     return packageName.replaceAll(/[^A-Za-z0-9._-]/g, '_');
   }
 
-  /** Writes deterministic JSON through a temporary sibling file. */
-  private async writeJson(filePath: string, value: object): Promise<void> {
+  /** Writes deterministic YAML through a temporary sibling file. */
+  private async writeYaml(filePath: string, value: object): Promise<void> {
     await mkdir(dirname(filePath), { recursive: true });
     const temporaryPath = `${filePath}.tmp-${process.pid}`;
-    await writeFile(temporaryPath, `${JSON.stringify(value, undefined, 2)}\n`, 'utf8');
+    await writeFile(temporaryPath, this.documentCodec.stringify(value), 'utf8');
     await rename(temporaryPath, filePath);
   }
 }

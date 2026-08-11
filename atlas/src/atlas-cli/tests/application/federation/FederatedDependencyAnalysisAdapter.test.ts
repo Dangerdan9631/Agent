@@ -242,7 +242,7 @@ class CyclicFederatedWorkspaceFixture {
       ]
     };
     return new WorkspaceSnapshot(
-      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.json', '/workspace/out'),
+      new ResolvedWorkspacePaths('/workspace', '/workspace/atlas.config.yml', '/workspace/out'),
       configuration,
       [
         new WorkspacePackage(

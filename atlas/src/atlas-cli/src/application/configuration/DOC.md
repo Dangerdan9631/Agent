@@ -7,7 +7,7 @@ This directory defines the vendor-neutral configuration model and ports used to 
 ## Conventions
 
 - Configuration values are immutable data and contain normalized workspace-relative paths after loading.
-- Infrastructure owns JSON parsing and schema validation; workflows depend on these contracts.
+- Infrastructure owns YAML parsing and JSON Schema validation; workflows depend on these contracts.
 
 ## Contents
 

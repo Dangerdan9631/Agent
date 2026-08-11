@@ -6,8 +6,8 @@ test-results/
 **/.gradle/
 **/.kotlin/
 **/build/
-!src/tools/atlas-cs/src/Atlas.Cs.MSBuild/build/
-!src/tools/atlas-cs/src/Atlas.Cs.MSBuild/build/**
+!src/tools/cs/atlas-cs-msbuild/build/
+!src/tools/cs/atlas-cs-msbuild/build/**
 !examples/csharp/build/
 !examples/csharp/build/**
 **/bin/

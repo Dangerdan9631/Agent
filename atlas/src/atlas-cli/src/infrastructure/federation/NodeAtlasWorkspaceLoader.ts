@@ -11,10 +11,19 @@ import type { AtlasWorkspaceLoader } from '#application/federation/ports/AtlasWo
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
+import type { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
+
 /**
- * Loads JSON module models from a manifest and links only matching stable identities.
+ * Loads YAML module models from a manifest and links only matching stable identities.
  */
 export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
+  /**
+   * Creates a portable workspace loader from the shared YAML document boundary.
+   *
+   * @param documentCodec - Parses manifest and module model documents.
+   */
+  public constructor(private readonly documentCodec: YamlDocumentCodec) {}
+
   /**
    * Loads a workspace manifest, validates each selected model, and resolves loaded targets.
    *
@@ -24,7 +33,7 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
   public async load(manifestPath: string): Promise<ResolvedAtlasWorkspace> {
     const absoluteManifestPath = resolve(manifestPath);
     const manifest = this.toManifest(
-      await this.readJson(absoluteManifestPath),
+      await this.readYaml(absoluteManifestPath),
       absoluteManifestPath
     );
     const entries = [...manifest.modules].sort((left, right) =>
@@ -43,7 +52,7 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
     const relationshipIds = new Set<string>();
     for (const entry of entries) {
       const modelPath = this.toContainedModelPath(absoluteManifestPath, entry.modelPath);
-      const model = this.toModel(await this.readJson(modelPath), modelPath);
+      const model = this.toModel(await this.readYaml(modelPath), modelPath);
       if (model.module.id !== entry.moduleId) {
         throw new Error(
           `Atlas manifest expects '${entry.moduleId}' but model '${modelPath}' identifies '${model.module.id}'.`
@@ -71,12 +80,12 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
     return new ResolvedAtlasWorkspace(models, this.resolveRelationships(models));
   }
 
-  /** Reads and parses one UTF-8 JSON document. */
-  private async readJson(filePath: string): Promise<unknown> {
+  /** Reads and parses one UTF-8 YAML document. */
+  private async readYaml(filePath: string): Promise<unknown> {
     try {
-      return JSON.parse(await readFile(filePath, 'utf8')) as unknown;
+      return this.documentCodec.parse(await readFile(filePath, 'utf8'));
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'unknown JSON error';
+      const message = error instanceof Error ? error.message : 'unknown YAML error';
       throw new Error(`Atlas could not load '${filePath}': ${message}`);
     }
   }
@@ -271,10 +280,10 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
       : new AtlasResolvedTarget(qualifiedTarget.module, qualifiedTarget.elementId);
   }
 
-  /** Narrows an unknown JSON value to a record. */
+  /** Narrows an unknown YAML value to a record. */
   private toRecord(value: unknown, filePath: string): Record<string, unknown> {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      throw new Error(`Atlas model document '${filePath}' must be a JSON object.`);
+      throw new Error(`Atlas model document '${filePath}' must be a YAML mapping.`);
     }
     return value as Record<string, unknown>;
   }

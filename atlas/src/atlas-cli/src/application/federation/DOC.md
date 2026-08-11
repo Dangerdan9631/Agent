@@ -11,5 +11,5 @@ This directory defines the language-neutral module model, manifest, and resolved
 
 ## Contents
 
-- `model/` defines portable JSON-compatible contracts and resolved identities.
+- `model/` defines portable YAML document contracts and resolved identities.
 - `ports/` defines manifest loading at the infrastructure boundary.

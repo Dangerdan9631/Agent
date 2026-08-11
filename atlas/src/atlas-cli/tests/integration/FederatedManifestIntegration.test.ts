@@ -14,7 +14,8 @@ import type { DependencyAnalysisArtifactWriter } from '#application/validation/p
 import type { DependencyAnalyzer } from '#application/validation/ports/DependencyAnalyzer.js';
 import { WorkspaceLoader } from '#application/workspace/WorkspaceLoader.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
-import { JsonAtlasConfigurationLoader } from '#infrastructure/configuration/JsonAtlasConfigurationLoader.js';
+import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
+import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { ManifestWorkspacePackageResolver } from '#infrastructure/federation/ManifestWorkspacePackageResolver.js';
 import { NodeAtlasWorkspaceLoader } from '#infrastructure/federation/NodeAtlasWorkspaceLoader.js';
 import { NodeWorkspacePathResolver } from '#infrastructure/workspace/NodeWorkspacePathResolver.js';
@@ -32,12 +33,13 @@ describe('Federated manifest integration', () => {
    */
   it('validates and projects module-local Kotlin models through the shared pipeline', async () => {
     const fixturePath = resolve('tests/fixtures/federated-kotlin');
-    const manifestPath = resolve(fixturePath, 'models/atlas-workspace.json');
-    const manifestLoader = new NodeAtlasWorkspaceLoader();
+    const manifestPath = resolve(fixturePath, 'models/atlas.manifest.yml');
+    const documentCodec = new YamlDocumentCodec();
+    const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
     const policySelector = new PackagePolicySelector();
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
-      new JsonAtlasConfigurationLoader(),
+      new YamlAtlasConfigurationLoader(documentCodec),
       new NodeWorkspacePackageDiscoverer(policySelector),
       new ManifestWorkspacePackageResolver(manifestLoader, policySelector),
       new SilentAtlasLogger()

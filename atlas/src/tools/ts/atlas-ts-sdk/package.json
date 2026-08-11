@@ -1,0 +1,30 @@
+{
+  "name": "@starcruisestudios/atlas-ts-sdk",
+  "version": "0.1.0",
+  "description": "Pure TypeScript workspace model-generation SDK for Atlas.",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/TypeScriptModelGenerationSdk.js",
+    "./compiler": "./dist/CompilerTypeScriptModelGenerationSdk.js",
+    "./model": "./dist/TypeScriptModuleModel.js",
+    "./request": "./dist/TypeScriptModelGenerationRequest.js",
+    "./result": "./dist/TypeScriptModelGenerationResult.js"
+  },
+  "imports": {
+    "#sdk/*": "./dist/*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests --configLoader runner"
+  },
+  "dependencies": {
+    "fast-glob": "^3.3.3",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "vitest": "^3.2.7"
+  }
+}

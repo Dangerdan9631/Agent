@@ -1,0 +1,16 @@
+{
+  "name": "@starcruisestudios/atlas-ts-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "atlas-ts-sdk",
+    "atlas-ts-cli",
+    "atlas-ts-npm"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

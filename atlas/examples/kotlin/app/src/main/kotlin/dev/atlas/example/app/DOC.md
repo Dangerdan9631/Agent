@@ -1,18 +1,10 @@
-# Delivery Kotlin source
+# Kotlin Reading List Application
 
 ## Purpose
 
-This directory contains the executable Kotlin artifact that composes domain, application, and infrastructure modules and formats imported catalog items for user-facing output.
-
-## Conventions
-
-- Depend on inner modules through their published package namespaces.
-- Keep delivery-specific collection and text formatting at this boundary.
-- Use `ApplicationMain` as the executable composition root.
+This package composes the reading-list library and renders command results at the process boundary.
 
 ## Contents
 
-- `CatalogApplication.kt` assembles concrete adapters and use cases.
-- `ApplicationCatalogService.kt` exposes the use cases needed by delivery.
-- `CatalogDemo.kt` renders the deterministic catalog through `RuntimeOutputWriter.kt`.
-- `ApplicationMain.kt` starts the catalog demonstration.
+- `ReadingListCommand.kt` consumes the public `ReadingListItem` type.
+- `Program.kt` hosts the executable entry point.
