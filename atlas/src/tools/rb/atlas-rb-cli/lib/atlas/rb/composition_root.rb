@@ -13,6 +13,7 @@ module Atlas
           GenerateRubyModels.new(
             schema_validator: validator,
             discoverer: WorkspaceDiscoverer.new(logger),
+            configured_descriptor: ConfiguredRubyModuleDescriptor.new,
             model_builder: RubyModelBuilder.new,
             linker: WorkspaceModelLinker.new,
             writer: ModelDocumentWriter.new(validator),

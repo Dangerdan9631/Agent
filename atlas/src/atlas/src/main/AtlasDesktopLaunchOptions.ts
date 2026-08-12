@@ -8,8 +8,6 @@ export interface AtlasDesktopLaunchOptions {
   readonly configurationPath?: string | undefined;
   /** Optional artifact output path override. */
   readonly outputPath?: string | undefined;
-  /** Optional portable workspace manifest selection. */
-  readonly manifestPath?: string | undefined;
   /** Optional local listener hostname. */
   readonly host?: string | undefined;
   /** Optional local listener port where zero requests an available port. */

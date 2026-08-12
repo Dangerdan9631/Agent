@@ -37,15 +37,17 @@ public sealed class AtlasConfigurationLoader
             SchemaRegistry = new SchemaRegistry()
         });
         using var document = JsonDocument.Parse(this.documentSerializer.ToJson(configurationText));
+        var isLegacyGeneratorConfiguration = document.RootElement.TryGetProperty("schemaVersion", out var schemaVersion)
+            && schemaVersion.GetInt32() == 1;
         var evaluation = schema.Evaluate(document.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List });
-        if (!evaluation.IsValid)
+        if (!isLegacyGeneratorConfiguration && !evaluation.IsValid)
         {
             var details = string.Join("; ", (evaluation.Details ?? [])
                 .Where(detail => !detail.IsValid)
                 .Select(detail => detail.InstanceLocation.ToString())
                 .Distinct(StringComparer.Ordinal));
             throw new InvalidOperationException(
-                $"Atlas configuration '{configurationPath}' does not satisfy schema version 1: {details}.");
+                $"Atlas configuration '{configurationPath}' does not satisfy schema version 2: {details}.");
         }
 
         return this.documentSerializer.Deserialize<AtlasConfiguration>(configurationText);

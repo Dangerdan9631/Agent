@@ -38,9 +38,9 @@ class AtlasKotlinCliTest {
         assertEquals(0, AtlasKotlinCli().run(arguments).exitCode)
         assertEquals(first, Files.readString(output))
         val document = ObjectMapper(YAMLFactory()).readTree(first)
-        assertEquals(1, document.path("schemaVersion").asInt())
-        assertEquals("kotlin", document.path("sourceLanguage").asText())
-        assertEquals("Sample \"module\"\nline", document.path("module").path("displayName").asText())
+        assertEquals(2, document.path("schemaVersion").asInt())
+        assertEquals("kotlin", document.path("source").path("language").asText())
+        assertEquals("Sample \"module\"\nline", document.path("module").path("name").asText())
         assertTrue(document.path("elements").any { element -> element.path("kind").asText() == "class" })
         assertFalse(Files.list(output.parent).use { files ->
             files.anyMatch { file -> file.fileName.toString().contains(".tmp-") }
@@ -75,6 +75,7 @@ elements:
             "sample",
             "1.0.0",
             "library",
+            null,
             listOf("src/main/kotlin"),
             listOf(fragment.toFile()),
             temporaryDirectory.resolve("build/model.atlas.module.yml").toFile()

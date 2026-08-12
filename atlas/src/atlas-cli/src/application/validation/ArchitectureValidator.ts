@@ -1,7 +1,7 @@
 import type { AtlasArchitectureRule } from '#application/configuration/model/AtlasConfiguration.js';
 import { ArchitectureValidationResult } from '#application/validation/model/ArchitectureValidationResult.js';
 import type { ArchitectureRuleEvaluator } from '#application/validation/ports/ArchitectureRuleEvaluator.js';
-import type { DependencyAnalysisResult } from '#application/validation/model/DependencyAnalysisResult.js';
+import { DependencyAnalysisResult } from '#application/validation/model/DependencyAnalysisResult.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 
 /**
@@ -26,9 +26,26 @@ export class ArchitectureValidator {
     workspace: WorkspaceSnapshot,
     analysisResults: readonly DependencyAnalysisResult[]
   ): ArchitectureValidationResult {
-    const violations = (workspace.configuration.rules ?? []).flatMap((rule) =>
-      this.evaluateRule(rule, workspace, analysisResults)
+    const legacyRules = (workspace.configuration as unknown as LegacyRuleConfiguration).rules;
+    const rootRules = workspace.configuration.validation?.rules ?? legacyRules ?? [];
+    const rootAnalysis =
+      workspace.configuration.documentType === 'root'
+        ? this.toInterModuleAnalysis(analysisResults)
+        : analysisResults;
+    const moduleRules = [...workspace.moduleConfigurationsById].flatMap(([moduleId, module]) =>
+      (module.validation?.rules ?? []).map((rule) => ({ moduleId, rule }))
     );
+    const rootViolations = rootRules.flatMap((rule) =>
+      this.evaluateRule(rule, workspace, rootAnalysis)
+    );
+    const moduleViolations = moduleRules.flatMap(({ moduleId, rule }) =>
+      this.evaluateRule(
+        rule,
+        workspace,
+        analysisResults.filter((analysis) => analysis.packageName === moduleId)
+      ).map((violation) => Object.assign(violation, { ruleId: `${moduleId}:${violation.ruleId}` }))
+    );
+    const violations = [...rootViolations, ...moduleViolations];
 
     return new ArchitectureValidationResult(
       violations.sort((left, right) => {
@@ -46,6 +63,25 @@ export class ArchitectureValidator {
         }
         return left.message.localeCompare(right.message);
       })
+    );
+  }
+
+  /** Restricts root validation facts to relationships crossing loaded module boundaries. */
+  private toInterModuleAnalysis(
+    analysisResults: readonly DependencyAnalysisResult[]
+  ): readonly DependencyAnalysisResult[] {
+    return analysisResults.map(
+      (analysis) =>
+        new DependencyAnalysisResult(
+          analysis.packageName,
+          analysis.relationships.filter(
+            (relationship) =>
+              relationship.sourceModuleId !== undefined &&
+              relationship.targetModuleId !== undefined &&
+              relationship.sourceModuleId !== relationship.targetModuleId
+          ),
+          analysis.rawReport
+        )
     );
   }
 
@@ -70,4 +106,12 @@ export class ArchitectureValidator {
 
     return evaluator.evaluate(rule, workspace, analysisResults);
   }
+}
+
+/**
+ * Describes the obsolete root rule collection accepted only by direct legacy test fixtures.
+ */
+interface LegacyRuleConfiguration {
+  /** Lists legacy root validation rules. */
+  readonly rules?: readonly AtlasArchitectureRule[];
 }

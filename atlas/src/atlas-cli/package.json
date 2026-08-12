@@ -12,6 +12,8 @@
     "./artifact-host": "./dist/composition/AtlasArtifactHost.js",
     "./artifact-host-options": "./dist/composition/AtlasArtifactHostOptions.js",
     "./schema": "./dist/config/atlas.schema.json",
+    "./schema/base": "./dist/config/atlas-base.schema.json",
+    "./schema/module-config": "./dist/config/atlas-module-config.schema.json",
     "./schema/module": "./dist/config/atlas-module.schema.json",
     "./schema/workspace": "./dist/config/atlas-workspace.schema.json"
   },
@@ -33,13 +35,12 @@
     "build": "npm run build:server",
     "build:server": "tsc -p tsconfig.build.json && node ./scripts/CopyBuildAssets.mjs",
     "link": "npm link",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "test": "vitest run --configLoader runner",
     "test:watch": "vitest",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
-    "atlas:generate-models": "node ./dist/presentation/cli/atlas-cli.js generate-models --no-validate"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
     "ajv": "^8.20.0",

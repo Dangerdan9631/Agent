@@ -1,5 +1,6 @@
 import type {
   AtlasConfiguration,
+  AtlasDiscoveryConfiguration,
   AtlasPackagePolicy
 } from '#application/configuration/model/AtlasConfiguration.js';
 import type { WorkspacePackageDiscoverer as WorkspacePackageDiscovererPort } from '#application/workspace/ports/WorkspacePackageDiscoverer.js';
@@ -37,7 +38,7 @@ export class NodeWorkspacePackageDiscoverer implements WorkspacePackageDiscovere
     const realWorkspaceRootPath = await this.resolveDirectory(workspaceRootPath, 'workspace root');
     const candidateRoots = await this.findCandidateRoots(
       realWorkspaceRootPath,
-      configuration.discovery.packageGlobs
+      this.toDiscovery(configuration).packageGlobs
     );
     const packages = await Promise.all(
       candidateRoots.map((candidateRootPath) =>
@@ -107,7 +108,7 @@ export class NodeWorkspacePackageDiscoverer implements WorkspacePackageDiscovere
   ): Promise<WorkspacePackage | undefined> {
     const relativeRootPath = this.toRelativePath(workspaceRootPath, packageRootPath);
 
-    if (this.isExcluded(relativeRootPath, configuration.discovery.excludePackageGlobs)) {
+    if (this.isExcluded(relativeRootPath, this.toDiscovery(configuration).excludePackageGlobs)) {
       return undefined;
     }
 
@@ -118,14 +119,14 @@ export class NodeWorkspacePackageDiscoverer implements WorkspacePackageDiscovere
     }
 
     const policy = this.policySelector.select(
-      configuration.discovery,
+      this.toDiscovery(configuration),
       manifest.name,
       relativeRootPath
     );
     const sourceRootPaths = await this.resolveSourceRoots(
       packageRootPath,
       policy,
-      configuration.discovery.defaultSourceRoots
+      this.toDiscovery(configuration).defaultSourceRoots
     );
     const tsconfigPath = await this.resolveTsconfigPath(packageRootPath, policy.tsconfig);
 
@@ -348,6 +349,15 @@ export class NodeWorkspacePackageDiscoverer implements WorkspacePackageDiscovere
    */
   private normalizeGlob(value: string): string {
     return value.replaceAll('\\', '/');
+  }
+
+  /** Extracts obsolete discovery policy only for callers using the isolated compatibility adapter. */
+  private toDiscovery(configuration: AtlasConfiguration) {
+    return (
+      configuration as unknown as {
+        readonly discovery: AtlasDiscoveryConfiguration;
+      }
+    ).discovery;
   }
 
   /**

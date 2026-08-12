@@ -21,17 +21,6 @@ export class YamlDocumentCodec {
    * @returns Deterministic YAML document text.
    */
   public stringify(value: unknown): string {
-    return stringify(this.sortValue(value), { lineWidth: 0, sortMapEntries: true });
-  }
-
-  /** Recursively orders mapping keys while retaining meaningful collection order. */
-  private sortValue(value: unknown): unknown {
-    if (Array.isArray(value)) return value.map((entry) => this.sortValue(entry));
-    if (typeof value !== 'object' || value === null) return value;
-    return Object.fromEntries(
-      Object.entries(value)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, entry]) => [key, this.sortValue(entry)])
-    );
+    return stringify(value, { lineWidth: 0, sortMapEntries: false });
   }
 }

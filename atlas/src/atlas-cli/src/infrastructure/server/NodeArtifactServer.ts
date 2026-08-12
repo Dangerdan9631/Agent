@@ -18,7 +18,7 @@ import {
   type DeclarationRelationshipType
 } from '#application/graph/model/DeclarationGraph.js';
 import { createReadStream } from 'node:fs';
-import { access, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { access, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
@@ -64,7 +64,7 @@ export class NodeArtifactServer implements ArtifactServer {
    * @param port - TCP port to bind. Zero requests an operating-system-selected port.
    * @param configurationPath - Absolute configured Atlas policy path permitted for explicit viewer actions.
    * @param configurationChangeHandler - Optional application callback that refreshes artifacts after a policy mutation.
-   * @returns Active landscape location after the listener is ready.
+   * @returns Active location for the first explicitly generated diagram after the listener is ready.
    */
   public async start(
     artifactRootPath: string,
@@ -79,6 +79,7 @@ export class NodeArtifactServer implements ArtifactServer {
     const rootPath = resolve(artifactRootPath);
     await access(rootPath);
     await access(configurationPath);
+    const initialDocumentPath = await this.initialDocumentPath(rootPath);
     const server = createServer((request, response) => {
       void this.respond(rootPath, request, response);
     });
@@ -87,11 +88,64 @@ export class NodeArtifactServer implements ArtifactServer {
       this.#server = server;
       this.#configurationPath = resolve(configurationPath);
       this.#configurationChangeHandler = configurationChangeHandler;
-      return new ArtifactServerLocation(`http://${host}:${boundPort}/landscape/index.html`);
+      return new ArtifactServerLocation(`http://${host}:${boundPort}/${initialDocumentPath}`);
     } catch (error: unknown) {
       server.close();
       throw error;
     }
+  }
+
+  /**
+   * Selects the first generated diagram without assuming that a project landscape exists.
+   *
+   * @param rootPath - Absolute generated artifact root.
+   * @returns URL-encoded artifact-relative index path with deterministic scope ordering.
+   */
+  private async initialDocumentPath(rootPath: string): Promise<string> {
+    const landscapePath = resolve(rootPath, 'landscape', 'index.html');
+    try {
+      if ((await stat(landscapePath)).isFile()) return 'landscape/index.html';
+    } catch {
+      // The version-two configuration may intentionally declare only module diagrams.
+    }
+    const candidates = [...(await this.indexDocuments(rootPath, rootPath))].sort((left, right) => {
+      const precedence = this.scopePrecedence(left) - this.scopePrecedence(right);
+      if (precedence !== 0) return precedence;
+      if (left === right) return 0;
+      return left < right ? -1 : 1;
+    });
+    const first = candidates[0];
+    if (first === undefined) {
+      throw new Error('Atlas did not generate any explicitly configured diagram artifacts.');
+    }
+    return first;
+  }
+
+  /** Recursively finds generated index documents below a contained artifact directory. */
+  private async indexDocuments(
+    rootPath: string,
+    directoryPath: string
+  ): Promise<readonly string[]> {
+    const documents: string[] = [];
+    const entries = await readdir(directoryPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryPath = resolve(directoryPath, entry.name);
+      if (entry.isDirectory()) {
+        documents.push(...(await this.indexDocuments(rootPath, entryPath)));
+      } else if (entry.isFile() && entry.name === 'index.html') {
+        documents.push(relative(rootPath, entryPath).replaceAll('\\', '/'));
+      }
+    }
+    return documents;
+  }
+
+  /** Orders explicit scope kinds from broad architectural views to narrower source views. */
+  private scopePrecedence(documentPath: string): number {
+    const scopeRoot = documentPath.split('/')[0];
+    const precedence = ['modules', 'packages', 'folders', 'tags', 'queries'].indexOf(
+      scopeRoot ?? ''
+    );
+    return precedence < 0 ? Number.MAX_SAFE_INTEGER : precedence;
   }
 
   /**
@@ -309,10 +363,13 @@ export class NodeArtifactServer implements ArtifactServer {
       response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       response.end(
         `${JSON.stringify({
-          externalDependencies: configuration.diagrams?.excludeExternalDependencies ?? [],
-          sourceGlobs: configuration.diagrams?.excludeSourceGlobs ?? [],
+          externalDependencies:
+            configuration.project.diagrams?.[0]?.externalDependencies?.excludeIds ??
+            configuration.project.diagramDefaults?.externalDependencies.excludeIds ??
+            [],
+          sourceGlobs: configuration.project.diagrams?.[0]?.filters?.excludeSourcePaths ?? [],
           splitExternalDependenciesByImporter:
-            configuration.diagrams?.splitExternalDependenciesByImporter ?? false
+            configuration.project.diagrams?.[0]?.externalDependencies?.splitByModule ?? false
         })}\n`
       );
     } catch {
@@ -390,9 +447,10 @@ export class NodeArtifactServer implements ArtifactServer {
     return (
       typeof value === 'object' &&
       value !== null &&
-      (value as Record<string, unknown>).schemaVersion === 1 &&
-      typeof (value as Record<string, unknown>).discovery === 'object' &&
-      (value as Record<string, unknown>).discovery !== null
+      (value as Record<string, unknown>).schemaVersion === 2 &&
+      (value as Record<string, unknown>).documentType === 'root' &&
+      typeof (value as Record<string, unknown>).project === 'object' &&
+      Array.isArray((value as Record<string, unknown>).modules)
     );
   }
 
@@ -407,50 +465,50 @@ export class NodeArtifactServer implements ArtifactServer {
     configuration: AtlasConfiguration,
     action: ConfigurationAction
   ): AtlasConfiguration {
-    const diagrams = { ...(configuration.diagrams ?? {}) };
+    const diagrams = [...(configuration.project.diagrams ?? [])];
+    const existingDiagram = diagrams[0];
+    if (existingDiagram === undefined) {
+      throw new Error('Atlas viewer configuration actions require an explicit project diagram.');
+    }
+    let externalDependencies = { ...(existingDiagram.externalDependencies ?? {}) };
+    let filters = { ...(existingDiagram.filters ?? {}) };
     if (action.type === 'hide-external' || action.type === 'remove-external-exclusion') {
       const exclusions = this.updateStringList(
-        diagrams.excludeExternalDependencies,
+        externalDependencies.excludeIds,
         action.value as string,
         action.type === 'hide-external'
       );
-      if (exclusions === undefined) {
-        delete diagrams.excludeExternalDependencies;
-      } else {
-        diagrams.excludeExternalDependencies = exclusions;
-      }
+      externalDependencies = {
+        ...externalDependencies,
+        ...(exclusions === undefined ? {} : { excludeIds: exclusions })
+      };
+      if (exclusions === undefined) delete externalDependencies.excludeIds;
     }
     if (action.type === 'hide-source' || action.type === 'remove-source-exclusion') {
       const exclusions = this.updateStringList(
-        diagrams.excludeSourceGlobs,
+        filters.excludeSourcePaths,
         action.value as string,
         action.type === 'hide-source'
       );
-      if (exclusions === undefined) {
-        delete diagrams.excludeSourceGlobs;
-      } else {
-        diagrams.excludeSourceGlobs = exclusions;
-      }
+      filters = {
+        ...filters,
+        ...(exclusions === undefined ? {} : { excludeSourcePaths: exclusions })
+      };
+      if (exclusions === undefined) delete filters.excludeSourcePaths;
     }
     if (action.type === 'set-external-splitting') {
-      diagrams.splitExternalDependenciesByImporter = action.value as boolean;
+      externalDependencies = { ...externalDependencies, splitByModule: action.value as boolean };
     }
     if (action.type === 'create-folder-diagram') {
-      const folder = action.value as ConfigurationFolder;
-      const folders = [...(diagrams.folders ?? [])].filter(
-        (candidate) =>
-          !(candidate.packageName === folder.packageName && candidate.path === folder.path)
-      );
-      folders.push({
-        packageName: folder.packageName,
-        path: folder.path,
-        ...(folder.title === undefined || folder.title.length === 0 ? {} : { title: folder.title })
-      });
-      diagrams.folders = folders.sort((left, right) =>
-        `${left.packageName}/${left.path}`.localeCompare(`${right.packageName}/${right.path}`)
+      throw new Error(
+        'Atlas version-two module diagrams must be added to their owning module configuration.'
       );
     }
-    return { ...configuration, diagrams };
+    diagrams[0] = { ...existingDiagram, externalDependencies, filters };
+    return {
+      ...configuration,
+      project: { ...configuration.project, diagrams }
+    };
   }
 
   /**
@@ -489,8 +547,8 @@ export class NodeArtifactServer implements ArtifactServer {
   ): Promise<void> {
     const temporaryPath = `${configurationPath}.tmp-${process.pid}`;
     try {
+      await this.configurationLoader.validateRootDocument(configurationPath, configuration);
       await writeFile(temporaryPath, this.documentCodec.stringify(configuration), 'utf8');
-      await this.configurationLoader.load(temporaryPath);
       await rename(temporaryPath, configurationPath);
     } catch (error: unknown) {
       await rm(temporaryPath, { force: true });
@@ -669,6 +727,8 @@ export class NodeArtifactServer implements ArtifactServer {
         scope.includes('..') ||
         scope.includes('\\') ||
         (!scope.startsWith('landscape') &&
+          !scope.startsWith('project:') &&
+          !scope.startsWith('module:') &&
           !scope.startsWith('package:') &&
           !scope.startsWith('group:') &&
           !scope.startsWith('folder:'))
@@ -694,11 +754,15 @@ export class NodeArtifactServer implements ArtifactServer {
         ? 'landscape'
         : scope.startsWith('package:')
           ? `packages/${encodeURIComponent(scope.slice('package:'.length))}`
-          : scope.startsWith('group:')
-            ? `groups/${encodeURIComponent(scope.slice('group:'.length))}`
-            : scope.startsWith('folder:')
-              ? `folders/${encodeURIComponent(scope.slice('folder:'.length))}`
-              : undefined;
+          : scope.startsWith('project:')
+            ? `projects/${encodeURIComponent(scope.slice('project:'.length))}`
+            : scope.startsWith('module:')
+              ? `modules/${encodeURIComponent(scope.slice('module:'.length))}`
+              : scope.startsWith('group:')
+                ? `groups/${encodeURIComponent(scope.slice('group:'.length))}`
+                : scope.startsWith('folder:')
+                  ? `folders/${encodeURIComponent(scope.slice('folder:'.length))}`
+                  : undefined;
     return childPath === undefined ? undefined : this.resolveRequestPath(rootPath, `/${childPath}`);
   }
 
@@ -820,6 +884,8 @@ export class NodeArtifactServer implements ArtifactServer {
     return (
       typeof value === 'string' &&
       (value === 'landscape' ||
+        value.startsWith('project:') ||
+        value.startsWith('module:') ||
         value.startsWith('package:') ||
         value.startsWith('group:') ||
         value.startsWith('folder:'))

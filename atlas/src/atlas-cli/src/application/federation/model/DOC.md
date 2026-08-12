@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory defines YAML-compatible language-neutral module, manifest, and resolved-workspace values.
+This directory defines YAML-compatible language-neutral module and resolved-workspace values.
 
 ## Conventions
 
@@ -14,3 +14,4 @@ This directory defines YAML-compatible language-neutral module, manifest, and re
 - `AtlasModuleModel.ts` defines published-artifact model contracts.
 - `AtlasWorkspaceManifest.ts` selects module model files.
 - `ResolvedAtlasWorkspace.ts` represents identity-linked loaded models.
+- `ConfiguredAtlasWorkspace.ts` retains the loaded subset, missing paths, and policy keyed by module ID.

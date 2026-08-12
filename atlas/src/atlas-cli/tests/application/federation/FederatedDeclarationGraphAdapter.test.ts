@@ -28,7 +28,7 @@ describe('FederatedDeclarationGraphAdapter', () => {
     expect(futureGraph.nodes.map((node) => comparer.toSemanticNode(node))).toEqual(
       typescriptGraph.nodes.map((node) => comparer.toSemanticNode(node))
     );
-    expect(futureGraph.nodes.find((node) => node.id === 'demo-class')?.sourceLanguage).toBe(
+    expect(futureGraph.nodes.find((node) => node.id === 'demo:demo-class')?.sourceLanguage).toBe(
       'future-language'
     );
   });

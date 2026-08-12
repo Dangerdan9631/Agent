@@ -9,7 +9,7 @@ import type { TypeScriptModelGenerationResult } from "#sdk/TypeScriptModelGenera
 import type { TypeScriptModelGenerationSdk } from "#sdk/TypeScriptModelGenerationSdk.js";
 import fastGlob from "fast-glob";
 import { readFile } from "node:fs/promises";
-import { relative, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 import ts from "typescript";
 
 /**
@@ -27,7 +27,11 @@ export class CompilerTypeScriptModelGenerationSdk implements TypeScriptModelGene
   ): Promise<TypeScriptModelGenerationResult> {
     const packages = await Promise.all(
       request.packagePaths.map((packagePath) =>
-        this.readPackage(request.workspacePath, packagePath),
+        this.readPackage(
+          request.workspacePath,
+          packagePath,
+          request.tsconfigFile,
+        ),
       ),
     );
     const packageNames = new Set(
@@ -40,7 +44,7 @@ export class CompilerTypeScriptModelGenerationSdk implements TypeScriptModelGene
     );
     return {
       modules: modules.sort((left, right) =>
-        left.module.id.localeCompare(right.module.id),
+        this.compareText(left.module.id, right.module.id),
       ),
     };
   }
@@ -49,6 +53,7 @@ export class CompilerTypeScriptModelGenerationSdk implements TypeScriptModelGene
   private async readPackage(
     workspacePath: string,
     packagePath: string,
+    tsconfigFile: string | undefined,
   ): Promise<WorkspacePackage> {
     const rootPath = resolve(workspacePath, packagePath);
     const manifest = JSON.parse(
@@ -62,23 +67,57 @@ export class CompilerTypeScriptModelGenerationSdk implements TypeScriptModelGene
         `TypeScript package '${packagePath}' must declare a non-empty name.`,
       );
     }
-    const sourcePaths = await fastGlob(
-      ["**/*.ts", "!**/*.d.ts", "!**/node_modules/**", "!**/dist/**"],
-      {
-        absolute: true,
-        cwd: rootPath,
-        onlyFiles: true,
-      },
-    );
+    if (typeof manifest.version !== "string" || manifest.version.length === 0) {
+      throw new Error(
+        `TypeScript package '${packagePath}' must declare a non-empty version.`,
+      );
+    }
+    const sourcePaths =
+      tsconfigFile === undefined
+        ? await fastGlob(
+            ["**/*.ts", "!**/*.d.ts", "!**/node_modules/**", "!**/dist/**"],
+            { absolute: true, cwd: rootPath, onlyFiles: true },
+          )
+        : this.readConfiguredSourcePaths(rootPath, tsconfigFile);
     return {
       name: manifest.name,
-      version:
-        typeof manifest.version === "string" && manifest.version.length > 0
-          ? manifest.version
-          : "0.0.0",
+      version: manifest.version,
       rootPath,
-      sourcePaths: sourcePaths.sort((left, right) => left.localeCompare(right)),
+      sourcePaths: [...sourcePaths].sort((left, right) =>
+        this.compareText(left, right),
+      ),
     };
+  }
+
+  /** Resolves the exact compiler file set from one package-relative tsconfig. */
+  private readConfiguredSourcePaths(
+    rootPath: string,
+    tsconfigFile: string,
+  ): readonly string[] {
+    const configurationPath = resolve(rootPath, tsconfigFile);
+    const loaded = ts.readConfigFile(configurationPath, ts.sys.readFile);
+    if (loaded.error !== undefined) {
+      throw new Error(
+        ts.flattenDiagnosticMessageText(loaded.error.messageText, "\n"),
+      );
+    }
+    const parsed = ts.parseJsonConfigFileContent(
+      loaded.config,
+      ts.sys,
+      dirname(configurationPath),
+    );
+    if (parsed.errors.length > 0) {
+      throw new Error(
+        parsed.errors
+          .map((error) =>
+            ts.flattenDiagnosticMessageText(error.messageText, "\n"),
+          )
+          .join("; "),
+      );
+    }
+    return parsed.fileNames
+      .map((filePath) => resolve(filePath))
+      .sort((left, right) => this.compareText(left, right));
   }
 
   /** Converts one package's compiler syntax into a portable module model. */
@@ -131,10 +170,12 @@ export class CompilerTypeScriptModelGenerationSdk implements TypeScriptModelGene
         category: "npm-package",
       },
       sourceLanguage: "typescript",
-      elements: elements.sort((left, right) => left.id.localeCompare(right.id)),
+      elements: elements.sort((left, right) =>
+        this.compareText(left.id, right.id),
+      ),
       relationships: [
         ...new Map(relationships.map((value) => [value.id, value])).values(),
-      ].sort((left, right) => left.id.localeCompare(right.id)),
+      ].sort((left, right) => this.compareText(left.id, right.id)),
     };
   }
 
@@ -240,6 +281,12 @@ export class CompilerTypeScriptModelGenerationSdk implements TypeScriptModelGene
     name: string,
   ): string {
     return `element:${encodeURIComponent(moduleId)}:${encodeURIComponent(sourcePath)}:${kind}:${encodeURIComponent(name)}`;
+  }
+
+  /** Compares persisted identities by Unicode code-unit order without locale-dependent collation. */
+  private compareText(left: string, right: string): number {
+    if (left === right) return 0;
+    return left < right ? -1 : 1;
   }
 }
 

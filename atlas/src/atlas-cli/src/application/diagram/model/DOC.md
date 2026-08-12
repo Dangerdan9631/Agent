@@ -6,7 +6,7 @@ This directory contains immutable scope-specific graphs ready for JSON, matrix, 
 
 ## Conventions
 
-- Diagram scope IDs are stable and use exact package manifest names.
+- Diagram scope IDs are stable and use opaque loaded module IDs.
 - Nodes and relationships retain semantic graph IDs.
 
 ## Contents

@@ -3,6 +3,7 @@
 require "fileutils"
 require "json"
 require "yaml"
+require_relative "version_two_model_document"
 
 module Atlas
   module Rb
@@ -11,15 +12,17 @@ module Atlas
       # Creates writing from the portable schema validator.
       def initialize(schema_validator)
         @schema_validator = schema_validator
+        @model_document = VersionTwoModelDocument.new
       end
 
       # Writes module models and returns the absolute generated manifest path.
       def write(output_directory, models)
         FileUtils.mkdir_p(output_directory)
         entries = models.sort_by { |model| model.fetch(:module).fetch(:id) }.map do |model|
-          @schema_validator.validate!("atlas-module.schema.json", stringify(model), model.fetch(:module).fetch(:id))
+          document = @model_document.create(model)
+          @schema_validator.validate!("atlas-module.schema.json", stringify(document), model.fetch(:module).fetch(:id))
           file_name = "#{safe_file_name(model.fetch(:module).fetch(:id))}.atlas.module.yml"
-          atomic_write(File.join(output_directory, file_name), model)
+          atomic_write(File.join(output_directory, file_name), document)
           { moduleId: model.fetch(:module).fetch(:id), modelPath: file_name }
         end
         manifest = { schemaVersion: 1, modules: entries }
@@ -27,6 +30,15 @@ module Atlas
         manifest_path = File.join(output_directory, "atlas.manifest.yml")
         atomic_write(manifest_path, manifest)
         File.realpath(manifest_path)
+      end
+
+      # Writes one configured module model to its exact destination and returns the absolute path.
+      def write_model(output_path, model)
+        document = @model_document.create(model)
+        @schema_validator.validate!("atlas-module.schema.json", stringify(document), model.fetch(:module).fetch(:id))
+        FileUtils.mkdir_p(File.dirname(output_path))
+        atomic_write(output_path, document)
+        File.realpath(output_path)
       end
 
       private

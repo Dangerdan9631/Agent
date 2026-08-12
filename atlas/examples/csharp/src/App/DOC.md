@@ -11,5 +11,6 @@ Command-line validation and rendering remain at the executable boundary.
 
 ## Contents
 
+- `App.csproj` configures its target-specific Atlas output through shared MSBuild properties.
 - `ReadingListCommand` coordinates validation, library use, and output.
 - `Program` composes and runs the command.

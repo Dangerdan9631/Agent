@@ -18,8 +18,6 @@ describe('AtlasDesktopArgumentParser', () => {
         'atlas.config.yml',
         '--output',
         'architecture',
-        '--manifest',
-        'build/atlas/atlas.manifest.yml',
         '--host',
         '127.0.0.1',
         '--port',
@@ -30,7 +28,6 @@ describe('AtlasDesktopArgumentParser', () => {
       workspacePath: 'examples/typescript',
       configurationPath: 'atlas.config.yml',
       outputPath: 'architecture',
-      manifestPath: 'build/atlas/atlas.manifest.yml',
       host: '127.0.0.1',
       port: 4173
     });

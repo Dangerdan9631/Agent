@@ -18,6 +18,14 @@ class BuildAssetCopier {
       resolve(destinationPath, 'atlas.schema.json')
     );
     await cp(
+      resolve('src/config/atlas-base.schema.json'),
+      resolve(destinationPath, 'atlas-base.schema.json')
+    );
+    await cp(
+      resolve('src/config/atlas-module-config.schema.json'),
+      resolve(destinationPath, 'atlas-module-config.schema.json')
+    );
+    await cp(
       resolve('src/config/atlas-module.schema.json'),
       resolve(destinationPath, 'atlas-module.schema.json')
     );

@@ -8,5 +8,9 @@
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="Spectre.Console" Version="0.49.1" />
     <ProjectReference Include="../lib/Lib.csproj" />
+    <ProjectReference Include="../../../../src/tools/cs/atlas-cs-cli/Atlas.Cs.Cli.csproj" ReferenceOutputAssembly="false">
+      <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+    </ProjectReference>
   </ItemGroup>
+  <Import Project="../../../../src/tools/cs/atlas-cs-msbuild/build/StarCruiseStudios.Atlas.Cs.MSBuild.targets" />
 </Project>

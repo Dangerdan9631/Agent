@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This directory coordinates workspace discovery, SDK analysis, and YAML artifact
-output without exposing process details to the pure SDK.
+This directory coordinates SDK analysis and deterministic version-two YAML
+artifact output without exposing process details to the pure SDK.
 
 ## Conventions
 
@@ -13,4 +13,5 @@ output without exposing process details to the pure SDK.
 ## Contents
 
 - `TypeScriptModelGenerationWorkflow.ts` defines the command-facing contract.
-- `SdkTypeScriptModelGenerationWorkflow.ts` implements YAML-backed orchestration.
+- `SdkTypeScriptModelGenerationWorkflow.ts` reads one package's `atlas` mapping and writes its configured model.
+- `VersionTwoTypeScriptModelDocument.ts` maps SDK facts to the generated schema.

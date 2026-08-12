@@ -36,7 +36,8 @@ class GenerateRubyModelsTest < Minitest::Test
       assert_equal(["catalog"], manifest.fetch("modules").map { |entry| entry.fetch("moduleId") })
       model = YAML.safe_load(File.read(File.join(File.dirname(manifest_path), manifest.dig("modules", 0, "modelPath")),
                                        encoding: "UTF-8"))
-      assert_equal "ruby", model.fetch("sourceLanguage")
+      assert_equal 2, model.fetch("schemaVersion")
+      assert_equal "ruby", model.dig("source", "language")
       assert_equal "1.2.3", model.dig("module", "version")
       post = model.fetch("elements").find { |element| element["qualifiedName"] == "Post" }
       association = model.fetch("relationships").find do |relationship|

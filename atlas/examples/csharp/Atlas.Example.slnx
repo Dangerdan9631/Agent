@@ -3,7 +3,4 @@
     <Project Path="src/app/App.csproj" />
     <Project Path="src/lib/Lib.csproj" />
   </Folder>
-  <Folder Name="/build/">
-    <Project Path="build/Atlas.Example.csproj" />
-  </Folder>
 </Solution>

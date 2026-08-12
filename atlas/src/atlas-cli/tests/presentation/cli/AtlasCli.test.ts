@@ -345,7 +345,7 @@ describe('AtlasCli', () => {
     const exitCode = await cli.run(['validate']);
 
     expect(exitCode).toBe(0);
-    expect(outputWriter.lines).toEqual(['Validated 1 package(s) with 0 warning(s).']);
+    expect(outputWriter.lines).toEqual(['Validated 1 module(s) with 0 warning(s).']);
   });
 
   /**
@@ -462,7 +462,6 @@ describe('AtlasCli', () => {
       new UnreachableDiagramWorkflow(),
       new UnreachableLayoutWorkflow(),
       new UnreachableCleanWorkflow(),
-      undefined,
       viewWorkflow
     );
 

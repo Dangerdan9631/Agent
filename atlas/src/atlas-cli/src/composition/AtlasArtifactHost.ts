@@ -29,8 +29,7 @@ export class AtlasArtifactHost {
         invocationDirectoryPath: options.invocationDirectoryPath,
         workspaceOption: options.workspacePath,
         configurationOption: options.configurationPath,
-        outputOption: options.outputPath,
-        manifestOption: options.manifestPath
+        outputOption: options.outputPath
       },
       options.host ?? '127.0.0.1',
       options.port ?? 0,

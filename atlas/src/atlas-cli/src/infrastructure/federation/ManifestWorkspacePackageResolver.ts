@@ -1,4 +1,7 @@
-import type { AtlasConfiguration } from '#application/configuration/model/AtlasConfiguration.js';
+import type {
+  AtlasConfiguration,
+  AtlasDiscoveryConfiguration
+} from '#application/configuration/model/AtlasConfiguration.js';
 import type { AtlasWorkspaceLoader } from '#application/federation/ports/AtlasWorkspaceLoader.js';
 import { WorkspacePackage } from '#application/workspace/model/WorkspacePackage.js';
 import type { ManifestWorkspacePackageResolver as ManifestWorkspacePackageResolverPort } from '#application/workspace/ports/ManifestWorkspacePackageResolver.js';
@@ -36,7 +39,12 @@ export class ManifestWorkspacePackageResolver implements ManifestWorkspacePackag
     return [...workspace.modules.values()]
       .sort((left, right) => left.module.id.localeCompare(right.module.id))
       .map((model) => {
-        const policy = this.policySelector.select(configuration.discovery, model.module.id, '.');
+        const discovery = (
+          configuration as unknown as {
+            readonly discovery: AtlasDiscoveryConfiguration;
+          }
+        ).discovery;
+        const policy = this.policySelector.select(discovery, model.module.id, '.');
         return new WorkspacePackage(
           model.module.id,
           workspaceRootPath,

@@ -7,9 +7,9 @@ projects that reference the Atlas C# MSBuild integration package.
 
 ## Conventions
 
-- Keep generation opt-in and disabled during ordinary builds by default.
-- Expose command and path properties so consumers can select local or installed tools.
+- Generate only the current evaluated project target and never search for solutions or projects.
+- Expose command and model-path properties so consumers can select local or installed tools.
 
 ## Contents
 
-- `StarCruiseStudios.Atlas.Cs.MSBuild.targets` defines model, validation, diagram, and viewer targets.
+- `StarCruiseStudios.Atlas.Cs.MSBuild.targets` generates the current target's configured model after its build.

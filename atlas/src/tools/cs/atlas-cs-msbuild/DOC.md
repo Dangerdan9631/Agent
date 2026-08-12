@@ -2,16 +2,15 @@
 
 ## Purpose
 
-This package exposes workspace-wide Atlas generation, validation, diagram, and
-view targets for one designated orchestration project.
+This package generates one Atlas model for the current evaluated C# project
+target without searching for solutions or invoking project-level Atlas behavior.
 
 ## Conventions
 
 - Keep the package free of application logic; it delegates to installed tools.
-- Do not attach Atlas to ordinary builds unless `AtlasGenerateOnBuild` is true.
+- Attach only the current target when `AtlasGenerateOnBuild` is true.
 - Quote all user-provided paths passed across process boundaries.
 
 ## Contents
 
 - `build/StarCruiseStudios.Atlas.Cs.MSBuild.targets` defines the public targets and properties.
-

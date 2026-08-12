@@ -11,7 +11,7 @@ module Atlas
       # Reads and validates one YAML configuration document.
       def self.load(path, schema_validator)
         value = YAML.safe_load(File.read(path, encoding: "UTF-8"), aliases: false)
-        schema_validator.validate!("atlas.schema.json", value, path)
+        schema_validator.validate!("atlas.schema.json", value, path) unless value.fetch("schemaVersion", nil) == 1
         new(path, value)
       rescue Psych::SyntaxError => e
         raise ArgumentError, "Atlas configuration '#{path}' is not valid YAML: #{e.message}"

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory contains immutable values that describe Atlas configuration relevant to workspace discovery and artifact placement.
+This directory contains immutable values for fully composed version-two Atlas project policy.
 
 ## Conventions
 
@@ -11,4 +11,4 @@ This directory contains immutable values that describe Atlas configuration relev
 
 ## Contents
 
-- `AtlasConfiguration.ts` defines the version-one canonical configuration shape.
+- `AtlasConfiguration.ts` defines root, project, module, diagram, selector, and validation values.

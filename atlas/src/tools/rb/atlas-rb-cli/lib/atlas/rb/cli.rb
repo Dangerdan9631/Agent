@@ -18,8 +18,8 @@ module Atlas
         return write_usage(2, "atlas-rb requires the 'generate' command.") unless command == "generate"
 
         options = parse_options(arguments)
-        manifest = @workflow_factory.call(options.fetch(:verbose)).execute(to_request(options))
-        @output_writer.write_line("Generated Atlas workspace manifest at #{manifest}.")
+        output = @workflow_factory.call(options.fetch(:verbose)).execute(to_request(options))
+        @output_writer.write_line("Generated Atlas Ruby output at #{output}.")
         0
       rescue OptionParser::ParseError, ArgumentError => e
         @output_writer.write_error(e.message)
@@ -36,8 +36,10 @@ module Atlas
         parser = OptionParser.new do |value|
           value.banner = "Usage: atlas-rb generate [options]"
           value.on("--workspace PATH", "Ruby workspace root") { |path| options[:workspace] = path }
+          value.on("--module-root PATH", "Ruby module root") { |path| options[:workspace] = path }
           value.on("--config PATH", "Atlas configuration path") { |path| options[:config] = path }
           value.on("--output PATH", "Artifact output root") { |path| options[:output] = path }
+          add_module_options(value, options)
           value.on("--module-id ID", "Gemless root module ID") { |id| options[:identity][:module_id] = id }
           value.on("--display-name NAME", "Gemless root display name") do |name|
             options[:identity][:display_name] = name
@@ -63,12 +65,27 @@ module Atlas
         options
       end
 
+      def add_module_options(parser, options)
+        parser.on("--model-file PATH", "Exact module model output") { |path| options[:model_file] = path }
+        parser.on("--gemspec-file PATH", "Exact module gemspec") { |path| options[:gemspec_file] = path }
+        parser.on("--source-root PATH", "Explicit module source root") do |path|
+          (options[:source_roots] ||= []) << path
+        end
+        parser.on("--route-file PATH", "Explicit Rails route file") do |path|
+          (options[:route_files] ||= []) << path
+        end
+      end
+
       def to_request(options)
         GenerationRequest.new(
           workspace_path: options[:workspace],
           configuration_path: options[:config],
           output_path: options[:output],
-          identity_overrides: options.fetch(:identity)
+          identity_overrides: options.fetch(:identity),
+          model_file: options[:model_file],
+          gemspec_file: options[:gemspec_file],
+          source_roots: options.fetch(:source_roots, []),
+          route_files: options.fetch(:route_files, [])
         )
       end
 

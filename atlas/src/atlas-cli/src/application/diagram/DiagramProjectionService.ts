@@ -1,5 +1,7 @@
 import type {
-  AtlasDiagramConfiguration,
+  AtlasDiagramConfiguration as AtlasVersionTwoDiagramConfiguration,
+  AtlasDiagramFilters,
+  AtlasLegacyDiagramConfiguration as AtlasDiagramConfiguration,
   AtlasExternalDependencyImporterSplit,
   AtlasFolderDiagramConfiguration,
   AtlasModuleGroupConfiguration,
@@ -27,22 +29,80 @@ export class DiagramProjectionService {
    * @returns Scope graphs sorted with landscape first, then packages and folders by stable scope.
    */
   public project(workspace: WorkspaceSnapshot, graph: DeclarationGraph): readonly DiagramGraph[] {
-    const policy = new DiagramProjectionPolicy(workspace.configuration.diagrams, undefined);
+    if (workspace.configuration.documentType === 'root') {
+      return this.projectVersionTwo(workspace, graph);
+    }
+    const diagramConfiguration = this.toCompatibilityDiagramConfiguration(workspace);
+    const policy = new DiagramProjectionPolicy(diagramConfiguration, undefined);
     const shapedGraph = this.applyPolicy(graph, policy, true);
-    const landscape = this.createLandscape(shapedGraph);
+    const isVersionTwo = workspace.configuration.documentType === 'root';
+    const projectDiagram = workspace.configuration.project?.diagrams?.[0];
+    const landscapes =
+      isVersionTwo && projectDiagram === undefined
+        ? []
+        : [this.createLandscape(shapedGraph, projectDiagram?.title ?? 'Workspace Landscape')];
     const packageDiagrams = this.toModuleScopeIds(workspace, shapedGraph).map((moduleId) =>
       this.createPackageDiagram(moduleId, shapedGraph)
     );
-    const groupDiagrams = (workspace.configuration.diagrams?.moduleGroups ?? [])
+    const groupDiagrams = (diagramConfiguration.moduleGroups ?? [])
       .slice()
       .sort((left, right) => left.id.localeCompare(right.id))
       .map((group) => this.createModuleGroupDiagram(group, shapedGraph));
-    const folderDiagrams = (workspace.configuration.diagrams?.folders ?? [])
+    const folderDiagrams = (diagramConfiguration.folders ?? [])
       .slice()
       .sort((left, right) => this.toFolderScope(left).localeCompare(this.toFolderScope(right)))
       .map((folder) => this.createFolderDiagram(workspace, graph, folder));
 
-    return [landscape, ...packageDiagrams, ...groupDiagrams, ...folderDiagrams];
+    return [...landscapes, ...packageDiagrams, ...groupDiagrams, ...folderDiagrams];
+  }
+
+  /** Creates exactly the project and module diagrams declared by the composed version-two policy. */
+  private projectVersionTwo(
+    workspace: WorkspaceSnapshot,
+    graph: DeclarationGraph
+  ): readonly DiagramGraph[] {
+    const projectDiagrams = (workspace.configuration.project.diagrams ?? []).map(
+      (diagram, index) => {
+        const policy = new DiagramProjectionPolicy(
+          this.toVersionTwoDiagramPolicy(workspace, diagram),
+          undefined,
+          diagram.filters
+        );
+        return this.createLandscape(
+          this.applyPolicy(graph, policy, true),
+          diagram.title,
+          index === 0 ? 'landscape' : `project:${diagram.id}`
+        );
+      }
+    );
+    const moduleDiagrams = [...workspace.moduleConfigurationsById].flatMap(([moduleId, module]) =>
+      (module.diagrams ?? []).map((diagram) => {
+        const scope = `module:${encodeURIComponent(moduleId)}:${diagram.id}` as const;
+        const policy = new DiagramProjectionPolicy(
+          this.toVersionTwoDiagramPolicy(workspace, diagram),
+          undefined,
+          diagram.filters
+        );
+        const shapedGraph = this.applyPolicy(graph, policy, false);
+        if (diagram.scope.type === 'module') {
+          return this.createPackageDiagram(moduleId, shapedGraph, scope, diagram.title);
+        }
+        const workspacePackage = workspace.packages.find(
+          (candidate) => candidate.name === moduleId
+        );
+        if (workspacePackage === undefined) {
+          throw new Error(`Atlas module diagram references unknown module '${moduleId}'.`);
+        }
+        return this.createFolderDiagram(
+          workspace,
+          shapedGraph,
+          { packageName: moduleId, path: diagram.scope.path, title: diagram.title },
+          scope,
+          true
+        );
+      })
+    );
+    return [...projectDiagrams, ...moduleDiagrams];
   }
 
   /**
@@ -79,7 +139,11 @@ export class DiagramProjectionService {
    * @param graph - Policy-shaped declaration graph.
    * @returns Workspace-wide landscape diagram graph.
    */
-  private createLandscape(graph: DeclarationGraph): DiagramGraph {
+  private createLandscape(
+    graph: DeclarationGraph,
+    title: string,
+    scope: DiagramGraph['scope'] = 'landscape'
+  ): DiagramGraph {
     const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
     const relationships = graph.relationships.filter((relationship) => {
       const source = nodesById.get(relationship.sourceId);
@@ -92,8 +156,8 @@ export class DiagramProjectionService {
       relationships.flatMap((relationship) => [relationship.sourceId, relationship.targetId])
     );
     return this.toGraph(
-      'landscape',
-      'Workspace Landscape',
+      scope,
+      title,
       graph.nodes.filter((node) => nodeIds.has(node.id)),
       relationships
     );
@@ -106,7 +170,12 @@ export class DiagramProjectionService {
    * @param graph - Policy-shaped complete declaration graph.
    * @returns Focused package diagram graph.
    */
-  private createPackageDiagram(packageName: string, graph: DeclarationGraph): DiagramGraph {
+  private createPackageDiagram(
+    packageName: string,
+    graph: DeclarationGraph,
+    scope: DiagramGraph['scope'] = `package:${packageName}`,
+    title = `Package: ${packageName}`
+  ): DiagramGraph {
     const includedNodeIds = new Set(
       graph.nodes.filter((node) => node.packageName === packageName).map((node) => node.id)
     );
@@ -119,8 +188,8 @@ export class DiagramProjectionService {
       }
     }
     return this.toGraph(
-      `package:${packageName}`,
-      `Package: ${packageName}`,
+      scope,
+      title,
       graph.nodes.filter((node) => includedNodeIds.has(node.id)),
       graph.relationships.filter(
         (relationship) =>
@@ -177,7 +246,9 @@ export class DiagramProjectionService {
   private createFolderDiagram(
     workspace: WorkspaceSnapshot,
     graph: DeclarationGraph,
-    folder: AtlasFolderDiagramConfiguration
+    folder: AtlasFolderDiagramConfiguration,
+    scope: DiagramGraph['scope'] = this.toFolderScope(folder),
+    graphIsShaped = false
   ): DiagramGraph {
     const workspacePackage = workspace.packages.find(
       (candidate) => candidate.name === folder.packageName
@@ -185,8 +256,11 @@ export class DiagramProjectionService {
     if (workspacePackage === undefined) {
       throw new Error(`Atlas folder diagram references unknown package '${folder.packageName}'.`);
     }
-    const policy = new DiagramProjectionPolicy(workspace.configuration.diagrams, folder);
-    const shapedGraph = this.applyPolicy(graph, policy, false);
+    const policy = new DiagramProjectionPolicy(
+      this.toCompatibilityDiagramConfiguration(workspace),
+      folder
+    );
+    const shapedGraph = graphIsShaped ? graph : this.applyPolicy(graph, policy, false);
     const folderPrefix = this.toWorkspaceFolderPrefix(workspacePackage, folder.path);
     const localNodeIds = new Set(
       shapedGraph.nodes
@@ -235,7 +309,7 @@ export class DiagramProjectionService {
       );
     }
     return this.toGraph(
-      this.toFolderScope(folder),
+      scope,
       folder.title ?? `Folder: ${folder.packageName}/${this.normalizeFolderPath(folder.path)}`,
       [...nodesById.values()],
       relationships
@@ -303,7 +377,9 @@ export class DiagramProjectionService {
     );
     const includedRelationships = graph.relationships.filter(
       (relationship) =>
-        visibleNodeIds.has(relationship.sourceId) && visibleNodeIds.has(relationship.targetId)
+        visibleNodeIds.has(relationship.sourceId) &&
+        visibleNodeIds.has(relationship.targetId) &&
+        policy.includesRelationship(relationship)
     );
     const nodesById = new Map(
       graph.nodes.filter((node) => visibleNodeIds.has(node.id)).map((node) => [node.id, node])
@@ -461,6 +537,89 @@ export class DiagramProjectionService {
     return folderPath.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/+$/, '');
   }
 
+  /** Translates version-two diagram defaults and explicit path scopes for the current renderer. */
+  private toCompatibilityDiagramConfiguration(
+    workspace: WorkspaceSnapshot
+  ): AtlasDiagramConfiguration {
+    const legacy = (
+      workspace.configuration as unknown as {
+        readonly diagrams?: AtlasDiagramConfiguration;
+      }
+    ).diagrams;
+    if (workspace.configuration.project === undefined) return legacy ?? {};
+    const defaults = workspace.configuration.project.diagramDefaults?.externalDependencies;
+    const projectDiagram = workspace.configuration.project.diagrams?.[0];
+    const collapse = projectDiagram?.externalDependencies?.collapse ?? defaults?.collapse;
+    const excludedIds = [
+      ...(projectDiagram?.inheritDefaults === false ? [] : (defaults?.excludeIds ?? [])),
+      ...(projectDiagram?.externalDependencies?.excludeIds ?? [])
+    ];
+    const groups = (projectDiagram?.groups ?? []).map((group) => ({
+      id: group.id,
+      title: group.title,
+      moduleIdPatterns: [
+        ...(group.selector.moduleIds ?? []),
+        ...workspace.packages
+          .filter((workspacePackage) =>
+            (group.selector.moduleTags ?? []).some((tag) => workspacePackage.classes.includes(tag))
+          )
+          .map((workspacePackage) => workspacePackage.name)
+      ]
+    }));
+    const folders = [...workspace.moduleConfigurationsById].flatMap(([moduleId, module]) =>
+      (module.diagrams ?? []).flatMap((diagram) => {
+        if (diagram.scope.type !== 'path') return [];
+        return [{ packageName: moduleId, path: diagram.scope.path, title: diagram.title }];
+      })
+    );
+    return {
+      ...(excludedIds.length === 0 ? {} : { excludeExternalDependencies: excludedIds }),
+      ...(collapse === undefined
+        ? {}
+        : {
+            collapseExternalDependencies: collapse.mode === 'all',
+            ...(collapse.mode === 'matching'
+              ? { collapseExternalDependencyGlobs: collapse.ids ?? [] }
+              : {})
+          }),
+      ...(projectDiagram?.externalDependencies?.splitByModule === undefined
+        ? {}
+        : {
+            splitExternalDependenciesByImporter: projectDiagram.externalDependencies.splitByModule
+          }),
+      ...(groups.length === 0 ? {} : { moduleGroups: groups }),
+      ...(folders.length === 0 ? {} : { folders })
+    };
+  }
+
+  /** Resolves inherited and diagram-local external behavior into the renderer compatibility policy. */
+  private toVersionTwoDiagramPolicy(
+    workspace: WorkspaceSnapshot,
+    diagram: AtlasVersionTwoDiagramConfiguration
+  ): AtlasDiagramConfiguration {
+    const defaults = workspace.configuration.project.diagramDefaults?.externalDependencies;
+    const inherited = diagram.inheritDefaults === false ? undefined : defaults;
+    const local = diagram.externalDependencies;
+    const exclusions = [
+      ...new Set([...(inherited?.excludeIds ?? []), ...(local?.excludeIds ?? [])])
+    ];
+    const collapseMode = local?.collapse?.mode ?? inherited?.collapse?.mode ?? 'all';
+    const collapsePatterns = [
+      ...new Set([...(inherited?.collapse?.ids ?? []), ...(local?.collapse?.ids ?? [])])
+    ];
+    return {
+      ...(diagram.filters?.excludeSourcePaths === undefined
+        ? {}
+        : { excludeSourceGlobs: diagram.filters.excludeSourcePaths }),
+      ...(exclusions.length === 0 ? {} : { excludeExternalDependencies: exclusions }),
+      collapseExternalDependencies: collapseMode === 'all',
+      ...(collapseMode === 'matching' ? { collapseExternalDependencyGlobs: collapsePatterns } : {}),
+      ...(local?.splitByModule === undefined
+        ? {}
+        : { splitExternalDependenciesByImporter: local.splitByModule })
+    };
+  }
+
   /**
    * Creates the stable public scope identity for one configured folder diagram.
    *
@@ -484,7 +643,8 @@ class DiagramProjectionPolicy {
    */
   public constructor(
     globalConfiguration: AtlasDiagramConfiguration | undefined,
-    folderConfiguration: AtlasFolderDiagramConfiguration | undefined
+    folderConfiguration: AtlasFolderDiagramConfiguration | undefined,
+    private readonly filters: AtlasDiagramFilters | undefined = undefined
   ) {
     this.excludeSourceGlobs = [
       ...(globalConfiguration?.excludeSourceGlobs ?? []),
@@ -575,6 +735,15 @@ class DiagramProjectionPolicy {
     );
   }
 
+  /** Determines whether one exact semantic relationship kind passes diagram-local filters. */
+  public includesRelationship(relationship: DeclarationRelationship): boolean {
+    const relationshipKinds = this.filters?.relationshipKinds;
+    return (
+      relationshipKinds === undefined ||
+      relationshipKinds.some((kind) => kind === relationship.semanticKind)
+    );
+  }
+
   /**
    * Determines whether one semantic graph node remains visible after effective exclusions.
    *
@@ -586,6 +755,24 @@ class DiagramProjectionPolicy {
       return !this.excludeExternalDependencies.some((pattern) => this.matches(node.label, pattern));
     }
     if (node.sourcePath === undefined) {
+      return false;
+    }
+    const elementKinds = this.filters?.elementKinds;
+    if (elementKinds !== undefined && !elementKinds.some((kind) => kind === node.semanticKind)) {
+      return false;
+    }
+    const visibilities = this.filters?.visibilities;
+    if (
+      visibilities !== undefined &&
+      (node.visibility === undefined ||
+        !visibilities.some((visibility) => visibility === node.visibility))
+    ) {
+      return false;
+    }
+    if (
+      this.filters?.traits !== undefined &&
+      !this.filters.traits.some((trait) => node.traits.includes(trait))
+    ) {
       return false;
     }
     const sourcePath = node.sourcePath;

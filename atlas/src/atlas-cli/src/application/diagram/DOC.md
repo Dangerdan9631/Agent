@@ -7,7 +7,7 @@ This directory projects semantic declaration graphs into deterministic diagram s
 ## Conventions
 
 - Projection is graph-only; filesystem and HTML details remain infrastructure concerns.
-- Module and package diagrams include local declarations and only directly connected external declarations.
+- Project, whole-module, and module-path diagrams exist only when explicitly declared in version-two policy.
 - Presentation groups select module IDs without changing canonical artifact identities.
 
 ## Contents

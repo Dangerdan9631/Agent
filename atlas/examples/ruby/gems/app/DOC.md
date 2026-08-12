@@ -12,5 +12,6 @@ the library gem.
 
 ## Contents
 
+- `Rakefile` explicitly configures this gem's model input and output.
 - `ReadingListCommand` coordinates library use and terminal rendering.
 - `Program` composes the command and translates process arguments.

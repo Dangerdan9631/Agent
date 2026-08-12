@@ -196,13 +196,6 @@ public sealed class CSharpModuleExtractor
             var element = this.AddElement(kind, qualifiedName, symbol.Name, qualifiedName, null, parentId, source, this.TypeTraits(symbol, node));
             this.ownerIds[node] = element.Id;
             this.RegisterPrimaryConstructorMembers(node, semanticModel, symbol, source);
-            if (symbol.ContainingType is null && symbol.ContainingNamespace is { IsGlobalNamespace: false } containingNamespace)
-            {
-                var namespaceName = this.QualifiedName(containingNamespace);
-                var namespaceId = this.identity.ElementId("namespace", namespaceName);
-                this.relationships.Add(new PendingRelationship(namespaceId, "contains", qualifiedName, null, qualifiedName));
-            }
-
             if (symbol.BaseType is not null && symbol.BaseType.SpecialType != SpecialType.System_Object
                 && kind is not "interface" and not "annotation")
             {

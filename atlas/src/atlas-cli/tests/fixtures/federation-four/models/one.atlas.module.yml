@@ -1,0 +1,26 @@
+schemaVersion: 2
+generator: { name: atlas-ts, version: test }
+source: { language: typescript }
+module:
+  id: '@atlas-fixture/federation-one'
+  name: '@atlas-fixture/federation-one'
+  version: 1.0.0
+  category: npm-package
+elements:
+  - id: one
+    kind: class
+    name: One
+    qualifiedName: One
+    visibility: public
+    source:
+      path: src/one.ts
+      start: { line: 6, column: 1 }
+      end: { line: 17, column: 2 }
+relationships:
+  - id: one-references-two
+    sourceElementId: one
+    kind: references
+    target:
+      type: element
+      moduleId: '@atlas-fixture/federation-two'
+      elementId: two

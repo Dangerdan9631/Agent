@@ -11,4 +11,4 @@ This directory defines boundaries for loading canonical federated workspaces.
 
 ## Contents
 
-- `AtlasWorkspaceLoader.ts` loads a manifest and resolves selected model identities.
+- `AtlasWorkspaceLoader.ts` loads configured models in declaration order and resolves selected identities.

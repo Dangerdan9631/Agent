@@ -28,6 +28,9 @@ export class DeclarationNode {
    * @param sourcePath - Workspace-relative declaration source path, when the node is local.
    * @param moduleNode - Indicates whether the node aggregates top-level functions and values for a file.
    * @param sourceLanguage - Optional presentation-only source ecosystem metadata for viewer strategies.
+   * @param semanticKind - Exact normalized element kind before renderer compatibility mapping.
+   * @param visibility - Normalized source visibility used by diagram filters.
+   * @param traits - Sorted source and normalized traits used by diagram filters.
    */
   public constructor(
     public readonly id: string,
@@ -36,7 +39,10 @@ export class DeclarationNode {
     public readonly packageName: string | undefined,
     public readonly sourcePath: string | undefined,
     public readonly moduleNode: boolean,
-    public readonly sourceLanguage: string | undefined = undefined
+    public readonly sourceLanguage: string | undefined = undefined,
+    public readonly semanticKind: string = kind,
+    public readonly visibility: string | undefined = undefined,
+    public readonly traits: readonly string[] = []
   ) {}
 }
 
@@ -65,12 +71,14 @@ export class DeclarationRelationship {
    * @param sourceId - Stable identifier of the referring declaration node.
    * @param targetId - Stable identifier of the referenced declaration or external node.
    * @param type - Semantic relationship category.
+   * @param semanticKind - Exact normalized relationship kind before renderer compatibility mapping.
    */
   public constructor(
     public readonly id: string,
     public readonly sourceId: string,
     public readonly targetId: string,
-    public readonly type: DeclarationRelationshipType
+    public readonly type: DeclarationRelationshipType,
+    public readonly semanticKind: string = type
   ) {}
 }
 

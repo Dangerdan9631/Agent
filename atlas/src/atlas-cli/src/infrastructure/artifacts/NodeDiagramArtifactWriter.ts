@@ -13,6 +13,7 @@ import {
   LayoutSettings
 } from '#application/layout/model/LayoutDocument.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
+import type { AtlasLayoutConfiguration } from '#application/configuration/model/AtlasConfiguration.js';
 import { LegacyAutoLayoutScript } from '#infrastructure/artifacts/LegacyAutoLayoutScript.js';
 import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -171,7 +172,7 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
     const layout = this.layoutService.layout(
       diagram,
       savedLayout,
-      this.createLayoutSettings(workspace)
+      this.createLayoutSettings(workspace, diagram.scope)
     );
 
     await this.writeAtomically(
@@ -486,8 +487,11 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
    * @param workspace - Loaded workspace carrying optional Atlas layout policy.
    * @returns Fully specified deterministic layout settings.
    */
-  private createLayoutSettings(workspace: WorkspaceSnapshot): LayoutSettings {
-    const configuredLayout = workspace.configuration.layout;
+  private createLayoutSettings(
+    workspace: WorkspaceSnapshot,
+    scope: DiagramGraph['scope']
+  ): LayoutSettings {
+    const configuredLayout = this.toConfiguredLayout(workspace, scope);
     return new LayoutSettings(
       configuredLayout?.orientation ?? 'horizontal',
       configuredLayout?.rows ?? 6,
@@ -495,6 +499,32 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
       configuredLayout?.verticalGap ?? 60,
       false
     );
+  }
+
+  /** Selects the diagram-local layout corresponding to one generated scope. */
+  private toConfiguredLayout(
+    workspace: WorkspaceSnapshot,
+    scope: DiagramGraph['scope']
+  ): AtlasLayoutConfiguration | undefined {
+    const legacyLayout = (
+      workspace.configuration as unknown as {
+        readonly layout?: AtlasLayoutConfiguration;
+      }
+    ).layout;
+    if (workspace.configuration.documentType !== 'root') return legacyLayout;
+    if (scope === 'landscape') return workspace.configuration.project.diagrams?.[0]?.layout;
+    if (scope.startsWith('project:')) {
+      return workspace.configuration.project.diagrams?.find(
+        (diagram) => diagram.id === scope.slice('project:'.length)
+      )?.layout;
+    }
+    for (const [moduleId, module] of workspace.moduleConfigurationsById) {
+      const diagram = (module.diagrams ?? []).find(
+        (candidate) => `module:${encodeURIComponent(moduleId)}:${candidate.id}` === scope
+      );
+      if (diagram !== undefined) return diagram.layout;
+    }
+    return undefined;
   }
 
   /**
@@ -897,8 +927,10 @@ function hideEmptyGroups() { cy.nodes(':parent').sort((left, right) => right.anc
 const autoLayout = new DiagramAutoLayout(cy);
 function runAutoLayout() { autoLayout.configure(Number(document.getElementById('atlas-rows').value) || 5, Number(document.getElementById('atlas-horizontal-gap').value) || 120, Number(document.getElementById('atlas-vertical-gap').value) || 120, verticalLayoutEnabled); const selected = cy.$(':selected').filter(':node'); if (selected.empty()) { autoLayout.layout(); } else { autoLayout.layoutGroup(selected); } cy.resize(); cy.fit(undefined, 36); }
 function setStatus(text) { status.textContent = text; }
-function focus(selected) { cy.elements().removeClass('faded inbound outbound'); const selectedEdge = cy.$(':selected').filter(':edge'); const hasNodeSelection = selected && !selected.empty(); const proxySelected = hasNodeSelection && isCollapsedProxy(selected); hideSelected.disabled = !hasNodeSelection && selectedEdge.empty(); collapseGroup.disabled = !hasNodeSelection || (!proxySelected && selected.children().empty()); collapseGroup.textContent = proxySelected ? 'Expand' : 'Collapse'; splitExternals.disabled = !hasNodeSelection || proxySelected || selected.data('kind') !== 'external' || graph.scope !== 'landscape'; createFolderDiagram.disabled = !hasNodeSelection || proxySelected || typeof selected.data('packageName') !== 'string' || typeof selected.data('packageSourcePath') !== 'string'; if (!hasNodeSelection) { setStatus(selectedEdge.empty() ? 'Select a node to inspect direct dependencies.' : 'Select Hide to conceal this connection.'); return; } const inbound = selected.incomers('edge'); const outbound = selected.outgoers('edge'); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : inbound.union(outbound); const selectedContents = selected.union(selected.descendants()); cy.elements().difference(selectedContents.union(shown).union(shown.connectedNodes())).addClass('faded'); if (relationshipFilter === 'none') { cy.edges().addClass('hidden-by-filter'); } else { inbound.addClass('inbound'); outbound.addClass('outbound'); } setStatus(selected.data('label') + ': ' + outbound.length + ' outbound, ' + inbound.length + ' inbound direct relationship(s).'); }
-function selectedNodesToKeepVisible() { const selected = cy.$(':selected').filter(':node'); if (selected.empty()) { return cy.collection(); } const inbound = selected.incomers('edge'); const outbound = selected.outgoers('edge'); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : inbound.union(outbound); const relatedNodes = shown.connectedNodes(); return selected.union(selected.descendants()).union(relatedNodes).union(selected.ancestors()).union(relatedNodes.ancestors()); }
+function selectedContents(selected) { return selected.union(selected.descendants()); }
+function selectedLeafNodes(selected) { return selectedContents(selected).filter(':childless'); }
+function focus(selected) { cy.elements().removeClass('faded inbound outbound'); const selectedEdge = cy.$(':selected').filter(':edge'); const hasNodeSelection = selected && !selected.empty(); const proxySelected = hasNodeSelection && isCollapsedProxy(selected); hideSelected.disabled = !hasNodeSelection && selectedEdge.empty(); collapseGroup.disabled = !hasNodeSelection || (!proxySelected && selected.children().empty()); collapseGroup.textContent = proxySelected ? 'Expand' : 'Collapse'; splitExternals.disabled = !hasNodeSelection || proxySelected || selected.data('kind') !== 'external' || graph.scope !== 'landscape'; createFolderDiagram.disabled = !hasNodeSelection || proxySelected || typeof selected.data('packageName') !== 'string' || typeof selected.data('packageSourcePath') !== 'string'; if (!hasNodeSelection) { setStatus(selectedEdge.empty() ? 'Select a node to inspect direct dependencies.' : 'Select Hide to conceal this connection.'); return; } const contents = selectedContents(selected); const selectedNodes = selectedLeafNodes(selected); const inbound = selectedNodes.incomers('edge'); const outbound = selectedNodes.outgoers('edge'); const directRelationships = inbound.union(outbound); const shown = relationshipFilter === 'none' ? cy.collection() : relationshipFilter === 'inbound' ? inbound : relationshipFilter === 'outbound' ? outbound : directRelationships; const directNodes = directRelationships.connectedNodes(); cy.elements().difference(contents.union(selected.ancestors()).union(directRelationships).union(directNodes).union(directNodes.ancestors())).addClass('faded'); if (relationshipFilter === 'none') { cy.edges().addClass('hidden-by-filter'); } else { inbound.addClass('inbound'); outbound.addClass('outbound'); } setStatus(selected.data('label') + ': ' + outbound.length + ' outbound, ' + inbound.length + ' inbound direct relationship(s).'); }
+function selectedNodesToKeepVisible() { const selected = cy.$(':selected').filter(':node'); if (selected.empty()) { return cy.collection(); } const contents = selectedContents(selected); const selectedNodes = selectedLeafNodes(selected); const directRelationships = selectedNodes.incomers('edge').union(selectedNodes.outgoers('edge')); const directNodes = directRelationships.connectedNodes(); return contents.union(directNodes).union(selected.ancestors()).union(directNodes.ancestors()); }
 function updateFilters() { const query = search.value.trim().toLocaleLowerCase(); synchronizeCollapsedGroups(); cy.elements().removeClass('hidden-by-filter search-match'); hideCollapsedGroups(); cy.nodes('[kind = "external"]').toggleClass('hidden-by-filter', !externalNodesVisible); if (query) { const matches = cy.nodes().filter((node) => String(node.data('label')).toLocaleLowerCase().includes(query)); matches.addClass('search-match'); cy.nodes().difference(matches).addClass('hidden-by-filter'); } if (relationshipFilter === 'none') { cy.edges().not('.collapsed-proxy').addClass('hidden-by-filter'); } updateHiddenConnections(); hideEmptyGroups(); selectedNodesToKeepVisible().removeClass('hidden-by-filter'); focus(cy.$(':selected').filter(':node')); }
 function updateTheme() { const dark = darkMode.classList.contains('active'); const foreground = dark ? '#e5e7eb' : '#111827'; document.body.classList.toggle('dark-mode', dark); cy.style().selector('node').style('color', foreground).selector(':parent').style('background-color', dark ? '#111827' : '#f8fafc').style('color', foreground).selector('node.collapsed-proxy').style('color', foreground).update(); localStorage.setItem('atlas-dark-mode', String(dark)); }
 function renderExclusionSection(title, values, removeType, addType) { const section = document.createElement('section'); section.className = 'exclusion-section'; const label = document.createElement('div'); label.className = 'exclusion-label'; label.textContent = title; section.append(label); values.forEach((value) => { const rule = document.createElement('label'); rule.className = 'exclusion-rule'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = true; checkbox.addEventListener('change', () => { if (!checkbox.checked) { void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: removeType, value }) }).then(() => window.location.reload()); } }); const text = document.createElement('span'); text.textContent = value; rule.append(checkbox, text); section.append(rule); }); const add = document.createElement('div'); add.className = 'exclusion-add'; const input = document.createElement('input'); input.placeholder = 'Node name or glob'; const button = document.createElement('button'); button.className = 'toolbar-button'; button.type = 'button'; button.textContent = '+'; const submit = () => { const value = input.value.trim(); if (value) { void fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: addType, value }) }).then(() => window.location.reload()); } }; button.addEventListener('click', submit); input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); submit(); } }); add.append(input, button); section.append(add); return section; }
@@ -1451,6 +1483,12 @@ void loadLayout();
     }
     if (scope.startsWith('package:')) {
       return `packages/${encodeURIComponent(scope.slice('package:'.length))}`;
+    }
+    if (scope.startsWith('project:')) {
+      return `projects/${encodeURIComponent(scope.slice('project:'.length))}`;
+    }
+    if (scope.startsWith('module:')) {
+      return `modules/${encodeURIComponent(scope.slice('module:'.length))}`;
     }
     if (scope.startsWith('group:')) {
       return `groups/${encodeURIComponent(scope.slice('group:'.length))}`;

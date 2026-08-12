@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory defines the `atlas:*` tasks exposed to Ruby workspaces.
+This directory defines the module-local `atlas:generate_model` task and its explicit Rake configuration.
 
 ## Conventions
 
@@ -12,4 +12,5 @@ This directory defines the `atlas:*` tasks exposed to Ruby workspaces.
 
 ## Contents
 
-- `rake.rb` installs generation, validation, and viewing tasks.
+- `rake.rb` exposes `Atlas::Rake.configure` and installs model generation without invoking project-level Atlas behavior.
+- `rake_configuration.rb` validates the exact gemspec, source roots, route files, output, and build hook settings.

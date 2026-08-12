@@ -294,6 +294,13 @@ describe('NodeDiagramArtifactWriter', () => {
     expect(matrix).toContain(
       'class="navigation-link current" href="/landscape/matrix.html">Matrix</a>'
     );
+    expect(landscapeViewer).toContain(
+      "function selectedLeafNodes(selected) { return selectedContents(selected).filter(':childless'); }"
+    );
+    expect(landscapeViewer).toContain('const directRelationships = inbound.union(outbound);');
+    expect(landscapeViewer).toContain(
+      'contents.union(selected.ancestors()).union(directRelationships).union(directNodes).union(directNodes.ancestors())'
+    );
   });
 
   /**

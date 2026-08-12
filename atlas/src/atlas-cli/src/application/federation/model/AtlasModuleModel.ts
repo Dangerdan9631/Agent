@@ -52,6 +52,8 @@ export interface AtlasElement {
   readonly sourcePath?: string;
   /** Shared semantic traits such as static or singleton. */
   readonly traits?: readonly string[];
+  /** Normalized source visibility retained for selectors and diagram filters. */
+  readonly visibility?: string;
 }
 
 /**
@@ -69,11 +71,17 @@ export type AtlasDeclarationKind =
   | 'delegate'
   | 'type-alias'
   | 'function'
+  | 'local-function'
   | 'constructor'
   | 'method'
   | 'property'
   | 'field'
-  | 'constant';
+  | 'constant'
+  | 'event'
+  | 'enum-member'
+  | 'parameter'
+  | 'local-variable'
+  | 'type-parameter';
 
 /**
  * Represents a relationship from an owned element to an owned or external target.
@@ -93,7 +101,18 @@ export interface AtlasRelationship {
  * Identifies shared semantic relationship categories.
  */
 export type AtlasRelationshipKind =
-  'imports' | 'references' | 'inherits' | 'implements' | 'calls' | 'contains';
+  | 'imports'
+  | 'exports'
+  | 'references'
+  | 'inherits'
+  | 'implements'
+  | 'calls'
+  | 'instantiates'
+  | 'reads'
+  | 'writes'
+  | 'overrides'
+  | 'decorates'
+  | 'contains';
 
 /**
  * Identifies an owned target or an artifact dependency outside the current model.

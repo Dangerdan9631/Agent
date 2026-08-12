@@ -8,7 +8,7 @@ namespace StarCruiseStudios.Atlas.Cs.Presentation;
 /// </summary>
 public sealed class AtlasCsCli
 {
-    private const string Usage = "Usage: atlas-cs generate [--workspace PATH] [--config PATH] [--output PATH] [--solution PATH] [--verbose]";
+    private const string Usage = "Usage: atlas-cs generate [--project PATH --target-framework TFM --model-file PATH] [--verbose]";
     private readonly Func<bool, StarCruiseStudios.Atlas.Cs.Application.GenerateCSharpModels> workflowFactory;
     private readonly IRuntimeOutputWriter outputWriter;
 
@@ -46,8 +46,8 @@ public sealed class AtlasCsCli
         try
         {
             var request = this.Parse(arguments.Skip(1).ToArray());
-            var manifest = await this.workflowFactory(request.Verbose).ExecuteAsync(request).ConfigureAwait(false);
-            this.outputWriter.WriteLine($"Generated Atlas workspace manifest at {manifest}.");
+            var output = await this.workflowFactory(request.Verbose).ExecuteAsync(request).ConfigureAwait(false);
+            this.outputWriter.WriteLine($"Generated Atlas C# output at {output}.");
             return 0;
         }
         catch (ArgumentException error)
@@ -69,6 +69,9 @@ public sealed class AtlasCsCli
         string? configuration = null;
         string? output = null;
         string? solution = null;
+        string? project = null;
+        string? targetFramework = null;
+        string? modelFile = null;
         var verbose = false;
         for (var index = 0; index < arguments.Count; index++)
         {
@@ -84,7 +87,7 @@ public sealed class AtlasCsCli
                 throw new ArgumentException(Usage);
             }
 
-            if (option is not ("--workspace" or "--config" or "--output" or "--solution"))
+            if (option is not ("--workspace" or "--config" or "--output" or "--solution" or "--project" or "--target-framework" or "--model-file"))
             {
                 throw new ArgumentException($"Unknown atlas-cs option '{option}'.");
             }
@@ -101,10 +104,17 @@ public sealed class AtlasCsCli
                 case "--config": configuration = value; break;
                 case "--output": output = value; break;
                 case "--solution": solution = value; break;
+                case "--project": project = value; break;
+                case "--target-framework": targetFramework = value; break;
+                case "--model-file": modelFile = value; break;
             }
         }
 
-        return new GenerationRequest(workspace, configuration, output, solution, verbose);
+        var directValues = new[] { project, targetFramework, modelFile };
+        if (directValues.Any(value => value is not null) && directValues.Any(value => value is null))
+        {
+            throw new ArgumentException("Module-local C# generation requires --project, --target-framework, and --model-file.");
+        }
+        return new GenerationRequest(workspace, configuration, output, solution, verbose, project, targetFramework, modelFile);
     }
 }
-

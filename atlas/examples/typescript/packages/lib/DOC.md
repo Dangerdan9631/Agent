@@ -14,4 +14,5 @@ example workspace.
 ## Contents
 
 - `package.json` defines the workspace package, dependencies, and exports.
+- `tsconfig.json` selects only this package's compiler source set for Atlas.
 - `src/` contains the reading-list types and behavior.

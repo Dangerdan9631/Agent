@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory defines the language-neutral module model, manifest, and resolved workspace contracts.
+This directory defines language-neutral module models and the resolved configured workspace contract.
 
 ## Conventions
 
@@ -12,4 +12,4 @@ This directory defines the language-neutral module model, manifest, and resolved
 ## Contents
 
 - `model/` defines portable YAML document contracts and resolved identities.
-- `ports/` defines manifest loading at the infrastructure boundary.
+- `ports/` defines explicit configured-model loading at the infrastructure boundary.

@@ -2,150 +2,129 @@ import type {
   TypeScriptModelGenerationOptions,
   TypeScriptModelGenerationWorkflow,
 } from "#application/TypeScriptModelGenerationWorkflow.js";
+import { VersionTwoTypeScriptModelDocument } from "#application/VersionTwoTypeScriptModelDocument.js";
 import { CompilerTypeScriptModelGenerationSdk } from "@starcruisestudios/atlas-ts-sdk/compiler";
-import type { TypeScriptModuleModel } from "@starcruisestudios/atlas-ts-sdk/model";
-import fastGlob from "fast-glob";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, relative, resolve } from "node:path";
-import { parse, stringify } from "yaml";
+import { dirname, resolve } from "node:path";
+import { stringify } from "yaml";
 
 /**
- * Coordinates SDK analysis with YAML configuration discovery and atomic artifact output.
+ * Coordinates package-local SDK analysis with atomic model output.
  */
 export class SdkTypeScriptModelGenerationWorkflow implements TypeScriptModelGenerationWorkflow {
   /**
    * Creates the workflow from the process-independent TypeScript SDK.
    *
    * @param sdk Generates portable models without performing filesystem output.
+   * @param modelDocument Converts SDK facts into the closed generated schema.
    */
   public constructor(
     private readonly sdk = new CompilerTypeScriptModelGenerationSdk(),
+    private readonly modelDocument = new VersionTwoTypeScriptModelDocument(),
   ) {}
 
   /**
-   * Loads workspace policy, invokes the SDK, and writes YAML model documents.
+   * Loads package-local policy, invokes the SDK, and writes one YAML model.
    *
-   * @param options Workspace, policy, and output paths supplied by the CLI.
+   * @param options Package, compiler configuration, and output paths supplied by the CLI.
    */
   public async execute(
     options: TypeScriptModelGenerationOptions,
   ): Promise<void> {
-    const workspacePath = resolve(options.workspacePath ?? process.cwd());
-    const configurationPath = resolve(
-      workspacePath,
-      options.configurationPath ?? "atlas.config.yml",
+    const packagePath = resolve(options.packagePath ?? process.cwd());
+    const packageDefinition = this.readPackageDefinition(
+      await readFile(resolve(packagePath, "package.json"), "utf8"),
     );
-    const configuration = this.readConfiguration(
-      await readFile(configurationPath, "utf8"),
+    const tsconfigPath =
+      options.tsconfigPath ?? packageDefinition.atlas.tsconfigFile;
+    const modelPath = resolve(
+      packagePath,
+      options.outputPath ?? packageDefinition.atlas.modelFile,
     );
-    const artifactRoot = resolve(
-      workspacePath,
-      options.outputPath ?? configuration.artifactRoot,
-    );
-    const packagePaths = await this.discoverPackages(
-      workspacePath,
-      configuration,
-    );
-    const result = await this.sdk.generate({ workspacePath, packagePaths });
-    const modelDirectoryPath = resolve(artifactRoot, "models");
-    await mkdir(modelDirectoryPath, { recursive: true });
-    const entries = await Promise.all(
-      result.modules.map(async (moduleModel) => {
-        const modelPath = resolve(
-          modelDirectoryPath,
-          `${this.fileName(moduleModel.module.id)}.atlas.module.yml`,
-        );
-        await this.writeYaml(modelPath, moduleModel);
-        return {
-          moduleId: moduleModel.module.id,
-          modelPath: relative(modelDirectoryPath, modelPath).replaceAll(
-            "\\",
-            "/",
-          ),
-        };
-      }),
-    );
-    await this.writeYaml(resolve(modelDirectoryPath, "atlas.manifest.yml"), {
-      schemaVersion: 1,
-      modules: entries.sort((left, right) =>
-        left.moduleId.localeCompare(right.moduleId),
-      ),
+    const result = await this.sdk.generate({
+      workspacePath: packagePath,
+      packagePaths: ["."],
+      tsconfigFile: tsconfigPath,
     });
-  }
-
-  /** Parses and validates the configuration surface required by TypeScript source discovery. */
-  private readConfiguration(source: string): TypeScriptSourceConfiguration {
-    const value = parse(source) as unknown;
-    if (typeof value !== "object" || value === null)
-      throw new Error("Atlas configuration must be a YAML mapping.");
-    const record = value as {
-      readonly discovery?: {
-        readonly packageGlobs?: unknown;
-        readonly excludePackageGlobs?: unknown;
-      };
-      readonly artifacts?: { readonly root?: unknown };
-    };
-    const packageGlobs = record.discovery?.packageGlobs;
-    if (
-      !Array.isArray(packageGlobs) ||
-      !packageGlobs.every((entry) => typeof entry === "string")
-    ) {
+    const moduleModel = result.modules[0];
+    if (moduleModel === undefined || result.modules.length !== 1) {
       throw new Error(
-        "Atlas TypeScript discovery requires string packageGlobs.",
+        "Atlas TypeScript generation must produce exactly one package model.",
       );
     }
-    const exclusions = record.discovery?.excludePackageGlobs;
-    if (
-      exclusions !== undefined &&
-      (!Array.isArray(exclusions) ||
-        !exclusions.every((entry) => typeof entry === "string"))
-    ) {
-      throw new Error("Atlas excludePackageGlobs must contain strings.");
+    await this.writeYaml(modelPath, this.modelDocument.create(moduleModel));
+  }
+
+  /** Parses the package identity and closed Atlas npm integration settings. */
+  private readPackageDefinition(source: string): TypeScriptPackageDefinition {
+    const value = JSON.parse(source) as unknown;
+    if (typeof value !== "object" || value === null) {
+      throw new Error("TypeScript package.json must contain a JSON object.");
     }
-    const artifactRoot = record.artifacts?.root;
+    const record = value as Record<string, unknown>;
+    if (typeof record.name !== "string" || record.name.trim().length === 0) {
+      throw new Error(
+        "Atlas TypeScript packages require a non-empty package name.",
+      );
+    }
+    if (
+      typeof record.version !== "string" ||
+      record.version.trim().length === 0
+    ) {
+      throw new Error(
+        "Atlas TypeScript packages require a non-empty package version.",
+      );
+    }
+    const atlas = record.atlas;
+    if (typeof atlas !== "object" || atlas === null || Array.isArray(atlas)) {
+      throw new Error("TypeScript package.json requires an atlas mapping.");
+    }
+    const integration = atlas as Record<string, unknown>;
+    const allowed = new Set(["modelFile", "tsconfigFile", "generateOnBuild"]);
+    const unknown = Object.keys(integration).find((key) => !allowed.has(key));
+    if (unknown !== undefined) {
+      throw new Error(`Unknown TypeScript Atlas setting '${unknown}'.`);
+    }
+    if (
+      typeof integration.modelFile !== "string" ||
+      !integration.modelFile.endsWith(".atlas.module.yml")
+    ) {
+      throw new Error(
+        "TypeScript atlas.modelFile must end in .atlas.module.yml.",
+      );
+    }
+    if (
+      typeof integration.tsconfigFile !== "string" ||
+      integration.tsconfigFile.trim().length === 0
+    ) {
+      throw new Error(
+        "TypeScript atlas.tsconfigFile must be a non-empty path.",
+      );
+    }
+    if (
+      integration.generateOnBuild !== undefined &&
+      typeof integration.generateOnBuild !== "boolean"
+    ) {
+      throw new Error("TypeScript atlas.generateOnBuild must be boolean.");
+    }
     return {
-      packageGlobs,
-      excludePackageGlobs: exclusions ?? [],
-      artifactRoot:
-        typeof artifactRoot === "string" && artifactRoot.length > 0
-          ? artifactRoot
-          : "architecture",
+      name: record.name,
+      version: record.version,
+      atlas: {
+        modelFile: integration.modelFile,
+        tsconfigFile: integration.tsconfigFile,
+        generateOnBuild: integration.generateOnBuild ?? true,
+      },
     };
-  }
-
-  /** Resolves configured npm package directories in deterministic relative-path order. */
-  private async discoverPackages(
-    workspacePath: string,
-    configuration: TypeScriptSourceConfiguration,
-  ): Promise<readonly string[]> {
-    const paths = await fastGlob([...configuration.packageGlobs], {
-      cwd: workspacePath,
-      onlyDirectories: true,
-      unique: true,
-      ignore: [...configuration.excludePackageGlobs],
-    });
-    if (paths.length === 0)
-      throw new Error("No TypeScript packages matched Atlas discovery policy.");
-    return paths
-      .map((value) => value.replaceAll("\\", "/"))
-      .sort((left, right) => left.localeCompare(right));
-  }
-
-  /** Converts a package identity into a deterministic filesystem-safe filename. */
-  private fileName(moduleId: string): string {
-    return moduleId.replaceAll(/[^A-Za-z0-9._-]/g, "_");
   }
 
   /** Writes one deterministic YAML document through a temporary sibling file. */
-  private async writeYaml(
-    filePath: string,
-    value: TypeScriptModuleModel | object,
-  ): Promise<void> {
+  private async writeYaml(filePath: string, value: object): Promise<void> {
     await mkdir(dirname(filePath), { recursive: true });
     const temporaryPath = `${filePath}.tmp-${process.pid}`;
     await writeFile(
       temporaryPath,
-      stringify(value, { sortMapEntries: true }),
+      stringify(value, { sortMapEntries: false }),
       "utf8",
     );
     await rename(temporaryPath, filePath);
@@ -153,13 +132,25 @@ export class SdkTypeScriptModelGenerationWorkflow implements TypeScriptModelGene
 }
 
 /**
- * Contains TypeScript source discovery and artifact-root policy loaded from YAML.
+ * Contains validated npm package identity and module-local Atlas settings.
  */
-interface TypeScriptSourceConfiguration {
-  /** Package directory glob patterns relative to the workspace. */
-  readonly packageGlobs: readonly string[];
-  /** Package directory exclusion patterns relative to the workspace. */
-  readonly excludePackageGlobs: readonly string[];
-  /** Configured artifact root relative to the workspace. */
-  readonly artifactRoot: string;
+interface TypeScriptPackageDefinition {
+  /** Required npm package name used as the module identity. */
+  readonly name: string;
+  /** Required npm package version copied into the generated model. */
+  readonly version: string;
+  /** Closed package-local Atlas integration settings. */
+  readonly atlas: TypeScriptPackageAtlasConfiguration;
+}
+
+/**
+ * Contains the package-local compiler input and model output configuration.
+ */
+interface TypeScriptPackageAtlasConfiguration {
+  /** Package-relative output ending in `.atlas.module.yml`. */
+  readonly modelFile: string;
+  /** Package-relative TypeScript compiler configuration path. */
+  readonly tsconfigFile: string;
+  /** Whether the npm lifecycle integration generates the model during builds. */
+  readonly generateOnBuild: boolean;
 }

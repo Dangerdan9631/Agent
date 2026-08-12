@@ -1,0 +1,60 @@
+schemaVersion: 2
+generator:
+  name: atlas-ts
+  version: test
+source:
+  language: typescript
+  languageVersion: 5.9.3
+module:
+  id: '@atlas-fixture/semantic-graph'
+  name: '@atlas-fixture/semantic-graph'
+  version: 1.0.0
+  category: npm-package
+elements:
+  - id: base-contract
+    kind: interface
+    name: BaseContract
+    qualifiedName: BaseContract
+    visibility: public
+    source:
+      path: src/contracts.ts
+      start: { line: 4, column: 1 }
+      end: { line: 9, column: 2 }
+  - id: derived-contract
+    kind: interface
+    name: DerivedContract
+    qualifiedName: DerivedContract
+    visibility: public
+    source:
+      path: src/contracts.ts
+      start: { line: 14, column: 1 }
+      end: { line: 14, column: 57 }
+  - id: fixture-service
+    kind: class
+    name: FixtureService
+    qualifiedName: FixtureService
+    visibility: public
+    source:
+      path: src/service.ts
+      start: { line: 8, column: 1 }
+      end: { line: 23, column: 2 }
+relationships:
+  - id: derived-inherits-base
+    sourceElementId: derived-contract
+    kind: inherits
+    target:
+      type: element
+      elementId: base-contract
+  - id: service-implements-derived
+    sourceElementId: fixture-service
+    kind: implements
+    target:
+      type: element
+      elementId: derived-contract
+  - id: service-reads-fs
+    sourceElementId: fixture-service
+    kind: references
+    target:
+      type: external
+      id: node:fs/promises
+      name: node:fs/promises

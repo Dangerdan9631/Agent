@@ -27,4 +27,9 @@ export class DiagramGraph {
  * Identifies a generated diagram scope supported by the initial artifact generator.
  */
 export type DiagramScope =
-  'landscape' | `package:${string}` | `group:${string}` | `folder:${string}:${string}`;
+  | 'landscape'
+  | `project:${string}`
+  | `module:${string}:${string}`
+  | `package:${string}`
+  | `group:${string}`
+  | `folder:${string}:${string}`;

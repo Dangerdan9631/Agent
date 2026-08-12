@@ -28,7 +28,10 @@ export class FederatedDependencyAnalysisAdapter {
     const graph = this.graphAdapter.toGraph(workspace);
     const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
     const resolvedById = new Map(
-      workspace.relationships.map((relationship) => [relationship.relationship.id, relationship])
+      workspace.relationships.map((relationship) => [
+        this.qualify(relationship.sourceModuleId, relationship.relationship.id),
+        relationship
+      ])
     );
     const dependencyRelationships = graph.relationships.filter(
       (relationship) => resolvedById.get(relationship.id)?.relationship.kind !== 'contains'
@@ -60,6 +63,11 @@ export class FederatedDependencyAnalysisAdapter {
       );
   }
 
+  /** Qualifies a module-local relationship identity using the graph adapter convention. */
+  private qualify(moduleId: string, localId: string): string {
+    return `${encodeURIComponent(moduleId)}:${localId}`;
+  }
+
   /** Converts one resolved graph edge into the legacy validation relationship value. */
   private toRelationship(
     relationship: DeclarationRelationship,
@@ -86,7 +94,14 @@ export class FederatedDependencyAnalysisAdapter {
       cyclePath !== undefined,
       cyclePath ?? [],
       sourceModuleId,
-      targetModuleId
+      targetModuleId,
+      resolved?.relationship.kind,
+      resolved?.relationship.sourceElementId,
+      resolved?.targetElementId,
+      resolved?.relationship.target.moduleId === undefined &&
+        resolved?.relationship.target.elementId === undefined
+        ? resolved?.relationship.target.label
+        : undefined
     );
   }
 }
@@ -152,7 +167,7 @@ class FederatedGraphCycleDetector {
       }
       return [
         {
-          id: resolved.relationship.id,
+          id: `${encodeURIComponent(resolved.sourceModuleId)}:${resolved.relationship.id}`,
           sourceId: resolved.sourceModuleId,
           targetId: targetModuleId
         }

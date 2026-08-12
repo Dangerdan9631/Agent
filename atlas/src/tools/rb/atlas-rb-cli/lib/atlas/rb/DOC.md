@@ -15,3 +15,4 @@ orchestration, schema validation, logging, and portable document output.
 
 - CLI and host types translate process input into generation requests.
 - Composition and adapter types connect configuration, logging, and persistence.
+- `version_two_model_document.rb` maps linked Ruby facts into the closed generated model schema.

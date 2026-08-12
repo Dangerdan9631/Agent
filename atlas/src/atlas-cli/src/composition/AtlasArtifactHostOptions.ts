@@ -10,8 +10,6 @@ export interface AtlasArtifactHostOptions {
   readonly configurationPath?: string | undefined;
   /** Optional generated artifact root override. */
   readonly outputPath?: string | undefined;
-  /** Optional language-neutral workspace manifest selection. */
-  readonly manifestPath?: string | undefined;
   /** Optional loopback listener host. */
   readonly host?: string | undefined;
   /** Optional TCP port where zero requests an available port. */

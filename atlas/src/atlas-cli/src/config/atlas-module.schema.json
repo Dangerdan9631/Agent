@@ -2,168 +2,513 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://atlas.dev/schema/atlas-module.schema.json",
   "title": "Atlas Module Model",
-  "description": "Defines one independently regenerable, language-neutral published artifact model.",
+  "description": "Defines one deterministic version-two language-neutral generated module model.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "generatorVersion",
-    "module",
-    "sourceLanguage",
-    "elements",
-    "relationships"
-  ],
+  "required": ["schemaVersion", "generator", "source", "module", "elements", "relationships"],
   "properties": {
-    "schemaVersion": {
-      "description": "Identifies the supported independently versioned module schema.",
-      "const": 1
-    },
-    "generatorVersion": {
-      "description": "Identifies the generator version that produced this model.",
-      "type": "string",
-      "minLength": 1
-    },
-    "module": { "$ref": "#/$defs/artifact" },
-    "sourceLanguage": {
-      "description": "Provides presentation-only generator language metadata.",
-      "type": "string",
-      "minLength": 1
-    },
+    "schemaVersion": { "description": "Identifies module model schema version two.", "const": 2 },
+    "generator": { "$ref": "#/$defs/generator" },
+    "source": { "$ref": "#/$defs/sourceMetadata" },
+    "module": { "$ref": "#/$defs/moduleIdentity" },
     "elements": {
-      "description": "Lists declarations owned by this artifact.",
+      "description": "Lists owned source elements in lexicographic ID order.",
       "type": "array",
       "items": { "$ref": "#/$defs/element" }
     },
     "relationships": {
-      "description": "Lists relationships sourced by owned declarations.",
+      "description": "Lists sourced semantic relationships in lexicographic ID order.",
       "type": "array",
       "items": { "$ref": "#/$defs/relationship" }
     }
   },
   "$defs": {
-    "artifact": {
-      "description": "Identifies one published artifact.",
+    "text": {
+      "description": "A trimmed non-empty string.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!\\s)(?:.|\\n)*\\S$|^\\S$"
+    },
+    "modulePath": {
+      "description": "A slash-normalized module-relative path without dot segments.",
+      "allOf": [
+        { "$ref": "#/$defs/text" },
+        {
+          "type": "string",
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"
+        }
+      ]
+    },
+    "generator": {
+      "description": "Identifies the native language adapter that generated the model.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "displayName", "version", "category"],
+      "required": ["name", "version"],
       "properties": {
-        "id": { "description": "Opaque stable artifact ID.", "type": "string", "minLength": 1 },
-        "displayName": {
-          "description": "Readable artifact name.",
-          "type": "string",
-          "minLength": 1
+        "name": { "$ref": "#/$defs/text" },
+        "version": { "$ref": "#/$defs/text" }
+      }
+    },
+    "sourceMetadata": {
+      "description": "Describes the source language used to derive the model.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language"],
+      "properties": {
+        "language": {
+          "allOf": [
+            { "$ref": "#/$defs/text" },
+            { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+          ]
         },
-        "version": {
-          "description": "Published artifact version.",
-          "type": "string",
-          "minLength": 1
-        },
-        "variant": {
-          "description": "Optional build target or variant.",
-          "type": "string",
-          "minLength": 1
-        },
-        "category": {
-          "description": "Published artifact category.",
-          "type": "string",
-          "minLength": 1
-        }
+        "languageVersion": { "$ref": "#/$defs/text" }
+      }
+    },
+    "moduleIdentity": {
+      "description": "Defines the opaque native source-derived module identity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "category"],
+      "properties": {
+        "id": { "$ref": "#/$defs/text" },
+        "name": { "$ref": "#/$defs/text" },
+        "version": { "$ref": "#/$defs/text" },
+        "variant": { "$ref": "#/$defs/text" },
+        "category": { "$ref": "#/$defs/text" }
       }
     },
     "element": {
-      "description": "Defines one owned declaration.",
+      "description": "Defines one owned normalized source element.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "kind", "qualifiedName"],
+      "required": ["id", "kind", "name", "qualifiedName", "visibility"],
       "properties": {
-        "id": { "description": "Stable declaration identity.", "type": "string", "minLength": 1 },
-        "name": { "description": "Display declaration name.", "type": "string", "minLength": 1 },
-        "kind": {
-          "description": "Common declaration category.",
-          "enum": [
-            "namespace",
-            "source-unit",
-            "class",
-            "interface",
-            "struct",
-            "record",
-            "enum",
-            "annotation",
-            "delegate",
-            "type-alias",
-            "function",
-            "constructor",
-            "method",
-            "property",
-            "field",
-            "constant"
-          ]
-        },
-        "qualifiedName": {
-          "description": "Normalized qualified declaration name.",
-          "type": "string",
-          "minLength": 1
-        },
-        "signature": {
-          "description": "Optional overload signature.",
-          "type": "string",
-          "minLength": 1
-        },
-        "parentId": {
-          "description": "Optional owned parent declaration identity.",
-          "type": "string",
-          "minLength": 1
-        },
-        "sourcePath": {
-          "description": "Optional workspace-relative source path.",
-          "type": "string",
-          "minLength": 1,
-          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-        },
+        "id": { "$ref": "#/$defs/text" },
+        "kind": { "$ref": "#/$defs/elementKind" },
+        "name": { "$ref": "#/$defs/text" },
+        "qualifiedName": { "$ref": "#/$defs/text" },
+        "parentId": { "$ref": "#/$defs/text" },
+        "visibility": { "$ref": "#/$defs/visibility" },
         "traits": {
-          "description": "Shared declaration traits.",
+          "description": "Lists unique normalized or source-metadata traits.",
           "type": "array",
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "source": { "$ref": "#/$defs/sourceSpan" },
+        "type": { "$ref": "#/$defs/typeExpression" },
+        "signature": { "$ref": "#/$defs/callableSignature" },
+        "parameter": { "$ref": "#/$defs/parameterMetadata" },
+        "typeParameter": { "$ref": "#/$defs/typeParameterMetadata" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": { "enum": ["function", "local-function", "constructor", "method"] }
+            },
+            "required": ["kind"]
+          },
+          "then": { "required": ["signature"] },
+          "else": { "not": { "required": ["signature"] } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "parameter" } }, "required": ["kind"] },
+          "then": { "required": ["type", "parameter"] },
+          "else": { "not": { "required": ["parameter"] } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "type-parameter" } }, "required": ["kind"] },
+          "then": { "required": ["typeParameter"] },
+          "else": { "not": { "required": ["typeParameter"] } }
+        }
+      ]
+    },
+    "elementKind": {
+      "description": "Identifies one normalized source element category.",
+      "enum": [
+        "namespace",
+        "source-unit",
+        "class",
+        "interface",
+        "struct",
+        "record",
+        "enum",
+        "annotation",
+        "delegate",
+        "type-alias",
+        "function",
+        "local-function",
+        "constructor",
+        "method",
+        "property",
+        "field",
+        "constant",
+        "event",
+        "enum-member",
+        "parameter",
+        "local-variable",
+        "type-parameter"
+      ]
+    },
+    "visibility": {
+      "description": "Identifies normalized source visibility.",
+      "enum": ["public", "protected", "internal", "private", "local", "unknown"]
+    },
+    "position": {
+      "description": "Defines a one-based source position.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "column"],
+      "properties": {
+        "line": {
+          "description": "Provides the positive one-based line.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "description": "Provides the positive one-based column.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "sourceSpan": {
+      "description": "Defines an inclusive-start and exclusive-end module-relative source span.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "start", "end"],
+      "properties": {
+        "path": { "$ref": "#/$defs/modulePath" },
+        "start": { "$ref": "#/$defs/position" },
+        "end": { "$ref": "#/$defs/position" }
+      }
+    },
+    "callableSignature": {
+      "description": "Defines ordered callable generic, parameter, and return metadata.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["typeParameters", "parameters"],
+      "properties": {
+        "typeParameters": {
+          "description": "Lists child type-parameter element IDs in declaration order.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "parameters": {
+          "description": "Lists child parameter element IDs in declaration order.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "returns": { "$ref": "#/$defs/typeExpression" }
+      }
+    },
+    "parameterMetadata": {
+      "description": "Defines normalized callable parameter behavior.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "optional", "variadic", "passing"],
+      "properties": {
+        "position": {
+          "description": "Provides the zero-based parameter position.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "optional": { "description": "Indicates optional invocation syntax.", "type": "boolean" },
+        "variadic": { "description": "Indicates variadic invocation syntax.", "type": "boolean" },
+        "passing": {
+          "description": "Identifies normalized passing behavior.",
+          "enum": ["value", "reference", "output", "receiver"]
+        }
+      }
+    },
+    "typeParameterMetadata": {
+      "description": "Defines normalized generic parameter variance and constraints.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "variance": {
+          "description": "Identifies normalized variance.",
+          "enum": ["invariant", "in", "out"]
+        },
+        "constraints": {
+          "description": "Lists generic constraints in source declaration order.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/typeExpression" }
+        }
+      }
+    },
+    "typeExpression": {
+      "description": "Defines one finite normalized type expression.",
+      "oneOf": [
+        { "$ref": "#/$defs/namedType" },
+        { "$ref": "#/$defs/unionType" },
+        { "$ref": "#/$defs/intersectionType" },
+        { "$ref": "#/$defs/tupleType" },
+        { "$ref": "#/$defs/callableType" },
+        { "$ref": "#/$defs/collectionType" },
+        { "$ref": "#/$defs/nullableType" },
+        { "$ref": "#/$defs/literalType" },
+        { "$ref": "#/$defs/typeParameterType" },
+        { "$ref": "#/$defs/simpleType" }
+      ]
+    },
+    "namedType": {
+      "description": "Defines a named type with optional generic arguments and exact target.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": { "description": "Identifies a named type.", "const": "named" },
+        "name": { "$ref": "#/$defs/text" },
+        "arguments": {
+          "description": "Lists ordered generic arguments.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/typeExpression" }
+        },
+        "target": {
+          "description": "Identifies an exact local or cross-module element target.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["elementId"],
+          "properties": {
+            "moduleId": { "$ref": "#/$defs/text" },
+            "elementId": { "$ref": "#/$defs/text" }
+          }
+        }
+      }
+    },
+    "unionType": {
+      "description": "Defines two or more unique type alternatives.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "types"],
+      "properties": {
+        "kind": { "description": "Identifies a union type.", "const": "union" },
+        "types": {
+          "description": "Lists canonical unique alternatives.",
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/typeExpression" }
+        }
+      }
+    },
+    "intersectionType": {
+      "description": "Defines two or more unique type conjuncts.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "types"],
+      "properties": {
+        "kind": { "description": "Identifies an intersection type.", "const": "intersection" },
+        "types": {
+          "description": "Lists canonical unique conjuncts.",
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/typeExpression" }
+        }
+      }
+    },
+    "tupleType": {
+      "description": "Defines an ordered tuple type.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "elements"],
+      "properties": {
+        "kind": { "description": "Identifies a tuple type.", "const": "tuple" },
+        "elements": {
+          "description": "Lists ordered tuple entries.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/namedTypeEntry" }
+        }
+      }
+    },
+    "namedTypeEntry": {
+      "description": "Defines an optionally named ordered type entry.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "type": { "$ref": "#/$defs/typeExpression" },
+        "optional": {
+          "description": "Indicates an optional callable parameter.",
+          "type": "boolean"
+        },
+        "variadic": { "description": "Indicates a variadic callable parameter.", "type": "boolean" }
+      }
+    },
+    "callableType": {
+      "description": "Defines an ordered callable type expression.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "parameters", "returns"],
+      "properties": {
+        "kind": { "description": "Identifies a callable type.", "const": "callable" },
+        "parameters": {
+          "description": "Lists ordered callable parameters.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/namedTypeEntry" }
+        },
+        "returns": { "$ref": "#/$defs/typeExpression" }
+      }
+    },
+    "collectionType": {
+      "description": "Defines an array, sequence, set, or map type.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "collection"],
+      "properties": {
+        "kind": { "description": "Identifies a collection type.", "const": "collection" },
+        "collection": {
+          "description": "Identifies the collection shape.",
+          "enum": ["array", "sequence", "set", "map"]
+        },
+        "element": { "$ref": "#/$defs/typeExpression" },
+        "rank": {
+          "description": "Provides a positive array rank.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "key": { "$ref": "#/$defs/typeExpression" },
+        "value": { "$ref": "#/$defs/typeExpression" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "collection": { "const": "map" } }, "required": ["collection"] },
+          "then": {
+            "required": ["key", "value"],
+            "not": { "anyOf": [{ "required": ["element"] }, { "required": ["rank"] }] }
+          },
+          "else": {
+            "required": ["element"],
+            "not": { "anyOf": [{ "required": ["key"] }, { "required": ["value"] }] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "collection": { "const": "array" } },
+            "required": ["collection"]
+          },
+          "else": { "not": { "required": ["rank"] } }
+        }
+      ]
+    },
+    "nullableType": {
+      "description": "Defines a nullable wrapper around a non-nullable type.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "type"],
+      "properties": {
+        "kind": { "description": "Identifies a nullable type.", "const": "nullable" },
+        "type": { "$ref": "#/$defs/typeExpression" }
+      }
+    },
+    "literalType": {
+      "description": "Defines a primitive literal type.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "description": "Identifies a literal type.", "const": "literal" },
+        "value": {
+          "description": "Provides a primitive literal value.",
+          "type": ["string", "number", "boolean", "null"]
+        }
+      }
+    },
+    "typeParameterType": {
+      "description": "References one owned type-parameter element.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "elementId"],
+      "properties": {
+        "kind": {
+          "description": "Identifies a type-parameter reference.",
+          "const": "type-parameter"
+        },
+        "elementId": { "$ref": "#/$defs/text" }
+      }
+    },
+    "simpleType": {
+      "description": "Defines a dynamic, unknown, void, or never type.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "description": "Identifies a fieldless normalized type.",
+          "enum": ["dynamic", "unknown", "void", "never"]
         }
       }
     },
     "relationship": {
-      "description": "Defines one semantic relationship.",
+      "description": "Defines one semantic relationship sourced by an owned element.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "sourceElementId", "kind", "target"],
       "properties": {
-        "id": { "description": "Stable relationship identity.", "type": "string", "minLength": 1 },
-        "sourceElementId": {
-          "description": "Owned source element identity.",
-          "type": "string",
-          "minLength": 1
-        },
+        "id": { "$ref": "#/$defs/text" },
+        "sourceElementId": { "$ref": "#/$defs/text" },
         "kind": {
-          "description": "Common semantic relationship category.",
-          "enum": ["imports", "references", "inherits", "implements", "calls", "contains"]
+          "description": "Identifies normalized semantic relationship behavior.",
+          "enum": [
+            "imports",
+            "exports",
+            "references",
+            "inherits",
+            "implements",
+            "calls",
+            "instantiates",
+            "reads",
+            "writes",
+            "overrides",
+            "decorates"
+          ]
         },
-        "target": { "$ref": "#/$defs/target" }
+        "target": { "$ref": "#/$defs/relationshipTarget" },
+        "source": { "$ref": "#/$defs/sourceSpan" }
       }
     },
-    "target": {
-      "description": "Identifies an owned or external relationship target.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "moduleId": { "description": "External artifact ID.", "type": "string", "minLength": 1 },
-        "elementId": {
-          "description": "Optional target declaration ID.",
-          "type": "string",
-          "minLength": 1
+    "relationshipTarget": {
+      "description": "Identifies exactly one local, module, or external relationship target.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "elementId"],
+          "properties": {
+            "type": { "description": "Identifies an element target.", "const": "element" },
+            "moduleId": { "$ref": "#/$defs/text" },
+            "elementId": { "$ref": "#/$defs/text" }
+          }
         },
-        "label": {
-          "description": "Unresolved target display label.",
-          "type": "string",
-          "minLength": 1
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "moduleId"],
+          "properties": {
+            "type": { "description": "Identifies a whole-module target.", "const": "module" },
+            "moduleId": { "$ref": "#/$defs/text" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "id"],
+          "properties": {
+            "type": {
+              "description": "Identifies an unresolved or third-party target.",
+              "const": "external"
+            },
+            "id": { "$ref": "#/$defs/text" },
+            "name": { "$ref": "#/$defs/text" }
+          }
         }
-      }
+      ]
     }
   }
 }

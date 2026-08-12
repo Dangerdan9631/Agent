@@ -1,21 +1,33 @@
-schemaVersion: 1
-generatorVersion: atlas-kt-test
+schemaVersion: 2
+generator:
+  name: atlas-kt
+  version: test
+source:
+  language: kotlin
 module:
   id: dev.example:test-support:1.0.0
-  displayName: test-support
+  name: test-support
   version: 1.0.0
   category: gradle-jvm-artifact
-sourceLanguage: kotlin
 elements:
   - id: support-service
-    name: TestCatalog
     kind: class
+    name: TestCatalog
     qualifiedName: dev.example.support.TestCatalog
-    sourcePath: src/main/kotlin/dev/example/support/TestCatalog.kt
+    visibility: public
+    source:
+      path: src/main/kotlin/dev/example/support/TestCatalog.kt
+      start:
+        line: 1
+        column: 1
+      end:
+        line: 2
+        column: 1
 relationships:
   - id: support-application
     sourceElementId: support-service
     kind: references
     target:
+      type: element
       moduleId: dev.example:app:1.0.0
       elementId: application-service

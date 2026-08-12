@@ -1,11 +1,25 @@
-schemaVersion: 1
-discovery:
-  packages:
-    - match:
-        name: "@atlas-fixture/semantic-graph"
-      classification: runtime
-      tsconfig: tsconfig.json
-diagrams:
-  folders:
-    - packageName: "@atlas-fixture/semantic-graph"
-      path: src
+schemaVersion: 2
+documentType: root
+
+project:
+  name: Semantic graph fixture
+  artifacts:
+    root: architecture
+  diagrams:
+    - id: landscape
+      title: Semantic graph landscape
+
+modules:
+  - model: models/semantic-graph.atlas.module.yml
+    tags:
+      - runtime
+    diagrams:
+      - id: module
+        title: Semantic graph module
+        scope:
+          type: module
+      - id: source
+        title: Source
+        scope:
+          type: path
+          path: src

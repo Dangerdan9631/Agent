@@ -1,39 +1,51 @@
 # frozen_string_literal: true
 
 require "rake"
+require "shellwords"
+require_relative "rake_configuration"
 
 module Atlas
-  module Rb
-    # Registers Ruby workspace tasks that invoke the dedicated Atlas executables.
-    class RakeTasks
-      include Rake::DSL
+  # Owns module-local Ruby build integration without loading project Atlas policy.
+  module Rake
+    # Registers and configures the single-module model generation task.
+    class Integration
+      include ::Rake::DSL
 
-      # Installs model generation, validation, diagram generation, and viewing tasks.
+      # Creates an unconfigured integration whose settings are supplied by the Rakefile.
+      def initialize
+        @configuration = RakeConfiguration.new
+        @installed = false
+      end
+
+      # Applies one configuration block and installs the task exactly once.
+      def configure(rakefile_path)
+        @configuration.rakefile_path = rakefile_path
+        yield @configuration
+        @configuration.validate!
+        install unless @installed
+      end
+
+      private
+
       def install
+        configuration = @configuration
         namespace :atlas do
-          desc "Generate Ruby Atlas module models and the workspace manifest"
-          task :generate_models do
-            sh "atlas-rb generate --config atlas.config.yml"
-          end
-
-          desc "Validate the generated Ruby Atlas workspace"
-          task validate: :generate_models do
-            sh "atlas-cli validate --config atlas.config.yml --manifest architecture/models/atlas.manifest.yml"
-          end
-
-          desc "Generate viewer artifacts for the Ruby Atlas workspace"
-          task generate: :generate_models do
-            sh "atlas-cli generate --config atlas.config.yml --manifest architecture/models/atlas.manifest.yml"
-          end
-
-          desc "Open the generated Ruby Atlas workspace"
-          task view: :generate do
-            sh "atlas --config atlas.config.yml --manifest architecture/models/atlas.manifest.yml"
+          desc "Generate this Ruby module's Atlas model"
+          task :generate_model do
+            sh Shellwords.join(configuration.command_arguments)
           end
         end
+        task build: "atlas:generate_model" if configuration.generate_on_build
+        @installed = true
       end
+    end
+
+    @integration = Integration.new
+
+    # Configures the Atlas task for the gem or application owning this Rakefile.
+    def self.configure(&)
+      rakefile_path = caller_locations(1, 1).first&.absolute_path
+      @integration.configure(rakefile_path, &)
     end
   end
 end
-
-Atlas::Rb::RakeTasks.new.install

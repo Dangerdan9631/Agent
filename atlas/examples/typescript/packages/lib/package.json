@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "atlas": {
+    "modelFile": "../../architecture/models/lib.atlas.module.yml",
+    "tsconfigFile": "tsconfig.json",
+    "generateOnBuild": true
+  },
+  "scripts": {
+    "architecture:model": "atlas-ts-npm"
+  },
   "exports": {
     "./ReadingList": "./src/ReadingList.ts",
     "./ReadingListItem": "./src/ReadingListItem.ts"

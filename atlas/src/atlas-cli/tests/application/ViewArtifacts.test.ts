@@ -116,7 +116,7 @@ describe('ViewArtifacts', () => {
 
     expect(location.url).toBe('http://127.0.0.1:4321/landscape/index.html');
     expect(server.configurationPath).toBe('/workspace/atlas.config.yml');
-    expect(generation.skipValidationValues).toEqual([true]);
+    expect(generation.skipValidationValues).toEqual([false, true]);
     expect(browser.urls).toEqual([location.url]);
   });
 });

@@ -11,6 +11,7 @@ public sealed class GenerateCSharpModels
 {
     private readonly AtlasConfigurationLoader configurationLoader;
     private readonly CSharpWorkspaceDiscoverer discoverer;
+    private readonly ICSharpProjectEvaluator projectEvaluator;
     private readonly CSharpProjectLoader projectLoader;
     private readonly CSharpModuleExtractor extractor;
     private readonly CSharpWorkspaceModelLinker linker;
@@ -23,6 +24,7 @@ public sealed class GenerateCSharpModels
     public GenerateCSharpModels(
         AtlasConfigurationLoader configurationLoader,
         CSharpWorkspaceDiscoverer discoverer,
+        ICSharpProjectEvaluator projectEvaluator,
         CSharpProjectLoader projectLoader,
         CSharpModuleExtractor extractor,
         CSharpWorkspaceModelLinker linker,
@@ -31,6 +33,7 @@ public sealed class GenerateCSharpModels
     {
         this.configurationLoader = configurationLoader;
         this.discoverer = discoverer;
+        this.projectEvaluator = projectEvaluator;
         this.projectLoader = projectLoader;
         this.extractor = extractor;
         this.linker = linker;
@@ -45,6 +48,11 @@ public sealed class GenerateCSharpModels
     /// <returns>Absolute path to the generated workspace manifest.</returns>
     public async Task<string> ExecuteAsync(GenerationRequest request)
     {
+        if (request.ProjectPath is not null)
+        {
+            return await this.GenerateConfiguredProjectAsync(request).ConfigureAwait(false);
+        }
+
         var workspacePath = Path.GetFullPath(request.WorkspacePath ?? Directory.GetCurrentDirectory());
         if (!Directory.Exists(workspacePath))
         {
@@ -79,5 +87,48 @@ public sealed class GenerateCSharpModels
             ["modules"] = models.Select(model => model.Module.Id).ToArray()
         });
         return await this.writer.WriteAsync(Path.Combine(artifactRoot, "models"), models).ConfigureAwait(false);
+    }
+
+    private async Task<string> GenerateConfiguredProjectAsync(GenerationRequest request)
+    {
+        if (request.TargetFramework is null || request.ModelFile is null)
+        {
+            throw new ArgumentException("Module-local C# generation requires --project, --target-framework, and --model-file.");
+        }
+
+        var projectPath = Path.GetFullPath(request.ProjectPath!);
+        if (!File.Exists(projectPath))
+        {
+            throw new ArgumentException($"C# project '{projectPath}' does not exist.");
+        }
+
+        var metadata = this.projectEvaluator.Evaluate(projectPath)
+            .SingleOrDefault(value => value.TargetFrameworks.Single() == request.TargetFramework)
+            ?? throw new ArgumentException($"C# project '{projectPath}' does not define target '{request.TargetFramework}'.");
+        var projectRoot = Path.GetDirectoryName(projectPath)!;
+        var category = metadata.OutputType is "Exe" or "WinExe" ? "dotnet-application" : "dotnet-library";
+        var target = new CSharpProjectTarget(
+            projectPath,
+            projectRoot,
+            ".",
+            request.TargetFramework,
+            new AtlasArtifactIdentity(
+                $"{metadata.PackageId}@{request.TargetFramework}",
+                metadata.PackageId,
+                metadata.Version,
+                request.TargetFramework,
+                category),
+            [projectRoot]);
+        using var loadedProject = await this.projectLoader.LoadAsync(target).ConfigureAwait(false);
+        var extracted = await this.extractor.ExtractAsync(target, loadedProject.Documents).ConfigureAwait(false);
+        var model = this.linker.Link([extracted]).Single();
+        var outputPath = Path.GetFullPath(request.ModelFile, projectRoot);
+        this.logger.Info("Writing configured C# Atlas module.", new Dictionary<string, object?>
+        {
+            ["module"] = target.Identity.Id,
+            ["targetFramework"] = target.TargetFramework,
+            ["output"] = outputPath
+        });
+        return await this.writer.WriteModelAsync(outputPath, model).ConfigureAwait(false);
     }
 }

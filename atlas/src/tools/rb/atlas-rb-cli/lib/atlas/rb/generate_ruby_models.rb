@@ -8,9 +8,11 @@ module Atlas
     # Coordinates configuration, Ruby discovery, extraction, linking, and persistence.
     class GenerateRubyModels
       # Creates generation from focused infrastructure collaborators.
-      def initialize(schema_validator:, discoverer:, model_builder:, linker:, writer:, logger:)
+      def initialize(schema_validator:, discoverer:, model_builder:, linker:, writer:, logger:,
+                     configured_descriptor: ConfiguredRubyModuleDescriptor.new)
         @schema_validator = schema_validator
         @discoverer = discoverer
+        @configured_descriptor = configured_descriptor
         @model_builder = model_builder
         @linker = linker
         @writer = writer
@@ -19,6 +21,8 @@ module Atlas
 
       # Generates all selected module models and returns the absolute manifest path.
       def execute(request)
+        return generate_configured_module(request) unless request.model_file.nil?
+
         workspace_path = canonical_directory(request.workspace_path || Dir.pwd, "workspace")
         configuration_path = resolve_configuration(workspace_path, request.configuration_path)
         configuration = WorkspaceConfiguration.load(configuration_path, @schema_validator)
@@ -33,6 +37,15 @@ module Atlas
       end
 
       private
+
+      def generate_configured_module(request)
+        module_root = canonical_directory(request.workspace_path || Dir.pwd, "module root")
+        descriptor = @configured_descriptor.create(module_root, request)
+        model = @linker.link([@model_builder.build(descriptor)], [descriptor]).fetch(0)
+        output_path = File.expand_path(request.model_file, module_root)
+        @logger.info("Writing Ruby Atlas module", module: descriptor.id, output: output_path)
+        @writer.write_model(output_path, model)
+      end
 
       def canonical_directory(path, label)
         absolute = File.expand_path(path)

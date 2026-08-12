@@ -1,21 +1,33 @@
-schemaVersion: 1
-generatorVersion: atlas-kt-test
+schemaVersion: 2
+generator:
+  name: atlas-kt
+  version: test
+source:
+  language: kotlin
 module:
   id: dev.example:app:1.0.0
-  displayName: app
+  name: app
   version: 1.0.0
   category: gradle-jvm-artifact
-sourceLanguage: kotlin
 elements:
   - id: application-service
-    name: ApplicationService
     kind: class
+    name: ApplicationService
     qualifiedName: dev.example.app.feature.ApplicationService
-    sourcePath: src/main/kotlin/dev/example/app/feature/ApplicationService.kt
+    visibility: public
+    source:
+      path: src/main/kotlin/dev/example/app/feature/ApplicationService.kt
+      start:
+        line: 1
+        column: 1
+      end:
+        line: 2
+        column: 1
 relationships:
   - id: application-support
     sourceElementId: application-service
     kind: references
     target:
+      type: element
       moduleId: dev.example:test-support:1.0.0
       elementId: support-service

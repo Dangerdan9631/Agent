@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "atlas": {
+    "modelFile": "../../architecture/models/app.atlas.module.yml",
+    "tsconfigFile": "tsconfig.json",
+    "generateOnBuild": true
+  },
+  "scripts": {
+    "architecture:model": "atlas-ts-npm"
+  },
   "dependencies": {
     "@atlas-example/lib": "file:../lib",
     "date-fns": "^4.1.0",

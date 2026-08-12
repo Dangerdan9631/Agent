@@ -8,7 +8,8 @@ This directory hosts generated Atlas artifacts through a path-contained local HT
 
 - Decode and validate request paths before resolving them under the artifact root.
 - Reject traversal and unsupported methods without exposing filesystem paths.
-- Regenerate neutral diagram artifacts after validated viewer policy mutations.
+- Validate viewer mutations against the closed version-two root schema before atomic persistence.
+- Module-owned diagram additions remain edits to their defining module configuration rather than root mutations.
 
 ## Contents
 

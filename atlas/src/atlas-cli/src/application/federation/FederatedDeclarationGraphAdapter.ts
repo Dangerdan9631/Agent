@@ -41,13 +41,16 @@ export class FederatedDeclarationGraphAdapter {
   /** Maps a portable owned declaration to a compatibility graph node. */
   private toNode(moduleId: string, element: AtlasElement, sourceLanguage: string): DeclarationNode {
     return new DeclarationNode(
-      element.id,
+      this.qualify(moduleId, element.id),
       element.name,
       this.toKind(element.kind),
       moduleId,
       element.sourcePath,
       element.kind === 'source-unit',
-      sourceLanguage
+      sourceLanguage,
+      element.kind,
+      element.visibility,
+      element.traits ?? []
     );
   }
 
@@ -56,13 +59,14 @@ export class FederatedDeclarationGraphAdapter {
     resolved: ResolvedAtlasWorkspace['relationships'][number],
     nodesById: Map<string, DeclarationNode>
   ): DeclarationRelationship {
-    const sourceId = resolved.relationship.sourceElementId;
+    const sourceId = this.qualify(resolved.sourceModuleId, resolved.relationship.sourceElementId);
     const targetId = this.toTargetId(resolved, nodesById);
     return new DeclarationRelationship(
-      resolved.relationship.id,
+      this.qualify(resolved.sourceModuleId, resolved.relationship.id),
       sourceId,
       targetId,
-      this.toRelationshipType(resolved.relationship.kind)
+      this.toRelationshipType(resolved.relationship.kind),
+      resolved.relationship.kind
     );
   }
 
@@ -72,7 +76,10 @@ export class FederatedDeclarationGraphAdapter {
     nodesById: Map<string, DeclarationNode>
   ): string {
     if (resolved.targetElementId !== undefined) {
-      return resolved.targetElementId;
+      return this.qualify(
+        resolved.targetModule?.module.id ?? resolved.sourceModuleId,
+        resolved.targetElementId
+      );
     }
     const target = resolved.relationship.target;
     const targetId = `external:${encodeURIComponent(target.moduleId ?? target.label ?? 'unknown')}`;
@@ -92,13 +99,32 @@ export class FederatedDeclarationGraphAdapter {
     return targetId;
   }
 
+  /** Qualifies a module-local identity so equal IDs from different models cannot collide. */
+  private qualify(moduleId: string, localId: string): string {
+    return `${encodeURIComponent(moduleId)}:${localId}`;
+  }
+
   /** Maps the portable common declaration kinds supported by legacy visual artifacts. */
   private toKind(kind: AtlasElement['kind']): DeclarationNodeKind {
     if (kind === 'interface') return 'interface';
     if (kind === 'type-alias' || kind === 'delegate') return 'type-alias';
     if (kind === 'enum') return 'enum';
-    if (kind === 'function' || kind === 'method' || kind === 'constructor') return 'function';
-    if (kind === 'property' || kind === 'field') return 'field';
+    if (
+      kind === 'function' ||
+      kind === 'local-function' ||
+      kind === 'method' ||
+      kind === 'constructor'
+    )
+      return 'function';
+    if (
+      kind === 'property' ||
+      kind === 'field' ||
+      kind === 'event' ||
+      kind === 'enum-member' ||
+      kind === 'parameter' ||
+      kind === 'local-variable'
+    )
+      return 'field';
     if (kind === 'constant') return 'constant';
     if (kind === 'source-unit' || kind === 'namespace') return 'module';
     return 'class';

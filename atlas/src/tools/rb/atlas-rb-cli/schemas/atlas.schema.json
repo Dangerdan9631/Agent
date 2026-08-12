@@ -1,524 +1,626 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://atlas.dev/schema/atlas.schema.json",
-  "title": "Atlas Configuration",
-  "description": "Defines version-one Atlas workspace discovery, artifact, and layout policy.",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "discovery"],
-  "properties": {
-    "schemaVersion": {
-      "description": "Identifies the supported Atlas configuration schema version.",
-      "const": 1
+  "title": "Atlas Project Configuration",
+  "description": "Defines the single version-two Atlas project root and its closed configuration fragments.",
+  "$ref": "#/$defs/rootDocument",
+  "$defs": {
+    "text": {
+      "description": "A trimmed non-empty string.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!\\s)(?:.|\\n)*\\S$|^\\S$"
     },
-    "discovery": {
-      "description": "Defines package discovery and explicit classification policy.",
+    "path": {
+      "description": "A slash-normalized relative path without parent traversal.",
+      "allOf": [
+        { "$ref": "#/$defs/text" },
+        {
+          "type": "string",
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\).+$"
+        }
+      ]
+    },
+    "pathPattern": {
+      "description": "A portable slash-normalized Atlas path pattern.",
+      "allOf": [
+        { "$ref": "#/$defs/text" },
+        { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*[{}!()\\[\\]]).+$" }
+      ]
+    },
+    "modulePath": {
+      "description": "A normalized module-relative source path without dot segments.",
+      "allOf": [
+        { "$ref": "#/$defs/path" },
+        {
+          "type": "string",
+          "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"
+        }
+      ]
+    },
+    "idPattern": {
+      "description": "A complete opaque ID pattern supporting only star and question-mark wildcards.",
+      "allOf": [
+        { "$ref": "#/$defs/text" },
+        { "type": "string", "pattern": "^(?!.*[{}!()\\[\\]]).+$" }
+      ]
+    },
+    "uniqueTexts": {
+      "description": "A non-empty collection of unique non-empty strings.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/text" }
+    },
+    "rootDocument": {
+      "description": "The single project-root configuration document.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["packages"],
+      "required": ["schemaVersion", "documentType", "project", "modules"],
       "properties": {
-        "packageGlobs": {
-          "description": "Matches package directories relative to the workspace root.",
+        "schemaVersion": { "description": "Identifies version two.", "const": 2 },
+        "documentType": { "description": "Identifies the root document family.", "const": "root" },
+        "extends": {
+          "description": "Lists unique base fragments in merge order.",
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "items": {
+            "allOf": [
+              { "$ref": "#/$defs/path" },
+              { "type": "string", "pattern": "\\.atlas\\.base\\.yml$" }
+            ]
+          }
+        },
+        "project": { "$ref": "#/$defs/projectConfiguration" },
+        "modules": {
+          "description": "Lists complete module entries in processing order.",
+          "type": "array",
           "minItems": 1,
-          "uniqueItems": true
+          "items": {
+            "oneOf": [
+              {
+                "allOf": [
+                  { "$ref": "#/$defs/path" },
+                  { "type": "string", "pattern": "atlas\\.module\\.config\\.yml$" }
+                ]
+              },
+              { "$ref": "#/$defs/moduleConfiguration" }
+            ]
+          }
         },
-        "excludePackageGlobs": {
-          "description": "Excludes package directories before policy matching.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
+        "validation": { "$ref": "#/$defs/rootValidation" }
+      }
+    },
+    "baseDocument": {
+      "description": "A reusable external-dependency diagram-default fragment.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "documentType", "diagramDefaults"],
+      "properties": {
+        "schemaVersion": { "description": "Identifies version two.", "const": 2 },
+        "documentType": { "description": "Identifies the base fragment family.", "const": "base" },
+        "diagramDefaults": { "$ref": "#/$defs/externalDiagramDefaults" }
+      }
+    },
+    "moduleDocument": {
+      "description": "A complete portable module configuration fragment.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "documentType", "model"],
+      "properties": {
+        "schemaVersion": { "description": "Identifies version two.", "const": 2 },
+        "documentType": {
+          "description": "Identifies the module fragment family.",
+          "const": "module"
         },
-        "defaultSourceRoots": {
-          "description": "Defines source roots used when package policies do not override them.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "minItems": 1,
-          "uniqueItems": true
+        "model": {
+          "allOf": [
+            { "$ref": "#/$defs/path" },
+            { "type": "string", "pattern": "\\.atlas\\.module\\.yml$" }
+          ]
         },
-        "packages": {
-          "description": "Defines explicit classification policies for included packages.",
+        "tags": {
+          "description": "Lists unique project-policy tags.",
           "type": "array",
-          "items": { "$ref": "#/$defs/packagePolicy" },
-          "minItems": 1
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "diagrams": {
+          "description": "Declares explicit module diagrams.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/moduleDiagram" }
+        },
+        "validation": { "$ref": "#/$defs/moduleValidation" }
+      }
+    },
+    "projectConfiguration": {
+      "description": "Defines project identity, artifacts, defaults, and landscape diagrams.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "artifacts"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "artifacts": {
+          "description": "Defines project-level generated artifact placement.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["root"],
+          "properties": { "root": { "$ref": "#/$defs/path" } }
+        },
+        "diagramDefaults": { "$ref": "#/$defs/externalDiagramDefaults" },
+        "diagrams": {
+          "description": "Declares explicit project diagrams.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/projectDiagram" }
         }
       }
     },
-    "artifacts": {
-      "description": "Defines the artifact output root.",
+    "moduleConfiguration": {
+      "description": "Defines one generated model and all module-owned project policy.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model"],
+      "properties": {
+        "model": {
+          "allOf": [
+            { "$ref": "#/$defs/path" },
+            { "type": "string", "pattern": "\\.atlas\\.module\\.yml$" }
+          ]
+        },
+        "tags": {
+          "description": "Lists unique project-policy tags.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "diagrams": {
+          "description": "Declares explicit module diagrams.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/moduleDiagram" }
+        },
+        "validation": { "$ref": "#/$defs/moduleValidation" }
+      }
+    },
+    "externalDiagramDefaults": {
+      "description": "Defines the only external dependency behavior shared between diagrams.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalDependencies"],
+      "properties": {
+        "externalDependencies": { "$ref": "#/$defs/externalDependencyDefaults" }
+      }
+    },
+    "externalDependencyDefaults": {
+      "description": "Defines inheritable external exclusion and collapse behavior.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "root": {
-          "description": "Names the artifact output directory.",
-          "type": "string",
-          "minLength": 1
+        "excludeIds": {
+          "description": "Lists unique external ID exclusion patterns.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/idPattern" }
+        },
+        "collapse": { "$ref": "#/$defs/collapse" }
+      }
+    },
+    "collapse": {
+      "description": "Controls external identity collapsing.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "description": "Selects collapsing behavior.",
+          "enum": ["all", "matching", "none"]
+        },
+        "ids": {
+          "description": "Lists ID patterns selected by matching mode.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/idPattern" }
         }
+      }
+    },
+    "commonDiagramProperties": {
+      "description": "Defines fields shared by every diagram.",
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "id": { "$ref": "#/$defs/text" },
+        "title": { "$ref": "#/$defs/text" },
+        "inheritDefaults": {
+          "description": "Controls inherited external defaults.",
+          "type": "boolean"
+        },
+        "layout": { "$ref": "#/$defs/layout" },
+        "filters": { "$ref": "#/$defs/filters" },
+        "externalDependencies": { "$ref": "#/$defs/externalDependencyOptions" }
+      }
+    },
+    "projectDiagram": {
+      "description": "Defines one project landscape diagram.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/commonDiagramProperties" },
+        {
+          "type": "object",
+          "properties": {
+            "groups": {
+              "description": "Lists non-overlapping module groups.",
+              "type": "array",
+              "items": { "$ref": "#/$defs/projectGroup" }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleDiagram": {
+      "description": "Defines one module-owned diagram.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/commonDiagramProperties" },
+        {
+          "type": "object",
+          "required": ["scope"],
+          "properties": { "scope": { "$ref": "#/$defs/moduleScope" } }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleScope": {
+      "description": "Selects a complete module or source-path subtree.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "description": "Selects the complete module.", "const": "module" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "description": "Selects a source path.", "const": "path" },
+            "path": { "$ref": "#/$defs/modulePath" }
+          }
+        }
+      ]
+    },
+    "projectGroup": {
+      "description": "Defines one project-diagram module group.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "selector"],
+      "properties": {
+        "id": { "$ref": "#/$defs/text" },
+        "title": { "$ref": "#/$defs/text" },
+        "selector": { "$ref": "#/$defs/moduleSelector" }
       }
     },
     "layout": {
-      "description": "Defines default deterministic layout settings.",
+      "description": "Defines diagram-local deterministic layout behavior.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "orientation": {
-          "description": "Defines the primary layout axis.",
+          "description": "Selects the primary placement axis.",
           "enum": ["horizontal", "vertical"]
         },
-        "rows": {
-          "description": "Limits sibling items in each generated row.",
-          "type": "integer",
-          "minimum": 1
-        },
+        "rows": { "description": "Defines a positive row limit.", "type": "integer", "minimum": 1 },
         "horizontalGap": {
-          "description": "Defines the minimum horizontal gap between item bounds.",
+          "description": "Defines a non-negative finite horizontal gap.",
           "type": "number",
           "minimum": 0
         },
         "verticalGap": {
-          "description": "Defines the minimum vertical gap between item bounds.",
+          "description": "Defines a non-negative finite vertical gap.",
           "type": "number",
           "minimum": 0
         }
       }
     },
-    "diagrams": {
-      "description": "Defines generated diagram graph-shaping policy and opt-in folder scopes.",
-      "$ref": "#/$defs/diagramConfiguration"
-    },
-    "rules": {
-      "description": "Declares architecture policies Atlas evaluates during validation.",
-      "type": "array",
-      "items": { "$ref": "#/$defs/architectureRule" },
-      "uniqueItems": true
-    },
-    "layers": {
-      "description": "Defines optional named source layers for dependency direction rules.",
-      "type": "array",
-      "items": { "$ref": "#/$defs/layerDefinition" },
-      "uniqueItems": true
-    }
-  },
-  "$defs": {
-    "diagramConfiguration": {
-      "description": "Configures generated diagram inclusion and external-dependency rendering.",
+    "filters": {
+      "description": "Defines diagram-local presentation filters.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "moduleGroups": {
-          "description": "Defines presentation-only groups that collapse matching canonical artifact module IDs.",
-          "type": "array",
-          "items": { "$ref": "#/$defs/moduleGroupConfiguration" },
-          "uniqueItems": true
-        },
-        "excludeSourceGlobs": {
-          "description": "Excludes local declarations whose workspace-relative source paths match a glob.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "excludeExternalDependencies": {
-          "description": "Excludes external dependency labels matching a glob.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "collapseExternalDependencies": {
-          "description": "Collapses visible external dependencies to package-level nodes.",
-          "type": "boolean"
-        },
-        "collapseExternalDependencyGlobs": {
-          "description": "Collapses matching external dependency labels when global collapsing is disabled.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "splitExternalDependenciesByImporter": {
-          "description": "Splits landscape external dependencies by importing workspace package.",
-          "type": "boolean"
-        },
-        "externalDependencyImporterSplits": {
-          "description": "Selectively splits matching landscape external dependencies by importing package.",
-          "type": "array",
-          "items": { "$ref": "#/$defs/externalDependencyImporterSplit" },
-          "uniqueItems": true
-        },
-        "packages": {
-          "description": "Defines package-specific declaration exclusion policy.",
-          "type": "array",
-          "items": { "$ref": "#/$defs/packageDiagramConfiguration" },
-          "uniqueItems": true
-        },
-        "folders": {
-          "description": "Declares opt-in package-local folder diagrams.",
-          "type": "array",
-          "items": { "$ref": "#/$defs/folderDiagramConfiguration" },
-          "uniqueItems": true
-        }
-      }
-    },
-    "folderDiagramConfiguration": {
-      "description": "Configures one package-local folder diagram with inherited or overridden graph policy.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["packageName", "path"],
-      "properties": {
-        "packageName": {
-          "description": "Names the explicitly discovered package that owns the folder.",
-          "type": "string",
-          "minLength": 1
-        },
-        "path": {
-          "description": "Names a normalized folder path relative to the package root.",
-          "type": "string",
-          "minLength": 1,
-          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-        },
-        "title": {
-          "description": "Optionally overrides the generated folder diagram title.",
-          "type": "string",
-          "minLength": 1
-        },
-        "excludeSourceGlobs": {
-          "description": "Adds source-node exclusions to inherited graph policy.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "excludeExternalDependencies": {
-          "description": "Adds external dependency exclusions to inherited graph policy.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "collapseExternalDependencies": {
-          "description": "Optionally overrides inherited external collapse behavior.",
-          "type": "boolean"
-        },
-        "splitExternalDependenciesByImporter": {
-          "description": "Optionally overrides inherited external splitting behavior.",
-          "type": "boolean"
-        },
-        "externalDependencyImporterSplits": {
-          "description": "Adds selective external dependency importer splits to inherited policy.",
-          "type": "array",
-          "items": { "$ref": "#/$defs/externalDependencyImporterSplit" },
-          "uniqueItems": true
-        }
-      }
-    },
-    "moduleGroupConfiguration": {
-      "description": "Defines one stable presentation-only artifact module group.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "title", "moduleIdPatterns"],
-      "properties": {
-        "id": {
-          "description": "Stable group identity used in diagram and layout scope IDs.",
-          "type": "string",
-          "minLength": 1
-        },
-        "title": {
-          "description": "Human-readable title shown for the presentation group.",
-          "type": "string",
-          "minLength": 1
-        },
-        "moduleIdPatterns": {
-          "description": "Lists glob patterns matched against opaque artifact module IDs.",
+        "elementKinds": { "$ref": "#/$defs/elementKinds" },
+        "visibilities": { "$ref": "#/$defs/visibilities" },
+        "traits": { "$ref": "#/$defs/uniqueTexts" },
+        "relationshipKinds": { "$ref": "#/$defs/relationshipKinds" },
+        "excludeSourcePaths": {
+          "description": "Lists unique source-path exclusion patterns.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "$ref": "#/$defs/pathPattern" }
         }
       }
     },
-    "externalDependencyImporterSplit": {
-      "description": "Splits one external dependency for selected importing workspace packages.",
+    "externalDependencyOptions": {
+      "description": "Defines diagram-local external dependency behavior.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["dependency", "packageNames"],
       "properties": {
-        "dependency": {
-          "description": "Matches one external dependency label using a glob pattern.",
-          "type": "string",
-          "minLength": 1
-        },
-        "packageNames": {
-          "description": "Names importing workspace packages receiving separate dependency nodes.",
+        "excludeIds": {
+          "description": "Lists unique external ID exclusion patterns.",
           "type": "array",
-          "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "$ref": "#/$defs/idPattern" }
+        },
+        "collapse": { "$ref": "#/$defs/collapse" },
+        "splitByModule": {
+          "description": "Splits collapsed targets by importing module.",
+          "type": "boolean"
         }
       }
     },
-    "packageDiagramConfiguration": {
-      "description": "Configures source-node exclusions for one explicitly discovered package.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["packageName"],
-      "properties": {
-        "packageName": {
-          "description": "Names the explicitly discovered package that owns the declarations.",
-          "type": "string",
-          "minLength": 1
-        },
-        "excludeSourceGlobs": {
-          "description": "Adds source-node exclusions for declarations in this package.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        }
-      }
-    },
-    "packagePolicy": {
-      "description": "Classifies one selected package and its source roots.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["match", "classification"],
-      "properties": {
-        "match": { "$ref": "#/$defs/packageMatch" },
-        "classification": {
-          "description": "Identifies runtime or support package membership.",
-          "enum": ["runtime", "support"]
-        },
-        "classes": {
-          "description": "Adds stable user-defined package class labels.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "sourceRoots": {
-          "description": "Overrides default source roots relative to the package root.",
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "minItems": 1,
-          "uniqueItems": true
-        },
-        "tsconfig": {
-          "description": "Names an optional TypeScript configuration file relative to the package root.",
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "packageMatch": {
-      "description": "Matches a package manifest name, directory path, or both.",
+    "moduleSelector": {
+      "description": "Selects loaded modules by ID pattern and configured tag.",
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
       "properties": {
-        "name": {
-          "description": "Matches a package manifest name using a glob pattern.",
-          "type": "string",
-          "minLength": 1
-        },
-        "path": {
-          "description": "Matches a workspace-relative package directory path using a glob pattern.",
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "architectureRule": {
-      "description": "Defines one supported architecture validation rule.",
-      "oneOf": [
-        { "$ref": "#/$defs/noCircularRule" },
-        { "$ref": "#/$defs/noRuntimeToSupportRule" },
-        { "$ref": "#/$defs/dependencyDirectionRule" },
-        { "$ref": "#/$defs/forbiddenImportRule" },
-        { "$ref": "#/$defs/forbiddenExternalRule" }
-      ]
-    },
-    "noCircularRule": {
-      "description": "Rejects circular dependencies reported by the analysis adapter.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "type", "severity"],
-      "properties": {
-        "id": {
-          "description": "Uniquely identifies this rule in the configuration document.",
-          "type": "string",
-          "minLength": 1
-        },
-        "type": {
-          "description": "Identifies circular dependency policy behavior.",
-          "const": "no-circular"
-        },
-        "severity": {
-          "description": "Determines whether violations fail the command.",
-          "enum": ["error", "warning"]
-        }
-      }
-    },
-    "noRuntimeToSupportRule": {
-      "description": "Rejects dependencies from runtime packages to support packages.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "type", "severity"],
-      "properties": {
-        "id": {
-          "description": "Uniquely identifies this rule in the configuration document.",
-          "type": "string",
-          "minLength": 1
-        },
-        "type": {
-          "description": "Identifies runtime-to-support dependency policy behavior.",
-          "const": "no-runtime-to-support"
-        },
-        "severity": {
-          "description": "Determines whether violations fail the command.",
-          "enum": ["error", "warning"]
-        }
-      }
-    },
-    "dependencyDirectionRule": {
-      "description": "Restricts dependency directions between selected packages or layers.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "type", "severity", "mode", "from", "to"],
-      "properties": {
-        "id": { "description": "Uniquely identifies this rule.", "type": "string", "minLength": 1 },
-        "type": {
-          "description": "Identifies dependency direction behavior.",
-          "const": "dependency-direction"
-        },
-        "severity": {
-          "description": "Determines command failure behavior.",
-          "enum": ["error", "warning"]
-        },
-        "mode": {
-          "description": "Allows only selected targets or forbids selected targets.",
-          "enum": ["allow-only", "forbid"]
-        },
-        "from": {
-          "description": "Selects importing packages or layers.",
-          "$ref": "#/$defs/ruleSelector"
-        },
-        "to": {
-          "description": "Selects allowed or forbidden targets.",
-          "$ref": "#/$defs/ruleSelector"
-        }
-      }
-    },
-    "forbiddenImportRule": {
-      "description": "Rejects configured import specifier patterns.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "type", "severity", "patterns"],
-      "properties": {
-        "id": { "description": "Uniquely identifies this rule.", "type": "string", "minLength": 1 },
-        "type": {
-          "description": "Identifies forbidden import behavior.",
-          "const": "forbidden-import"
-        },
-        "severity": {
-          "description": "Determines command failure behavior.",
-          "enum": ["error", "warning"]
-        },
-        "from": {
-          "description": "Optionally selects importing packages or layers.",
-          "$ref": "#/$defs/ruleSelector"
-        },
-        "patterns": {
-          "description": "Lists forbidden import-specifier globs.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        }
-      }
-    },
-    "forbiddenExternalRule": {
-      "description": "Rejects configured external package imports.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "type", "severity", "packages"],
-      "properties": {
-        "id": { "description": "Uniquely identifies this rule.", "type": "string", "minLength": 1 },
-        "type": {
-          "description": "Identifies forbidden external behavior.",
-          "const": "forbidden-external"
-        },
-        "severity": {
-          "description": "Determines command failure behavior.",
-          "enum": ["error", "warning"]
-        },
-        "from": {
-          "description": "Optionally selects importing packages or layers.",
-          "$ref": "#/$defs/ruleSelector"
-        },
-        "packages": {
-          "description": "Lists forbidden external package-root globs.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        }
-      }
-    },
-    "ruleSelector": {
-      "description": "Selects packages and source paths by package names, classes, or layers.",
-      "type": "object",
-      "additionalProperties": false,
-      "minProperties": 1,
-      "properties": {
-        "packageNames": {
-          "description": "Matches exact discovered package names.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        },
         "moduleIds": {
-          "description": "Matches opaque artifact module IDs; package names remain compatible aliases.",
+          "description": "Lists unique complete module ID patterns.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "$ref": "#/$defs/idPattern" }
         },
-        "packageClasses": {
-          "description": "Matches configured package classes.",
+        "moduleTags": { "$ref": "#/$defs/uniqueTexts" }
+      }
+    },
+    "elementSelector": {
+      "description": "Selects elements inside one loaded module.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "elementKinds": { "$ref": "#/$defs/elementKinds" },
+        "visibilities": { "$ref": "#/$defs/visibilities" },
+        "traits": { "$ref": "#/$defs/uniqueTexts" },
+        "sourcePaths": {
+          "description": "Lists unique module-relative source path patterns.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        },
-        "layers": {
-          "description": "Matches configured source layer names.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "$ref": "#/$defs/pathPattern" }
         }
       }
     },
-    "layerDefinition": {
-      "description": "Defines a named workspace-relative source layer.",
+    "rootValidation": {
+      "description": "Defines rules evaluated between loaded modules.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "sourceGlobs"],
+      "required": ["rules"],
       "properties": {
-        "name": {
-          "description": "Uniquely identifies the layer.",
-          "type": "string",
-          "minLength": 1
-        },
-        "sourceGlobs": {
-          "description": "Lists workspace-relative source path globs in the layer.",
+        "rules": {
+          "description": "Lists root validation rules.",
           "type": "array",
           "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        },
-        "packageNames": {
-          "description": "Optionally limits the layer to exact discovered package names.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/rootCircularRule" },
+              { "$ref": "#/$defs/rootDirectionRule" }
+            ]
+          }
         }
+      }
+    },
+    "moduleValidation": {
+      "description": "Defines rules evaluated from one owning module.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules"],
+      "properties": {
+        "rules": {
+          "description": "Lists module validation rules.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/moduleCircularRule" },
+              { "$ref": "#/$defs/moduleDirectionRule" },
+              { "$ref": "#/$defs/forbidRule" }
+            ]
+          }
+        }
+      }
+    },
+    "ruleFields": {
+      "description": "Defines fields shared by validation rules.",
+      "type": "object",
+      "required": ["id", "type", "severity", "relationships"],
+      "properties": {
+        "id": { "$ref": "#/$defs/text" },
+        "type": { "$ref": "#/$defs/text" },
+        "severity": {
+          "description": "Determines validation outcome.",
+          "enum": ["error", "warning"]
+        },
+        "relationships": { "$ref": "#/$defs/relationshipKinds" }
+      }
+    },
+    "rootCircularRule": {
+      "description": "Rejects cycles between selected loaded modules.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "description": "Identifies cycle prohibition.", "const": "no-circular" },
+            "within": { "$ref": "#/$defs/moduleSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "rootDirectionRule": {
+      "description": "Restricts dependencies between selected loaded modules.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        {
+          "type": "object",
+          "required": ["mode", "from", "to"],
+          "properties": {
+            "type": {
+              "description": "Identifies directional dependency behavior.",
+              "const": "dependency-direction"
+            },
+            "mode": {
+              "description": "Selects allow-only or forbidden targets.",
+              "enum": ["allow-only", "forbid"]
+            },
+            "from": { "$ref": "#/$defs/moduleSelector" },
+            "to": { "$ref": "#/$defs/moduleSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleCircularRule": {
+      "description": "Rejects cycles among selected elements in one module.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "description": "Identifies cycle prohibition.", "const": "no-circular" },
+            "within": { "$ref": "#/$defs/elementSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleDirectionRule": {
+      "description": "Restricts dependencies among selected elements in one module.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        {
+          "type": "object",
+          "required": ["mode", "from", "to"],
+          "properties": {
+            "type": {
+              "description": "Identifies directional dependency behavior.",
+              "const": "dependency-direction"
+            },
+            "mode": {
+              "description": "Selects allow-only or forbidden targets.",
+              "enum": ["allow-only", "forbid"]
+            },
+            "from": { "$ref": "#/$defs/elementSelector" },
+            "to": { "$ref": "#/$defs/elementSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "forbidRule": {
+      "description": "Rejects selected local, module, or external targets.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        {
+          "type": "object",
+          "required": ["to"],
+          "properties": {
+            "type": { "description": "Identifies target prohibition behavior.", "const": "forbid" },
+            "from": { "$ref": "#/$defs/elementSelector" },
+            "to": {
+              "description": "Selects exactly one target family.",
+              "oneOf": [
+                { "$ref": "#/$defs/moduleSelector" },
+                { "$ref": "#/$defs/elementSelector" },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["externalIds"],
+                  "properties": {
+                    "externalIds": {
+                      "description": "Lists unique external target ID patterns.",
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": { "$ref": "#/$defs/idPattern" }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "elementKinds": {
+      "description": "Lists unique normalized source element kinds.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "namespace",
+          "source-unit",
+          "class",
+          "interface",
+          "struct",
+          "record",
+          "enum",
+          "annotation",
+          "delegate",
+          "type-alias",
+          "function",
+          "local-function",
+          "constructor",
+          "method",
+          "property",
+          "field",
+          "constant",
+          "event",
+          "enum-member",
+          "parameter",
+          "local-variable",
+          "type-parameter"
+        ]
+      }
+    },
+    "visibilities": {
+      "description": "Lists unique normalized visibility values.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["public", "protected", "internal", "private", "local", "unknown"] }
+    },
+    "relationshipKinds": {
+      "description": "Lists unique normalized semantic relationship kinds.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "imports",
+          "exports",
+          "references",
+          "inherits",
+          "implements",
+          "calls",
+          "instantiates",
+          "reads",
+          "writes",
+          "overrides",
+          "decorates"
+        ]
       }
     }
   }

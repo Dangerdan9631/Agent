@@ -84,7 +84,6 @@ class AtlasDesktopApplication {
       workspacePath: options.workspacePath,
       configurationPath: options.configurationPath,
       outputPath: options.outputPath,
-      manifestPath: options.manifestPath,
       host: options.host,
       port: options.port
     };

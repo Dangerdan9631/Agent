@@ -1,499 +1,793 @@
 /**
- * Describes the complete version-one Atlas policy configuration.
+ * Describes the fully composed version-two Atlas project configuration.
  */
 export interface AtlasConfiguration {
   /**
-   * Identifies the supported configuration document version. Version one is the only accepted value.
+   * Identifies the supported configuration schema version.
    */
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
 
   /**
-   * Defines package discovery and explicit package inclusion policy.
+   * Identifies this document as the single project root.
    */
-  readonly discovery: AtlasDiscoveryConfiguration;
+  readonly documentType: 'root';
 
   /**
-   * Defines the directory that contains generated Atlas artifacts.
+   * Lists normalized project-relative base fragments in application order.
    */
-  readonly artifacts?: AtlasArtifactConfiguration;
+  readonly extends?: readonly string[];
 
   /**
-   * Defines default deterministic layout settings for generated diagrams.
+   * Defines project identity, artifact placement, defaults, and project diagrams.
+   */
+  readonly project: AtlasProjectConfiguration;
+
+  /**
+   * Lists complete module configurations in their processing order.
+   */
+  readonly modules: readonly AtlasModuleConfiguration[];
+
+  /**
+   * Defines rules evaluated between successfully loaded modules.
+   */
+  readonly validation?: AtlasRootValidationConfiguration;
+}
+
+/**
+ * Defines project-owned identity, output, and diagram policy.
+ */
+export interface AtlasProjectConfiguration {
+  /**
+   * Provides the non-empty human-readable project name.
+   */
+  readonly name: string;
+
+  /**
+   * Defines the project-level generated artifact directory.
+   */
+  readonly artifacts: AtlasArtifactConfiguration;
+
+  /**
+   * Defines composed external-dependency presentation defaults.
+   */
+  readonly diagramDefaults?: AtlasExternalDiagramDefaults;
+
+  /**
+   * Declares explicit project landscape diagrams.
+   */
+  readonly diagrams?: readonly AtlasProjectDiagram[];
+}
+
+/**
+ * Configures where Atlas writes project-level generated artifacts.
+ */
+export interface AtlasArtifactConfiguration {
+  /**
+   * Names a normalized path contained by the project root.
+   */
+  readonly root: string;
+}
+
+/**
+ * Describes one complete configured generated module model.
+ */
+export interface AtlasModuleConfiguration {
+  /**
+   * Names a normalized project-relative generated model path.
+   */
+  readonly model: string;
+
+  /**
+   * Provides unique project-policy labels for the loaded module.
+   */
+  readonly tags?: readonly string[];
+
+  /**
+   * Declares explicit diagrams owned by this module.
+   */
+  readonly diagrams?: readonly AtlasModuleDiagram[];
+
+  /**
+   * Defines rules evaluated from the owning loaded module.
+   */
+  readonly validation?: AtlasModuleValidationConfiguration;
+}
+
+/**
+ * Defines external-dependency defaults that may be composed from base fragments.
+ */
+export interface AtlasExternalDiagramDefaults {
+  /**
+   * Defines the external dependency behavior inherited by diagrams.
+   */
+  readonly externalDependencies: AtlasExternalDependencyDefaults;
+}
+
+/**
+ * Defines the inheritable subset of external dependency presentation behavior.
+ */
+export interface AtlasExternalDependencyDefaults {
+  /**
+   * Excludes external IDs matching any complete ID pattern.
+   */
+  readonly excludeIds?: readonly string[];
+
+  /**
+   * Defines how equal external identities are collapsed.
+   */
+  readonly collapse?: AtlasExternalCollapseConfiguration;
+}
+
+/**
+ * Configures external target collapsing for a diagram or inherited defaults.
+ */
+export interface AtlasExternalCollapseConfiguration {
+  /**
+   * Selects all, matching, or no external identities for collapsing.
+   */
+  readonly mode: AtlasExternalCollapseMode;
+
+  /**
+   * Lists complete ID patterns used only by matching mode.
+   */
+  readonly ids?: readonly string[];
+}
+
+/**
+ * Identifies supported external target collapsing behavior.
+ */
+export type AtlasExternalCollapseMode = 'all' | 'matching' | 'none';
+
+/**
+ * Defines fields shared by project and module diagrams.
+ */
+export interface AtlasDiagramConfiguration {
+  /**
+   * Provides the stable diagram identity within its owning scope.
+   */
+  readonly id: string;
+
+  /**
+   * Provides the non-empty viewer title.
+   */
+  readonly title: string;
+
+  /**
+   * Determines whether composed external defaults are applied before local settings.
+   */
+  readonly inheritDefaults?: boolean;
+
+  /**
+   * Defines layout behavior local to this diagram.
    */
   readonly layout?: AtlasLayoutConfiguration;
 
   /**
-   * Defines generated diagram scopes and graph-shaping policy separate from architecture rules.
+   * Defines presentation filters local to this diagram.
    */
-  readonly diagrams?: AtlasDiagramConfiguration;
+  readonly filters?: AtlasDiagramFilters;
 
   /**
-   * Declares architecture policies that Atlas evaluates during validation and generation.
+   * Defines diagram-local external dependency presentation behavior.
    */
-  readonly rules?: readonly AtlasArchitectureRule[];
-
-  /**
-   * Defines optional named source layers used by dependency-direction selectors.
-   */
-  readonly layers?: readonly AtlasLayerDefinition[];
+  readonly externalDependencies?: AtlasExternalDependencyOptions;
 }
 
 /**
- * Configures workspace package discovery and classification.
+ * Describes one explicitly configured project landscape diagram.
  */
-export interface AtlasDiscoveryConfiguration {
+export interface AtlasProjectDiagram extends AtlasDiagramConfiguration {
   /**
-   * Matches package directories relative to the workspace root. An omitted value discovers the workspace root package.
+   * Defines non-overlapping presentation groups for loaded modules.
    */
-  readonly packageGlobs?: readonly string[];
-
-  /**
-   * Excludes package directories relative to the workspace root before policy matching.
-   */
-  readonly excludePackageGlobs?: readonly string[];
-
-  /**
-   * Defines source-root paths used when a package policy does not provide its own roots.
-   */
-  readonly defaultSourceRoots?: readonly string[];
-
-  /**
-   * Provides one explicit policy for every discovered package that Atlas includes.
-   */
-  readonly packages: readonly AtlasPackagePolicy[];
+  readonly groups?: readonly AtlasProjectDiagramGroup[];
 }
 
 /**
- * Classifies one matching package and supplies its source-analysis settings.
+ * Describes one explicitly configured module diagram.
  */
-export interface AtlasPackagePolicy {
+export interface AtlasModuleDiagram extends AtlasDiagramConfiguration {
   /**
-   * Selects package manifest names and/or workspace-relative directory paths.
+   * Selects the entire owning module or one module-relative source path.
    */
-  readonly match: AtlasPackageMatch;
-
-  /**
-   * Determines whether the package appears in runtime architecture diagrams or only supports analysis.
-   */
-  readonly classification: AtlasPackageClassification;
-
-  /**
-   * Adds user-defined grouping labels used by later dependency-direction rules.
-   */
-  readonly classes?: readonly string[];
-
-  /**
-   * Overrides default source roots with paths relative to the matched package root.
-   */
-  readonly sourceRoots?: readonly string[];
-
-  /**
-   * Identifies an optional TypeScript configuration file relative to the matched package root.
-   */
-  readonly tsconfig?: string;
+  readonly scope: AtlasModuleDiagramScope;
 }
 
 /**
- * Matches a package by its manifest name, relative directory path, or both.
+ * Selects the source facts projected by one module diagram.
  */
-export interface AtlasPackageMatch {
-  /**
-   * Matches the package manifest name using a slash-normalized glob pattern.
-   */
-  readonly name?: string;
+export type AtlasModuleDiagramScope = AtlasWholeModuleScope | AtlasSourcePathScope;
 
+/**
+ * Selects every included element in the owning module.
+ */
+export interface AtlasWholeModuleScope {
   /**
-   * Matches the package directory relative to the workspace root using a slash-normalized glob pattern.
+   * Identifies whole-module scope behavior.
    */
-  readonly path?: string;
+  readonly type: 'module';
 }
 
 /**
- * Identifies whether a package belongs to runtime architecture or supports development work.
+ * Selects elements at or below one module-relative source path.
  */
-export type AtlasPackageClassification = 'runtime' | 'support';
-
-/**
- * Configures where Atlas writes generated reports and diagrams.
- */
-export interface AtlasArtifactConfiguration {
+export interface AtlasSourcePathScope {
   /**
-   * Names a non-empty path relative to the workspace root or an absolute artifact directory.
+   * Identifies source-path scope behavior.
    */
-  readonly root?: string;
+  readonly type: 'path';
+
+  /**
+   * Names a normalized module-relative path without glob syntax.
+   */
+  readonly path: string;
 }
 
 /**
- * Configures deterministic default layout behavior.
+ * Defines one named group in a project diagram.
+ */
+export interface AtlasProjectDiagramGroup {
+  /**
+   * Provides the stable group identity within its diagram.
+   */
+  readonly id: string;
+
+  /**
+   * Provides the non-empty presentation title.
+   */
+  readonly title: string;
+
+  /**
+   * Selects loaded modules assigned to this group.
+   */
+  readonly selector: AtlasModuleSelector;
+}
+
+/**
+ * Configures deterministic layout behavior for one diagram.
  */
 export interface AtlasLayoutConfiguration {
   /**
-   * Arranges sibling items across columns or down rows when Atlas computes a layout.
+   * Selects the primary sibling placement axis.
    */
   readonly orientation?: AtlasLayoutOrientation;
 
   /**
-   * Limits the number of sibling items in each generated row. Must be a positive integer.
+   * Limits generated sibling items per row and must be a positive integer.
    */
   readonly rows?: number;
 
   /**
-   * Defines the minimum horizontal distance between rendered item bounds. Must be non-negative.
+   * Defines a finite non-negative horizontal gap.
    */
   readonly horizontalGap?: number;
 
   /**
-   * Defines the minimum vertical distance between rendered item bounds. Must be non-negative.
+   * Defines a finite non-negative vertical gap.
    */
   readonly verticalGap?: number;
 }
 
 /**
- * Identifies the primary axis used by the deterministic layout algorithm.
+ * Identifies the primary axis used by deterministic layout.
  */
 export type AtlasLayoutOrientation = 'horizontal' | 'vertical';
 
 /**
- * Configures generated diagram inclusion, external rendering, and opt-in folder scopes.
+ * Defines presentation-only element and relationship filters for one diagram.
  */
-export interface AtlasDiagramConfiguration {
+export interface AtlasDiagramFilters {
   /**
-   * Defines presentation-only groups that collapse matching canonical artifact module IDs.
+   * Includes only elements having one of the listed normalized kinds.
    */
-  readonly moduleGroups?: readonly AtlasModuleGroupConfiguration[];
+  readonly elementKinds?: readonly AtlasElementKind[];
 
   /**
-   * Excludes local declaration nodes whose workspace-relative source paths match any slash-normalized glob.
+   * Includes only elements having one of the listed normalized visibilities.
    */
-  readonly excludeSourceGlobs?: readonly string[];
+  readonly visibilities?: readonly AtlasVisibility[];
 
   /**
-   * Excludes external dependency nodes whose stable external labels match any glob.
+   * Includes elements carrying at least one listed trait.
    */
-  readonly excludeExternalDependencies?: readonly string[];
+  readonly traits?: readonly string[];
 
   /**
-   * Collapses visible external dependency nodes to one package-level node per external label.
+   * Includes only relationships having one of the listed normalized kinds.
    */
-  readonly collapseExternalDependencies?: boolean;
+  readonly relationshipKinds?: readonly AtlasRelationshipKind[];
 
   /**
-   * Collapses matching external dependency labels when global external collapsing is disabled.
+   * Excludes elements whose module-relative path matches a listed path pattern.
    */
-  readonly collapseExternalDependencyGlobs?: readonly string[];
-
-  /**
-   * Splits landscape external dependency nodes by importing workspace package when enabled.
-   */
-  readonly splitExternalDependenciesByImporter?: boolean;
-
-  /**
-   * Selectively splits matching landscape external dependencies by their configured importing packages.
-   */
-  readonly externalDependencyImporterSplits?: readonly AtlasExternalDependencyImporterSplit[];
-
-  /**
-   * Defines package-specific source-node exclusions inherited by package and folder diagrams.
-   */
-  readonly packages?: readonly AtlasPackageDiagramConfiguration[];
-
-  /**
-   * Declares opt-in folder diagrams with inherited and overridden graph-shaping policy.
-   */
-  readonly folders?: readonly AtlasFolderDiagramConfiguration[];
+  readonly excludeSourcePaths?: readonly string[];
 }
 
 /**
- * Defines one presentation-only grouping of independently versioned or targeted artifact modules.
+ * Defines diagram-local external dependency behavior.
  */
-export interface AtlasModuleGroupConfiguration {
+export interface AtlasExternalDependencyOptions extends AtlasExternalDependencyDefaults {
   /**
-   * Stable group identity used for diagram and layout scope IDs.
+   * Separates collapsed external targets by importing module in project diagrams.
    */
-  readonly id: string;
-
-  /**
-   * Human-readable diagram title for this presentation group.
-   */
-  readonly title: string;
-
-  /**
-   * Glob patterns matched against opaque artifact module IDs.
-   */
-  readonly moduleIdPatterns: readonly string[];
+  readonly splitByModule?: boolean;
 }
 
 /**
- * Defines one package-local folder diagram scope.
+ * Selects loaded modules by derived identity and configured tags.
  */
-export interface AtlasFolderDiagramConfiguration {
+export interface AtlasModuleSelector {
   /**
-   * Identifies the explicitly discovered package that owns the folder.
-   */
-  readonly packageName: string;
-
-  /**
-   * Names a slash-normalized folder path relative to the owning package root.
-   */
-  readonly path: string;
-
-  /**
-   * Optionally overrides the generated human-readable folder diagram title.
-   */
-  readonly title?: string;
-
-  /**
-   * Adds source-node exclusions to inherited diagram exclusions.
-   */
-  readonly excludeSourceGlobs?: readonly string[];
-
-  /**
-   * Adds external dependency exclusions to inherited diagram exclusions.
-   */
-  readonly excludeExternalDependencies?: readonly string[];
-
-  /**
-   * Optionally overrides inherited external dependency collapsing.
-   */
-  readonly collapseExternalDependencies?: boolean;
-
-  /**
-   * Optionally overrides inherited per-importer external dependency splitting.
-   */
-  readonly splitExternalDependenciesByImporter?: boolean;
-
-  /**
-   * Adds selective external dependency importer splits to inherited landscape policy.
-   */
-  readonly externalDependencyImporterSplits?: readonly AtlasExternalDependencyImporterSplit[];
-}
-
-/**
- * Splits one external dependency into separate landscape nodes for selected importing packages.
- */
-export interface AtlasExternalDependencyImporterSplit {
-  /**
-   * Matches one external dependency label using a slash-normalized glob pattern.
-   */
-  readonly dependency: string;
-
-  /**
-   * Names the importing workspace packages that receive separate external dependency nodes.
-   */
-  readonly packageNames: readonly string[];
-}
-
-/**
- * Defines source-node graph-shaping policy for one explicitly discovered package.
- */
-export interface AtlasPackageDiagramConfiguration {
-  /**
-   * Identifies the explicitly discovered package to which this policy applies.
-   */
-  readonly packageName: string;
-
-  /**
-   * Adds source-node exclusions to global diagram exclusions for this package's declarations.
-   */
-  readonly excludeSourceGlobs?: readonly string[];
-}
-
-/**
- * Describes one architecture policy rule supported by the initial validation engine.
- */
-export type AtlasArchitectureRule =
-  | AtlasCircularDependencyRule
-  | AtlasRuntimeToSupportRule
-  | AtlasDependencyDirectionRule
-  | AtlasForbiddenImportRule
-  | AtlasForbiddenExternalRule;
-
-/**
- * Rejects directed import cycles reported by the dependency analysis adapter.
- */
-export interface AtlasCircularDependencyRule {
-  /**
-   * Uniquely identifies this policy rule within one configuration document.
-   */
-  readonly id: string;
-
-  /**
-   * Identifies circular-dependency policy behavior.
-   */
-  readonly type: 'no-circular';
-
-  /**
-   * Determines whether a violation fails the command or is reported as a warning.
-   */
-  readonly severity: AtlasRuleSeverity;
-}
-
-/**
- * Rejects direct dependencies from runtime packages to support packages.
- */
-export interface AtlasRuntimeToSupportRule {
-  /**
-   * Uniquely identifies this policy rule within one configuration document.
-   */
-  readonly id: string;
-
-  /**
-   * Identifies runtime-to-support dependency policy behavior.
-   */
-  readonly type: 'no-runtime-to-support';
-
-  /**
-   * Determines whether a violation fails the command or is reported as a warning.
-   */
-  readonly severity: AtlasRuleSeverity;
-}
-
-/**
- * Restricts dependency directions between named packages, package classes, or source layers.
- */
-export interface AtlasDependencyDirectionRule {
-  /**
-   * Uniquely identifies this policy rule within one configuration document.
-   */
-  readonly id: string;
-
-  /**
-   * Identifies directional dependency policy behavior.
-   */
-  readonly type: 'dependency-direction';
-
-  /**
-   * Determines whether a violation fails the command or is reported as a warning.
-   */
-  readonly severity: AtlasRuleSeverity;
-
-  /**
-   * Determines whether matched targets are exclusively allowed or explicitly forbidden.
-   */
-  readonly mode: AtlasDependencyDirectionMode;
-
-  /**
-   * Selects importing packages or source layers to which this direction rule applies.
-   */
-  readonly from: AtlasRuleSelector;
-
-  /**
-   * Selects dependency targets allowed or forbidden by this rule.
-   */
-  readonly to: AtlasRuleSelector;
-}
-
-/**
- * Rejects import specifiers matching configured patterns from selected sources.
- */
-export interface AtlasForbiddenImportRule {
-  /**
-   * Uniquely identifies this policy rule within one configuration document.
-   */
-  readonly id: string;
-
-  /**
-   * Identifies import-specifier prohibition behavior.
-   */
-  readonly type: 'forbidden-import';
-
-  /**
-   * Determines whether a violation fails the command or is reported as a warning.
-   */
-  readonly severity: AtlasRuleSeverity;
-
-  /**
-   * Optionally limits the rule to selected importing packages or source layers.
-   */
-  readonly from?: AtlasRuleSelector;
-
-  /**
-   * Lists slash-normalized glob patterns that must not appear as import specifiers.
-   */
-  readonly patterns: readonly string[];
-}
-
-/**
- * Rejects external package imports matching configured package patterns from selected sources.
- */
-export interface AtlasForbiddenExternalRule {
-  /**
-   * Uniquely identifies this policy rule within one configuration document.
-   */
-  readonly id: string;
-
-  /**
-   * Identifies external package prohibition behavior.
-   */
-  readonly type: 'forbidden-external';
-
-  /**
-   * Determines whether a violation fails the command or is reported as a warning.
-   */
-  readonly severity: AtlasRuleSeverity;
-
-  /**
-   * Optionally limits the rule to selected importing packages or source layers.
-   */
-  readonly from?: AtlasRuleSelector;
-
-  /**
-   * Lists package-root glob patterns that must not be imported as external dependencies.
-   */
-  readonly packages: readonly string[];
-}
-
-/**
- * Selects packages and source files by exact package names, package classes, or named layers.
- */
-export interface AtlasRuleSelector {
-  /**
-   * Matches opaque artifact module IDs. TypeScript package names remain compatible module-ID aliases.
+   * Matches derived module IDs using complete ID patterns.
    */
   readonly moduleIds?: readonly string[];
 
   /**
-   * Matches one or more exact discovered package manifest names.
+   * Matches modules carrying at least one listed project-policy tag.
    */
-  readonly packageNames?: readonly string[];
-
-  /**
-   * Matches packages carrying one or more configured package class labels.
-   */
-  readonly packageClasses?: readonly string[];
-
-  /**
-   * Matches source paths belonging to one or more named source layers.
-   */
-  readonly layers?: readonly string[];
+  readonly moduleTags?: readonly string[];
 }
 
 /**
- * Defines a named source-layer selector for direction rules.
+ * Selects elements inside one loaded module.
  */
-export interface AtlasLayerDefinition {
+export interface AtlasElementSelector {
   /**
-   * Uniquely identifies the layer for rule selectors.
+   * Matches elements having one of the listed kinds.
    */
-  readonly name: string;
+  readonly elementKinds?: readonly AtlasElementKind[];
 
   /**
-   * Lists slash-normalized workspace-relative source path glob patterns in this layer.
+   * Matches elements having one of the listed normalized visibilities.
    */
-  readonly sourceGlobs: readonly string[];
+  readonly visibilities?: readonly AtlasVisibility[];
 
   /**
-   * Optionally limits the layer to exact discovered package manifest names.
+   * Matches elements carrying at least one listed trait.
    */
-  readonly packageNames?: readonly string[];
+  readonly traits?: readonly string[];
+
+  /**
+   * Matches module-relative element paths using path patterns.
+   */
+  readonly sourcePaths?: readonly string[];
 }
 
 /**
- * Determines whether a dependency target is exclusively allowed or explicitly forbidden.
+ * Groups rules evaluated only between distinct successfully loaded modules.
+ */
+export interface AtlasRootValidationConfiguration {
+  /**
+   * Lists unique project rule definitions.
+   */
+  readonly rules: readonly AtlasRootRule[];
+}
+
+/**
+ * Groups rules evaluated from one successfully loaded module.
+ */
+export interface AtlasModuleValidationConfiguration {
+  /**
+   * Lists unique module-owned rule definitions.
+   */
+  readonly rules: readonly AtlasModuleRule[];
+}
+
+/**
+ * Describes a rule supported at the project boundary.
+ */
+export type AtlasRootRule = AtlasRootCircularRule | AtlasRootDependencyDirectionRule;
+
+/**
+ * Describes a rule supported at the module boundary.
+ */
+export type AtlasModuleRule =
+  AtlasModuleCircularRule | AtlasModuleDependencyDirectionRule | AtlasForbidRule;
+
+/**
+ * Defines fields shared by every version-two validation rule.
+ */
+export interface AtlasRuleConfiguration {
+  /**
+   * Provides the stable rule identity within its owning validation block.
+   */
+  readonly id: string;
+
+  /**
+   * Determines whether a violation fails validation or is reported as a warning.
+   */
+  readonly severity: AtlasRuleSeverity;
+
+  /**
+   * Selects the relationship facts evaluated by this rule.
+   */
+  readonly relationships: readonly AtlasRelationshipKind[];
+}
+
+/**
+ * Rejects inter-module cycles among optionally selected modules.
+ */
+export interface AtlasRootCircularRule extends AtlasRuleConfiguration {
+  /**
+   * Identifies cycle prohibition behavior.
+   */
+  readonly type: 'no-circular';
+
+  /**
+   * Optionally limits cycle evaluation to matching modules.
+   */
+  readonly within?: AtlasModuleSelector;
+}
+
+/**
+ * Restricts dependency direction between selected modules.
+ */
+export interface AtlasRootDependencyDirectionRule extends AtlasRuleConfiguration {
+  /**
+   * Identifies directional dependency behavior.
+   */
+  readonly type: 'dependency-direction';
+
+  /**
+   * Selects allow-only or forbidden target behavior.
+   */
+  readonly mode: AtlasDependencyDirectionMode;
+
+  /**
+   * Selects source modules.
+   */
+  readonly from: AtlasModuleSelector;
+
+  /**
+   * Selects target modules.
+   */
+  readonly to: AtlasModuleSelector;
+}
+
+/**
+ * Rejects element cycles inside one owning module.
+ */
+export interface AtlasModuleCircularRule extends AtlasRuleConfiguration {
+  /**
+   * Identifies cycle prohibition behavior.
+   */
+  readonly type: 'no-circular';
+
+  /**
+   * Optionally limits cycle evaluation to matching elements.
+   */
+  readonly within?: AtlasElementSelector;
+}
+
+/**
+ * Restricts dependency direction between selected elements in one module.
+ */
+export interface AtlasModuleDependencyDirectionRule extends AtlasRuleConfiguration {
+  /**
+   * Identifies directional dependency behavior.
+   */
+  readonly type: 'dependency-direction';
+
+  /**
+   * Selects allow-only or forbidden target behavior.
+   */
+  readonly mode: AtlasDependencyDirectionMode;
+
+  /**
+   * Selects source elements in the owning module.
+   */
+  readonly from: AtlasElementSelector;
+
+  /**
+   * Selects target elements in the owning module.
+   */
+  readonly to: AtlasElementSelector;
+}
+
+/**
+ * Rejects selected local, module, or external dependency targets from one module.
+ */
+export interface AtlasForbidRule extends AtlasRuleConfiguration {
+  /**
+   * Identifies general target prohibition behavior.
+   */
+  readonly type: 'forbid';
+
+  /**
+   * Optionally limits source elements in the owning module.
+   */
+  readonly from?: AtlasElementSelector;
+
+  /**
+   * Selects exactly one target selector form.
+   */
+  readonly to: AtlasForbidTargetSelector;
+}
+
+/**
+ * Selects one supported target family for a module forbid rule.
+ */
+export type AtlasForbidTargetSelector =
+  AtlasModuleSelector | AtlasElementSelector | AtlasExternalTargetSelector;
+
+/**
+ * Selects unresolved external relationship targets by complete ID pattern.
+ */
+export interface AtlasExternalTargetSelector {
+  /**
+   * Matches external IDs using complete ID patterns.
+   */
+  readonly externalIds: readonly string[];
+}
+
+/**
+ * Determines whether selected targets are exclusively allowed or forbidden.
  */
 export type AtlasDependencyDirectionMode = 'allow-only' | 'forbid';
 
 /**
- * Determines the command outcome for a reported architecture policy violation.
+ * Determines command outcome for a validation violation.
  */
 export type AtlasRuleSeverity = 'error' | 'warning';
+
+/**
+ * Identifies normalized source element categories accepted by module models and selectors.
+ */
+export type AtlasElementKind =
+  | 'namespace'
+  | 'source-unit'
+  | 'class'
+  | 'interface'
+  | 'struct'
+  | 'record'
+  | 'enum'
+  | 'annotation'
+  | 'delegate'
+  | 'type-alias'
+  | 'function'
+  | 'local-function'
+  | 'constructor'
+  | 'method'
+  | 'property'
+  | 'field'
+  | 'constant'
+  | 'event'
+  | 'enum-member'
+  | 'parameter'
+  | 'local-variable'
+  | 'type-parameter';
+
+/**
+ * Identifies normalized source visibility values.
+ */
+export type AtlasVisibility = 'public' | 'protected' | 'internal' | 'private' | 'local' | 'unknown';
+
+/**
+ * Identifies normalized semantic relationship categories.
+ */
+export type AtlasRelationshipKind =
+  | 'imports'
+  | 'exports'
+  | 'references'
+  | 'inherits'
+  | 'implements'
+  | 'calls'
+  | 'instantiates'
+  | 'reads'
+  | 'writes'
+  | 'overrides'
+  | 'decorates';
+
+/**
+ * Identifies whether a compatibility workspace package represents runtime or support behavior.
+ */
+export type AtlasPackageClassification = 'runtime' | 'support';
+
+/**
+ * Describes obsolete source-discovery policy retained only by isolated compatibility adapters.
+ */
+export interface AtlasDiscoveryConfiguration {
+  /** Lists workspace package directory patterns. */
+  readonly packageGlobs?: readonly string[];
+  /** Lists excluded workspace package directory patterns. */
+  readonly excludePackageGlobs?: readonly string[];
+  /** Lists default package-relative source roots. */
+  readonly defaultSourceRoots?: readonly string[];
+  /** Lists explicit package selection policies. */
+  readonly packages: readonly AtlasPackagePolicy[];
+}
+
+/**
+ * Describes one obsolete source package selection policy at the compatibility boundary.
+ */
+export interface AtlasPackagePolicy {
+  /** Selects a package by name or relative path. */
+  readonly match: AtlasPackageMatch;
+  /** Classifies runtime or support behavior. */
+  readonly classification: AtlasPackageClassification;
+  /** Lists compatibility grouping labels. */
+  readonly classes?: readonly string[];
+  /** Lists package-relative source roots. */
+  readonly sourceRoots?: readonly string[];
+  /** Names a package-relative TypeScript project file. */
+  readonly tsconfig?: string;
+}
+
+/**
+ * Selects one obsolete source package by name or project-relative path pattern.
+ */
+export interface AtlasPackageMatch {
+  /** Matches the package manifest name. */
+  readonly name?: string;
+  /** Matches the project-relative package path. */
+  readonly path?: string;
+}
+
+/**
+ * Describes legacy graph-shaping fields used only while existing artifact adapters are migrated.
+ */
+export interface AtlasLegacyDiagramConfiguration {
+  /** Lists presentation groups. */
+  readonly moduleGroups?: readonly AtlasModuleGroupConfiguration[];
+  /** Lists source exclusions. */
+  readonly excludeSourceGlobs?: readonly string[];
+  /** Lists external exclusions. */
+  readonly excludeExternalDependencies?: readonly string[];
+  /** Controls global external collapsing. */
+  readonly collapseExternalDependencies?: boolean;
+  /** Lists selectively collapsed external IDs. */
+  readonly collapseExternalDependencyGlobs?: readonly string[];
+  /** Controls external splitting by importing module. */
+  readonly splitExternalDependenciesByImporter?: boolean;
+  /** Lists selective external splits. */
+  readonly externalDependencyImporterSplits?: readonly AtlasExternalDependencyImporterSplit[];
+  /** Lists module-specific source exclusions. */
+  readonly packages?: readonly AtlasPackageDiagramConfiguration[];
+  /** Lists module-local path diagrams. */
+  readonly folders?: readonly AtlasFolderDiagramConfiguration[];
+}
+
+/**
+ * Describes one legacy presentation group projected by the current artifact adapter.
+ */
+export interface AtlasModuleGroupConfiguration {
+  /** Provides the stable group ID. */
+  readonly id: string;
+  /** Provides the presentation title. */
+  readonly title: string;
+  /** Lists matched module ID patterns. */
+  readonly moduleIdPatterns: readonly string[];
+}
+
+/**
+ * Describes one legacy module-local path diagram projected by the current artifact adapter.
+ */
+export interface AtlasFolderDiagramConfiguration {
+  /** Names the owning loaded module. */
+  readonly packageName: string;
+  /** Names the module-relative path. */
+  readonly path: string;
+  /** Provides an optional title. */
+  readonly title?: string;
+  /** Lists source exclusions. */
+  readonly excludeSourceGlobs?: readonly string[];
+  /** Lists external exclusions. */
+  readonly excludeExternalDependencies?: readonly string[];
+  /** Controls external collapsing. */
+  readonly collapseExternalDependencies?: boolean;
+  /** Controls external splitting. */
+  readonly splitExternalDependenciesByImporter?: boolean;
+  /** Lists selective external splits. */
+  readonly externalDependencyImporterSplits?: readonly AtlasExternalDependencyImporterSplit[];
+}
+
+/**
+ * Describes one legacy selective external dependency split.
+ */
+export interface AtlasExternalDependencyImporterSplit {
+  /** Matches one external identity. */
+  readonly dependency: string;
+  /** Lists importing module identities. */
+  readonly packageNames: readonly string[];
+}
+
+/**
+ * Describes one legacy module-specific source exclusion policy.
+ */
+export interface AtlasPackageDiagramConfiguration {
+  /** Names the loaded module. */
+  readonly packageName: string;
+  /** Lists module-relative source exclusions. */
+  readonly excludeSourceGlobs?: readonly string[];
+}
+
+/**
+ * Selects legacy compatibility relationships by module and source classification.
+ */
+export interface AtlasRuleSelector {
+  /** Lists exact or patterned module identities. */
+  readonly moduleIds?: readonly string[];
+  /** Lists exact legacy package names. */
+  readonly packageNames?: readonly string[];
+  /** Lists configured compatibility tags. */
+  readonly packageClasses?: readonly string[];
+  /** Lists legacy named layers. */
+  readonly layers?: readonly string[];
+}
+
+/**
+ * Describes one obsolete named source layer retained by validation compatibility adapters.
+ */
+export interface AtlasLayerDefinition {
+  /** Provides the unique layer name. */
+  readonly name: string;
+  /** Lists source path patterns in the layer. */
+  readonly sourceGlobs: readonly string[];
+  /** Optionally limits the layer to named modules. */
+  readonly packageNames?: readonly string[];
+}
+
+/**
+ * Describes a compatibility validation rule consumed by the current evaluator ports.
+ */
+export type AtlasArchitectureRule =
+  | AtlasRootRule
+  | AtlasModuleRule
+  | AtlasRuntimeToSupportRule
+  | AtlasForbiddenImportRule
+  | AtlasForbiddenExternalRule;
+
+/**
+ * Identifies either root- or module-level cycle behavior.
+ */
+export type AtlasCircularDependencyRule = AtlasRootCircularRule | AtlasModuleCircularRule;
+
+/**
+ * Identifies either root- or module-level dependency direction behavior.
+ */
+export type AtlasDependencyDirectionRule =
+  AtlasRootDependencyDirectionRule | AtlasModuleDependencyDirectionRule;
+
+/**
+ * Describes obsolete runtime-to-support validation retained only for compatibility.
+ */
+export interface AtlasRuntimeToSupportRule {
+  /** Provides the stable rule ID. */
+  readonly id: string;
+  /** Identifies compatibility behavior. */
+  readonly type: 'no-runtime-to-support';
+  /** Determines validation outcome. */
+  readonly severity: AtlasRuleSeverity;
+}
+
+/**
+ * Describes obsolete import-text validation retained only for compatibility.
+ */
+export interface AtlasForbiddenImportRule {
+  /** Provides the stable rule ID. */
+  readonly id: string;
+  /** Identifies compatibility behavior. */
+  readonly type: 'forbidden-import';
+  /** Determines validation outcome. */
+  readonly severity: AtlasRuleSeverity;
+  /** Optionally selects source modules or layers. */
+  readonly from?: AtlasRuleSelector;
+  /** Lists forbidden import text patterns. */
+  readonly patterns: readonly string[];
+}
+
+/**
+ * Describes obsolete external-package validation retained only for compatibility.
+ */
+export interface AtlasForbiddenExternalRule {
+  /** Provides the stable rule ID. */
+  readonly id: string;
+  /** Identifies compatibility behavior. */
+  readonly type: 'forbidden-external';
+  /** Determines validation outcome. */
+  readonly severity: AtlasRuleSeverity;
+  /** Optionally selects source modules or layers. */
+  readonly from?: AtlasRuleSelector;
+  /** Lists forbidden external ID patterns. */
+  readonly packages: readonly string[];
+}

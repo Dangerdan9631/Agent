@@ -5,22 +5,18 @@ import type { AtlasLogContext, AtlasLogger } from '#application/shared/logging/A
 import { ArchitectureValidator } from '#application/validation/ArchitectureValidator.js';
 import { CircularDependencyRuleEvaluator } from '#application/validation/CircularDependencyRuleEvaluator.js';
 import { DependencyDirectionRuleEvaluator } from '#application/validation/DependencyDirectionRuleEvaluator.js';
+import { ForbidRuleEvaluator } from '#application/validation/ForbidRuleEvaluator.js';
 import { PackageOwnershipResolver } from '#application/validation/PackageOwnershipResolver.js';
 import { RuleSelectorMatcher } from '#application/validation/RuleSelectorMatcher.js';
-import { RuntimeToSupportRuleEvaluator } from '#application/validation/RuntimeToSupportRuleEvaluator.js';
 import { ValidateArchitecture } from '#application/validation/ValidateArchitecture.js';
 import type { DependencyAnalysisResult } from '#application/validation/model/DependencyAnalysisResult.js';
 import type { DependencyAnalysisArtifactWriter } from '#application/validation/ports/DependencyAnalysisArtifactWriter.js';
-import type { DependencyAnalyzer } from '#application/validation/ports/DependencyAnalyzer.js';
 import { WorkspaceLoader } from '#application/workspace/WorkspaceLoader.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
 import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
-import { ManifestWorkspacePackageResolver } from '#infrastructure/federation/ManifestWorkspacePackageResolver.js';
 import { NodeAtlasWorkspaceLoader } from '#infrastructure/federation/NodeAtlasWorkspaceLoader.js';
 import { NodeWorkspacePathResolver } from '#infrastructure/workspace/NodeWorkspacePathResolver.js';
-import { PackagePolicySelector } from '#infrastructure/workspace/PackagePolicySelector.js';
-import { NodeWorkspacePackageDiscoverer } from '#infrastructure/workspace/WorkspacePackageDiscoverer.js';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -33,15 +29,12 @@ describe('Federated manifest integration', () => {
    */
   it('validates and projects module-local Kotlin models through the shared pipeline', async () => {
     const fixturePath = resolve('tests/fixtures/federated-kotlin');
-    const manifestPath = resolve(fixturePath, 'models/atlas.manifest.yml');
     const documentCodec = new YamlDocumentCodec();
     const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
-    const policySelector = new PackagePolicySelector();
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
       new YamlAtlasConfigurationLoader(documentCodec),
-      new NodeWorkspacePackageDiscoverer(policySelector),
-      new ManifestWorkspacePackageResolver(manifestLoader, policySelector),
+      manifestLoader,
       new SilentAtlasLogger()
     );
     const graphAdapter = new FederatedDeclarationGraphAdapter();
@@ -49,31 +42,31 @@ describe('Federated manifest integration', () => {
     const selectorMatcher = new RuleSelectorMatcher(ownershipResolver);
     const validationWorkflow = new ValidateArchitecture(
       workspaceLoader,
-      new UnusedDependencyAnalyzer(),
       new IgnoringAnalysisArtifactWriter(),
       new ArchitectureValidator([
         new CircularDependencyRuleEvaluator(),
-        new RuntimeToSupportRuleEvaluator(ownershipResolver),
-        new DependencyDirectionRuleEvaluator(selectorMatcher)
+        new DependencyDirectionRuleEvaluator(selectorMatcher),
+        new ForbidRuleEvaluator(selectorMatcher)
       ]),
-      manifestLoader,
       new FederatedDependencyAnalysisAdapter(graphAdapter)
     );
     const request = {
       invocationDirectoryPath: fixturePath,
       workspaceOption: fixturePath,
       configurationOption: undefined,
-      outputOption: undefined,
-      manifestOption: manifestPath
+      outputOption: undefined
     };
 
     const validation = await validationWorkflow.execute(request);
-    const graph = graphAdapter.toGraph(await manifestLoader.load(manifestPath));
+    const modelWorkspace = validation.workspace.modelWorkspace;
+    expect(modelWorkspace).toBeDefined();
+    const graph = graphAdapter.toGraph(modelWorkspace!);
     const diagrams = new DiagramProjectionService().project(validation.workspace, graph);
     const scopes = diagrams.map((diagram) => diagram.scope);
+    const applicationModuleId = 'dev.example:app:1.0.0';
+    const supportModuleId = 'dev.example:test-support:1.0.0';
     const folder = diagrams.find(
-      (diagram) =>
-        diagram.scope === 'folder:dev.example:app:1.0.0:src/main/kotlin/dev/example/app/feature'
+      (diagram) => diagram.scope === `module:${encodeURIComponent(applicationModuleId)}:app-feature`
     );
 
     expect(validation.workspace.packages.map((workspacePackage) => workspacePackage.name)).toEqual([
@@ -81,34 +74,18 @@ describe('Federated manifest integration', () => {
       'dev.example:test-support:1.0.0'
     ]);
     expect(validation.validation.violations.map((violation) => violation.ruleId)).toEqual([
-      'application-no-support-class',
-      'feature-no-support-package',
-      'no-cycles',
-      'runtime-no-support'
+      'application-no-support',
+      'dev.example:app:1.0.0:feature-no-support',
+      'no-cycles'
     ]);
-    expect(scopes).toContain('group:kotlin-example');
-    expect(scopes).toContain('package:dev.example:app:1.0.0');
-    expect(scopes).not.toContain('package:dev.example:test-support:1.0.0');
+    expect(scopes).toContain(`module:${encodeURIComponent(applicationModuleId)}:app`);
+    expect(scopes.some((scope) => scope.includes(encodeURIComponent(supportModuleId)))).toBe(false);
     expect(folder?.nodes.map((node) => node.id)).toEqual([
-      'application-service',
-      'boundary:support-service'
+      'boundary:dev.example%253Atest-support%253A1.0.0%3Asupport-service',
+      'dev.example%3Aapp%3A1.0.0:application-service'
     ]);
   });
 });
-
-/**
- * Supplies inert source analysis because manifest validation uses the federated adapter.
- */
-class UnusedDependencyAnalyzer implements DependencyAnalyzer {
-  /**
-   * Returns no source-platform analysis results.
-   *
-   * @returns Empty analysis result collection.
-   */
-  public analyze(): Promise<readonly DependencyAnalysisResult[]> {
-    return Promise.resolve([]);
-  }
-}
 
 /**
  * Discards raw analysis artifacts while retaining validation behavior under test.

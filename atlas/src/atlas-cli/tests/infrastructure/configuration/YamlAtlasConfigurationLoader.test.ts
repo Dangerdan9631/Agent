@@ -1,18 +1,15 @@
 import type { AtlasConfigurationError } from '#infrastructure/configuration/AtlasConfigurationError.js';
 import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
 import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 /**
- * Creates and removes isolated configuration documents for infrastructure tests.
+ * Creates and removes isolated version-two configuration document families.
  */
 class TemporaryConfigurationDirectory {
-  /**
-   * Holds directories created during the current test suite.
-   */
   private static readonly directories: string[] = [];
 
   /**
@@ -34,15 +31,17 @@ class TemporaryConfigurationDirectory {
   }
 
   /**
-   * Writes a YAML configuration document under the temporary directory.
+   * Writes one YAML document below the temporary project root.
    *
-   * @param document - Serializable configuration document value.
-   * @returns Absolute path to the written configuration file.
+   * @param relativePath - Slash-separated project-relative file path.
+   * @param document - Serializable YAML document value.
+   * @returns Absolute path to the written document.
    */
-  public async write(document: unknown): Promise<string> {
-    const configurationPath = join(this.directoryPath, 'atlas.config.yml');
-    await writeFile(configurationPath, new YamlDocumentCodec().stringify(document), 'utf8');
-    return configurationPath;
+  public async write(relativePath: string, document: unknown): Promise<string> {
+    const documentPath = join(this.directoryPath, ...relativePath.split('/'));
+    await mkdir(dirname(documentPath), { recursive: true });
+    await writeFile(documentPath, new YamlDocumentCodec().stringify(document), 'utf8');
+    return documentPath;
   }
 
   /**
@@ -59,54 +58,80 @@ class TemporaryConfigurationDirectory {
 }
 
 /**
- * Verifies YAML document and JSON Schema validation at the configuration infrastructure boundary.
+ * Verifies closed-schema validation and deterministic version-two composition.
  */
 describe('YamlAtlasConfigurationLoader', () => {
   afterEach(TemporaryConfigurationDirectory.removeAll.bind(TemporaryConfigurationDirectory));
 
-  /**
-   * Verifies that a valid explicit package policy becomes a typed configuration model.
-   */
-  it('loads a valid canonical configuration', async () => {
-    const temporaryDirectory = await TemporaryConfigurationDirectory.create();
-    const configurationPath = await temporaryDirectory.write({
-      schemaVersion: 1,
-      discovery: {
-        packages: [
-          {
-            match: { name: '@demo/*' },
-            classification: 'runtime',
-            sourceRoots: ['src']
-          }
-        ]
-      },
-      layout: { rows: 4, horizontalGap: 20, verticalGap: 10 },
-      diagrams: {
-        excludeSourceGlobs: ['**/*.test.ts'],
-        packages: [{ packageName: '@demo/app', excludeSourceGlobs: ['src/generated/**'] }],
-        folders: [{ packageName: '@demo/app', path: 'src/application' }]
+  /** Verifies ordered base merging and defining-document-relative module model resolution. */
+  it('composes base and module fragments into the canonical project model', async () => {
+    const project = await TemporaryConfigurationDirectory.create();
+    await project.write('config/team.atlas.base.yml', {
+      schemaVersion: 2,
+      documentType: 'base',
+      diagramDefaults: {
+        externalDependencies: {
+          excludeIds: ['System.*'],
+          collapse: { mode: 'matching', ids: ['Microsoft.*'] }
+        }
       }
+    });
+    await project.write('packages/lib/atlas.module.config.yml', {
+      schemaVersion: 2,
+      documentType: 'module',
+      model: '../../architecture/models/lib.atlas.module.yml',
+      tags: ['core'],
+      diagrams: [{ id: 'lib', title: 'Library', scope: { type: 'module' } }]
+    });
+    const configurationPath = await project.write('atlas.config.yml', {
+      schemaVersion: 2,
+      documentType: 'root',
+      extends: ['config/team.atlas.base.yml'],
+      project: {
+        name: 'Demo',
+        artifacts: { root: 'architecture' },
+        diagramDefaults: {
+          externalDependencies: {
+            excludeIds: ['System.*', 'node:*'],
+            collapse: { mode: 'matching', ids: ['@types/*'] }
+          }
+        }
+      },
+      modules: [
+        'packages/lib/atlas.module.config.yml',
+        { model: 'architecture/models/app.atlas.module.yml', tags: ['delivery'] }
+      ]
     });
 
     const configuration = await new YamlAtlasConfigurationLoader(new YamlDocumentCodec()).load(
       configurationPath
     );
 
-    expect(configuration.discovery.packages[0]?.classification).toBe('runtime');
-    expect(configuration.layout?.rows).toBe(4);
-    expect(configuration.diagrams?.folders?.[0]?.path).toBe('src/application');
-    expect(configuration.diagrams?.packages?.[0]?.excludeSourceGlobs).toEqual(['src/generated/**']);
+    expect(configuration.schemaVersion).toBe(2);
+    expect(configuration.project.artifacts.root).toBe('architecture');
+    expect(configuration.project.diagramDefaults?.externalDependencies.excludeIds).toEqual([
+      'System.*',
+      'node:*'
+    ]);
+    expect(configuration.project.diagramDefaults?.externalDependencies.collapse?.ids).toEqual([
+      'Microsoft.*',
+      '@types/*'
+    ]);
+    expect(configuration.modules.map((module) => module.model)).toEqual([
+      'architecture/models/lib.atlas.module.yml',
+      'architecture/models/app.atlas.module.yml'
+    ]);
   });
 
-  /**
-   * Verifies that unrecognized policy fields fail with an actionable schema error.
-   */
-  it('rejects unrecognized configuration fields', async () => {
-    const temporaryDirectory = await TemporaryConfigurationDirectory.create();
-    const configurationPath = await temporaryDirectory.write({
-      schemaVersion: 1,
-      discovery: { packages: [] },
-      unsupported: true
+  /** Verifies each discriminator selects a closed schema. */
+  it('rejects unrecognized root fields', async () => {
+    const project = await TemporaryConfigurationDirectory.create();
+    const configurationPath = await project.write('atlas.config.yml', {
+      schemaVersion: 2,
+      documentType: 'root',
+      project: { name: 'Demo', artifacts: { root: 'architecture' } },
+      modules: [{ model: 'architecture/app.atlas.module.yml' }],
+      discovery: {}
     });
 
     await expect(
@@ -118,50 +143,39 @@ describe('YamlAtlasConfigurationLoader', () => {
     );
   });
 
-  /**
-   * Verifies that path traversal in an opt-in folder diagram is rejected by the canonical schema.
-   */
-  it('rejects folder diagram paths that escape their configured package root', async () => {
-    const temporaryDirectory = await TemporaryConfigurationDirectory.create();
-    const configurationPath = await temporaryDirectory.write({
-      schemaVersion: 1,
-      discovery: {
-        packages: [{ match: { name: '@demo/app' }, classification: 'runtime' }]
-      },
-      diagrams: {
-        folders: [{ packageName: '@demo/app', path: '../private' }]
-      }
+  /** Verifies referenced fragments are required and cannot silently produce partial policy. */
+  it('rejects a missing configuration fragment', async () => {
+    const project = await TemporaryConfigurationDirectory.create();
+    const configurationPath = await project.write('atlas.config.yml', {
+      schemaVersion: 2,
+      documentType: 'root',
+      extends: ['config/missing.atlas.base.yml'],
+      project: { name: 'Demo', artifacts: { root: 'architecture' } },
+      modules: [{ model: 'architecture/app.atlas.module.yml' }]
     });
 
     await expect(
       new YamlAtlasConfigurationLoader(new YamlDocumentCodec()).load(configurationPath)
-    ).rejects.toEqual(
-      expect.objectContaining<Partial<AtlasConfigurationError>>({
-        name: 'AtlasConfigurationError'
-      })
-    );
+    ).rejects.toThrow("Path 'config/missing.atlas.base.yml' is invalid");
   });
 
-  /**
-   * Verifies presentation groups receive unique stable identities for diagram and layout persistence.
-   */
-  it('rejects duplicate module group IDs', async () => {
-    const temporaryDirectory = await TemporaryConfigurationDirectory.create();
-    const configurationPath = await temporaryDirectory.write({
-      schemaVersion: 1,
-      discovery: {
-        packages: [{ match: { name: '@demo/app' }, classification: 'runtime' }]
-      },
-      diagrams: {
-        moduleGroups: [
-          { id: 'application', title: 'Application', moduleIdPatterns: ['@demo/*'] },
-          { id: 'application', title: 'Duplicate', moduleIdPatterns: ['@other/*'] }
-        ]
-      }
+  /** Verifies canonical model identities cannot enter the ordered module list twice. */
+  it('rejects duplicate resolved model paths', async () => {
+    const project = await TemporaryConfigurationDirectory.create();
+    const configurationPath = await project.write('atlas.config.yml', {
+      schemaVersion: 2,
+      documentType: 'root',
+      project: { name: 'Demo', artifacts: { root: 'architecture' } },
+      modules: [
+        { model: 'architecture/app.atlas.module.yml' },
+        { model: 'architecture/app.atlas.module.yml' }
+      ]
     });
 
     await expect(
       new YamlAtlasConfigurationLoader(new YamlDocumentCodec()).load(configurationPath)
-    ).rejects.toThrow("Module group ID 'application' must be unique.");
+    ).rejects.toThrow(
+      "Generated model path 'architecture/app.atlas.module.yml' is configured more than once."
+    );
   });
 });

@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This source tree implements the `dev.atlas.kotlin` Gradle plugin. It converts Kotlin source declarations into portable Atlas module-model YAML and orchestrates manifest generation.
+This source tree implements the `dev.atlas.kotlin` Gradle plugin. It converts
+each explicitly registered target compilation into one portable module-model YAML.
 
-The root viewer task carries the generated manifest through to Atlas desktop, preserving language-neutral regeneration after interactive configuration changes.
+No root aggregation or viewer task is registered; project-level composition is
+owned by the root `atlas.config.yml` and shared Atlas application.
 
 ## Conventions
 

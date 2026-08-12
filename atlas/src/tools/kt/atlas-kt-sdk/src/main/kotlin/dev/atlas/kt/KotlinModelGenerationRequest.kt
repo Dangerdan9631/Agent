@@ -10,6 +10,7 @@ import java.io.File
  * @property displayName Readable artifact name.
  * @property version Published artifact version.
  * @property category Portable artifact family label.
+ * @property variant Optional exact Kotlin target name.
  * @property sourceRoots Kotlin source directories relative to the project root.
  * @property semanticFragments Optional KSP fragment files that refine source-derived semantics.
  * @property outputFile Destination module-model YAML file.
@@ -20,6 +21,7 @@ data class KotlinModelGenerationRequest(
     val displayName: String,
     val version: String,
     val category: String,
+    val variant: String?,
     val sourceRoots: List<String>,
     val semanticFragments: List<File>,
     val outputFile: File
@@ -58,6 +60,7 @@ class KotlinModelGenerationRequestParser(
             this.required(values, "--display-name"),
             this.required(values, "--version"),
             this.required(values, "--category"),
+            values["--variant"]?.singleOrNull()?.takeIf { value -> value.isNotBlank() },
             sourceRoots,
             values["--semantic-fragment"].orEmpty()
                 .map { path -> File(path).canonicalFile }

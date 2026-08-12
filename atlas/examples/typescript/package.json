@@ -4,11 +4,11 @@
   "type": "module",
   "scripts": {
     "demo": "tsx packages/app/src/main.ts \"The Left Hand of Darkness\"",
-    "architecture:models": "atlas-ts-npm --workspace . --config atlas.config.yml --output architecture",
-    "architecture:validate": "atlas-cli validate --manifest architecture/models/atlas.manifest.yml",
-    "architecture:generate": "atlas-cli generate --manifest architecture/models/atlas.manifest.yml --no-validate",
-    "architecture:layout": "atlas-cli layout landscape --manifest architecture/models/atlas.manifest.yml --generate --force",
-    "architecture:view": "atlas --config atlas.config.yml --manifest architecture/models/atlas.manifest.yml",
+    "architecture:models": "npm run architecture:model --workspace=@atlas-example/lib && npm run architecture:model --workspace=@atlas-example/app",
+    "architecture:validate": "atlas-cli validate --config atlas.config.yml",
+    "architecture:generate": "atlas-cli generate --config atlas.config.yml --no-validate",
+    "architecture:layout": "atlas-cli layout landscape --config atlas.config.yml --generate --force",
+    "architecture:view": "atlas --config atlas.config.yml",
     "architecture:clean": "atlas-cli clean --confirm",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && npm run architecture:models && npm run architecture:validate && npm run architecture:generate"

@@ -39,7 +39,7 @@ export class ViewArtifacts implements ViewArtifactsWorkflow {
     port: number,
     openBrowser: boolean
   ): Promise<ArtifactServerLocation> {
-    await this.generateSelectedManifest(request);
+    await this.generateConfiguredArtifacts(request);
     const workspace = await this.workspaceLoader.load(request);
     if (workspace.paths.artifactRootPath === undefined) {
       throw new Error('Atlas cannot serve artifacts before resolving an artifact root.');
@@ -57,13 +57,13 @@ export class ViewArtifacts implements ViewArtifactsWorkflow {
     return location;
   }
 
-  /** Generates manifest-selected artifacts before serving so the viewer receives the requested workspace. */
-  private async generateSelectedManifest(request: WorkspaceLoadingRequest): Promise<void> {
-    if (request.manifestOption === undefined || this.generationWorkflow === undefined) return;
+  /** Generates configured artifacts before serving so the viewer receives the selected model subset. */
+  private async generateConfiguredArtifacts(request: WorkspaceLoadingRequest): Promise<void> {
+    if (this.generationWorkflow === undefined) return;
     const result = await this.generationWorkflow.execute(request, false);
     if (!result.generated()) {
       throw new Error(
-        'Atlas cannot serve a federated manifest while architecture validation has errors.'
+        'Atlas cannot serve configured models while architecture validation has errors.'
       );
     }
   }

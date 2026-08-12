@@ -10,7 +10,6 @@ import type { ArchitectureDiagramWorkflow } from '#application/diagram/ports/Arc
 import { LayoutOverrides } from '#application/layout/model/LayoutDocument.js';
 import type { ArchitectureLayoutWorkflow } from '#application/layout/ports/ArchitectureLayoutWorkflow.js';
 import type { CleanArtifactsWorkflow } from '#application/clean/ports/CleanArtifactsWorkflow.js';
-import type { GenerateFederatedModels } from '#application/federation/GenerateFederatedModels.js';
 import type { ViewArtifactsWorkflow } from '#application/view/ports/ViewArtifactsWorkflow.js';
 import { Command, CommanderError } from 'commander';
 
@@ -32,7 +31,6 @@ export class AtlasCli {
     private readonly diagramWorkflow: ArchitectureDiagramWorkflow,
     private readonly layoutWorkflow: ArchitectureLayoutWorkflow,
     private readonly cleanWorkflow: CleanArtifactsWorkflow,
-    private readonly federatedModelWorkflow?: GenerateFederatedModels,
     private readonly viewWorkflow?: ViewArtifactsWorkflow
   ) {}
 
@@ -81,7 +79,6 @@ export class AtlasCli {
         'Workspace root, absolute or relative to the invocation directory.'
       )
       .option('--config <path>', 'Atlas configuration file path.')
-      .option('--manifest <path>', 'Federated Atlas workspace manifest path.')
       .option('--output <path>', 'Artifact output root.')
       .option('--log-level <level>', 'Diagnostic log level.')
       .exitOverride();
@@ -116,12 +113,6 @@ export class AtlasCli {
       .option('--confirm')
       .action(this.cleanArtifacts.bind(this, program));
     program
-      .command('generate-models')
-      .description(
-        'Generate one language-neutral model per selected package and a workspace manifest.'
-      )
-      .action(this.generateFederatedModels.bind(this, program));
-    program
       .command('view')
       .description('Serve generated diagrams and persist viewer changes.')
       .option('--host <host>', 'Host interface for the local viewer.', '127.0.0.1')
@@ -145,8 +136,7 @@ export class AtlasCli {
       invocationDirectoryPath: process.cwd(),
       workspaceOption: globalOptions?.workspace,
       configurationOption: globalOptions?.config,
-      outputOption: globalOptions?.output,
-      manifestOption: globalOptions?.manifest
+      outputOption: globalOptions?.output
     });
 
     for (const violation of commandResult.validation.violations) {
@@ -160,7 +150,7 @@ export class AtlasCli {
     }
 
     this.outputWriter.writeLine(
-      `Validated ${commandResult.workspace.packages.length} package(s) with ${commandResult.validation.violations.length} warning(s).`
+      `Validated ${commandResult.workspace.packages.length} module(s) with ${commandResult.validation.violations.length} warning(s).`
     );
   }
 
@@ -182,8 +172,7 @@ export class AtlasCli {
         invocationDirectoryPath: process.cwd(),
         workspaceOption: globalOptions.workspace,
         configurationOption: globalOptions.config,
-        outputOption: globalOptions.output,
-        manifestOption: globalOptions.manifest
+        outputOption: globalOptions.output
       },
       options.validate === false
     );
@@ -223,8 +212,7 @@ export class AtlasCli {
         invocationDirectoryPath: process.cwd(),
         workspaceOption: globalOptions.workspace,
         configurationOption: globalOptions.config,
-        outputOption: globalOptions.output,
-        manifestOption: globalOptions.manifest
+        outputOption: globalOptions.output
       },
       scope,
       this.toLayoutOverrides(options),
@@ -269,8 +257,7 @@ export class AtlasCli {
         invocationDirectoryPath: process.cwd(),
         workspaceOption: globalOptions.workspace,
         configurationOption: globalOptions.config,
-        outputOption: globalOptions.output,
-        manifestOption: globalOptions.manifest
+        outputOption: globalOptions.output
       },
       scope,
       options.validate === false
@@ -377,27 +364,6 @@ export class AtlasCli {
   }
 
   /**
-   * Generates independently regenerable package models and reports their manifest path.
-   *
-   * @param rootCommand - Root Commander program carrying global options.
-   * @returns A promise that resolves after manifest generation completes.
-   */
-  private async generateFederatedModels(rootCommand: Command): Promise<void> {
-    this.applyLogLevel(rootCommand);
-    if (this.federatedModelWorkflow === undefined) {
-      throw new Error('Atlas federated model generation is not configured for this command host.');
-    }
-    const options = rootCommand.opts<AtlasGlobalOptions>();
-    const manifestPath = await this.federatedModelWorkflow.execute({
-      invocationDirectoryPath: process.cwd(),
-      workspaceOption: options.workspace,
-      configurationOption: options.config,
-      outputOption: options.output
-    });
-    this.outputWriter.writeLine(`Generated Atlas workspace manifest at ${manifestPath}.`);
-  }
-
-  /**
    * Starts the local artifact viewer through the application-owned hosting workflow.
    *
    * @param rootCommand - Root Commander program carrying global workspace options.
@@ -415,8 +381,7 @@ export class AtlasCli {
         invocationDirectoryPath: process.cwd(),
         workspaceOption: globalOptions.workspace,
         configurationOption: globalOptions.config,
-        outputOption: globalOptions.output,
-        manifestOption: globalOptions.manifest
+        outputOption: globalOptions.output
       },
       options.host,
       this.toPort(options.port),
@@ -499,11 +464,6 @@ export class AtlasCli {
  * Represents Atlas global command-line options after Commander parsing.
  */
 interface AtlasGlobalOptions {
-  /**
-   * Optionally selects a federated Atlas workspace manifest.
-   */
-  readonly manifest?: string;
-
   /**
    * Optionally selects a workspace root path.
    */

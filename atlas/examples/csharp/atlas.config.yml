@@ -1,48 +1,36 @@
-schemaVersion: 1
-discovery:
-  packageGlobs:
-    - "src/*"
-  defaultSourceRoots:
-    - "."
-  packages:
-    - match:
-        name: "Lib@*"
-      classification: runtime
-      classes:
-        - library
-    - match:
-        name: "App@*"
-      classification: runtime
-      classes:
-        - executable
-artifacts:
-  root: architecture
-diagrams:
-  packages:
-    - packageName: "Lib@net8.0"
-    - packageName: "App@net8.0"
-layers:
-  - name: library
-    sourceGlobs:
-      - "**"
-    packageNames:
-      - "Lib@net8.0"
-  - name: executable
-    sourceGlobs:
-      - "**"
-    packageNames:
-      - "App@net8.0"
-rules:
-  - id: no-cycles
-    type: no-circular
-    severity: error
-  - id: library-does-not-depend-on-app
-    type: dependency-direction
-    severity: error
-    mode: forbid
-    from:
-      layers:
-        - library
-    to:
-      layers:
-        - executable
+schemaVersion: 2
+documentType: root
+project:
+  name: Atlas C# Reading List
+  artifacts:
+    root: architecture
+  diagrams:
+    - id: landscape
+      title: C# reading list
+modules:
+  - model: architecture/models/Lib-net8.0.atlas.module.yml
+    tags: [runtime, library]
+    diagrams:
+      - id: api
+        title: Library API
+        scope: { type: module }
+  - model: architecture/models/App-net8.0.atlas.module.yml
+    tags: [runtime, executable]
+    diagrams:
+      - id: application
+        title: Application
+        scope: { type: module }
+validation:
+  rules:
+    - id: no-runtime-cycles
+      type: no-circular
+      severity: error
+      relationships: [imports, references, calls]
+      within: { moduleTags: [runtime] }
+    - id: library-does-not-depend-on-app
+      type: dependency-direction
+      severity: error
+      mode: forbid
+      relationships: [imports, references, calls]
+      from: { moduleTags: [library] }
+      to: { moduleTags: [executable] }

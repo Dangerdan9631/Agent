@@ -1,0 +1,19 @@
+schemaVersion: 2
+generator: { name: atlas-ts, version: test }
+source: { language: csharp }
+module:
+  id: '@atlas-fixture/federation-four'
+  name: '@atlas-fixture/federation-four'
+  version: 1.0.0
+  category: npm-package
+elements:
+  - id: four
+    kind: class
+    name: Four
+    qualifiedName: Four
+    visibility: public
+    source:
+      path: src/four.ts
+      start: { line: 4, column: 1 }
+      end: { line: 4, column: 21 }
+relationships: []

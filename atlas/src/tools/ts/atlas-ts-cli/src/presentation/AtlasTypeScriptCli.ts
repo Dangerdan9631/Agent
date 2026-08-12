@@ -31,8 +31,8 @@ export class AtlasTypeScriptCli {
       .exitOverride();
     command
       .command("generate")
-      .option("--workspace <path>")
-      .option("--config <path>")
+      .option("--package-root <path>")
+      .option("--tsconfig <path>")
       .option("--output <path>")
       .action(async (options: AtlasTypeScriptOptions) => {
         await this.workflow.execute(this.toWorkflowOptions(options));
@@ -58,12 +58,12 @@ export class AtlasTypeScriptCli {
     options: AtlasTypeScriptOptions,
   ): TypeScriptModelGenerationOptions {
     return {
-      ...(options.workspace === undefined
+      ...(options.packageRoot === undefined
         ? {}
-        : { workspacePath: options.workspace }),
-      ...(options.config === undefined
+        : { packagePath: options.packageRoot }),
+      ...(options.tsconfig === undefined
         ? {}
-        : { configurationPath: options.config }),
+        : { tsconfigPath: options.tsconfig }),
       ...(options.output === undefined ? {} : { outputPath: options.output }),
     };
   }
@@ -73,10 +73,10 @@ export class AtlasTypeScriptCli {
  * Represents the permitted command-line options for TypeScript model generation.
  */
 interface AtlasTypeScriptOptions {
-  /** Optional root directory containing the TypeScript workspace. */
-  readonly workspace?: string;
-  /** Optional Atlas configuration document path. */
-  readonly config?: string;
+  /** Optional root directory containing the npm package. */
+  readonly packageRoot?: string;
+  /** Optional package-relative TypeScript compiler configuration. */
+  readonly tsconfig?: string;
   /** Optional generated-artifact root override. */
   readonly output?: string;
 }

@@ -2,20 +2,20 @@
  * Describes filesystem options for one TypeScript model-generation operation.
  */
 export interface TypeScriptModelGenerationOptions {
-  /** Optional workspace root; defaults to the current working directory. */
-  readonly workspacePath?: string;
-  /** Optional YAML policy path; defaults to atlas.config.yml in the workspace. */
-  readonly configurationPath?: string;
-  /** Optional artifact root overriding the YAML policy value. */
+  /** Optional npm package root; defaults to the current working directory. */
+  readonly packagePath?: string;
+  /** Optional package-relative tsconfig override. */
+  readonly tsconfigPath?: string;
+  /** Optional package-relative model output override. */
   readonly outputPath?: string;
 }
 
 /**
- * Generates portable Atlas models from one selected TypeScript workspace.
+ * Generates one portable Atlas model from one selected TypeScript package.
  */
 export interface TypeScriptModelGenerationWorkflow {
   /**
-   * Generates and persists models using the supplied workspace options.
+   * Generates and persists a model using the supplied package options.
    *
    * @param options Resolved command options owned by the CLI boundary.
    */

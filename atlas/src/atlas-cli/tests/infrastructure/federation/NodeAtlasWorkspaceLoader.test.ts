@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 /**
- * Verifies manifest-selected module models are validated and linked only by stable artifact identities.
+ * Verifies configured module models are validated and linked only by stable artifact identities.
  */
 describe('NodeAtlasWorkspaceLoader', () => {
   const temporaryDirectories: string[] = [];
@@ -148,7 +148,142 @@ describe('NodeAtlasWorkspaceLoader', () => {
       new NodeAtlasWorkspaceLoader(codec).load(resolve(directory, 'atlas.manifest.yml'))
     ).rejects.toThrow("duplicate relationship ID 'shared'");
   });
+
+  /** Skips only absent configured outputs while retaining ordered loaded module policy. */
+  it('loads the configured version-two subset and reports missing model paths', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-configured-models-'));
+    temporaryDirectories.push(directory);
+    const codec = new YamlDocumentCodec();
+    await writeFile(
+      resolve(directory, 'present.atlas.module.yml'),
+      codec.stringify(new VersionTwoModelFixture().create('present')),
+      'utf8'
+    );
+
+    const workspace = await new NodeAtlasWorkspaceLoader(codec).loadConfigured(directory, [
+      { model: 'present.atlas.module.yml', tags: ['loaded'] },
+      { model: 'missing.atlas.module.yml', tags: ['absent'] }
+    ]);
+
+    expect([...workspace.workspace.modules.keys()]).toEqual(['present']);
+    expect(workspace.missingModelPaths).toEqual(['missing.atlas.module.yml']);
+    expect(workspace.modulesById.get('present')?.tags).toEqual(['loaded']);
+  });
+
+  /** Rejects a project whose complete configured model subset is absent. */
+  it('rejects a zero-model configured result', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-configured-models-'));
+    temporaryDirectories.push(directory);
+
+    await expect(
+      new NodeAtlasWorkspaceLoader(new YamlDocumentCodec()).loadConfigured(directory, [
+        { model: 'missing.atlas.module.yml' }
+      ])
+    ).rejects.toThrow('could not load any configured generated module models');
+  });
+
+  /** Treats malformed present generated output as an error rather than a missing model. */
+  it('rejects an invalid present configured model', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-configured-models-'));
+    temporaryDirectories.push(directory);
+    await writeFile(resolve(directory, 'invalid.atlas.module.yml'), 'schemaVersion: 2\n', 'utf8');
+
+    await expect(
+      new NodeAtlasWorkspaceLoader(new YamlDocumentCodec()).loadConfigured(directory, [
+        { model: 'invalid.atlas.module.yml' }
+      ])
+    ).rejects.toThrow('is invalid');
+  });
+
+  /** Preserves normalized version-two relationship kinds beyond the legacy compatibility subset. */
+  it('loads the complete version-two relationship vocabulary', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-configured-models-'));
+    temporaryDirectories.push(directory);
+    const codec = new YamlDocumentCodec();
+    const model = new VersionTwoModelFixture().create('present') as Record<string, unknown>;
+    model.relationships = [
+      {
+        id: 'export',
+        sourceElementId: 'element',
+        kind: 'exports',
+        target: { type: 'external', id: 'public-api' }
+      }
+    ];
+    await writeFile(resolve(directory, 'present.atlas.module.yml'), codec.stringify(model), 'utf8');
+
+    const workspace = await new NodeAtlasWorkspaceLoader(codec).loadConfigured(directory, [
+      { model: 'present.atlas.module.yml' }
+    ]);
+
+    expect(workspace.workspace.relationships[0]?.relationship.kind).toBe('exports');
+  });
+
+  /** Preserves source-unit ancestry as source paths when a generator omits optional source spans. */
+  it('derives source paths from version-two source-unit parentage', async () => {
+    const directory = await mkdtemp(resolve(tmpdir(), 'atlas-configured-models-'));
+    temporaryDirectories.push(directory);
+    const codec = new YamlDocumentCodec();
+    const model = new VersionTwoModelFixture().create('present') as Record<string, unknown>;
+    model.elements = [
+      {
+        id: 'element',
+        kind: 'class',
+        name: 'Element',
+        qualifiedName: 'Example',
+        parentId: 'source-unit',
+        visibility: 'public'
+      },
+      {
+        id: 'source-unit',
+        kind: 'source-unit',
+        name: 'Example.kt',
+        qualifiedName: 'src/main/kotlin/Example.kt',
+        visibility: 'public'
+      }
+    ];
+    await writeFile(resolve(directory, 'present.atlas.module.yml'), codec.stringify(model), 'utf8');
+
+    const workspace = await new NodeAtlasWorkspaceLoader(codec).loadConfigured(directory, [
+      { model: 'present.atlas.module.yml' }
+    ]);
+
+    expect(workspace.workspace.modules.get('present')?.elements).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'element', sourcePath: 'src/main/kotlin/Example.kt' })
+      ])
+    );
+  });
 });
+
+/**
+ * Creates minimal version-two generated documents for configured subset tests.
+ */
+class VersionTwoModelFixture {
+  /**
+   * Creates one schema-valid model with deterministic empty relationships.
+   *
+   * @param moduleId - Opaque source-derived module identity.
+   * @returns Minimal version-two module model.
+   */
+  public create(moduleId: string): object {
+    return {
+      schemaVersion: 2,
+      generator: { name: 'atlas-test', version: '1.0.0' },
+      source: { language: 'test' },
+      module: { id: moduleId, name: moduleId, version: '1.0.0', category: 'test' },
+      elements: [
+        {
+          id: 'element',
+          kind: 'class',
+          name: 'Element',
+          qualifiedName: 'Element',
+          visibility: 'public'
+        }
+      ],
+      relationships: []
+    };
+  }
+}
 
 /**
  * Creates minimal schema-valid model documents for federation loader tests.

@@ -34,14 +34,18 @@ class AtlasKotlinModelDocument(
      */
     private fun render(): String {
         val document = StringBuilder()
-        document.appendLine("schemaVersion: 1")
-        document.appendLine("generatorVersion: ${this.quote("atlas-kt-1")}")
+        document.appendLine("schemaVersion: 2")
+        document.appendLine("generator:")
+        document.appendLine("  name: ${this.quote("atlas-kt")}")
+        document.appendLine("  version: ${this.quote("1")}")
+        document.appendLine("source:")
+        document.appendLine("  language: ${this.quote("kotlin")}")
         document.appendLine("module:")
         document.appendLine("  id: ${this.quote(this.request.moduleId)}")
-        document.appendLine("  displayName: ${this.quote(this.request.displayName)}")
+        document.appendLine("  name: ${this.quote(this.request.displayName)}")
         document.appendLine("  version: ${this.quote(this.request.version)}")
+        this.request.variant?.let { value -> document.appendLine("  variant: ${this.quote(value)}") }
         document.appendLine("  category: ${this.quote(this.request.category)}")
-        document.appendLine("sourceLanguage: ${this.quote("kotlin")}")
         this.appendCollection(document, "elements", this.elements.map(this::elementYaml))
         this.appendCollection(document, "relationships", this.relationships.map(this::relationshipYaml))
         return document.toString()
@@ -56,16 +60,22 @@ class AtlasKotlinModelDocument(
     private fun elementYaml(element: KotlinAtlasElement): List<String> {
         val fields = mutableListOf(
             "id: ${this.quote(element.id)}",
-            "name: ${this.quote(element.name)}",
             "kind: ${this.quote(element.kind)}",
-            "qualifiedName: ${this.quote(element.qualifiedName)}"
+            "name: ${this.quote(element.name)}",
+            "qualifiedName: ${this.quote(element.qualifiedName)}",
+            "visibility: ${this.quote("unknown")}"
         )
-        element.sourcePath?.let { value -> fields.add("sourcePath: ${this.quote(value)}") }
-        element.signature?.let { value -> fields.add("signature: ${this.quote(value)}") }
         element.parentId?.let { value -> fields.add("parentId: ${this.quote(value)}") }
         if (element.traits.isNotEmpty()) {
             fields.add("traits:")
             fields.addAll(element.traits.distinct().sorted().map { trait -> "  - ${this.quote(trait)}" })
+        }
+        if (element.kind in setOf("function", "local-function", "constructor", "method")) {
+            fields.add("signature:")
+            fields.add("  typeParameters: []")
+            fields.add("  parameters: []")
+            if (element.kind != "constructor") fields.add("  returns:")
+            if (element.kind != "constructor") fields.add("    kind: ${this.quote("unknown")}")
         }
         return fields
     }
@@ -83,9 +93,26 @@ class AtlasKotlinModelDocument(
             "kind: ${this.quote(relationship.kind)}",
             "target:"
         )
-        relationship.target.moduleId?.let { value -> fields.add("  moduleId: ${this.quote(value)}") }
-        relationship.target.elementId?.let { value -> fields.add("  elementId: ${this.quote(value)}") }
-        relationship.target.label?.let { value -> fields.add("  label: ${this.quote(value)}") }
+        val target = relationship.target
+        when {
+            target.elementId != null -> {
+                val elementId = requireNotNull(target.elementId)
+                fields.add("  type: ${this.quote("element")}")
+                target.moduleId?.let { value -> fields.add("  moduleId: ${this.quote(value)}") }
+                fields.add("  elementId: ${this.quote(elementId)}")
+            }
+            target.moduleId != null -> {
+                val moduleId = requireNotNull(target.moduleId)
+                fields.add("  type: ${this.quote("module")}")
+                fields.add("  moduleId: ${this.quote(moduleId)}")
+            }
+            else -> {
+                val label = requireNotNull(target.label)
+                fields.add("  type: ${this.quote("external")}")
+                fields.add("  id: ${this.quote(label)}")
+                fields.add("  name: ${this.quote(label)}")
+            }
+        }
         return fields
     }
 

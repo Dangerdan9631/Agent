@@ -27,10 +27,6 @@ export class AtlasDesktopArgumentParser {
         options.outputPath = this.readValue(argument, values);
         continue;
       }
-      if (argument === '--manifest') {
-        options.manifestPath = this.readValue(argument, values);
-        continue;
-      }
       if (argument === '--host') {
         options.host = this.readValue(argument, values);
         continue;
@@ -77,8 +73,6 @@ interface MutableAtlasDesktopLaunchOptions {
   configurationPath?: string | undefined;
   /** Optional artifact output path override. */
   outputPath?: string | undefined;
-  /** Optional portable workspace manifest selection. */
-  manifestPath?: string | undefined;
   /** Optional local listener hostname. */
   host?: string | undefined;
   /** Optional local listener port. */

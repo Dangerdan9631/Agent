@@ -32,13 +32,15 @@ public sealed class CompositionRoot
         return new AtlasCsCli(verbose =>
         {
             var logger = new StructuredAtlasLogger(Console.Error, verbose);
+            var projectEvaluator = new CSharpProjectEvaluator();
             return new GenerateCSharpModels(
                 new AtlasConfigurationLoader(Path.Combine(schemaDirectory, "atlas.schema.json"), documentSerializer),
                 new CSharpWorkspaceDiscoverer(
                     new SolutionProjectDiscoverer(),
-                    new CSharpProjectEvaluator(),
+                    projectEvaluator,
                     new GlobMatcher(),
                     logger),
+                projectEvaluator,
                 new CSharpProjectLoader(logger),
                 new CSharpModuleExtractor(logger),
                 new CSharpWorkspaceModelLinker(),

@@ -35,8 +35,14 @@ class TemporaryArtifactRoot {
     await writeFile(
       join(rootPath, 'atlas.config.yml'),
       new YamlDocumentCodec().stringify({
-        schemaVersion: 1,
-        discovery: { packages: [{ match: { name: 'demo' }, classification: 'runtime' }] }
+        schemaVersion: 2,
+        documentType: 'root',
+        project: {
+          name: 'Demo',
+          artifacts: { root: 'artifacts' },
+          diagrams: [{ id: 'landscape', title: 'Landscape' }]
+        },
+        modules: [{ model: 'models/demo.atlas.module.yml' }]
       }),
       'utf8'
     );
@@ -239,14 +245,19 @@ describe('NodeArtifactServer', () => {
       expect(configResponse.status).toBe(204);
       expect(hideSourceResponse.status).toBe(204);
       expect(splitResponse.status).toBe(204);
-      expect(folderResponse.status).toBe(204);
+      expect(folderResponse.status).toBe(400);
       expect(removeSourceResponse.status).toBe(204);
-      expect(configurationRefreshCount).toBe(5);
+      expect(configurationRefreshCount).toBe(4);
       await expect(root.readConfiguration()).resolves.toMatchObject({
-        diagrams: {
-          excludeExternalDependencies: ['node:fs'],
-          folders: [{ packageName: 'demo', path: 'src/feature' }],
-          splitExternalDependenciesByImporter: true
+        project: {
+          diagrams: [
+            {
+              externalDependencies: {
+                excludeIds: ['node:fs'],
+                splitByModule: true
+              }
+            }
+          ]
         }
       });
       expect(pngResponse.status).toBe(204);
@@ -287,6 +298,36 @@ describe('NodeArtifactServer', () => {
 
       expect(response.status).toBe(400);
       await expect(root.readConfigurationText()).resolves.toBe(originalText);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  /** Opens a module diagram when the project intentionally declares no landscape. */
+  it('selects the first explicit module diagram when no landscape exists', async () => {
+    const root = await TemporaryArtifactRoot.create();
+    await rm(join(root.rootPath, 'landscape'), { recursive: true, force: true });
+    const modulePath = join(root.rootPath, 'modules', 'demo%3Aapi');
+    await mkdir(modulePath, { recursive: true });
+    await writeFile(join(modulePath, 'index.html'), '<main>module</main>', 'utf8');
+    const server = new NodeArtifactServer(
+      new DeterministicLayoutService(),
+      new YamlAtlasConfigurationLoader(new YamlDocumentCodec()),
+      new YamlDocumentCodec()
+    );
+
+    const location = await server.start(
+      root.rootPath,
+      '127.0.0.1',
+      0,
+      join(root.rootPath, 'atlas.config.yml')
+    );
+
+    try {
+      expect(new URL(location.url).pathname).toBe('/modules/demo%3Aapi/index.html');
+      const response = await fetch(location.url);
+      expect(response.status).toBe(200);
+      await expect(response.text()).resolves.toContain('module');
     } finally {
       await server.stop();
     }

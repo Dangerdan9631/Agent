@@ -7,4 +7,7 @@ export interface TypeScriptModelGenerationRequest {
 
   /** Package root paths relative to the workspace root. */
   readonly packagePaths: readonly string[];
+
+  /** Optional compiler configuration relative to the sole selected package. */
+  readonly tsconfigFile?: string;
 }

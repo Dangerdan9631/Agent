@@ -1,11 +1,9 @@
 import type { ArchitectureValidator } from '#application/validation/ArchitectureValidator.js';
 import { ValidationCommandResult } from '#application/validation/model/ValidationCommandResult.js';
 import type { ArchitectureValidationWorkflow } from '#application/validation/ports/ArchitectureValidationWorkflow.js';
-import type { DependencyAnalyzer } from '#application/validation/ports/DependencyAnalyzer.js';
 import type { DependencyAnalysisArtifactWriter } from '#application/validation/ports/DependencyAnalysisArtifactWriter.js';
 import type { WorkspaceLoadingRequest } from '#application/workspace/model/WorkspaceLoadingRequest.js';
 import type { WorkspaceLoadingWorkflow } from '#application/workspace/ports/WorkspaceLoadingWorkflow.js';
-import type { AtlasWorkspaceLoader } from '#application/federation/ports/AtlasWorkspaceLoader.js';
 import type { FederatedDependencyAnalysisAdapter } from '#application/federation/FederatedDependencyAnalysisAdapter.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import type { DependencyAnalysisResult } from '#application/validation/model/DependencyAnalysisResult.js';
@@ -24,11 +22,9 @@ export class ValidateArchitecture implements ArchitectureValidationWorkflow {
    */
   public constructor(
     private readonly workspaceLoader: WorkspaceLoadingWorkflow,
-    private readonly dependencyAnalyzer: DependencyAnalyzer,
     private readonly analysisArtifactWriter: DependencyAnalysisArtifactWriter,
     private readonly architectureValidator: ArchitectureValidator,
-    private readonly manifestLoader?: AtlasWorkspaceLoader,
-    private readonly federatedDependencyAnalysisAdapter?: FederatedDependencyAnalysisAdapter
+    private readonly federatedDependencyAnalysisAdapter: FederatedDependencyAnalysisAdapter
   ) {}
 
   /**
@@ -39,27 +35,18 @@ export class ValidateArchitecture implements ArchitectureValidationWorkflow {
    */
   public async execute(request: WorkspaceLoadingRequest): Promise<ValidationCommandResult> {
     const workspace = await this.workspaceLoader.load(request);
-    const analysisResults = await this.analyze(request, workspace);
+    const analysisResults = this.analyze(workspace);
     await this.analysisArtifactWriter.write(workspace, analysisResults);
     const validation = this.architectureValidator.validate(workspace, analysisResults);
 
     return new ValidationCommandResult(workspace, analysisResults, validation);
   }
 
-  /** Uses resolved manifest relationships when supplied, otherwise delegates to the source-ecosystem analyzer. */
-  private async analyze(
-    request: WorkspaceLoadingRequest,
-    workspace: WorkspaceSnapshot
-  ): Promise<readonly DependencyAnalysisResult[]> {
-    if (request.manifestOption === undefined) return this.dependencyAnalyzer.analyze(workspace);
-    if (
-      this.manifestLoader === undefined ||
-      this.federatedDependencyAnalysisAdapter === undefined
-    ) {
-      throw new Error('Atlas federated validation is not configured for this command host.');
+  /** Converts the configured, loaded language-neutral model subset into validation facts. */
+  private analyze(workspace: WorkspaceSnapshot): readonly DependencyAnalysisResult[] {
+    if (workspace.modelWorkspace === undefined) {
+      throw new Error('Atlas validation requires configured generated module models.');
     }
-    return this.federatedDependencyAnalysisAdapter.analyze(
-      await this.manifestLoader.load(request.manifestOption)
-    );
+    return this.federatedDependencyAnalysisAdapter.analyze(workspace.modelWorkspace);
   }
 }

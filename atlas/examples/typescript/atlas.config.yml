@@ -1,48 +1,36 @@
-schemaVersion: 1
-discovery:
-  packageGlobs:
-    - packages/*
-  defaultSourceRoots:
-    - src
-  packages:
-    - match:
-        name: "@atlas-example/lib"
-      classification: runtime
-      classes:
-        - library
-    - match:
-        name: "@atlas-example/app"
-      classification: runtime
-      classes:
-        - executable
-artifacts:
-  root: architecture
-diagrams:
-  packages:
-    - packageName: "@atlas-example/lib"
-    - packageName: "@atlas-example/app"
-layers:
-  - name: library
-    sourceGlobs:
-      - "**"
-    packageNames:
-      - "@atlas-example/lib"
-  - name: executable
-    sourceGlobs:
-      - "**"
-    packageNames:
-      - "@atlas-example/app"
-rules:
-  - id: no-cycles
-    type: no-circular
-    severity: error
-  - id: library-does-not-depend-on-app
-    type: dependency-direction
-    severity: error
-    mode: forbid
-    from:
-      layers:
-        - library
-    to:
-      layers:
-        - executable
+schemaVersion: 2
+documentType: root
+project:
+  name: Atlas TypeScript Reading List
+  artifacts:
+    root: architecture
+  diagrams:
+    - id: landscape
+      title: TypeScript reading list
+modules:
+  - model: architecture/models/lib.atlas.module.yml
+    tags: [runtime, library]
+    diagrams:
+      - id: api
+        title: Library API
+        scope: { type: module }
+  - model: architecture/models/app.atlas.module.yml
+    tags: [runtime, executable]
+    diagrams:
+      - id: application
+        title: Application
+        scope: { type: module }
+validation:
+  rules:
+    - id: no-runtime-cycles
+      type: no-circular
+      severity: error
+      relationships: [imports, references, calls]
+      within: { moduleTags: [runtime] }
+    - id: library-does-not-depend-on-app
+      type: dependency-direction
+      severity: error
+      mode: forbid
+      relationships: [imports, references, calls]
+      from: { moduleTags: [library] }
+      to: { moduleTags: [executable] }

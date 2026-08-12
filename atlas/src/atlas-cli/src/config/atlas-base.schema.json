@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.dev/schema/atlas-base.schema.json",
+  "title": "Atlas Base Configuration Fragment",
+  "description": "Defines one version-two external-dependency defaults fragment.",
+  "$ref": "atlas.schema.json#/$defs/baseDocument"
+}

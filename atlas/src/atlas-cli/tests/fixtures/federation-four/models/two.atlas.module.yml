@@ -1,0 +1,19 @@
+schemaVersion: 2
+generator: { name: atlas-ts, version: test }
+source: { language: kotlin }
+module:
+  id: '@atlas-fixture/federation-two'
+  name: '@atlas-fixture/federation-two'
+  version: 1.0.0
+  category: npm-package
+elements:
+  - id: two
+    kind: class
+    name: Two
+    qualifiedName: Two
+    visibility: public
+    source:
+      path: src/two.ts
+      start: { line: 4, column: 1 }
+      end: { line: 4, column: 20 }
+relationships: []

@@ -2,8 +2,9 @@
 
 ## Purpose
 
-This project discovers SDK-style C# artifacts, extracts compiler-resolved
-architecture facts, and persists portable Atlas models.
+This project accepts one exact SDK-style C# project target, extracts
+compiler-resolved architecture facts, and persists its portable Atlas model.
+Legacy workspace generation remains isolated from the MSBuild path.
 
 ## Conventions
 
@@ -18,4 +19,3 @@ architecture facts, and persists portable Atlas models.
 - `Infrastructure/` adapts Roslyn, MSBuild, persistence, logging, and output.
 - `Model/` contains portable and generator-internal values.
 - `Presentation/` implements the command boundary.
-

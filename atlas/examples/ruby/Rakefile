@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "atlas/rb/rake"
+require "rake"
 require "atlas_example/program"
 
 desc "Run the reading-list example"
@@ -8,7 +8,30 @@ task :app do
   AtlasExample::Program.new.run(%w[Domain-Driven Design])
 end
 
+desc "Generate each gem's independently configured Atlas model"
+task :models do
+  sh "rake -f gems/lib/Rakefile atlas:generate_model"
+  sh "rake -f gems/app/Rakefile atlas:generate_model"
+end
+
+desc "Validate the composed Atlas project"
+task validate: :models do
+  sh "atlas-cli validate --config atlas.config.yml"
+end
+
+desc "Generate Atlas project artifacts"
+task generate: :validate do
+  sh "atlas-cli generate --config atlas.config.yml --no-validate"
+end
+
+namespace :atlas do
+  desc "Open the composed Atlas project"
+  task view: :generate do
+    sh "atlas --config atlas.config.yml"
+  end
+end
+
 desc "Build the application and generate Atlas artifacts"
-task build: [:app, "atlas:generate"]
+task build: %i[app generate]
 
 task default: :build

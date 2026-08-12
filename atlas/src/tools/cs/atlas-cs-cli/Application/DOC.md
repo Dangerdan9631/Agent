@@ -12,4 +12,4 @@ depending on command-line or concrete process concerns.
 
 ## Contents
 
-- `GenerateCSharpModels` coordinates discovery, extraction, linking, and writing.
+- `GenerateCSharpModels` generates an exact configured project target; its compatibility branch remains isolated from MSBuild integration.

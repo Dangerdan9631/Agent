@@ -10,5 +10,6 @@ The gem is reusable and has no dependency on the executable application gem.
 
 ## Contents
 
+- `Rakefile` explicitly configures this gem's model input and output.
 - `ReadingListItem` represents normalized output.
 - `ReadingList` validates input and creates items.

@@ -1,7 +1,6 @@
 import type { DiagramProjectionService } from '#application/diagram/DiagramProjectionService.js';
 import type { DiagramGraph } from '#application/diagram/model/DiagramGraph.js';
 import type { DiagramArtifactWriter } from '#application/diagram/ports/DiagramArtifactWriter.js';
-import type { DeclarationGraphBuilder } from '#application/graph/ports/DeclarationGraphBuilder.js';
 import type { DeterministicLayoutService } from '#application/layout/DeterministicLayoutService.js';
 import { ArchitectureLayoutResult } from '#application/layout/model/ArchitectureLayoutResult.js';
 import { LayoutSettings } from '#application/layout/model/LayoutDocument.js';
@@ -9,12 +8,10 @@ import type { LayoutDocument, LayoutOverrides } from '#application/layout/model/
 import type { ArchitectureLayoutWorkflow } from '#application/layout/ports/ArchitectureLayoutWorkflow.js';
 import type { ArchitectureValidationWorkflow } from '#application/validation/ports/ArchitectureValidationWorkflow.js';
 import type { WorkspaceLoadingRequest } from '#application/workspace/model/WorkspaceLoadingRequest.js';
-import type { AtlasWorkspaceLoader } from '#application/federation/ports/AtlasWorkspaceLoader.js';
 import type { FederatedDeclarationGraphAdapter } from '#application/federation/FederatedDeclarationGraphAdapter.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import type { DeclarationGraph } from '#application/graph/model/DeclarationGraph.js';
-import type { AtlasModelGenerator } from '#application/federation/ports/AtlasModelGenerator.js';
-import { resolve } from 'node:path';
+import type { AtlasLayoutConfiguration } from '#application/configuration/model/AtlasConfiguration.js';
 
 /**
  * Orchestrates validation-aware rebuilding and persistence of one diagram scope layout.
@@ -31,13 +28,10 @@ export class LayoutArchitecture implements ArchitectureLayoutWorkflow {
    */
   public constructor(
     private readonly validationWorkflow: ArchitectureValidationWorkflow,
-    private readonly graphBuilder: DeclarationGraphBuilder,
     private readonly projectionService: DiagramProjectionService,
     private readonly layoutService: DeterministicLayoutService,
     private readonly artifactWriter: DiagramArtifactWriter,
-    private readonly manifestLoader?: AtlasWorkspaceLoader,
-    private readonly federatedGraphAdapter?: FederatedDeclarationGraphAdapter,
-    private readonly modelGenerator?: AtlasModelGenerator
+    private readonly federatedGraphAdapter: FederatedDeclarationGraphAdapter
   ) {}
 
   /**
@@ -62,7 +56,7 @@ export class LayoutArchitecture implements ArchitectureLayoutWorkflow {
 
     let diagram: DiagramGraph | undefined;
     if (generateArtifacts) {
-      const graph = await this.buildGraph(request, validationResult.workspace);
+      const graph = this.buildGraph(validationResult.workspace);
       const diagrams = this.projectionService.project(validationResult.workspace, graph);
       diagram = diagrams.find((candidate) => candidate.scope === scope);
       if (diagram !== undefined) {
@@ -79,7 +73,7 @@ export class LayoutArchitecture implements ArchitectureLayoutWorkflow {
     }
     const savedLayout = await this.artifactWriter.readLayout(validationResult.workspace, diagram);
     const settings = this.resolveSettings(
-      validationResult.workspace.configuration.layout,
+      this.toConfiguredLayout(validationResult.workspace, scope),
       overrides
     );
     const layout = this.layoutService.layout(diagram, savedLayout, settings);
@@ -95,35 +89,35 @@ export class LayoutArchitecture implements ArchitectureLayoutWorkflow {
     );
   }
 
-  /** Builds the selected manifest graph or the compatibility TypeScript graph. */
-  private async buildGraph(
-    request: WorkspaceLoadingRequest,
-    workspace: WorkspaceSnapshot
-  ): Promise<DeclarationGraph> {
-    const manifestPath = await this.toManifestPath(request, workspace);
-    if (manifestPath === undefined) return this.graphBuilder.build(workspace);
-    if (this.manifestLoader === undefined || this.federatedGraphAdapter === undefined) {
-      throw new Error('Atlas manifest layout generation is not configured for this command host.');
+  /** Selects diagram-local version-two layout or an isolated legacy test-fixture default. */
+  private toConfiguredLayout(workspace: WorkspaceSnapshot, scope: string) {
+    const legacyLayout = (
+      workspace.configuration as unknown as {
+        readonly layout?: AtlasLayoutConfiguration;
+      }
+    ).layout;
+    if (workspace.configuration.documentType !== 'root') return legacyLayout;
+    if (scope === 'landscape') return workspace.configuration.project.diagrams?.[0]?.layout;
+    if (scope.startsWith('project:')) {
+      return workspace.configuration.project.diagrams?.find(
+        (diagram) => diagram.id === scope.slice('project:'.length)
+      )?.layout;
     }
-    return this.federatedGraphAdapter.toGraph(await this.manifestLoader.load(manifestPath));
+    for (const [moduleId, module] of workspace.moduleConfigurationsById) {
+      const diagram = (module.diagrams ?? []).find(
+        (candidate) => `module:${encodeURIComponent(moduleId)}:${candidate.id}` === scope
+      );
+      if (diagram !== undefined) return diagram.layout;
+    }
+    return undefined;
   }
 
-  /** Resolves a selected manifest or generates the compatibility manifest from selected packages. */
-  private async toManifestPath(
-    request: WorkspaceLoadingRequest,
-    workspace: WorkspaceSnapshot
-  ): Promise<string | undefined> {
-    if (request.manifestOption !== undefined) return request.manifestOption;
-    if (this.modelGenerator === undefined) return undefined;
-    if (workspace.paths.artifactRootPath === undefined) {
-      throw new Error(
-        'Atlas requires an artifact root to generate its canonical workspace manifest.'
-      );
+  /** Builds the complete graph from the configured, successfully loaded model subset. */
+  private buildGraph(workspace: WorkspaceSnapshot): DeclarationGraph {
+    if (workspace.modelWorkspace === undefined) {
+      throw new Error('Atlas layout generation requires configured generated module models.');
     }
-    return this.modelGenerator.generate(
-      workspace,
-      resolve(workspace.paths.artifactRootPath, 'models')
-    );
+    return this.federatedGraphAdapter.toGraph(workspace.modelWorkspace);
   }
 
   /**

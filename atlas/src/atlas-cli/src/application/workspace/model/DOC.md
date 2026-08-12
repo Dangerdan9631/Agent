@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory contains immutable values representing packages selected for Atlas analysis.
+This directory contains immutable values representing a composed project and its loaded model subset.
 
 ## Conventions
 
@@ -13,3 +13,4 @@ This directory contains immutable values representing packages selected for Atla
 
 - `WorkspacePackage.ts` represents one analysable package.
 - `WorkspaceLoadingRequest.ts` carries invocation path selections into workspace loading.
+- `WorkspaceSnapshot.ts` retains composed policy, loaded facts, missing models, and module policy.

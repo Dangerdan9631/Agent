@@ -1,5 +1,4 @@
 import { AtlasCompositionRoot } from '#composition/AtlasCompositionRoot.js';
-import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -65,10 +64,24 @@ describe('Atlas generation integration', () => {
     await expect(access(join(output.path, 'landscape', 'index.html'))).resolves.toBeUndefined();
     await expect(access(join(output.path, 'landscape', 'matrix.html'))).resolves.toBeUndefined();
     await expect(
-      access(join(output.path, 'packages', '%40atlas-fixture%2Fsemantic-graph', 'graph.json'))
+      access(
+        join(
+          output.path,
+          'modules',
+          encodeURIComponent(`${encodeURIComponent('@atlas-fixture/semantic-graph')}:module`),
+          'graph.json'
+        )
+      )
     ).resolves.toBeUndefined();
     await expect(
-      access(join(output.path, 'folders', '%40atlas-fixture%2Fsemantic-graph%3Asrc', 'graph.json'))
+      access(
+        join(
+          output.path,
+          'modules',
+          encodeURIComponent(`${encodeURIComponent('@atlas-fixture/semantic-graph')}:source`),
+          'graph.json'
+        )
+      )
     ).resolves.toBeUndefined();
     await expect(
       access(
@@ -87,18 +100,18 @@ describe('Atlas generation integration', () => {
         '--output',
         output.path,
         'diagram',
-        'package:@atlas-fixture/semantic-graph'
+        `module:${encodeURIComponent('@atlas-fixture/semantic-graph')}:module`
       ]);
     const invalidDiagramExitCode = await new AtlasCompositionRoot()
       .createCli()
-      .run(['--workspace', fixturePath, '--output', output.path, 'diagram', 'package:missing']);
+      .run(['--workspace', fixturePath, '--output', output.path, 'diagram', 'module:missing']);
 
     expect(validDiagramExitCode).toBe(0);
     expect(invalidDiagramExitCode).toBe(2);
   }, 15000);
 
   /**
-   * Produces one independently regenerable model per npm package and diagrams every selected artifact.
+   * Loads four independently generated models and diagrams every explicitly configured artifact.
    */
   it('generates four module models with a landscape and four module diagrams', async () => {
     const output = await TemporaryArtifactOutput.create();
@@ -109,24 +122,27 @@ describe('Atlas generation integration', () => {
       .run(['--workspace', fixturePath, '--output', output.path, 'generate']);
 
     expect(exitCode).toBe(0);
-    const manifest = new YamlDocumentCodec().parse(
-      await readFile(join(output.path, 'models', 'atlas.manifest.yml'), 'utf8')
-    ) as { readonly modules: readonly { readonly moduleId: string; readonly modelPath: string }[] };
-    expect(manifest.modules).toHaveLength(4);
+    const moduleIds = [
+      '@atlas-fixture/federation-one',
+      '@atlas-fixture/federation-two',
+      '@atlas-fixture/federation-three',
+      '@atlas-fixture/federation-four'
+    ];
     await expect(access(join(output.path, 'landscape', 'graph.json'))).resolves.toBeUndefined();
-    await expect(
-      access(join(output.path, 'groups', 'all-fixtures', 'graph.json'))
-    ).resolves.toBeUndefined();
     await Promise.all(
-      manifest.modules.map(({ moduleId }) =>
+      moduleIds.map((moduleId, index) =>
         expect(
-          access(join(output.path, 'packages', encodeURIComponent(moduleId), 'graph.json'))
+          access(
+            join(
+              output.path,
+              'modules',
+              encodeURIComponent(
+                `${encodeURIComponent(moduleId)}:${['one', 'two', 'three', 'four'][index]}`
+              ),
+              'graph.json'
+            )
+          )
         ).resolves.toBeUndefined()
-      )
-    );
-    await Promise.all(
-      manifest.modules.map(({ modelPath }) =>
-        expect(access(join(output.path, 'models', modelPath))).resolves.toBeUndefined()
       )
     );
   }, 15000);

@@ -1,16 +1,42 @@
-schemaVersion: 1
-discovery:
-  packageGlobs:
-    - packages/*
-  defaultSourceRoots:
-    - src
-  packages:
-    - match:
-        name: "@atlas-fixture/federation-*"
-      classification: runtime
-diagrams:
-  moduleGroups:
-    - id: all-fixtures
-      title: All fixture artifacts
-      moduleIdPatterns:
-        - "@atlas-fixture/federation-*"
+schemaVersion: 2
+documentType: root
+
+project:
+  name: Four module federation
+  artifacts:
+    root: architecture
+  diagrams:
+    - id: landscape
+      title: Four module landscape
+      groups:
+        - id: all-fixtures
+          title: All fixture artifacts
+          selector:
+            moduleTags:
+              - fixture
+
+modules:
+  - model: models/one.atlas.module.yml
+    tags: [fixture]
+    diagrams:
+      - id: one
+        title: One
+        scope: { type: module }
+  - model: models/two.atlas.module.yml
+    tags: [fixture]
+    diagrams:
+      - id: two
+        title: Two
+        scope: { type: module }
+  - model: models/three.atlas.module.yml
+    tags: [fixture]
+    diagrams:
+      - id: three
+        title: Three
+        scope: { type: module }
+  - model: models/four.atlas.module.yml
+    tags: [fixture]
+    diagrams:
+      - id: four
+        title: Four
+        scope: { type: module }

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.dev/schema/atlas-module-config.schema.json",
+  "title": "Atlas Module Configuration Fragment",
+  "description": "Defines one complete version-two module configuration fragment.",
+  "$ref": "atlas.schema.json#/$defs/moduleDocument"
+}

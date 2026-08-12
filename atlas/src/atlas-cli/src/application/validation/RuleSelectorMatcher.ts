@@ -1,4 +1,9 @@
-import type { AtlasRuleSelector } from '#application/configuration/model/AtlasConfiguration.js';
+import type {
+  AtlasElementSelector,
+  AtlasLayerDefinition,
+  AtlasModuleSelector,
+  AtlasRuleSelector
+} from '#application/configuration/model/AtlasConfiguration.js';
 import type { PackageOwnershipResolver } from '#application/validation/PackageOwnershipResolver.js';
 import type { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
 import { minimatch } from 'minimatch';
@@ -21,32 +26,82 @@ export class RuleSelectorMatcher {
    * @param sourcePath - Slash-normalized workspace-relative source path.
    * @param workspace - Loaded workspace policy and packages.
    * @param moduleId - Optional opaque module identity for module-local federated paths.
+   * @param elementId - Optional module-local element identity used by element selectors.
    * @returns True when the path matches at least one selector branch.
    */
   public matches(
-    selector: AtlasRuleSelector,
+    selector: AtlasRuleSelector | AtlasModuleSelector | AtlasElementSelector,
     sourcePath: string,
     workspace: WorkspaceSnapshot,
-    moduleId: string | undefined = undefined
+    moduleId: string | undefined = undefined,
+    elementId: string | undefined = undefined
   ): boolean {
     const workspacePackage =
       moduleId === undefined
         ? this.ownershipResolver.resolve(sourcePath, workspace.packages)
         : workspace.packages.find((candidate) => candidate.name === moduleId);
+    const legacySelector = selector as AtlasRuleSelector;
+    const moduleSelector = selector as AtlasModuleSelector;
+    const elementSelector = selector as AtlasElementSelector;
+    const element =
+      moduleId === undefined || elementId === undefined
+        ? undefined
+        : workspace.modelWorkspace?.modules
+            .get(moduleId)
+            ?.elements.find((candidate) => candidate.id === elementId);
     const packageNameMatches =
       workspacePackage !== undefined &&
-      [...(selector.packageNames ?? []), ...(selector.moduleIds ?? [])].includes(
-        workspacePackage.name
+      (legacySelector.packageNames ?? []).includes(workspacePackage.name);
+    const moduleIdMatches =
+      moduleSelector.moduleIds === undefined ||
+      (workspacePackage !== undefined &&
+        moduleSelector.moduleIds.some((pattern) => this.matchesId(workspacePackage.name, pattern)));
+    const moduleTagMatches =
+      moduleSelector.moduleTags === undefined ||
+      (workspacePackage !== undefined &&
+        moduleSelector.moduleTags.some((tag) => workspacePackage.classes.includes(tag)));
+    const sourcePathMatches =
+      elementSelector.sourcePaths === undefined ||
+      elementSelector.sourcePaths.some((pattern) =>
+        minimatch(sourcePath, pattern.replaceAll('\\', '/'), { dot: true })
       );
+    const elementKindMatches =
+      elementSelector.elementKinds === undefined ||
+      (element !== undefined && elementSelector.elementKinds.includes(element.kind));
+    const visibilityMatches =
+      elementSelector.visibilities === undefined ||
+      (element?.visibility !== undefined &&
+        elementSelector.visibilities.some((visibility) => visibility === element.visibility));
+    const traitMatches =
+      elementSelector.traits === undefined ||
+      (element !== undefined &&
+        elementSelector.traits.some((trait) => element.traits?.includes(trait) === true));
     const packageClassMatches =
       workspacePackage !== undefined &&
-      (selector.packageClasses ?? []).some((packageClass) =>
+      (legacySelector.packageClasses ?? []).some((packageClass) =>
         workspacePackage.classes.includes(packageClass)
       );
-    const layerMatches = (selector.layers ?? []).some((layerName) =>
+    const layerMatches = (legacySelector.layers ?? []).some((layerName) =>
       this.matchesLayer(layerName, sourcePath, workspacePackage?.name, workspace)
     );
 
+    const usesVersionTwoSelector =
+      moduleSelector.moduleIds !== undefined ||
+      moduleSelector.moduleTags !== undefined ||
+      elementSelector.sourcePaths !== undefined ||
+      elementSelector.elementKinds !== undefined ||
+      elementSelector.visibilities !== undefined ||
+      elementSelector.traits !== undefined;
+    if (usesVersionTwoSelector) {
+      return (
+        moduleIdMatches &&
+        moduleTagMatches &&
+        sourcePathMatches &&
+        elementKindMatches &&
+        visibilityMatches &&
+        traitMatches
+      );
+    }
     return packageNameMatches || packageClassMatches || layerMatches;
   }
 
@@ -65,9 +120,13 @@ export class RuleSelectorMatcher {
     packageName: string | undefined,
     workspace: WorkspaceSnapshot
   ): boolean {
-    const layer = (workspace.configuration.layers ?? []).find(
-      (candidateLayer) => candidateLayer.name === layerName
-    );
+    const layers =
+      (
+        workspace.configuration as unknown as {
+          readonly layers?: readonly AtlasLayerDefinition[];
+        }
+      ).layers ?? [];
+    const layer = layers.find((candidateLayer) => candidateLayer.name === layerName);
 
     if (layer === undefined) {
       return false;
@@ -83,5 +142,14 @@ export class RuleSelectorMatcher {
     return layer.sourceGlobs.some((sourceGlob) =>
       minimatch(sourcePath, sourceGlob.replaceAll('\\', '/'), { dot: true })
     );
+  }
+
+  /** Matches the complete opaque ID grammar where star also spans slash characters. */
+  private matchesId(value: string, pattern: string): boolean {
+    const expression = pattern
+      .replace(/[.*+^${}()|[\]\\]/g, '\\$&')
+      .replaceAll('\\*', '.*')
+      .replaceAll('\\?', '.');
+    return new RegExp(`^${expression}$`, 'u').test(value);
   }
 }
