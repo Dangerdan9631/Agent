@@ -15,24 +15,19 @@ module Atlas
         @model_document = VersionTwoModelDocument.new
       end
 
-      # Writes module models and returns the absolute generated manifest path.
+      # Writes module models and returns their absolute containing directory.
       def write(output_directory, models)
         FileUtils.mkdir_p(output_directory)
-        entries = models.sort_by { |model| model.fetch(:module).fetch(:id) }.map do |model|
+        models.sort_by { |model| model.fetch(:module).fetch(:id) }.each do |model|
           document = @model_document.create(model)
           @schema_validator.validate!("atlas-module.schema.json", stringify(document), model.fetch(:module).fetch(:id))
           file_name = "#{safe_file_name(model.fetch(:module).fetch(:id))}.atlas.module.yml"
           atomic_write(File.join(output_directory, file_name), document)
-          { moduleId: model.fetch(:module).fetch(:id), modelPath: file_name }
         end
-        manifest = { schemaVersion: 1, modules: entries }
-        @schema_validator.validate!("atlas-workspace.schema.json", stringify(manifest), "Atlas workspace manifest")
-        manifest_path = File.join(output_directory, "atlas.manifest.yml")
-        atomic_write(manifest_path, manifest)
-        File.realpath(manifest_path)
+        File.realpath(output_directory)
       end
 
-      # Writes one configured module model to its exact destination and returns the absolute path.
+      # Writes one module model to its target-derived destination and returns the absolute path.
       def write_model(output_path, model)
         document = @model_document.create(model)
         @schema_validator.validate!("atlas-module.schema.json", stringify(document), model.fetch(:module).fetch(:id))

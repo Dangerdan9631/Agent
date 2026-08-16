@@ -2,12 +2,11 @@ package dev.atlas.gradle
 
 import org.gradle.api.Named
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
 /**
- * Describes one exact Kotlin target compilation and its generated model output.
+ * Describes one exact Kotlin target compilation used to derive a generated model.
  */
 abstract class AtlasKotlinModelConfiguration @Inject constructor(private val configurationName: String) : Named {
     /** Exact Kotlin target name without wildcard interpretation. */
@@ -15,9 +14,6 @@ abstract class AtlasKotlinModelConfiguration @Inject constructor(private val con
 
     /** Exact compilation name, normally `main`. */
     abstract val compilation: Property<String>
-
-    /** Exact output for this target's generated module model. */
-    abstract val modelFile: RegularFileProperty
 
     /** Explicit KSP semantic fragment files or directories for this target. */
     abstract val semanticFragments: ConfigurableFileCollection

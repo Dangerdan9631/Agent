@@ -5,14 +5,13 @@ import type {
 } from '#application/federation/model/AtlasModuleModel.js';
 import type { AtlasModuleConfiguration } from '#application/configuration/model/AtlasConfiguration.js';
 import { ConfiguredAtlasWorkspace } from '#application/federation/model/ConfiguredAtlasWorkspace.js';
-import type { AtlasWorkspaceManifest } from '#application/federation/model/AtlasWorkspaceManifest.js';
 import {
   ResolvedAtlasRelationship,
   ResolvedAtlasWorkspace
 } from '#application/federation/model/ResolvedAtlasWorkspace.js';
 import type { AtlasWorkspaceLoader } from '#application/federation/ports/AtlasWorkspaceLoader.js';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 import type { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -20,7 +19,7 @@ import type { AnySchema, ValidateFunction } from 'ajv';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Loads YAML module models from a manifest and links only matching stable identities.
+ * Loads configuration-selected YAML module models and links only matching stable identities.
  */
 export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
   readonly #modelSchemaPath = fileURLToPath(
@@ -30,26 +29,26 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
   /**
    * Creates a portable workspace loader from the shared YAML document boundary.
    *
-   * @param documentCodec - Parses manifest and module model documents.
+   * @param documentCodec - Parses configured module model documents.
    */
   public constructor(private readonly documentCodec: YamlDocumentCodec) {}
 
   /**
    * Loads only the generated model paths selected by the composed project configuration.
    *
-   * @param projectRootPath - Absolute canonical project root.
-   * @param modules - Ordered complete module entries with normalized project-relative model paths.
+   * @param modelRootPath - Absolute model directory beneath the configured artifact root.
+   * @param modules - Ordered complete module entries with normalized model-root-relative paths.
    * @returns Resolved loaded subset and missing model paths retained in declaration order.
    */
   public async loadConfigured(
-    projectRootPath: string,
+    modelRootPath: string,
     modules: readonly AtlasModuleConfiguration[]
   ): Promise<ConfiguredAtlasWorkspace> {
     const models = new Map<string, AtlasModuleModel>();
     const modulesById = new Map<string, AtlasModuleConfiguration>();
     const missingModelPaths: string[] = [];
     for (const configuredModule of modules) {
-      const modelPath = this.toConfiguredModelPath(projectRootPath, configuredModule.model);
+      const modelPath = this.toConfiguredModelPath(modelRootPath, configuredModule.model);
       const document = await this.readOptionalYaml(modelPath);
       if (document === undefined) {
         missingModelPaths.push(configuredModule.model);
@@ -359,72 +358,6 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
     }
   }
 
-  /**
-   * Loads a workspace manifest, validates each selected model, and resolves loaded targets.
-   *
-   * @param manifestPath - Absolute or current-directory-relative manifest path.
-   * @returns Fully validated workspace with ordinary unresolved external dependencies.
-   */
-  public async load(manifestPath: string): Promise<ResolvedAtlasWorkspace> {
-    const absoluteManifestPath = resolve(manifestPath);
-    const manifest = this.toManifest(
-      await this.readYaml(absoluteManifestPath),
-      absoluteManifestPath
-    );
-    const entries = [...manifest.modules].sort((left, right) =>
-      this.compareText(left.moduleId, right.moduleId)
-    );
-    const duplicateId = entries.find(
-      (entry, index) => index > 0 && entry.moduleId === entries[index - 1]?.moduleId
-    );
-    if (duplicateId !== undefined) {
-      throw new Error(
-        `Atlas manifest '${absoluteManifestPath}' declares duplicate module ID '${duplicateId.moduleId}'.`
-      );
-    }
-    const models = new Map<string, AtlasModuleModel>();
-    const ownedElementIds = new Set<string>();
-    const relationshipIds = new Set<string>();
-    for (const entry of entries) {
-      const modelPath = this.toContainedModelPath(absoluteManifestPath, entry.modelPath);
-      const model = this.toModel(await this.readYaml(modelPath), modelPath);
-      if (model.module.id !== entry.moduleId) {
-        throw new Error(
-          `Atlas manifest expects '${entry.moduleId}' but model '${modelPath}' identifies '${model.module.id}'.`
-        );
-      }
-      if (models.has(model.module.id)) {
-        throw new Error(`Atlas workspace contains duplicate module ID '${model.module.id}'.`);
-      }
-      for (const element of model.elements) {
-        if (ownedElementIds.has(element.id)) {
-          throw new Error(`Atlas workspace contains duplicate owned element ID '${element.id}'.`);
-        }
-        ownedElementIds.add(element.id);
-      }
-      for (const relationship of model.relationships) {
-        if (relationshipIds.has(relationship.id)) {
-          throw new Error(
-            `Atlas workspace contains duplicate relationship ID '${relationship.id}'.`
-          );
-        }
-        relationshipIds.add(relationship.id);
-      }
-      models.set(model.module.id, model);
-    }
-    return new ResolvedAtlasWorkspace(models, this.resolveRelationships(models));
-  }
-
-  /** Reads and parses one UTF-8 YAML document. */
-  private async readYaml(filePath: string): Promise<unknown> {
-    try {
-      return this.documentCodec.parse(await readFile(filePath, 'utf8'));
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'unknown YAML error';
-      throw new Error(`Atlas could not load '${filePath}': ${message}`);
-    }
-  }
-
   /** Reads a configured generated model while treating only a missing file as skippable. */
   private async readOptionalYaml(filePath: string): Promise<unknown> {
     try {
@@ -443,46 +376,14 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
     }
   }
 
-  /** Resolves one normalized configured model path and verifies lexical project containment. */
-  private toConfiguredModelPath(projectRootPath: string, configuredPath: string): string {
-    const absolutePath = resolve(projectRootPath, configuredPath);
-    const pathFromRoot = relative(projectRootPath, absolutePath);
+  /** Resolves one normalized configured model path and verifies model-root containment. */
+  private toConfiguredModelPath(modelRootPath: string, configuredPath: string): string {
+    const absolutePath = resolve(modelRootPath, configuredPath);
+    const pathFromRoot = relative(modelRootPath, absolutePath);
     if (pathFromRoot === '..' || pathFromRoot.startsWith(`..${sep}`) || isAbsolute(pathFromRoot)) {
-      throw new Error(`Atlas configured model path '${configuredPath}' escapes the project root.`);
+      throw new Error(`Atlas configured model path '${configuredPath}' escapes the model root.`);
     }
     return absolutePath;
-  }
-
-  /** Ensures a manifest model path is relative and remains within its manifest directory. */
-  private toContainedModelPath(manifestPath: string, modelPath: string): string {
-    if (isAbsolute(modelPath)) {
-      throw new Error(
-        `Atlas manifest '${manifestPath}' must use a relative model path, not '${modelPath}'.`
-      );
-    }
-    const absolutePath = resolve(dirname(manifestPath), modelPath);
-    const pathFromManifest = relative(dirname(manifestPath), absolutePath);
-    if (pathFromManifest === '..' || pathFromManifest.startsWith(`..${sep}`)) {
-      throw new Error(
-        `Atlas manifest '${manifestPath}' model path '${modelPath}' escapes its directory.`
-      );
-    }
-    return absolutePath;
-  }
-
-  /** Validates the minimal canonical workspace-manifest shape. */
-  private toManifest(value: unknown, filePath: string): AtlasWorkspaceManifest {
-    const record = this.toRecord(value, filePath);
-    if (record.schemaVersion !== 1 || !Array.isArray(record.modules)) {
-      throw new Error(`Atlas manifest '${filePath}' must contain schemaVersion 1 and modules.`);
-    }
-    for (const entry of record.modules) {
-      const item = this.toRecord(entry, filePath);
-      if (!this.isText(item.moduleId) || !this.isText(item.modelPath)) {
-        throw new Error(`Atlas manifest '${filePath}' contains an invalid module entry.`);
-      }
-    }
-    return record as unknown as AtlasWorkspaceManifest;
   }
 
   /** Validates model ownership, stable IDs, paths, and relationship targets. */
@@ -594,9 +495,7 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
         ...(module.variant === undefined ? {} : { variant: module.variant }),
         category: module.category
       },
-      elements: elements.map((value) =>
-        this.toCompatibilityElement(value, elements, filePath)
-      ),
+      elements: elements.map((value) => this.toCompatibilityElement(value, elements, filePath)),
       relationships: model.relationships.map((value) => {
         const relationship = this.toRecord(value, filePath);
         return {
@@ -659,7 +558,11 @@ export class NodeAtlasWorkspaceLoader implements AtlasWorkspaceLoader {
     if (element.kind === 'source-unit' && this.isText(element.qualifiedName)) {
       return element.qualifiedName;
     }
-    if (!this.isText(element.id) || !this.isText(element.parentId) || visitedElementIds.has(element.id)) {
+    if (
+      !this.isText(element.id) ||
+      !this.isText(element.parentId) ||
+      visitedElementIds.has(element.id)
+    ) {
       return undefined;
     }
     visitedElementIds.add(element.id);

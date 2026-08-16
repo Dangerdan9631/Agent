@@ -5,7 +5,7 @@ require "rake/testtask"
 
 # Names of the canonical Atlas contracts packaged with the Ruby gem.
 # The list is also used to verify package parity during tests and builds.
-SCHEMA_NAMES = %w[atlas.schema.json atlas-module.schema.json atlas-workspace.schema.json].freeze
+SCHEMA_NAMES = %w[atlas.schema.json atlas-module.schema.json].freeze
 
 desc "Copy the canonical Atlas schemas into the Ruby gem package"
 task :prepare_schemas do

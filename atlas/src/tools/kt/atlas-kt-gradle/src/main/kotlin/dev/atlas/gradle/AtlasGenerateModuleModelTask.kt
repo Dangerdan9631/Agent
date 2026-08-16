@@ -39,7 +39,7 @@ abstract class AtlasGenerateModuleModelTask : DefaultTask() {
     /** Explicit semantic fragment files or directories. */
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val semanticFragmentFiles: ConfigurableFileCollection
-    /** Exact generated module-model output. */
+    /** Module-model output derived from the configured root and Kotlin build target. */
     @get:OutputFile abstract val outputFile: RegularFileProperty
     /** Process execution boundary supplied by Gradle. */
     @get:Inject abstract val execOperations: ExecOperations
@@ -54,7 +54,9 @@ abstract class AtlasGenerateModuleModelTask : DefaultTask() {
                 "generate", "--project-root", project.projectDir.absolutePath,
                 "--module-id", moduleId.get(), "--display-name", moduleName.get(),
                 "--version", moduleVersion.get(), "--category", moduleCategory.get(),
-                "--variant", moduleVariant.get(), "--output", outputFile.get().asFile.absolutePath
+                "--variant", moduleVariant.get(),
+                "--target-name", outputFile.get().asFile.name.removeSuffix(".atlas.module.yml"),
+                "--root", outputFile.get().asFile.parentFile.parentFile.absolutePath
             )
             sourceRoots.files.filter { file -> file.isDirectory }.sortedBy { file -> file.path }.forEach { root ->
                 val relativeRoot = project.projectDir.toPath().relativize(root.toPath()).toString()

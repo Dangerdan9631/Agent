@@ -14,4 +14,4 @@ Atlas policy and portable YAML documents.
 ## Contents
 
 - The configuration schema validates `atlas.config.yml` documents.
-- Module and workspace schemas validate generated YAML model contracts.
+- The module schema validates generated YAML model contracts.

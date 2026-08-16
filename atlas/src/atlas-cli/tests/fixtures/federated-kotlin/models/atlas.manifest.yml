@@ -1,6 +1,0 @@
-schemaVersion: 1
-modules:
-  - moduleId: dev.example:app:1.0.0
-    modelPath: app.atlas.module.yml
-  - moduleId: dev.example:test-support:1.0.0
-    modelPath: test-support.atlas.module.yml

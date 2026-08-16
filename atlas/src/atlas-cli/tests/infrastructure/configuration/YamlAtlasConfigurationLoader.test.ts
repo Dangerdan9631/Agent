@@ -63,7 +63,7 @@ class TemporaryConfigurationDirectory {
 describe('YamlAtlasConfigurationLoader', () => {
   afterEach(TemporaryConfigurationDirectory.removeAll.bind(TemporaryConfigurationDirectory));
 
-  /** Verifies ordered base merging and defining-document-relative module model resolution. */
+  /** Verifies ordered base merging and model-root-relative module selection. */
   it('composes base and module fragments into the canonical project model', async () => {
     const project = await TemporaryConfigurationDirectory.create();
     await project.write('config/team.atlas.base.yml', {
@@ -79,7 +79,7 @@ describe('YamlAtlasConfigurationLoader', () => {
     await project.write('packages/lib/atlas.module.config.yml', {
       schemaVersion: 2,
       documentType: 'module',
-      model: '../../architecture/models/lib.atlas.module.yml',
+      model: 'lib.atlas.module.yml',
       tags: ['core'],
       diagrams: [{ id: 'lib', title: 'Library', scope: { type: 'module' } }]
     });
@@ -99,7 +99,7 @@ describe('YamlAtlasConfigurationLoader', () => {
       },
       modules: [
         'packages/lib/atlas.module.config.yml',
-        { model: 'architecture/models/app.atlas.module.yml', tags: ['delivery'] }
+        { model: 'app.atlas.module.yml', tags: ['delivery'] }
       ]
     });
 
@@ -118,8 +118,8 @@ describe('YamlAtlasConfigurationLoader', () => {
       '@types/*'
     ]);
     expect(configuration.modules.map((module) => module.model)).toEqual([
-      'architecture/models/lib.atlas.module.yml',
-      'architecture/models/app.atlas.module.yml'
+      'lib.atlas.module.yml',
+      'app.atlas.module.yml'
     ]);
   });
 

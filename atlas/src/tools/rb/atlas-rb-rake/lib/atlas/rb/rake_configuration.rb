@@ -4,7 +4,7 @@ module Atlas
   module Rake
     # Holds the exact module-local inputs passed from Rake to the Ruby generator.
     class RakeConfiguration
-      attr_accessor :model_file, :gemspec_file, :source_roots, :route_files, :generate_on_build, :rakefile_path
+      attr_accessor :root_directory, :gemspec_file, :source_roots, :route_files, :generate_on_build, :rakefile_path
 
       # Creates settings with only the documented optional defaults applied.
       def initialize
@@ -15,7 +15,7 @@ module Atlas
 
       # Rejects incomplete or malformed integration settings before task execution.
       def validate!
-        validate_model_file
+        validate_root_directory
         validate_gemspec_file
         validate_paths(source_roots, "source_roots")
         validate_paths(route_files, "route_files")
@@ -23,10 +23,10 @@ module Atlas
         validate_generate_on_build
       end
 
-      def validate_model_file
-        return if model_file.is_a?(String) && model_file.end_with?(".atlas.module.yml")
+      def validate_root_directory
+        return if root_directory.is_a?(String) && !root_directory.strip.empty?
 
-        raise ArgumentError, "Atlas Ruby model_file must end in .atlas.module.yml."
+        raise ArgumentError, "Atlas Ruby root_directory must be a non-empty path."
       end
 
       def validate_gemspec_file
@@ -55,7 +55,7 @@ module Atlas
       # Returns one safely separable argument list for the dedicated module generator.
       def command_arguments
         module_root = File.dirname(File.expand_path(rakefile_path || "Rakefile"))
-        arguments = ["atlas-rb", "generate", "--module-root", module_root, "--model-file", model_file]
+        arguments = ["atlas-rb", "generate", "--module-root", module_root, "--output", root_directory]
         arguments.push("--gemspec-file", gemspec_file) unless gemspec_file.nil?
         source_roots.each { |path| arguments.push("--source-root", path) }
         route_files.each { |path| arguments.push("--route-file", path) }

@@ -106,8 +106,7 @@ describe('ViewArtifacts', () => {
         invocationDirectoryPath: '/workspace',
         workspaceOption: undefined,
         configurationOption: undefined,
-        outputOption: undefined,
-        manifestOption: undefined
+        outputOption: undefined
       },
       '127.0.0.1',
       0,

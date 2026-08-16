@@ -33,7 +33,7 @@ export class AtlasTypeScriptCli {
       .command("generate")
       .option("--package-root <path>")
       .option("--tsconfig <path>")
-      .option("--output <path>")
+      .option("--root <path>")
       .action(async (options: AtlasTypeScriptOptions) => {
         await this.workflow.execute(this.toWorkflowOptions(options));
       });
@@ -64,7 +64,7 @@ export class AtlasTypeScriptCli {
       ...(options.tsconfig === undefined
         ? {}
         : { tsconfigPath: options.tsconfig }),
-      ...(options.output === undefined ? {} : { outputPath: options.output }),
+      ...(options.root === undefined ? {} : { rootPath: options.root }),
     };
   }
 }
@@ -77,6 +77,6 @@ interface AtlasTypeScriptOptions {
   readonly packageRoot?: string;
   /** Optional package-relative TypeScript compiler configuration. */
   readonly tsconfig?: string;
-  /** Optional generated-artifact root override. */
-  readonly output?: string;
+  /** Optional Atlas artifact root override. */
+  readonly root?: string;
 }

@@ -4,7 +4,7 @@ documentType: root
 project:
   name: Four module federation
   artifacts:
-    root: architecture
+    root: artifact-root
   diagrams:
     - id: landscape
       title: Four module landscape
@@ -16,25 +16,25 @@ project:
               - fixture
 
 modules:
-  - model: models/one.atlas.module.yml
+  - model: one.atlas.module.yml
     tags: [fixture]
     diagrams:
       - id: one
         title: One
         scope: { type: module }
-  - model: models/two.atlas.module.yml
+  - model: two.atlas.module.yml
     tags: [fixture]
     diagrams:
       - id: two
         title: Two
         scope: { type: module }
-  - model: models/three.atlas.module.yml
+  - model: three.atlas.module.yml
     tags: [fixture]
     diagrams:
       - id: three
         title: Three
         scope: { type: module }
-  - model: models/four.atlas.module.yml
+  - model: four.atlas.module.yml
     tags: [fixture]
     diagrams:
       - id: four

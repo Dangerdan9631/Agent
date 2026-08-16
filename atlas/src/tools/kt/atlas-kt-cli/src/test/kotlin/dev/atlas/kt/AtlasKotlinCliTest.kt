@@ -21,7 +21,7 @@ class AtlasKotlinCliTest {
         val source = temporaryDirectory.resolve("src/main/kotlin/sample/Sample.kt")
         Files.createDirectories(source.parent)
         Files.writeString(source, "package sample\nclass Sample(val name: String)\n")
-        val output = temporaryDirectory.resolve("build/sample.atlas.module.yml")
+        val output = temporaryDirectory.resolve("build/model/sample.atlas.module.yml")
         val arguments = listOf(
             "generate",
             "--project-root", temporaryDirectory.toString(),
@@ -30,7 +30,8 @@ class AtlasKotlinCliTest {
             "--version", "1.0.0",
             "--category", "library",
             "--source-root", "src/main/kotlin",
-            "--output", output.toString()
+            "--target-name", "sample",
+            "--root", temporaryDirectory.resolve("build").toString()
         )
 
         assertEquals(0, AtlasKotlinCli().run(arguments).exitCode)

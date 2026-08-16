@@ -34,11 +34,11 @@ group = "example"
 version = "1.2.3"
 
 atlas {
+    rootDirectory.set(layout.projectDirectory.dir("architecture"))
     models {
         create("jvm") {
             target.set("jvm")
             compilation.set("main")
-            modelFile.set(rootProject.file("architecture/models/fixture-jvm.atlas.module.yml"))
             semanticFragments.from(layout.buildDirectory.dir("generated/ksp/main"))
             generateOnBuild.set(false)
         }
@@ -62,9 +62,9 @@ class One : Base(), Contract
             .withPluginClasspath()
             .build()
 
-        val modelPath = fixture.resolve("architecture/models/fixture-jvm.atlas.module.yml")
+        val modelPath = fixture.resolve("architecture/model/fixture-jvm.atlas.module.yml")
         assertTrue(Files.exists(modelPath))
-        assertFalse(Files.exists(fixture.resolve("architecture/models/atlas.manifest.yml")))
+        assertFalse(Files.exists(fixture.resolve("architecture/model/atlas.manifest.yml")))
         val modelText = Files.readString(modelPath)
         val model = ObjectMapper(YAMLFactory()).readTree(modelText)
         assertEquals(2, model.path("schemaVersion").asInt())

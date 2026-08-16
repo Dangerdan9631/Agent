@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "atlas": {
-    "modelFile": "../../architecture/models/lib.atlas.module.yml",
+    "rootDirectory": "../../architecture",
     "tsconfigFile": "tsconfig.json",
     "generateOnBuild": true
   },

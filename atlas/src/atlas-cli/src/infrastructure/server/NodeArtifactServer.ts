@@ -18,7 +18,7 @@ import {
   type DeclarationRelationshipType
 } from '#application/graph/model/DeclarationGraph.js';
 import { createReadStream } from 'node:fs';
-import { access, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
@@ -673,7 +673,7 @@ export class NodeArtifactServer implements ArtifactServer {
   }
 
   /**
-   * Validates and atomically persists a PNG export beside the matching generated graph scope.
+   * Validates and atomically persists a PNG beneath the artifact root's export directory.
    *
    * @param rootPath - Absolute permitted artifact root.
    * @param request - Incoming PNG persistence request.
@@ -689,6 +689,7 @@ export class NodeArtifactServer implements ArtifactServer {
     const scopeDirectoryPath =
       scope === undefined ? undefined : this.resolveScopeDirectoryPath(rootPath, scope);
     if (
+      scope === undefined ||
       scopeDirectoryPath === undefined ||
       !request.headers['content-type']?.toLocaleLowerCase().startsWith('image/png')
     ) {
@@ -702,7 +703,9 @@ export class NodeArtifactServer implements ArtifactServer {
         this.writeStatus(response, 400);
         return;
       }
-      const imagePath = resolve(scopeDirectoryPath, 'diagram.png');
+      const exportDirectoryPath = resolve(rootPath, 'export');
+      await mkdir(exportDirectoryPath, { recursive: true });
+      const imagePath = resolve(exportDirectoryPath, this.toExportFileName(scope));
       const temporaryPath = `${imagePath}.tmp-${process.pid}`;
       await writeFile(temporaryPath, image);
       await rename(temporaryPath, imagePath);
@@ -711,6 +714,15 @@ export class NodeArtifactServer implements ArtifactServer {
     } catch {
       this.writeStatus(response, 400);
     }
+  }
+
+  /** Converts a validated scope into one collision-safe image filename. */
+  private toExportFileName(scope: string): string {
+    if (scope === 'landscape') return 'landscape.png';
+    const separatorIndex = scope.indexOf(':');
+    const scopeKind = scope.slice(0, separatorIndex);
+    const scopeIdentity = scope.slice(separatorIndex + 1);
+    return `${scopeKind}-${encodeURIComponent(scopeIdentity)}.png`;
   }
 
   /**

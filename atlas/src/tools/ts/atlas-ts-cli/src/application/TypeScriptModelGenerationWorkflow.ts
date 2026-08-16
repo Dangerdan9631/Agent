@@ -6,8 +6,8 @@ export interface TypeScriptModelGenerationOptions {
   readonly packagePath?: string;
   /** Optional package-relative tsconfig override. */
   readonly tsconfigPath?: string;
-  /** Optional package-relative model output override. */
-  readonly outputPath?: string;
+  /** Optional package-relative Atlas artifact root override. */
+  readonly rootPath?: string;
 }
 
 /**

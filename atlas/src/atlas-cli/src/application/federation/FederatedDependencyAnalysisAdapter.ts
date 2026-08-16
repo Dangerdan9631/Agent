@@ -21,7 +21,7 @@ export class FederatedDependencyAnalysisAdapter {
   /**
    * Produces deterministic per-module dependency analysis without interpreting source-language metadata.
    *
-   * @param workspace - Resolved manifest-selected modules and relationships.
+   * @param workspace - Resolved configuration-selected modules and relationships.
    * @returns Dependency results grouped by opaque artifact module ID.
    */
   public analyze(workspace: ResolvedAtlasWorkspace): readonly DependencyAnalysisResult[] {
@@ -150,7 +150,7 @@ class FederatedGraphCycleDetector {
   /**
    * Finds artifact dependency cycles even when a relationship identifies only its target module.
    *
-   * @param relationships - Resolved language-neutral relationships from selected manifest modules.
+   * @param relationships - Resolved language-neutral relationships from selected configured modules.
    * @returns Module-qualified cycle paths keyed by stable relationship ID.
    */
   public detectModules(

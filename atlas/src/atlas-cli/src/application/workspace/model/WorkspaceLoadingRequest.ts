@@ -3,11 +3,6 @@
  */
 export interface WorkspaceLoadingRequest {
   /**
-   * Optionally selects a canonical federated workspace manifest.
-   */
-  readonly manifestOption?: string | undefined;
-
-  /**
    * Identifies the absolute current working directory of the Atlas process.
    */
   readonly invocationDirectoryPath: string;

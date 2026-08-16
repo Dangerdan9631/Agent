@@ -13,5 +13,5 @@ This directory hosts generated Atlas artifacts through a path-contained local HT
 
 ## Contents
 
-- `NodeArtifactServer.ts` serves generated artifacts, persists layouts and PNGs, and applies constrained policy changes.
+- `NodeArtifactServer.ts` serves generated artifacts, persists layouts and `export/` PNGs, and applies constrained policy changes.
 - `NodeArtifactBrowser.ts` delegates opening a ready local URL to the host browser.

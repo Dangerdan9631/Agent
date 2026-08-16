@@ -19,9 +19,9 @@ module Atlas
         @logger = logger
       end
 
-      # Generates all selected module models and returns the absolute manifest path.
+      # Generates all selected module models and returns their absolute containing directory.
       def execute(request)
-        return generate_configured_module(request) unless request.model_file.nil?
+        return generate_configured_module(request) unless request.module_root.nil?
 
         workspace_path = canonical_directory(request.workspace_path || Dir.pwd, "workspace")
         configuration_path = resolve_configuration(workspace_path, request.configuration_path)
@@ -33,18 +33,31 @@ module Atlas
         @logger.info("Writing Ruby Atlas models", workspace: workspace_path,
                                                   output: artifact_root,
                                                   modules: descriptors.map(&:id))
-        @writer.write(File.join(artifact_root, "models"), linked_models)
+        @writer.write(File.join(artifact_root, "model"), linked_models)
       end
 
       private
 
       def generate_configured_module(request)
-        module_root = canonical_directory(request.workspace_path || Dir.pwd, "module root")
+        module_root = canonical_directory(request.module_root, "module root")
+        if request.output_path.nil? || request.output_path.strip.empty?
+          raise ArgumentError, "Module-local Ruby generation requires --output."
+        end
+
         descriptor = @configured_descriptor.create(module_root, request)
         model = @linker.link([@model_builder.build(descriptor)], [descriptor]).fetch(0)
-        output_path = File.expand_path(request.model_file, module_root)
+        output_root = File.expand_path(request.output_path, module_root)
+        output_path = File.join(output_root, "model", model_file_name(descriptor.display_name))
         @logger.info("Writing Ruby Atlas module", module: descriptor.id, output: output_path)
         @writer.write_model(output_path, model)
+      end
+
+      def model_file_name(target_name)
+        unless target_name.match?(/\A[A-Za-z0-9._-]+\z/)
+          raise ArgumentError, "Ruby build target '#{target_name}' cannot form a model filename."
+        end
+
+        "#{target_name}.atlas.module.yml"
       end
 
       def canonical_directory(path, label)

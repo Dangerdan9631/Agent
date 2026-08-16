@@ -3,7 +3,7 @@
 require "atlas/rb/rake"
 
 Atlas::Rake.configure do |atlas|
-  atlas.model_file = "../../architecture/models/app.atlas.module.yml"
+  atlas.root_directory = "../../architecture"
   atlas.gemspec_file = "atlas-example-app.gemspec"
   atlas.source_roots = ["lib"]
   atlas.route_files = []

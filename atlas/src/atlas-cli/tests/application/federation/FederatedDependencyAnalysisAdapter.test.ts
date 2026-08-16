@@ -211,7 +211,7 @@ class CyclicFederatedWorkspaceFixture {
   }
 
   /**
-   * Creates classification and validation policy for the two manifest modules.
+   * Creates classification and validation policy for two configured modules.
    *
    * @returns Workspace whose packages use module-local source roots.
    */

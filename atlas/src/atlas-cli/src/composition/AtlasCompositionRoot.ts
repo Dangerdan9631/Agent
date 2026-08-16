@@ -44,12 +44,12 @@ export class AtlasCompositionRoot {
   public createArtifactHost(): AtlasArtifactHost {
     const logger = new TslogAtlasLogger();
     const documentCodec = new YamlDocumentCodec();
-    const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
+    const modelLoader = new NodeAtlasWorkspaceLoader(documentCodec);
     const configurationLoader = new YamlAtlasConfigurationLoader(documentCodec);
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
       configurationLoader,
-      manifestLoader,
+      modelLoader,
       logger
     );
     const ownershipResolver = new PackageOwnershipResolver();
@@ -100,12 +100,12 @@ export class AtlasCompositionRoot {
   public createCli(): AtlasCli {
     const logger = new TslogAtlasLogger();
     const documentCodec = new YamlDocumentCodec();
-    const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
+    const modelLoader = new NodeAtlasWorkspaceLoader(documentCodec);
     const configurationLoader = new YamlAtlasConfigurationLoader(documentCodec);
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
       configurationLoader,
-      manifestLoader,
+      modelLoader,
       logger
     );
     const ownershipResolver = new PackageOwnershipResolver();

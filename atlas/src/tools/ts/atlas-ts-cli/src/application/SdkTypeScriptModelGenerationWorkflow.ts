@@ -37,9 +37,14 @@ export class SdkTypeScriptModelGenerationWorkflow implements TypeScriptModelGene
     );
     const tsconfigPath =
       options.tsconfigPath ?? packageDefinition.atlas.tsconfigFile;
-    const modelPath = resolve(
+    const artifactRootPath = resolve(
       packagePath,
-      options.outputPath ?? packageDefinition.atlas.modelFile,
+      options.rootPath ?? packageDefinition.atlas.rootDirectory,
+    );
+    const modelPath = resolve(
+      artifactRootPath,
+      "model",
+      this.toModelFileName(packageDefinition.name),
     );
     const result = await this.sdk.generate({
       workspacePath: packagePath,
@@ -80,17 +85,21 @@ export class SdkTypeScriptModelGenerationWorkflow implements TypeScriptModelGene
       throw new Error("TypeScript package.json requires an atlas mapping.");
     }
     const integration = atlas as Record<string, unknown>;
-    const allowed = new Set(["modelFile", "tsconfigFile", "generateOnBuild"]);
+    const allowed = new Set([
+      "rootDirectory",
+      "tsconfigFile",
+      "generateOnBuild",
+    ]);
     const unknown = Object.keys(integration).find((key) => !allowed.has(key));
     if (unknown !== undefined) {
       throw new Error(`Unknown TypeScript Atlas setting '${unknown}'.`);
     }
     if (
-      typeof integration.modelFile !== "string" ||
-      !integration.modelFile.endsWith(".atlas.module.yml")
+      typeof integration.rootDirectory !== "string" ||
+      integration.rootDirectory.trim().length === 0
     ) {
       throw new Error(
-        "TypeScript atlas.modelFile must end in .atlas.module.yml.",
+        "TypeScript atlas.rootDirectory must be a non-empty path.",
       );
     }
     if (
@@ -111,11 +120,22 @@ export class SdkTypeScriptModelGenerationWorkflow implements TypeScriptModelGene
       name: record.name,
       version: record.version,
       atlas: {
-        modelFile: integration.modelFile,
+        rootDirectory: integration.rootDirectory,
         tsconfigFile: integration.tsconfigFile,
         generateOnBuild: integration.generateOnBuild ?? true,
       },
     };
+  }
+
+  /** Derives a portable model filename from the npm package build target. */
+  private toModelFileName(packageName: string): string {
+    const targetName = packageName.split("/").at(-1);
+    if (targetName === undefined || !/^[A-Za-z0-9._-]+$/u.test(targetName)) {
+      throw new Error(
+        `TypeScript package '${packageName}' cannot form an Atlas model filename.`,
+      );
+    }
+    return `${targetName}.atlas.module.yml`;
   }
 
   /** Writes one deterministic YAML document through a temporary sibling file. */
@@ -147,8 +167,8 @@ interface TypeScriptPackageDefinition {
  * Contains the package-local compiler input and model output configuration.
  */
 interface TypeScriptPackageAtlasConfiguration {
-  /** Package-relative output ending in `.atlas.module.yml`. */
-  readonly modelFile: string;
+  /** Package-relative Atlas artifact root containing the shared `model` directory. */
+  readonly rootDirectory: string;
   /** Package-relative TypeScript compiler configuration path. */
   readonly tsconfigFile: string;
   /** Whether the npm lifecycle integration generates the model during builds. */

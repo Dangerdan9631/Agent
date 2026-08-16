@@ -224,9 +224,9 @@ describe('DiagramProjectionService', () => {
   });
 
   /**
-   * Projects manifest-classified modules with module-local Kotlin paths into groups and folders.
+   * Projects configuration-classified modules with module-local Kotlin paths into groups and folders.
    */
-  it('projects classified manifest groups and module-local folder scopes', () => {
+  it('projects configured module groups and module-local folder scopes', () => {
     const applicationModuleId = 'dev.example:app:1.0.0';
     const supportModuleId = 'dev.example:test-support:1.0.0';
     const workspace = new WorkspaceSnapshot(

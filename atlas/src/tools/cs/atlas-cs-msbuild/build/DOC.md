@@ -12,4 +12,4 @@ projects that reference the Atlas C# MSBuild integration package.
 
 ## Contents
 
-- `StarCruiseStudios.Atlas.Cs.MSBuild.targets` generates the current target's configured model after its build.
+- `StarCruiseStudios.Atlas.Cs.MSBuild.targets` derives the current target's model filename beneath the configured artifact root after its build.

@@ -13,5 +13,5 @@ artifact output without exposing process details to the pure SDK.
 ## Contents
 
 - `TypeScriptModelGenerationWorkflow.ts` defines the command-facing contract.
-- `SdkTypeScriptModelGenerationWorkflow.ts` reads one package's `atlas` mapping and writes its configured model.
+- `SdkTypeScriptModelGenerationWorkflow.ts` reads one package's `atlas` mapping and writes its target-derived model beneath the configured root.
 - `VersionTwoTypeScriptModelDocument.ts` maps SDK facts to the generated schema.

@@ -10,7 +10,6 @@ namespace StarCruiseStudios.Atlas.Cs.Model;
 /// <param name="Verbose">Whether detailed structured diagnostics are enabled.</param>
 /// <param name="ProjectPath">Optional exact project path for module-local generation.</param>
 /// <param name="TargetFramework">Optional exact evaluated target framework.</param>
-/// <param name="ModelFile">Optional exact module model output path.</param>
 public sealed record GenerationRequest(
     string? WorkspacePath,
     string? ConfigurationPath,
@@ -18,5 +17,4 @@ public sealed record GenerationRequest(
     string? SolutionPath,
     bool Verbose,
     string? ProjectPath = null,
-    string? TargetFramework = null,
-    string? ModelFile = null);
+    string? TargetFramework = null);

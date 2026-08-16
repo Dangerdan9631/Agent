@@ -12,5 +12,6 @@ intermediate values used during C# extraction and linking.
 
 ## Contents
 
-- Atlas records mirror the canonical module and workspace schemas.
+- Atlas records mirror the canonical module schema. Legacy workspace-manifest records
+  remain public SDK compatibility values and are not emitted by version-two generators.
 - C# target and extraction records carry generation state between adapters.

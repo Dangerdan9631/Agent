@@ -81,13 +81,13 @@ controls, see [Understanding Atlas output](docs/understanding-atlas.md).
  }
 
  atlas {
+     rootDirectory.set(rootProject.layout.projectDirectory.dir("architecture"))
      // cliExecutable = "atlas-cli"
      // viewerExecutable = "atlas"
      models {
          create("jvm") {
              target.set("jvm")
              compilation.set("main")
-             modelFile.set(rootProject.file("architecture/models/lib-jvm.atlas.module.yml"))
          }
      }
  }
@@ -106,7 +106,7 @@ from your own build steps.
 1. Add the `starcruisestudios-atlas-rb-sdk`, `starcruisestudios-atlas-rb-cli`,
    and `starcruisestudios-atlas-rb-rake` gems, then run `bundle install`.
 2. Configure each analyzed gem or application in its own Rakefile with
-   `Atlas::Rake.configure`, including an exact model output and optional exact gemspec.
+   `Atlas::Rake.configure`, including the shared `root_directory` and optional exact gemspec.
 3. Generate each module model and then drive the language-neutral CLI:
 
    ```sh
@@ -124,7 +124,7 @@ or newer and analyzes source without loading application or Rails classes.
    `StarCruiseStudios.Atlas.Cs.MSBuild` package in each analyzed project.
 2. Add `atlas.config.yml` at the solution root. C# module IDs use
    `<PackageId>@<TargetFramework>` so multi-target projects remain distinct.
-3. Set `AtlasModelFile` to a target-unique `.atlas.module.yml` path. The import
+3. Set `AtlasRootDirectory` to the shared Atlas artifact root. The import
    runs `AtlasGenerateModuleModel` for the current evaluated target; project
    validation and diagrams remain separate `atlas-cli` operations.
 
@@ -138,6 +138,10 @@ viewer. It uses `schemaVersion: 2` and `documentType: root`, may extend explicit
 diagrams under `project`, and lists every generated model in a non-empty ordered
 `modules` array. A module entry is either an inline complete configuration or a
 path to a complete `*.atlas.module.config.yml` fragment.
+
+Every `modules[].model` path is relative to the artifact root's `model/`
+directory. Native build integrations receive only the artifact root and derive
+target-specific filenames inside that directory.
 
 Atlas never discovers packages or model files. Layout and filters are
 diagram-local; only external exclusion and collapse behavior is inheritable.
@@ -167,7 +171,7 @@ atlas-ts generate --package-root packages/lib
 | ----------------------- | ---------------------------------------------------------- |
 | `--package-root <path>` | Exact npm package root (defaults to the current directory) |
 | `--tsconfig <path>`     | Package-relative tsconfig override                         |
-| `--output <path>`       | Package-relative model output override                     |
+| `--root <path>`         | Package-relative Atlas artifact root override              |
 
 ### `atlas-kt`
 
@@ -182,8 +186,9 @@ atlas-kt generate \
   --display-name name \
   --version 1.0.0 \
   --category jvm \
+  --target-name name \
   --source-root src/main/kotlin \
-  --output build/atlas/models/name.atlas.module.yml
+  --root build/atlas
 ```
 
 | Option                       | Required         | Description                                                   |
@@ -193,9 +198,10 @@ atlas-kt generate \
 | `--display-name <name>`      | Yes              | Readable artifact name                                        |
 | `--version <version>`        | Yes              | Published artifact version                                    |
 | `--category <category>`      | Yes              | Portable artifact family label (for example `jvm`)            |
+| `--target-name <name>`       | Yes              | Filesystem-safe native build-target name                      |
 | `--source-root <path>`       | Yes (repeatable) | Kotlin source directory relative to `--project-root`          |
 | `--semantic-fragment <path>` | No (repeatable)  | KSP `*.atlas.fragment.yml` file that refines source semantics |
-| `--output <path>`            | Yes              | Destination module-model YAML file                            |
+| `--root <path>`              | Yes              | Atlas artifact root containing the `model` directory          |
 
 ### `atlas-rb`
 
@@ -204,13 +210,13 @@ gemless application.
 
 ```sh
 bundle exec atlas-rb generate
-bundle exec atlas-rb generate --module-root . --model-file architecture/models/app.atlas.module.yml --source-root lib
+bundle exec atlas-rb generate --module-root . --output architecture --source-root lib
 ```
 
 | Option                  | Description                                    |
 | ----------------------- | ---------------------------------------------- |
 | `--module-root <path>`  | Exact gem or application root                  |
-| `--model-file <path>`   | Required module model output                   |
+| `--output <path>`       | Required Atlas artifact root                   |
 | `--gemspec-file <path>` | Exact optional gemspec; no search is performed |
 | `--source-root <path>`  | Explicit source root (repeatable)              |
 | `--route-file <path>`   | Explicit Rails route file (repeatable)         |
@@ -227,14 +233,14 @@ Generates one portable module model for one exact evaluated C# project target.
 Roslyn compiler symbols provide declarations and semantic relationships.
 
 ```sh
-atlas-cs generate --project src/Lib.csproj --target-framework net8.0 --model-file architecture/models/Lib-net8.0.atlas.module.yml
+atlas-cs generate --project src/Lib.csproj --target-framework net8.0 --output architecture
 ```
 
 | Option                     | Description                          |
 | -------------------------- | ------------------------------------ |
 | `--project <path>`         | Exact SDK-style C# project           |
 | `--target-framework <tfm>` | Exact evaluated target framework     |
-| `--model-file <path>`      | Target-unique generated model output |
+| `--output <path>`          | Shared Atlas artifact root           |
 | `--verbose`                | Emit detailed structured diagnostics |
 
 The MSBuild integration passes these exact evaluated values once for each built target.

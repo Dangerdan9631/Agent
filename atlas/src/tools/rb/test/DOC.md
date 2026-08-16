@@ -13,4 +13,4 @@ portable linking, deterministic persistence, and command behavior.
 ## Contents
 
 - Unit tests exercise extraction and discovery boundaries.
-- Integration tests generate schema-valid manifests from representative workspaces.
+- Integration tests generate schema-valid version-two module models from representative workspaces.

@@ -21,20 +21,18 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Verifies a Kotlin-style portable manifest drives shared validation and diagram behavior.
+ * Verifies Kotlin-style configured module models drive shared validation and diagram behavior.
  */
-describe('Federated manifest integration', () => {
-  /**
-   * Applies classification, selectors, cycles, groups, and folders without source-platform discovery.
-   */
+describe('Federated configured-model integration', () => {
+  /** Applies classification, selectors, cycles, groups, and folders without source-platform discovery. */
   it('validates and projects module-local Kotlin models through the shared pipeline', async () => {
     const fixturePath = resolve('tests/fixtures/federated-kotlin');
     const documentCodec = new YamlDocumentCodec();
-    const manifestLoader = new NodeAtlasWorkspaceLoader(documentCodec);
+    const modelLoader = new NodeAtlasWorkspaceLoader(documentCodec);
     const workspaceLoader = new WorkspaceLoader(
       new NodeWorkspacePathResolver(),
       new YamlAtlasConfigurationLoader(documentCodec),
-      manifestLoader,
+      modelLoader,
       new SilentAtlasLogger()
     );
     const graphAdapter = new FederatedDeclarationGraphAdapter();
@@ -91,11 +89,7 @@ describe('Federated manifest integration', () => {
  * Discards raw analysis artifacts while retaining validation behavior under test.
  */
 class IgnoringAnalysisArtifactWriter implements DependencyAnalysisArtifactWriter {
-  /**
-   * Completes without persisting the supplied analysis.
-   *
-   * @returns Fulfilled completion promise.
-   */
+  /** Completes without persisting the supplied analysis. */
   public write(
     _workspace: WorkspaceSnapshot,
     _analysisResults: readonly DependencyAnalysisResult[]
@@ -108,44 +102,32 @@ class IgnoringAnalysisArtifactWriter implements DependencyAnalysisArtifactWriter
  * Discards structured diagnostics emitted while loading the integration fixture.
  */
 class SilentAtlasLogger implements AtlasLogger {
-  /**
-   * Discards one trace diagnostic.
-   */
+  /** Discards one trace diagnostic. */
   public trace(_message: string, _context: AtlasLogContext): void {
     this.discard(_message, _context);
   }
 
-  /**
-   * Discards one debug diagnostic.
-   */
+  /** Discards one debug diagnostic. */
   public debug(_message: string, _context: AtlasLogContext): void {
     this.discard(_message, _context);
   }
 
-  /**
-   * Discards one informational diagnostic.
-   */
+  /** Discards one informational diagnostic. */
   public info(_message: string, _context: AtlasLogContext): void {
     this.discard(_message, _context);
   }
 
-  /**
-   * Discards one warning diagnostic.
-   */
+  /** Discards one warning diagnostic. */
   public warn(_message: string, _context: AtlasLogContext): void {
     this.discard(_message, _context);
   }
 
-  /**
-   * Discards one error diagnostic.
-   */
+  /** Discards one error diagnostic. */
   public error(_message: string, _context: AtlasLogContext): void {
     this.discard(_message, _context);
   }
 
-  /**
-   * Consumes diagnostic values without retaining test-global state.
-   */
+  /** Consumes diagnostic values without retaining test-global state. */
   private discard(message: string, context: AtlasLogContext): void {
     void message;
     void context;

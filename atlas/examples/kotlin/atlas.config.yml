@@ -8,13 +8,13 @@ project:
     - id: landscape
       title: Kotlin reading list
 modules:
-  - model: architecture/models/lib-jvm.atlas.module.yml
+  - model: lib-jvm.atlas.module.yml
     tags: [runtime, library]
     diagrams:
       - id: api
         title: Library API
         scope: { type: module }
-  - model: architecture/models/app-jvm.atlas.module.yml
+  - model: app-jvm.atlas.module.yml
     tags: [runtime, executable]
     diagrams:
       - id: application

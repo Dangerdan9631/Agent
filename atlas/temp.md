@@ -49,7 +49,8 @@ scans for fragments, packages, projects, gems, build targets, or model files.
 
 - `/` is the persisted separator on every platform.
 - `atlas.config.yml` is at the project root and is the only valid root document.
-- Paths in a document are relative to the directory containing that document.
+- Configuration-fragment paths are relative to the document containing them.
+- Module `model` paths are relative to the artifact root's `model/` directory.
 - Every configured path must resolve inside the project root after
   canonicalization and must not traverse a symbolic link outside that root.
 - Referenced configuration fragments must exist and be regular files. A missing
@@ -127,7 +128,7 @@ project:
 modules:
   - packages/lib/atlas.module.config.yml
 
-  - model: architecture/models/app.atlas.module.yml
+  - model: app.atlas.module.yml
     tags:
       - runtime
       - delivery
@@ -221,7 +222,7 @@ diagramDefaults:
 schemaVersion: 2
 documentType: module
 
-model: ../../architecture/models/lib.atlas.module.yml
+model: lib.atlas.module.yml
 tags:
   - runtime
   - core
@@ -251,8 +252,8 @@ validation:
           - "Microsoft.Data.SqlClient*"
 ```
 
-The model path in the module fragment is relative to that fragment. After
-canonical resolution, the example loads the same language-neutral model shape
+The model path in every module entry is relative to the artifact root's
+`model/` directory. After canonical resolution, the example loads the same language-neutral model shape
 regardless of which language adapter produced each file.
 
 ### Root schema
@@ -300,7 +301,7 @@ A module fragment is exactly one `ModuleConfiguration` plus its discriminator:
 | --------------- | ------------------------------- | -------- | -------------------------------------------------------------------------------- |
 | `schemaVersion` | integer                         | Yes      | Must equal `2`.                                                                  |
 | `documentType`  | string                          | Yes      | Must equal `module`.                                                             |
-| `model`         | path                            | Yes      | Generated model path relative to this fragment. Must end in `.atlas.module.yml`. |
+| `model`         | path                            | Yes      | Generated model path relative to the artifact root's `model/` directory. Must end in `.atlas.module.yml`. |
 | `tags`          | string[]                        | No       | Project-policy labels unique within this module.                                 |
 | `diagrams`      | `ModuleDiagram[]`               | No       | Explicit diagrams with IDs unique within this module.                            |
 | `validation`    | `ModuleValidationConfiguration` | No       | Rules owned by this module and evaluated from its elements.                      |
@@ -321,7 +322,7 @@ Atlas resolves a root configuration without searching the filesystem:
    directly as `ModuleConfiguration`; resolve string entries relative to the root
    and validate the referenced document against the module-fragment schema.
 5. Normalize every entry to one `ModuleConfiguration`, preserving module order
-   and the defining document as the base for its paths.
+   and resolving every model beneath the artifact root's `model/` directory.
 6. Reject duplicate canonical module-fragment and model paths.
 7. Validate selectors, diagram IDs, groups, rules, and all remaining cross-field
    constraints against the composed result.
@@ -356,7 +357,7 @@ Every module entry supplies all of its own configuration.
 
 | Field        | Type                            | Required | Rules                                                                                           |
 | ------------ | ------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `model`      | path                            | Yes      | Generated file that supplies all source identity and metadata. Must end in `.atlas.module.yml`. |
+| `model`      | path                            | Yes      | Model-root-relative generated file that supplies all source identity and metadata. Must end in `.atlas.module.yml`. |
 | `tags`       | string[]                        | No       | Project-policy labels unique within the module entry.                                           |
 | `diagrams`   | `ModuleDiagram[]`               | No       | Explicit diagrams with IDs unique within the module entry.                                      |
 | `validation` | `ModuleValidationConfiguration` | No       | Module-owned rules; omission means this module declares none.                                   |
@@ -887,9 +888,9 @@ module configures only the model or models produced by that build. Root Atlas
 configuration remains the only project-level aggregation mechanism.
 
 Every adapter must pass an immutable generation request to its language CLI or
-SDK and write atomically to its configured model file. The output path must
-resolve to a model path in the composed root configuration; Atlas core does not
-infer or reconcile a different build output.
+SDK and write atomically beneath the configured artifact root's `model/`
+directory. The filename is derived from the native build target; build
+configuration never supplies an exact model file.
 
 ### TypeScript npm configuration
 
@@ -900,7 +901,7 @@ Each analyzed package declares an `atlas` object in its own `package.json`:
   "name": "@reading-list/lib",
   "version": "1.4.0",
   "atlas": {
-    "modelFile": "../../architecture/models/lib.atlas.module.yml",
+    "rootDirectory": "../../architecture",
     "tsconfigFile": "tsconfig.json",
     "generateOnBuild": true
   }
@@ -909,11 +910,11 @@ Each analyzed package declares an `atlas` object in its own `package.json`:
 
 | Field             | Required | Default and behavior                                                                                 |
 | ----------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `modelFile`       | Yes      | Output path relative to this `package.json`.                                                         |
+| `rootDirectory`   | Yes      | Shared Atlas artifact root relative to this `package.json`.                                          |
 | `tsconfigFile`    | Yes      | Compiler configuration relative to this package. Its resolved file set is the complete source input. |
 | `generateOnBuild` | No       | `true`; wires generation into this package's build only.                                             |
 
-The adapter passes package root, package definition, `tsconfig`, and output path
+The adapter passes package root, package definition, `tsconfig`, and artifact root
 to `atlas-ts`. It must not read npm workspaces or search for other packages.
 Package `name` and `version` are required. The module category is `npm-package`;
 the module ID and name are the package name.
@@ -925,11 +926,11 @@ target models:
 
 ```kotlin
 atlas {
+    rootDirectory.set(rootProject.layout.projectDirectory.dir("architecture"))
     models {
         create("jvm") {
             target.set("jvm")
             compilation.set("main")
-            modelFile.set(rootProject.file("architecture/models/lib-jvm.atlas.module.yml"))
             semanticFragments.from(layout.buildDirectory.dir("generated/ksp/main"))
             generateOnBuild.set(true)
         }
@@ -941,7 +942,6 @@ atlas {
 | ------------------- | -------- | ------------------------------------------------------------------ |
 | `target`            | Yes      | Exact Kotlin target name; wildcards are invalid.                   |
 | `compilation`       | Yes      | Exact compilation, normally `main`.                                |
-| `modelFile`         | Yes      | Output for this project target.                                    |
 | `semanticFragments` | No       | Explicit KSP fragment files or directories for this target.        |
 | `generateOnBuild`   | No       | `true`; wires generation into this project's selected compilation. |
 
@@ -958,7 +958,7 @@ Each analyzed gem or application configures its own Rake integration:
 
 ```ruby
 Atlas::Rake.configure do |atlas|
-  atlas.model_file = "../../architecture/models/app.atlas.module.yml"
+  atlas.root_directory = "../../architecture"
   atlas.gemspec_file = "reading-list-app.gemspec"
   atlas.source_roots = ["lib"]
   atlas.route_files = []
@@ -968,7 +968,7 @@ end
 
 | Field               | Required    | Default and behavior                                                    |
 | ------------------- | ----------- | ----------------------------------------------------------------------- |
-| `model_file`        | Yes         | Output path relative to the configuring `Rakefile`.                     |
+| `root_directory`    | Yes         | Shared Atlas artifact root relative to the configuring `Rakefile`.      |
 | `gemspec_file`      | No          | Exact gemspec path. No gemspec search is performed.                     |
 | `source_roots`      | Conditional | Defaults to gemspec `require_paths`; required when there is no gemspec. |
 | `route_files`       | No          | Explicit Rails route files. Default is empty.                           |
@@ -980,23 +980,23 @@ gemless application derives ID/name from the module-root directory, uses version
 
 ### C# MSBuild configuration
 
-Each analyzed project imports the integration and configures target-specific
-output:
+Each analyzed project imports the integration and configures the shared artifact
+root:
 
 ```xml
 <PropertyGroup>
-  <AtlasModelFile>$(MSBuildProjectDirectory)/../../architecture/models/$(PackageId)-$(TargetFramework).atlas.module.yml</AtlasModelFile>
+  <AtlasRootDirectory>$(MSBuildProjectDirectory)/../../architecture</AtlasRootDirectory>
   <AtlasGenerateOnBuild>true</AtlasGenerateOnBuild>
 </PropertyGroup>
 ```
 
 | Property               | Required | Default and behavior                                                                                                                |
 | ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `AtlasModelFile`       | Yes      | Output for the current project target. A multi-target project must include `$(TargetFramework)` or another target-unique component. |
+| `AtlasRootDirectory`   | Yes      | Shared Atlas artifact root. The integration derives a project-and-target-specific filename beneath `model/`.                       |
 | `AtlasGenerateOnBuild` | No       | `true`; runs once for each explicitly built target framework.                                                                       |
 
 The adapter passes the current project path, evaluated build configuration,
-target framework, compilation, and output path to `atlas-cs`. It must not search
+target framework, compilation, and artifact root to `atlas-cs`. It must not search
 for solutions or projects. `PackageId` supplies the preferred name, with
 `AssemblyName` and project name as source-definition fallbacks. ID is
 `<name>@<TargetFramework>`, version comes from evaluated package/version

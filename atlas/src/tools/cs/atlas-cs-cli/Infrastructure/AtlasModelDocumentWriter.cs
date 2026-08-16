@@ -6,12 +6,11 @@ using StarCruiseStudios.Atlas.Cs.Model;
 namespace StarCruiseStudios.Atlas.Cs.Infrastructure;
 
 /// <summary>
-/// Validates and writes deterministic Atlas module documents and their workspace manifest.
+/// Validates and writes deterministic Atlas module documents to derived model paths.
 /// </summary>
 public sealed class AtlasModelDocumentWriter
 {
     private readonly JsonSchema moduleSchema;
-    private readonly JsonSchema workspaceSchema;
     private readonly JsonSerializerOptions jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,7 +22,7 @@ public sealed class AtlasModelDocumentWriter
     /// <summary>
     /// Creates a writer from canonical packaged schemas.
     /// </summary>
-    /// <param name="schemaDirectory">Directory containing module and workspace schemas.</param>
+    /// <param name="schemaDirectory">Directory containing the module schema.</param>
     /// <param name="documentSerializer">YAML document serialization boundary.</param>
     public AtlasModelDocumentWriter(string schemaDirectory, YamlDocumentSerializer documentSerializer)
     {
@@ -32,39 +31,29 @@ public sealed class AtlasModelDocumentWriter
         this.moduleSchema = JsonSchema.FromText(
             File.ReadAllText(Path.Combine(schemaDirectory, "atlas-module.schema.json")),
             buildOptions);
-        this.workspaceSchema = JsonSchema.FromText(
-            File.ReadAllText(Path.Combine(schemaDirectory, "atlas-workspace.schema.json")),
-            buildOptions);
     }
 
     /// <summary>
-    /// Writes all models and returns the absolute workspace-manifest path.
+    /// Writes all models and returns their containing directory.
     /// </summary>
     /// <param name="modelsDirectory">Destination directory reserved for generated models.</param>
     /// <param name="models">Linked portable module models.</param>
-    /// <returns>Absolute path to `atlas.manifest.yml`.</returns>
+    /// <returns>Absolute path to the generated model directory.</returns>
     public async Task<string> WriteAsync(string modelsDirectory, IReadOnlyList<AtlasModuleModel> models)
     {
         Directory.CreateDirectory(modelsDirectory);
-        var entries = new List<AtlasWorkspaceManifestEntry>();
         foreach (var model in models.OrderBy(model => model.Module.Id, StringComparer.Ordinal))
         {
             var fileName = $"{Uri.EscapeDataString(model.Module.Id)}.atlas.module.yml";
             var document = this.ToVersionTwoDocument(model);
             var yaml = this.SerializeAndValidate(document, this.moduleSchema, $"module '{model.Module.Id}'");
             await File.WriteAllTextAsync(Path.Combine(modelsDirectory, fileName), yaml).ConfigureAwait(false);
-            entries.Add(new AtlasWorkspaceManifestEntry(model.Module.Id, fileName));
         }
-
-        var manifest = new AtlasWorkspaceManifest(1, entries);
-        var manifestYaml = this.SerializeAndValidate(manifest, this.workspaceSchema, "workspace manifest");
-        var manifestPath = Path.Combine(modelsDirectory, "atlas.manifest.yml");
-        await File.WriteAllTextAsync(manifestPath, manifestYaml).ConfigureAwait(false);
-        return Path.GetFullPath(manifestPath);
+        return Path.GetFullPath(modelsDirectory);
     }
 
     /// <summary>
-    /// Writes one module model to the exact output configured by its owning project target.
+    /// Writes one module model to the target-derived output selected by the workflow.
     /// </summary>
     /// <param name="outputPath">Absolute or project-relative `.atlas.module.yml` destination.</param>
     /// <param name="model">One target-specific linked model.</param>

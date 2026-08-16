@@ -2,7 +2,7 @@ import { NodeArtifactServer } from '#infrastructure/server/NodeArtifactServer.js
 import { DeterministicLayoutService } from '#application/layout/DeterministicLayoutService.js';
 import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
 import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -42,7 +42,7 @@ class TemporaryArtifactRoot {
           artifacts: { root: 'artifacts' },
           diagrams: [{ id: 'landscape', title: 'Landscape' }]
         },
-        modules: [{ model: 'models/demo.atlas.module.yml' }]
+        modules: [{ model: 'demo.atlas.module.yml' }]
       }),
       'utf8'
     );
@@ -90,6 +90,7 @@ class TemporaryArtifactRoot {
     const folderPath = join(rootPath, 'folders', 'demo%3Asrc%2Ffeature');
     await mkdir(folderPath, { recursive: true });
     await writeFile(join(folderPath, 'index.html'), '<main>folder</main>', 'utf8');
+    await writeFile(join(folderPath, 'graph.json'), '{}', 'utf8');
     return new TemporaryArtifactRoot(rootPath);
   }
 
@@ -120,7 +121,7 @@ class TemporaryArtifactRoot {
    * @returns Complete exported PNG bytes.
    */
   public readLandscapePng(): Promise<Buffer> {
-    return readFile(join(this.rootPath, 'landscape', 'diagram.png'));
+    return readFile(join(this.rootPath, 'export', 'landscape.png'));
   }
 
   /**
@@ -235,6 +236,11 @@ describe('NodeArtifactServer', () => {
         headers: { 'Content-Type': 'image/png' },
         body: pngBytes
       });
+      const folderPngResponse = await fetch(`${origin}/api/png?scope=folder:demo:src/feature`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/png' },
+        body: pngBytes
+      });
 
       expect(pageResponse.status).toBe(200);
       expect(folderPageResponse.status).toBe(200);
@@ -261,12 +267,19 @@ describe('NodeArtifactServer', () => {
         }
       });
       expect(pngResponse.status).toBe(204);
+      expect(folderPngResponse.status).toBe(204);
       await expect(root.readLandscapeLayout()).resolves.toEqual({
         schemaVersion: 1,
         positions: [{ nodeId: 'live', parentId: 'directory:demo:src', x: 0, y: 0 }],
         hiddenRelationshipIds: ['live-edge']
       });
       await expect(root.readLandscapePng()).resolves.toEqual(pngBytes);
+      await expect(
+        readFile(join(root.rootPath, 'export', 'folder-demo%3Asrc%2Ffeature.png'))
+      ).resolves.toEqual(pngBytes);
+      await expect(access(join(root.rootPath, 'landscape', 'diagram.png'))).rejects.toMatchObject({
+        code: 'ENOENT'
+      });
     } finally {
       await server.stop();
     }

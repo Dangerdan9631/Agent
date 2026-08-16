@@ -10,84 +10,28 @@ import type { WorkspaceLoadingRequest } from '#application/workspace/model/Works
 import { ResolvedWorkspacePaths } from '#application/workspace/model/ResolvedWorkspacePaths.js';
 import { WorkspacePackage } from '#application/workspace/model/WorkspacePackage.js';
 import { WorkspaceSnapshot } from '#application/workspace/model/WorkspaceSnapshot.js';
-import type { WorkspacePackageDiscoverer } from '#application/workspace/ports/WorkspacePackageDiscoverer.js';
 import type { WorkspaceLoadingWorkflow } from '#application/workspace/ports/WorkspaceLoadingWorkflow.js';
-import type { ManifestWorkspacePackageResolver } from '#application/workspace/ports/ManifestWorkspacePackageResolver.js';
 import type { WorkspacePathResolver } from '#application/workspace/ports/WorkspacePathResolver.js';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 /**
  * Loads composed project policy and only the generated models selected by its ordered module list.
  */
 export class WorkspaceLoader implements WorkspaceLoadingWorkflow {
-  private readonly modelLoader: AtlasWorkspaceLoader | undefined;
-  private readonly packageDiscoverer: WorkspacePackageDiscoverer | undefined;
-  private readonly manifestPackageResolver: ManifestWorkspacePackageResolver | undefined;
-  private readonly logger: AtlasLogger;
-
   /**
-   * Creates the canonical version-two workspace loader.
+   * Creates workspace loading from configuration, model, path, and diagnostic boundaries.
    *
-   * @param pathResolver - Resolves command-line project, configuration, and output paths.
-   * @param configurationLoader - Loads and composes the canonical root configuration.
-   * @param modelLoader - Loads generated models selected by composed module entries.
-   * @param logger - Records resolved configuration and partial-project decisions.
-   */
-  public constructor(
-    pathResolver: WorkspacePathResolver,
-    configurationLoader: AtlasConfigurationLoader,
-    modelLoader: AtlasWorkspaceLoader,
-    logger: AtlasLogger
-  );
-
-  /**
-   * Creates the temporary version-one compatibility composition used by legacy callers.
-   *
-   * @param pathResolver - Resolves command-line workspace paths.
-   * @param configurationLoader - Loads configuration policy.
-   * @param packageDiscoverer - Discovers legacy source packages.
-   * @param manifestPackageResolver - Resolves legacy manifest-selected packages.
-   * @param logger - Records workspace decisions.
-   */
-  public constructor(
-    pathResolver: WorkspacePathResolver,
-    configurationLoader: AtlasConfigurationLoader,
-    packageDiscoverer: WorkspacePackageDiscoverer,
-    manifestPackageResolver: ManifestWorkspacePackageResolver,
-    logger: AtlasLogger
-  );
-
-  /**
-   * Wires either the canonical model-loading boundary or the isolated legacy compatibility boundary.
-   *
-   * @param pathResolver - Resolves configuration and artifact paths.
-   * @param configurationLoader - Loads configuration policy.
-   * @param modelOrPackageLoader - Canonical model loader or legacy package discoverer.
-   * @param loggerOrManifestResolver - Canonical logger or legacy manifest resolver.
-   * @param legacyLogger - Logger supplied only by the legacy constructor form.
+   * @param pathResolver - Resolves invocation-owned configuration and artifact paths.
+   * @param configurationLoader - Loads the composed version-two root configuration.
+   * @param modelLoader - Loads only models selected by configured module entries.
+   * @param logger - Records resolved selection and missing generated outputs.
    */
   public constructor(
     private readonly pathResolver: WorkspacePathResolver,
     private readonly configurationLoader: AtlasConfigurationLoader,
-    modelOrPackageLoader: AtlasWorkspaceLoader | WorkspacePackageDiscoverer,
-    loggerOrManifestResolver: AtlasLogger | ManifestWorkspacePackageResolver,
-    legacyLogger?: AtlasLogger
-  ) {
-    if (this.isModelLoader(modelOrPackageLoader)) {
-      this.modelLoader = modelOrPackageLoader;
-      this.packageDiscoverer = undefined;
-      this.manifestPackageResolver = undefined;
-      this.logger = loggerOrManifestResolver as AtlasLogger;
-      return;
-    }
-    this.modelLoader = undefined;
-    this.packageDiscoverer = modelOrPackageLoader;
-    this.manifestPackageResolver = loggerOrManifestResolver as ManifestWorkspacePackageResolver;
-    if (legacyLogger === undefined) {
-      throw new Error('Atlas legacy workspace composition requires a logger.');
-    }
-    this.logger = legacyLogger;
-  }
+    private readonly modelLoader: AtlasWorkspaceLoader,
+    private readonly logger: AtlasLogger
+  ) {}
 
   /**
    * Loads the complete project state required by an Atlas command.
@@ -103,67 +47,52 @@ export class WorkspaceLoader implements WorkspaceLoadingWorkflow {
     );
     const configuration = await this.configurationLoader.load(partialPaths.configurationPath);
     const artifacts = this.toArtifactConfiguration(configuration);
-    const projectPaths = this.isVersionTwo(configuration)
-      ? new ResolvedWorkspacePaths(
-          dirname(partialPaths.configurationPath),
-          partialPaths.configurationPath,
-          undefined
-        )
-      : partialPaths;
+    const projectPaths = new ResolvedWorkspacePaths(
+      dirname(partialPaths.configurationPath),
+      partialPaths.configurationPath,
+      undefined
+    );
     const paths = await this.pathResolver.resolveArtifactRoot(
       projectPaths,
       artifacts,
       request.outputOption
     );
 
-    if (this.isVersionTwo(configuration)) {
-      if (this.modelLoader === undefined) {
-        throw new Error('Atlas version-two workspace model loading is not configured.');
-      }
-      const loaded = await this.modelLoader.loadConfigured(
-        paths.workspaceRootPath,
-        configuration.modules
-      );
-      this.validateGroupMembership(configuration, loaded.modulesById);
-      const packages = [...loaded.workspace.modules.values()].map(
-        (model) =>
-          new WorkspacePackage(
-            model.module.id,
-            paths.workspaceRootPath,
-            '.',
-            [],
-            (loaded.modulesById.get(model.module.id)?.diagrams ?? []).some(
-              (diagram) => diagram.scope.type === 'module'
-            )
-              ? 'runtime'
-              : 'support',
-            loaded.modulesById.get(model.module.id)?.tags ?? [],
-            undefined
-          )
-      );
-      for (const missingModelPath of loaded.missingModelPaths) {
-        this.logger.warn('Atlas skipped a missing configured generated model.', {
-          values: { modelPath: missingModelPath }
-        });
-      }
-      this.logLoadedWorkspace(paths, packages, loaded.missingModelPaths);
-      return new WorkspaceSnapshot(
-        paths,
-        configuration,
-        packages,
-        loaded.workspace,
-        loaded.missingModelPaths,
-        loaded.modulesById
-      );
-    }
-
-    const packages = await this.discoverLegacyPackages(
-      request,
-      paths.workspaceRootPath,
-      configuration
+    const loaded = await this.modelLoader.loadConfigured(
+      join(paths.artifactRootPath!, 'model'),
+      configuration.modules
     );
-    this.logLoadedWorkspace(paths, packages, []);
-    return new WorkspaceSnapshot(paths, configuration, packages);
+    this.validateGroupMembership(configuration, loaded.modulesById);
+    const packages = [...loaded.workspace.modules.values()].map(
+      (model) =>
+        new WorkspacePackage(
+          model.module.id,
+          paths.workspaceRootPath,
+          '.',
+          [],
+          (loaded.modulesById.get(model.module.id)?.diagrams ?? []).some(
+            (diagram) => diagram.scope.type === 'module'
+          )
+            ? 'runtime'
+            : 'support',
+          loaded.modulesById.get(model.module.id)?.tags ?? [],
+          undefined
+        )
+    );
+    for (const missingModelPath of loaded.missingModelPaths) {
+      this.logger.warn('Atlas skipped a missing configured generated model.', {
+        values: { modelPath: missingModelPath }
+      });
+    }
+    this.logLoadedWorkspace(paths, packages, loaded.missingModelPaths);
+    return new WorkspaceSnapshot(
+      paths,
+      configuration,
+      packages,
+      loaded.workspace,
+      loaded.missingModelPaths,
+      loaded.modulesById
+    );
   }
 
   /** Rejects a loaded module that matches more than one group in the same project diagram. */
@@ -200,29 +129,9 @@ export class WorkspaceLoader implements WorkspaceLoadingWorkflow {
     return new RegExp(`^${expression}$`, 'u').test(value);
   }
 
-  /** Extracts artifact placement from the canonical project shape or a legacy test fixture. */
+  /** Extracts artifact placement from the canonical project shape. */
   private toArtifactConfiguration(configuration: AtlasConfiguration): AtlasArtifactConfiguration {
-    if (this.isVersionTwo(configuration)) return configuration.project.artifacts;
-    return (configuration as unknown as LegacyAtlasConfiguration).artifacts ?? { root: 'atlas' };
-  }
-
-  /** Uses legacy discovery only for callers that supplied an old structural fixture. */
-  private async discoverLegacyPackages(
-    request: WorkspaceLoadingRequest,
-    workspaceRootPath: string,
-    configuration: AtlasConfiguration
-  ): Promise<readonly WorkspacePackage[]> {
-    if (request.manifestOption !== undefined && this.manifestPackageResolver !== undefined) {
-      return this.manifestPackageResolver.resolve(
-        request.manifestOption,
-        workspaceRootPath,
-        configuration
-      );
-    }
-    if (this.packageDiscoverer === undefined) {
-      throw new Error('Atlas source package discovery is not configured.');
-    }
-    return this.packageDiscoverer.discover(workspaceRootPath, configuration);
+    return configuration.project.artifacts;
   }
 
   /** Records the loaded subset and paths that made it partial. */
@@ -241,24 +150,4 @@ export class WorkspaceLoader implements WorkspaceLoadingWorkflow {
       }
     });
   }
-
-  /** Identifies the canonical model-loading capability without depending on a concrete adapter. */
-  private isModelLoader(
-    value: AtlasWorkspaceLoader | WorkspacePackageDiscoverer
-  ): value is AtlasWorkspaceLoader {
-    return 'loadConfigured' in value && typeof value.loadConfigured === 'function';
-  }
-
-  /** Identifies the canonical composed document at the compatibility boundary. */
-  private isVersionTwo(configuration: AtlasConfiguration): boolean {
-    return configuration.schemaVersion === 2 && configuration.documentType === 'root';
-  }
-}
-
-/**
- * Describes only the legacy artifact field needed by the temporary constructor compatibility path.
- */
-interface LegacyAtlasConfiguration {
-  /** Defines legacy artifact placement. */
-  readonly artifacts?: AtlasArtifactConfiguration;
 }

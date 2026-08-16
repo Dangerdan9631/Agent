@@ -7,10 +7,8 @@
   <Target Name="AtlasGenerateModuleModel"
           AfterTargets="Build"
           Condition="'$(AtlasGenerateOnBuild)' == 'true' and '$(TargetFramework)' != ''">
-    <Error Condition="'$(AtlasModelFile)' == ''"
-           Text="AtlasModelFile is required and must identify this target framework's .atlas.module.yml output." />
-    <Error Condition="'$(TargetFrameworks)' != '' and !$([System.String]::Copy('$(AtlasModelFile)').Contains('$(TargetFramework)'))"
-           Text="A multi-target project AtlasModelFile must include TargetFramework or another target-unique value." />
-    <Exec Command="&quot;$(AtlasCsCommand)&quot; $(AtlasCsCommandArguments) generate --project &quot;$(MSBuildProjectFullPath)&quot; --target-framework &quot;$(TargetFramework)&quot; --model-file &quot;$(AtlasModelFile)&quot;" />
+    <Error Condition="'$(AtlasRootDirectory)' == ''"
+           Text="AtlasRootDirectory is required and must identify the shared Atlas artifact root." />
+    <Exec Command="&quot;$(AtlasCsCommand)&quot; $(AtlasCsCommandArguments) generate --project &quot;$(MSBuildProjectFullPath)&quot; --target-framework &quot;$(TargetFramework)&quot; --output &quot;$(AtlasRootDirectory)&quot;" />
   </Target>
 </Project>

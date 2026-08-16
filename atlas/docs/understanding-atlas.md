@@ -20,7 +20,7 @@ that produced it:
 
 ```text
 TypeScript source ─┐
-Kotlin source/KSP ─┼─> module models ─> workspace manifest ─> resolved workspace
+Kotlin source/KSP ─┼─> module models ─> atlas.config.yml ─> resolved workspace
 Ruby/Rails source ─┤                                      │
 C#/Roslyn source ──┘                                      │
                                                           ├─> dependency facts ─> rules
@@ -31,8 +31,9 @@ C#/Roslyn source ──┘                                      │
                                                                  └─> dependency matrix
 ```
 
-A language generator owns the first mapping. `atlas-cli` owns everything after
-the manifest. This boundary is what lets Atlas compare and federate different
+A language generator owns the first mapping. `atlas.config.yml` explicitly
+selects generated model paths, and `atlas-cli` owns everything after that
+selection. This boundary is what lets Atlas compare and federate different
 languages without exposing TypeScript compiler objects, Kotlin PSI/KSP objects,
 Ruby Prism nodes, Roslyn symbols, MSBuild types, Gradle types, or
 dependency-analyzer vendor records to its core.
@@ -43,9 +44,9 @@ used, or that Atlas inferred the business significance of the relationship.
 
 ## The portable architecture model
 
-The intermediate abstraction is the version-one **Atlas module model**. It is a
+The intermediate abstraction is the version-two **Atlas module model**. It is a
 deterministic YAML document describing one independently generated artifact.
-The workspace manifest lists the models selected for one Atlas run.
+The root `atlas.config.yml` lists the models selected for one Atlas run.
 
 ### Artifact identity
 
@@ -122,14 +123,13 @@ This graduated target shape is intentional. A generator records a precise
 target when it can prove one and retains a useful boundary label when it cannot.
 It should not guess across ambiguous imports or declarations.
 
-### Manifest linking and model validation
+### Configuration linking and model validation
 
-`atlas.manifest.yml` is deliberately small: each entry pairs the expected
-`moduleId` with a manifest-relative model path. When Atlas loads it, it validates
-the model and linking contract before architecture rules run. Among other
-checks, Atlas rejects escaping model paths, mismatched module identities,
-duplicate module/element/relationship IDs, unknown local parents or targets,
-absolute source paths, and unsupported kinds.
+Every root configuration declares `.atlas.module.yml` paths relative to the
+artifact root's `model/` directory in processing order. Atlas loads only those files and validates each model before
+architecture rules run. Among other checks, Atlas rejects escaping configured
+paths, duplicate module/element/relationship IDs, unknown local parents or
+targets, absolute source paths, and unsupported kinds.
 
 Targets are then linked in this order:
 
@@ -297,10 +297,10 @@ names. These are declared policies; Atlas does not infer layers from folder
 names.
 
 With direct source analysis, `forbidden-import` sees the source import spelling.
-With a version-one federated manifest, the portable relationship does not have a
-separate original-import field, so the normalized target module or label is the
-specifier available to that rule. Prefer stable module/package patterns when a
-policy must behave the same across language adapters.
+Generated version-two module models do not carry a separate original-import
+field, so the normalized target module or label is the specifier available to
+that rule. Prefer stable module/package patterns when a policy must behave the
+same across language adapters.
 
 An `error` violation makes `validate` fail and prevents normal generation. A
 `warning` is reported but does not fail the command. `generate --no-validate`
@@ -475,9 +475,9 @@ they affect regenerated views. They still do not suppress validation rules.
 ### Theme and exports
 
 Dark mode is stored in browser-local storage and is shared by diagram and matrix
-pages. **Export Image** writes a PNG of the complete current graph beside its
-scope artifacts. **Export All** visits every generated graph page and replaces
-all scope PNG exports.
+pages. **Export Image** writes a PNG of the complete current graph under the
+artifact root's `export/` directory. **Export All** visits every generated graph
+page and replaces all PNGs in that shared export directory.
 
 ## What not to infer from a view
 

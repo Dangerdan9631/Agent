@@ -42,10 +42,10 @@ public sealed class GenerateCSharpModels
     }
 
     /// <summary>
-    /// Generates every selected module model and returns the absolute manifest path.
+    /// Generates every selected module model and returns their containing directory.
     /// </summary>
     /// <param name="request">Command paths and diagnostic preference.</param>
-    /// <returns>Absolute path to the generated workspace manifest.</returns>
+    /// <returns>Absolute path to the generated model directory or target-derived model file.</returns>
     public async Task<string> ExecuteAsync(GenerationRequest request)
     {
         if (request.ProjectPath is not null)
@@ -86,14 +86,14 @@ public sealed class GenerateCSharpModels
             ["output"] = artifactRoot,
             ["modules"] = models.Select(model => model.Module.Id).ToArray()
         });
-        return await this.writer.WriteAsync(Path.Combine(artifactRoot, "models"), models).ConfigureAwait(false);
+        return await this.writer.WriteAsync(Path.Combine(artifactRoot, "model"), models).ConfigureAwait(false);
     }
 
     private async Task<string> GenerateConfiguredProjectAsync(GenerationRequest request)
     {
-        if (request.TargetFramework is null || request.ModelFile is null)
+        if (request.TargetFramework is null || request.OutputPath is null)
         {
-            throw new ArgumentException("Module-local C# generation requires --project, --target-framework, and --model-file.");
+            throw new ArgumentException("Module-local C# generation requires --project, --target-framework, and --output.");
         }
 
         var projectPath = Path.GetFullPath(request.ProjectPath!);
@@ -122,7 +122,13 @@ public sealed class GenerateCSharpModels
         using var loadedProject = await this.projectLoader.LoadAsync(target).ConfigureAwait(false);
         var extracted = await this.extractor.ExtractAsync(target, loadedProject.Documents).ConfigureAwait(false);
         var model = this.linker.Link([extracted]).Single();
-        var outputPath = Path.GetFullPath(request.ModelFile, projectRoot);
+        var outputRoot = Path.GetFullPath(request.OutputPath, projectRoot);
+        var targetName = $"{Path.GetFileNameWithoutExtension(projectPath)}-{request.TargetFramework}";
+        if (targetName.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not ('.' or '_' or '-')))
+        {
+            throw new ArgumentException($"C# build target '{targetName}' cannot form a model filename.");
+        }
+        var outputPath = Path.Combine(outputRoot, "model", $"{targetName}.atlas.module.yml");
         this.logger.Info("Writing configured C# Atlas module.", new Dictionary<string, object?>
         {
             ["module"] = target.Identity.Id,

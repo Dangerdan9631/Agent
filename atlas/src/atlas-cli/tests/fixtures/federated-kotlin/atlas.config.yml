@@ -4,7 +4,7 @@ documentType: root
 project:
   name: Federated Kotlin
   artifacts:
-    root: architecture
+    root: artifact-root
   diagrams:
     - id: kotlin-example
       title: Kotlin Example
@@ -16,7 +16,7 @@ project:
               - application
 
 modules:
-  - model: models/app.atlas.module.yml
+  - model: app.atlas.module.yml
     tags:
       - application
     diagrams:
@@ -43,7 +43,7 @@ modules:
             moduleTags:
               - support-tooling
 
-  - model: models/test-support.atlas.module.yml
+  - model: test-support.atlas.module.yml
     tags:
       - support-tooling
 

@@ -1,5 +1,5 @@
 import { AtlasCompositionRoot } from '#composition/AtlasCompositionRoot.js';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, cp, mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -25,8 +25,10 @@ class TemporaryArtifactOutput {
    *
    * @returns Ready output-root wrapper.
    */
-  public static async create(): Promise<TemporaryArtifactOutput> {
+  public static async create(fixturePath: string): Promise<TemporaryArtifactOutput> {
     const path = await mkdtemp(join(tmpdir(), 'atlas-generation-'));
+    await mkdir(join(path, 'model'));
+    await cp(join(fixturePath, 'artifact-root', 'model'), join(path, 'model'), { recursive: true });
     this.paths.push(path);
     return new TemporaryArtifactOutput(path);
   }
@@ -52,8 +54,8 @@ describe('Atlas generation integration', () => {
    * Generates landscape, package, folder, matrix, graph, and raw analysis artifacts through the real CLI composition.
    */
   it('generates every configured artifact scope into an isolated output root', async () => {
-    const output = await TemporaryArtifactOutput.create();
     const fixturePath = resolve('tests/fixtures/semantic-graph');
+    const output = await TemporaryArtifactOutput.create(fixturePath);
 
     const exitCode = await new AtlasCompositionRoot()
       .createCli()
@@ -114,8 +116,8 @@ describe('Atlas generation integration', () => {
    * Loads four independently generated models and diagrams every explicitly configured artifact.
    */
   it('generates four module models with a landscape and four module diagrams', async () => {
-    const output = await TemporaryArtifactOutput.create();
     const fixturePath = resolve('tests/fixtures/federation-four');
+    const output = await TemporaryArtifactOutput.create(fixturePath);
 
     const exitCode = await new AtlasCompositionRoot()
       .createCli()

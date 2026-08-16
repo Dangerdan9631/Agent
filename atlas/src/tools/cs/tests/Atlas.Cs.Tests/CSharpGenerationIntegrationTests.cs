@@ -34,7 +34,7 @@ public sealed class CSharpGenerationIntegrationTests
         var exitCode = await Program.Main(["generate", "--workspace", workspace.Path]);
 
         Assert.Equal(1, exitCode);
-        Assert.False(File.Exists(System.IO.Path.Combine(workspace.Path, "architecture", "models", "atlas.manifest.yml")));
+        Assert.False(File.Exists(System.IO.Path.Combine(workspace.Path, "architecture", "model", "atlas.manifest.yml")));
     }
 
     /// <summary>
@@ -102,12 +102,10 @@ public sealed class CSharpGenerationIntegrationTests
             Assert.Equal(first[path], second[path]);
         }
 
+        Assert.Equal(
+            ["Atlas.Cs.Fixture%40net8.0.atlas.module.yml", "Atlas.Cs.Fixture%40net9.0.atlas.module.yml"],
+            first.Keys.Order());
         var documentSerializer = new YamlDocumentSerializer();
-        using var manifest = JsonDocument.Parse(documentSerializer.ToJson(first["atlas.manifest.yml"]));
-        var moduleIds = manifest.RootElement.GetProperty("modules").EnumerateArray()
-            .Select(entry => entry.GetProperty("moduleId").GetString()!)
-            .ToArray();
-        Assert.Equal(["Atlas.Cs.Fixture@net8.0", "Atlas.Cs.Fixture@net9.0"], moduleIds);
         using var model = JsonDocument.Parse(
             documentSerializer.ToJson(first["Atlas.Cs.Fixture%40net8.0.atlas.module.yml"]));
         var kinds = model.RootElement.GetProperty("elements").EnumerateArray()
@@ -153,7 +151,7 @@ public sealed class CSharpGenerationIntegrationTests
 
         internal IReadOnlyDictionary<string, string> ReadGeneratedYaml()
         {
-            var models = System.IO.Path.Combine(this.Path, "architecture", "models");
+            var models = System.IO.Path.Combine(this.Path, "architecture", "model");
             return Directory.EnumerateFiles(models, "*.yml")
                 .ToDictionary(path => System.IO.Path.GetFileName(path)!, File.ReadAllText, StringComparer.Ordinal);
         }

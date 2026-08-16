@@ -4,13 +4,13 @@ documentType: root
 project:
   name: Semantic graph fixture
   artifacts:
-    root: architecture
+    root: artifact-root
   diagrams:
     - id: landscape
       title: Semantic graph landscape
 
 modules:
-  - model: models/semantic-graph.atlas.module.yml
+  - model: semantic-graph.atlas.module.yml
     tags:
       - runtime
     diagrams:

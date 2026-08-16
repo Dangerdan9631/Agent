@@ -66,8 +66,18 @@ class KotlinModelGenerationRequestParser(
                 .map { path -> File(path).canonicalFile }
                 .distinctBy { file -> file.path }
                 .sortedBy { file -> file.path },
-            File(this.required(values, "--output")).canonicalFile
+            this.outputFile(values)
         )
+    }
+
+    /** Derives the model destination from the configured artifact root and build target identity. */
+    private fun outputFile(values: Map<String, List<String>>): File {
+        val root = File(this.required(values, "--root")).canonicalFile
+        val targetName = this.required(values, "--target-name")
+        require(targetName.matches(Regex("[A-Za-z0-9._-]+"))) {
+            "Atlas Kotlin build target '$targetName' cannot form a model filename."
+        }
+        return File(root, "model/$targetName.atlas.module.yml").canonicalFile
     }
 
     /**

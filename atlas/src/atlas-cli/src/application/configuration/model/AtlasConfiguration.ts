@@ -73,7 +73,7 @@ export interface AtlasArtifactConfiguration {
  */
 export interface AtlasModuleConfiguration {
   /**
-   * Names a normalized project-relative generated model path.
+   * Names a normalized path relative to the artifact root's `model` directory.
    */
   readonly model: string;
 

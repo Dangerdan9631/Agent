@@ -2,7 +2,7 @@
 
 require_relative "test_helper"
 
-# Verifies complete Ruby workspaces produce deterministic portable manifests.
+# Verifies complete Ruby workspaces produce deterministic version-two module models.
 class GenerateRubyModelsTest < Minitest::Test
   include AtlasRbTestSupport
 
@@ -26,16 +26,14 @@ class GenerateRubyModelsTest < Minitest::Test
         identity_overrides: { module_id: "catalog", version: "1.2.3" }
       )
       generator = workflow
-      manifest_path = generator.execute(request)
-      first = generated_documents(File.dirname(manifest_path))
-      second_manifest_path = generator.execute(request)
-      second = generated_documents(File.dirname(second_manifest_path))
+      models_directory = generator.execute(request)
+      first = generated_documents(models_directory)
+      second_models_directory = generator.execute(request)
+      second = generated_documents(second_models_directory)
 
       assert_equal first, second
-      manifest = YAML.safe_load(File.read(manifest_path, encoding: "UTF-8"))
-      assert_equal(["catalog"], manifest.fetch("modules").map { |entry| entry.fetch("moduleId") })
-      model = YAML.safe_load(File.read(File.join(File.dirname(manifest_path), manifest.dig("modules", 0, "modelPath")),
-                                       encoding: "UTF-8"))
+      assert_equal ["catalog.atlas.module.yml"], first.keys
+      model = YAML.safe_load(File.read(File.join(models_directory, "catalog.atlas.module.yml"), encoding: "UTF-8"))
       assert_equal 2, model.fetch("schemaVersion")
       assert_equal "ruby", model.dig("source", "language")
       assert_equal "1.2.3", model.dig("module", "version")
@@ -64,16 +62,15 @@ class GenerateRubyModelsTest < Minitest::Test
                                                        %w[catalog-domain
                                                           catalog-application], package_globs: ["gems/*"]
                                                      )))
-      manifest_path = workflow.execute(Atlas::Rb::GenerationRequest.new(
-                                         workspace_path: root,
-                                         configuration_path: nil,
-                                         output_path: nil,
-                                         identity_overrides: {}
-                                       ))
-      models = YAML.safe_load(File.read(manifest_path, encoding: "UTF-8")).fetch("modules")
-      assert_equal(%w[catalog-application catalog-domain], models.map { |entry| entry.fetch("moduleId") })
-      application_path = models.find { |entry| entry["moduleId"] == "catalog-application" }.fetch("modelPath")
-      application = YAML.safe_load(File.read(File.join(File.dirname(manifest_path), application_path),
+      models_directory = workflow.execute(Atlas::Rb::GenerationRequest.new(
+                                            workspace_path: root,
+                                            configuration_path: nil,
+                                            output_path: nil,
+                                            identity_overrides: {}
+                                          ))
+      assert_equal %w[catalog-application.atlas.module.yml catalog-domain.atlas.module.yml],
+                   generated_documents(models_directory).keys.sort
+      application = YAML.safe_load(File.read(File.join(models_directory, "catalog-application.atlas.module.yml"),
                                              encoding: "UTF-8"))
       assert application.fetch("relationships").any? { |relationship|
         relationship.dig("target", "moduleId") == "catalog-domain"
@@ -85,7 +82,7 @@ class GenerateRubyModelsTest < Minitest::Test
   def test_packaged_schemas_match_canonical_contracts
     ruby_root = File.expand_path("..", __dir__)
     canonical_root = File.expand_path("../../atlas-cli/src/config", ruby_root)
-    %w[atlas.schema.json atlas-module.schema.json atlas-workspace.schema.json].each do |name|
+    %w[atlas.schema.json atlas-module.schema.json].each do |name|
       assert_equal File.binread(File.join(canonical_root, name)),
                    File.binread(File.join(ruby_root, "atlas-rb-cli", "schemas", name))
     end
@@ -107,7 +104,7 @@ class GenerateRubyModelsTest < Minitest::Test
   end
 
   def generated_documents(directory)
-    Dir.glob(File.join(directory, "*.json")).to_h do |path|
+    Dir.glob(File.join(directory, "*.yml")).to_h do |path|
       [File.basename(path), File.binread(path)]
     end
   end

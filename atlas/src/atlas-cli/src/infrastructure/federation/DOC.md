@@ -6,10 +6,9 @@ This directory contains filesystem adapters for independently generated Atlas mo
 
 ## Conventions
 
-- Configured model paths are canonical, project-contained, and loaded in declared order.
+- Configured model paths are canonical, contained by the artifact root's `model` directory, and loaded in declared order.
 - Missing configured generated models are skipped; invalid present models and a zero-model result fail.
 
 ## Contents
 
 - `NodeAtlasWorkspaceLoader.ts` reads, validates, and identity-links configuration-selected models.
-- `ManifestWorkspacePackageResolver.ts` applies explicit package policy to opaque module IDs.

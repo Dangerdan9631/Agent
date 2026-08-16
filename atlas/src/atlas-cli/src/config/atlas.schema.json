@@ -115,7 +115,7 @@
         },
         "model": {
           "allOf": [
-            { "$ref": "#/$defs/path" },
+            { "$ref": "#/$defs/modulePath" },
             { "type": "string", "pattern": "\\.atlas\\.module\\.yml$" }
           ]
         },
@@ -163,7 +163,7 @@
       "properties": {
         "model": {
           "allOf": [
-            { "$ref": "#/$defs/path" },
+            { "$ref": "#/$defs/modulePath" },
             { "type": "string", "pattern": "\\.atlas\\.module\\.yml$" }
           ]
         },

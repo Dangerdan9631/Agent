@@ -27,6 +27,5 @@
     <None Include="DOC.md" Pack="true" PackagePath="README.md" />
     <None Include="../../../atlas-cli/src/config/atlas.schema.json" Link="schemas/atlas.schema.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../atlas-cli/src/config/atlas-module.schema.json" Link="schemas/atlas-module.schema.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../../atlas-cli/src/config/atlas-workspace.schema.json" Link="schemas/atlas-workspace.schema.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

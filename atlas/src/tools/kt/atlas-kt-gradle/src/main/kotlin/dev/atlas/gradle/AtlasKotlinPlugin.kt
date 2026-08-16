@@ -18,6 +18,7 @@ class AtlasKotlinPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val extension = project.extensions.create("atlas", AtlasKotlinExtension::class.java)
         project.afterEvaluate {
+            require(extension.rootDirectory.isPresent) { "Atlas Kotlin requires rootDirectory." }
             extension.models.forEach { model -> this.registerModel(project, model) }
         }
     }
@@ -32,8 +33,6 @@ class AtlasKotlinPlugin : Plugin<Project> {
         require(compilation.isNotEmpty() && '*' !in compilation && '?' !in compilation) {
             "Atlas Kotlin model '${model.name}' requires an exact compilation."
         }
-        require(model.modelFile.isPresent) { "Atlas Kotlin model '${model.name}' requires modelFile." }
-
         val identity = GradleArtifactIdentityResolver(project, target).resolve()
         val taskName = "atlasGenerate${model.name.replaceFirstChar { character -> character.uppercase() }}Model"
         val generationTask = project.tasks.register(taskName, AtlasGenerateModuleModelTask::class.java) { task ->
@@ -48,13 +47,29 @@ class AtlasKotlinPlugin : Plugin<Project> {
             task.moduleCategory.set(identity.category)
             task.sourceRoots.from(project.layout.projectDirectory.dir("src/$compilation/kotlin"))
             task.semanticFragmentFiles.from(model.semanticFragments)
-            task.outputFile.set(model.modelFile)
+            task.outputFile.set(
+                extensionRoot(project).file("model/${this.modelFileName(project.name, target, compilation)}")
+            )
         }
         val compilationTasks = project.tasks.matching { task -> this.belongsToCompilation(task.name, target, compilation) }
         generationTask.configure { task -> task.dependsOn(compilationTasks) }
         if (model.generateOnBuild.get()) {
             project.tasks.matching { task -> task.name == "build" }.configureEach { task -> task.dependsOn(generationTask) }
         }
+    }
+
+    /** Resolves the configured artifact root from the owning project's Atlas extension. */
+    private fun extensionRoot(project: Project) =
+        project.extensions.getByType(AtlasKotlinExtension::class.java).rootDirectory
+
+    /** Derives one filesystem-safe model filename from the Gradle project and Kotlin target. */
+    private fun modelFileName(projectName: String, target: String, compilation: String): String {
+        val targetName = listOfNotNull(projectName, target, compilation.takeUnless { it == "main" })
+            .joinToString("-")
+        require(targetName.matches(Regex("[A-Za-z0-9._-]+"))) {
+            "Atlas Kotlin build target '$targetName' cannot form a model filename."
+        }
+        return "$targetName.atlas.module.yml"
     }
 
     /** Selects compiler tasks belonging to the explicitly named target compilation. */

@@ -12,6 +12,6 @@ This directory defines YAML-compatible language-neutral module and resolved-work
 ## Contents
 
 - `AtlasModuleModel.ts` defines published-artifact model contracts.
-- `AtlasWorkspaceManifest.ts` selects module model files.
+- `ConfiguredAtlasWorkspace.ts` retains the loaded models, missing configured paths, and module policy.
 - `ResolvedAtlasWorkspace.ts` represents identity-linked loaded models.
 - `ConfiguredAtlasWorkspace.ts` retains the loaded subset, missing paths, and policy keyed by module ID.

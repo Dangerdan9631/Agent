@@ -8,13 +8,13 @@ project:
     - id: landscape
       title: TypeScript reading list
 modules:
-  - model: architecture/models/lib.atlas.module.yml
+  - model: lib.atlas.module.yml
     tags: [runtime, library]
     diagrams:
       - id: api
         title: Library API
         scope: { type: module }
-  - model: architecture/models/app.atlas.module.yml
+  - model: app.atlas.module.yml
     tags: [runtime, executable]
     diagrams:
       - id: application

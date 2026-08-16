@@ -15,3 +15,5 @@ This directory contains distributable JSON Schemas for version-two project polic
 - `atlas-base.schema.json` exposes the base-fragment schema.
 - `atlas-module-config.schema.json` exposes the complete module-fragment schema.
 - `atlas-module.schema.json` validates one deterministic version-two language-neutral model.
+- `atlas-workspace.schema.json` remains a published compatibility schema for legacy consumers;
+  version-two CLI workflows neither generate nor load workspace manifests.

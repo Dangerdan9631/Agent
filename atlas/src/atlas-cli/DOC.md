@@ -16,7 +16,8 @@ atlas-cli clean --confirm
 ```
 
 All commands read `atlas.config.yml` from the current directory by default and
-accept `--workspace`, `--config`, `--manifest`, and `--output` overrides.
+accept `--workspace`, `--config`, and `--output` overrides. The composed
+`atlas.config.yml` module list is the sole workspace model selection mechanism.
 Generate models with `atlas-ts` or `atlas-kt` first. Use `atlas-cli view` for
 the browser-hosted interactive viewer or `atlas atlas.config.yml` for the
 Electron host. Both hosts serve the same generated, language-neutral artifacts.

@@ -174,7 +174,6 @@ export class YamlAtlasConfigurationLoader implements AtlasConfigurationLoader {
     const modules: AtlasModuleConfiguration[] = [];
     for (const entry of entries) {
       let module: RawModuleConfiguration;
-      let definingDirectoryPath = dirname(rootPath);
       if (typeof entry === 'string') {
         const fragmentPath = await this.toAbsoluteContainedPath(
           projectRootPath,
@@ -196,18 +195,11 @@ export class YamlAtlasConfigurationLoader implements AtlasConfigurationLoader {
           validator
         )) as RawModuleDocument;
         module = document;
-        definingDirectoryPath = dirname(fragmentPath);
       } else {
         module = entry;
       }
 
-      const modelPath = await this.toProjectRelativePath(
-        projectRootPath,
-        definingDirectoryPath,
-        module.model,
-        false,
-        rootPath
-      );
+      const modelPath = module.model;
       const modelIdentity = this.pathIdentity(modelPath);
       if (modelPaths.has(modelIdentity)) {
         throw new AtlasConfigurationError(

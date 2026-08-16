@@ -8,13 +8,13 @@ project:
     - id: landscape
       title: C# reading list
 modules:
-  - model: architecture/models/Lib-net8.0.atlas.module.yml
+  - model: Lib-net8.0.atlas.module.yml
     tags: [runtime, library]
     diagrams:
       - id: api
         title: Library API
         scope: { type: module }
-  - model: architecture/models/App-net8.0.atlas.module.yml
+  - model: App-net8.0.atlas.module.yml
     tags: [runtime, executable]
     diagrams:
       - id: application
