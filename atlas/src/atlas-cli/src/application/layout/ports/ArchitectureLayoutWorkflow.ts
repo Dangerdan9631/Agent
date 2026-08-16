@@ -19,6 +19,7 @@ export interface ArchitectureLayoutWorkflow {
     request: WorkspaceLoadingRequest,
     scope: string,
     overrides: LayoutOverrides,
-    generateArtifacts: boolean
+    generateArtifacts: boolean,
+    failOnViolations?: boolean
   ): Promise<ArchitectureLayoutResult>;
 }

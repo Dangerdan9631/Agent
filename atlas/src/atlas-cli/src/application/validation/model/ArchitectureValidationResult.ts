@@ -9,7 +9,10 @@ export class ArchitectureValidationResult {
    *
    * @param violations - Violations sorted by rule, source, target, and message.
    */
-  public constructor(public readonly violations: readonly ArchitectureViolation[]) {}
+  public constructor(
+    public readonly violations: readonly ArchitectureViolation[],
+    public readonly unassessableFactCount: number = 0
+  ) {}
 
   /**
    * Indicates whether an error-severity rule violation must fail the command.

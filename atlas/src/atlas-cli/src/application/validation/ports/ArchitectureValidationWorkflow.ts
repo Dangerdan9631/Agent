@@ -11,5 +11,8 @@ export interface ArchitectureValidationWorkflow {
    * @param request - Workspace path options supplied by the command presentation boundary.
    * @returns Complete analysis and validation outcome.
    */
-  execute(request: WorkspaceLoadingRequest): Promise<ValidationCommandResult>;
+  execute(
+    request: WorkspaceLoadingRequest,
+    enforcementEnabled?: boolean
+  ): Promise<ValidationCommandResult>;
 }

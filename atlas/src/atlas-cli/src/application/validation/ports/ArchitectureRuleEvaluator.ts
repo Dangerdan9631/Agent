@@ -28,4 +28,11 @@ export interface ArchitectureRuleEvaluator {
     workspace: WorkspaceSnapshot,
     analysisResults: readonly DependencyAnalysisResult[]
   ): readonly ArchitectureViolation[];
+
+  /**
+   * Returns facts that were selected but could not be assessed by this evaluator.
+   *
+   * @returns Number of selected facts omitted because their required model data was unavailable.
+   */
+  getUnassessableFactCount?(): number;
 }

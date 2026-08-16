@@ -274,12 +274,12 @@ viewer artifacts under the artifact root.
 
 ```sh
 atlas-cli generate --config atlas.config.yml
-atlas-cli generate --no-validate
+atlas-cli generate --fail-on-violations
 ```
 
-| Option          | Description                                                   |
-| --------------- | ------------------------------------------------------------- |
-| `--no-validate` | Skip enforcement and regenerate artifacts despite rule errors |
+| Option                   | Description                                                        |
+| ------------------------ | ------------------------------------------------------------------ |
+| `--fail-on-violations`  | Return non-zero after all requested artifacts and reports are written |
 
 #### `atlas-cli diagram <scope>`
 
@@ -289,12 +289,12 @@ use `module:<encoded-module-id>:<diagram-id>`.
 
 ```sh
 atlas-cli diagram landscape
-atlas-cli diagram module:%40atlas-example%2Flib:api --no-validate
+atlas-cli diagram module:%40atlas-example%2Flib:api --fail-on-violations
 ```
 
-| Option          | Description                                 |
-| --------------- | ------------------------------------------- |
-| `--no-validate` | Skip enforcement for this scoped generation |
+| Option                  | Description                                      |
+| ----------------------- | ------------------------------------------------ |
+| `--fail-on-violations` | Fail after scoped artifacts and report are written |
 
 #### `atlas-cli layout <scope>`
 

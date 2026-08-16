@@ -345,7 +345,9 @@ describe('AtlasCli', () => {
     const exitCode = await cli.run(['validate']);
 
     expect(exitCode).toBe(0);
-    expect(outputWriter.lines).toEqual(['Validated 1 module(s) with 0 warning(s).']);
+    expect(outputWriter.lines).toEqual([
+      'Policy passed: 0 error(s), 0 warning(s). Report: validation/report.json.'
+    ]);
   });
 
   /**
@@ -380,9 +382,9 @@ describe('AtlasCli', () => {
   });
 
   /**
-   * Verifies that generation passes the explicit validation-bypass option through unchanged.
+   * Verifies that generation passes explicit post-artifact enforcement through unchanged.
    */
-  it('passes --no-validate to generation', async () => {
+  it('passes --fail-on-violations to generation', async () => {
     const outputWriter = new CapturingOutputWriter();
     const generationWorkflow = new RecordingGenerationWorkflow();
     const cli = new AtlasCli(
@@ -395,11 +397,12 @@ describe('AtlasCli', () => {
       new UnreachableCleanWorkflow()
     );
 
-    const exitCode = await cli.run(['generate', '--no-validate']);
+    const exitCode = await cli.run(['generate', '--fail-on-violations']);
 
     expect(exitCode).toBe(0);
     expect(generationWorkflow.skipValidation).toBe(true);
     expect(outputWriter.lines).toEqual([
+      'Policy passed: 0 error(s), 0 warning(s). Report: validation/report.json.',
       'Generated 0 diagram scope(s) under /workspace/architecture.'
     ]);
   });

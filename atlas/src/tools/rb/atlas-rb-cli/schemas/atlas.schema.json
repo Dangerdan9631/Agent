@@ -408,7 +408,11 @@
           "items": {
             "oneOf": [
               { "$ref": "#/$defs/rootCircularRule" },
-              { "$ref": "#/$defs/rootDirectionRule" }
+              { "$ref": "#/$defs/rootDirectionRule" },
+              { "$ref": "#/$defs/publicApiOnlyRule" },
+              { "$ref": "#/$defs/rootDependencyBudgetRule" },
+              { "$ref": "#/$defs/rootRequiredDependencyRule" },
+              { "$ref": "#/$defs/rootNoOrphansRule" }
             ]
           }
         }
@@ -428,7 +432,10 @@
             "oneOf": [
               { "$ref": "#/$defs/moduleCircularRule" },
               { "$ref": "#/$defs/moduleDirectionRule" },
-              { "$ref": "#/$defs/forbidRule" }
+              { "$ref": "#/$defs/forbidRule" },
+              { "$ref": "#/$defs/moduleDependencyBudgetRule" },
+              { "$ref": "#/$defs/moduleRequiredDependencyRule" },
+              { "$ref": "#/$defs/moduleNoOrphansRule" }
             ]
           }
         }
@@ -562,6 +569,147 @@
         }
       ],
       "unevaluatedProperties": false
+    },
+    "publicApiOnlyRule": {
+      "description": "Rejects selected cross-module relationships targeting non-public elements.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "public-api-only" },
+            "from": { "$ref": "#/$defs/moduleSelector" },
+            "to": { "$ref": "#/$defs/moduleSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "rootDependencyBudgetRule": {
+      "description": "Limits direct inter-module dependencies for selected modules.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        { "$ref": "#/$defs/dependencyBudgetFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "dependency-budget" },
+            "within": { "$ref": "#/$defs/moduleSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleDependencyBudgetRule": {
+      "description": "Limits direct local-element dependencies for selected elements.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        { "$ref": "#/$defs/dependencyBudgetFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "dependency-budget" },
+            "within": { "$ref": "#/$defs/elementSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "dependencyBudgetFields": {
+      "type": "object",
+      "required": ["within", "direction", "count", "maximum"],
+      "properties": {
+        "within": {},
+        "direction": { "enum": ["incoming", "outgoing", "either"] },
+        "count": { "enum": ["endpoints", "relationships"] },
+        "maximum": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rootRequiredDependencyRule": {
+      "description": "Requires selected modules to reach selected modules.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        { "$ref": "#/$defs/requiredDependencyFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "required-dependency" },
+            "from": { "$ref": "#/$defs/moduleSelector" },
+            "to": { "$ref": "#/$defs/moduleSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleRequiredDependencyRule": {
+      "description": "Requires selected local elements to reach selected local elements.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        { "$ref": "#/$defs/requiredDependencyFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "required-dependency" },
+            "from": { "$ref": "#/$defs/elementSelector" },
+            "to": { "$ref": "#/$defs/elementSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "requiredDependencyFields": {
+      "type": "object",
+      "required": ["from", "to", "path"],
+      "properties": {
+        "from": {},
+        "to": {},
+        "path": { "enum": ["direct", "transitive"] }
+      }
+    },
+    "rootNoOrphansRule": {
+      "description": "Rejects selected modules without a direct relationship.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        { "$ref": "#/$defs/noOrphansFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "no-orphans" },
+            "within": { "$ref": "#/$defs/moduleSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "moduleNoOrphansRule": {
+      "description": "Rejects selected local elements without a direct relationship.",
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ruleFields" },
+        { "$ref": "#/$defs/noOrphansFields" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "no-orphans" },
+            "within": { "$ref": "#/$defs/elementSelector" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "noOrphansFields": {
+      "type": "object",
+      "required": ["within", "direction"],
+      "properties": {
+        "within": {},
+        "direction": { "enum": ["incoming", "outgoing", "either"] }
+      }
     },
     "elementKinds": {
       "description": "Lists unique normalized source element kinds.",

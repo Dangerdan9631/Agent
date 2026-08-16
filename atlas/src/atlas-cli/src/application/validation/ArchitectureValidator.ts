@@ -46,6 +46,10 @@ export class ArchitectureValidator {
       ).map((violation) => Object.assign(violation, { ruleId: `${moduleId}:${violation.ruleId}` }))
     );
     const violations = [...rootViolations, ...moduleViolations];
+    const unassessableFactCount = this.evaluators.reduce(
+      (count, evaluator) => count + (evaluator.getUnassessableFactCount?.() ?? 0),
+      0
+    );
 
     return new ArchitectureValidationResult(
       violations.sort((left, right) => {
@@ -62,7 +66,8 @@ export class ArchitectureValidator {
           return targetOrder;
         }
         return left.message.localeCompare(right.message);
-      })
+      }),
+      unassessableFactCount
     );
   }
 

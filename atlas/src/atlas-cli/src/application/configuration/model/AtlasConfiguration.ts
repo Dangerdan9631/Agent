@@ -376,13 +376,24 @@ export interface AtlasModuleValidationConfiguration {
 /**
  * Describes a rule supported at the project boundary.
  */
-export type AtlasRootRule = AtlasRootCircularRule | AtlasRootDependencyDirectionRule;
+export type AtlasRootRule =
+  | AtlasRootCircularRule
+  | AtlasRootDependencyDirectionRule
+  | AtlasPublicApiOnlyRule
+  | AtlasRootDependencyBudgetRule
+  | AtlasRootRequiredDependencyRule
+  | AtlasRootNoOrphansRule;
 
 /**
  * Describes a rule supported at the module boundary.
  */
 export type AtlasModuleRule =
-  AtlasModuleCircularRule | AtlasModuleDependencyDirectionRule | AtlasForbidRule;
+  | AtlasModuleCircularRule
+  | AtlasModuleDependencyDirectionRule
+  | AtlasForbidRule
+  | AtlasModuleDependencyBudgetRule
+  | AtlasModuleRequiredDependencyRule
+  | AtlasModuleNoOrphansRule;
 
 /**
  * Defines fields shared by every version-two validation rule.
@@ -502,6 +513,144 @@ export interface AtlasForbidRule extends AtlasRuleConfiguration {
    * Selects exactly one target selector form.
    */
   readonly to: AtlasForbidTargetSelector;
+}
+
+/**
+ * Rejects cross-module dependencies that resolve to a non-public target element.
+ */
+export interface AtlasPublicApiOnlyRule extends AtlasRuleConfiguration {
+  /** Identifies public API boundary behavior. */
+  readonly type: 'public-api-only';
+
+  /** Optionally narrows source modules. */
+  readonly from?: AtlasModuleSelector;
+
+  /** Optionally narrows target modules. */
+  readonly to?: AtlasModuleSelector;
+}
+
+/**
+ * Defines the direction used by a direct dependency count or orphan check.
+ */
+export type AtlasDependencyDirection = 'incoming' | 'outgoing' | 'either';
+
+/**
+ * Defines whether a budget counts unique endpoints or individual relationships.
+ */
+export type AtlasDependencyBudgetCount = 'endpoints' | 'relationships';
+
+/**
+ * Defines fields shared by root and module direct dependency budgets.
+ */
+export interface AtlasDependencyBudgetRule extends AtlasRuleConfiguration {
+  /** Selects direct subjects to measure. */
+  readonly within: AtlasModuleSelector | AtlasElementSelector;
+
+  /** Selects dependency direction relative to each subject. */
+  readonly direction: AtlasDependencyDirection;
+
+  /** Selects the direct-fact counting unit. */
+  readonly count: AtlasDependencyBudgetCount;
+
+  /** Defines the inclusive non-negative budget. */
+  readonly maximum: number;
+}
+
+/**
+ * Limits direct inter-module dependencies for selected modules.
+ */
+export interface AtlasRootDependencyBudgetRule extends AtlasDependencyBudgetRule {
+  /** Identifies dependency budget behavior. */
+  readonly type: 'dependency-budget';
+
+  /** Selects loaded module subjects. */
+  readonly within: AtlasModuleSelector;
+}
+
+/**
+ * Limits direct local element dependencies for selected module elements.
+ */
+export interface AtlasModuleDependencyBudgetRule extends AtlasDependencyBudgetRule {
+  /** Identifies dependency budget behavior. */
+  readonly type: 'dependency-budget';
+
+  /** Selects module-local element subjects. */
+  readonly within: AtlasElementSelector;
+}
+
+/**
+ * Defines fields shared by root and module required dependency rules.
+ */
+export interface AtlasRequiredDependencyRule extends AtlasRuleConfiguration {
+  /** Selects source boundaries which must reach at least one target. */
+  readonly from: AtlasModuleSelector | AtlasElementSelector;
+
+  /** Selects required target boundaries. */
+  readonly to: AtlasModuleSelector | AtlasElementSelector;
+
+  /** Selects direct or positive-length transitive reachability. */
+  readonly path: 'direct' | 'transitive';
+}
+
+/**
+ * Requires selected loaded modules to reach selected loaded modules.
+ */
+export interface AtlasRootRequiredDependencyRule extends AtlasRequiredDependencyRule {
+  /** Identifies required dependency behavior. */
+  readonly type: 'required-dependency';
+
+  /** Selects source modules. */
+  readonly from: AtlasModuleSelector;
+
+  /** Selects target modules. */
+  readonly to: AtlasModuleSelector;
+}
+
+/**
+ * Requires selected module-local elements to reach selected local elements.
+ */
+export interface AtlasModuleRequiredDependencyRule extends AtlasRequiredDependencyRule {
+  /** Identifies required dependency behavior. */
+  readonly type: 'required-dependency';
+
+  /** Selects source elements. */
+  readonly from: AtlasElementSelector;
+
+  /** Selects target elements. */
+  readonly to: AtlasElementSelector;
+}
+
+/**
+ * Defines fields shared by root and module orphan rules.
+ */
+export interface AtlasNoOrphansRule extends AtlasRuleConfiguration {
+  /** Selects subjects checked for direct relationships. */
+  readonly within: AtlasModuleSelector | AtlasElementSelector;
+
+  /** Selects relationship direction relative to each subject. */
+  readonly direction: AtlasDependencyDirection;
+}
+
+/**
+ * Rejects selected loaded modules without a direct relationship in the requested direction.
+ */
+export interface AtlasRootNoOrphansRule extends AtlasNoOrphansRule {
+  /** Identifies orphan detection behavior. */
+  readonly type: 'no-orphans';
+
+  /** Selects loaded module subjects. */
+  readonly within: AtlasModuleSelector;
+}
+
+/**
+ * Rejects selected local elements without a direct relationship in the requested direction.
+ */
+export interface AtlasModuleNoOrphansRule extends AtlasNoOrphansRule {
+  /** Identifies orphan detection behavior. */
+  readonly type: 'no-orphans';
+
+  /** Selects module-local element subjects. */
+  readonly within: AtlasElementSelector;
 }
 
 /**

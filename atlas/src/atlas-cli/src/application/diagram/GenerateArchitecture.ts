@@ -28,20 +28,17 @@ export class GenerateArchitecture implements ArchitectureGenerationWorkflow {
   ) {}
 
   /**
-   * Generates all initial scopes when validation permits generation or is explicitly bypassed.
+   * Generates all initial scopes while always retaining validation findings in generated artifacts.
    *
    * @param request - Workspace path options supplied by the command presentation boundary.
-   * @param skipValidation - Allows graph generation despite error-severity policy violations.
+   * @param failOnViolations - Marks report enforcement state for this artifact-producing command.
    * @returns Validation outcome with optional generated graph and scope diagrams.
    */
   public async execute(
     request: WorkspaceLoadingRequest,
-    skipValidation: boolean
+    failOnViolations: boolean
   ): Promise<ArchitectureGenerationResult> {
-    const validationResult = await this.validationWorkflow.execute(request);
-    if (!skipValidation && validationResult.validation.hasErrors()) {
-      return new ArchitectureGenerationResult(validationResult, undefined, []);
-    }
+    const validationResult = await this.validationWorkflow.execute(request, failOnViolations);
 
     const graph = this.buildGraph(validationResult.workspace);
     const diagrams = this.projectionService.project(validationResult.workspace, graph);

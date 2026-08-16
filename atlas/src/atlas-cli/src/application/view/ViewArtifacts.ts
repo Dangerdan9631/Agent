@@ -37,9 +37,10 @@ export class ViewArtifacts implements ViewArtifactsWorkflow {
     request: WorkspaceLoadingRequest,
     host: string,
     port: number,
-    openBrowser: boolean
+    openBrowser: boolean,
+    failOnViolations: boolean = false
   ): Promise<ArtifactServerLocation> {
-    await this.generateConfiguredArtifacts(request);
+    await this.generateConfiguredArtifacts(request, failOnViolations);
     const workspace = await this.workspaceLoader.load(request);
     if (workspace.paths.artifactRootPath === undefined) {
       throw new Error('Atlas cannot serve artifacts before resolving an artifact root.');
@@ -58,12 +59,18 @@ export class ViewArtifacts implements ViewArtifactsWorkflow {
   }
 
   /** Generates configured artifacts before serving so the viewer receives the selected model subset. */
-  private async generateConfiguredArtifacts(request: WorkspaceLoadingRequest): Promise<void> {
+  private async generateConfiguredArtifacts(
+    request: WorkspaceLoadingRequest,
+    failOnViolations: boolean
+  ): Promise<void> {
     if (this.generationWorkflow === undefined) return;
-    const result = await this.generationWorkflow.execute(request, false);
-    if (!result.generated()) {
+    const result = await this.generationWorkflow.execute(request, failOnViolations);
+    if (
+      !result.generated() ||
+      (failOnViolations && result.validationResult.validation.hasErrors())
+    ) {
       throw new Error(
-        'Atlas cannot serve configured models while architecture validation has errors.'
+        'Atlas generated configured artifacts but enforcement was enabled for architecture validation errors.'
       );
     }
   }

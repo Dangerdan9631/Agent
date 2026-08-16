@@ -5,18 +5,20 @@ import { DiagramProjectionService } from '#application/diagram/DiagramProjection
 import { ArchitectureValidator } from '#application/validation/ArchitectureValidator.js';
 import { CircularDependencyRuleEvaluator } from '#application/validation/CircularDependencyRuleEvaluator.js';
 import { DependencyDirectionRuleEvaluator } from '#application/validation/DependencyDirectionRuleEvaluator.js';
-import { ForbiddenExternalRuleEvaluator } from '#application/validation/ForbiddenExternalRuleEvaluator.js';
-import { ForbiddenImportRuleEvaluator } from '#application/validation/ForbiddenImportRuleEvaluator.js';
+import { DependencyBudgetRuleEvaluator } from '#application/validation/DependencyBudgetRuleEvaluator.js';
 import { ForbidRuleEvaluator } from '#application/validation/ForbidRuleEvaluator.js';
+import { NoOrphansRuleEvaluator } from '#application/validation/NoOrphansRuleEvaluator.js';
 import { PackageOwnershipResolver } from '#application/validation/PackageOwnershipResolver.js';
+import { PublicApiOnlyRuleEvaluator } from '#application/validation/PublicApiOnlyRuleEvaluator.js';
+import { RequiredDependencyRuleEvaluator } from '#application/validation/RequiredDependencyRuleEvaluator.js';
 import { RuleSelectorMatcher } from '#application/validation/RuleSelectorMatcher.js';
-import { RuntimeToSupportRuleEvaluator } from '#application/validation/RuntimeToSupportRuleEvaluator.js';
 import { ValidateArchitecture } from '#application/validation/ValidateArchitecture.js';
 import { YamlAtlasConfigurationLoader } from '#infrastructure/configuration/YamlAtlasConfigurationLoader.js';
 import { YamlDocumentCodec } from '#infrastructure/configuration/YamlDocumentCodec.js';
 import { TslogAtlasLogger } from '#infrastructure/logging/TslogAtlasLogger.js';
 import { ProcessRuntimeOutputWriter } from '#infrastructure/output/ProcessRuntimeOutputWriter.js';
 import { NodeDependencyAnalysisArtifactWriter } from '#infrastructure/artifacts/NodeDependencyAnalysisArtifactWriter.js';
+import { NodeValidationReportWriter } from '#infrastructure/artifacts/NodeValidationReportWriter.js';
 import { NodeDiagramArtifactWriter } from '#infrastructure/artifacts/NodeDiagramArtifactWriter.js';
 import { DeterministicLayoutService } from '#application/layout/DeterministicLayoutService.js';
 import { LayoutArchitecture } from '#application/layout/LayoutArchitecture.js';
@@ -56,11 +58,12 @@ export class AtlasCompositionRoot {
     const selectorMatcher = new RuleSelectorMatcher(ownershipResolver);
     const architectureValidator = new ArchitectureValidator([
       new CircularDependencyRuleEvaluator(selectorMatcher),
-      new RuntimeToSupportRuleEvaluator(ownershipResolver),
       new DependencyDirectionRuleEvaluator(selectorMatcher),
-      new ForbiddenImportRuleEvaluator(selectorMatcher),
-      new ForbiddenExternalRuleEvaluator(selectorMatcher),
-      new ForbidRuleEvaluator(selectorMatcher)
+      new ForbidRuleEvaluator(selectorMatcher),
+      new PublicApiOnlyRuleEvaluator(selectorMatcher),
+      new DependencyBudgetRuleEvaluator(selectorMatcher),
+      new RequiredDependencyRuleEvaluator(selectorMatcher),
+      new NoOrphansRuleEvaluator(selectorMatcher)
     ]);
     const layoutService = new DeterministicLayoutService();
     const federatedGraphAdapter = new FederatedDeclarationGraphAdapter();
@@ -68,7 +71,8 @@ export class AtlasCompositionRoot {
       workspaceLoader,
       new NodeDependencyAnalysisArtifactWriter(),
       architectureValidator,
-      new FederatedDependencyAnalysisAdapter(federatedGraphAdapter)
+      new FederatedDependencyAnalysisAdapter(federatedGraphAdapter),
+      new NodeValidationReportWriter()
     );
     const generationWorkflow = new GenerateArchitecture(
       validationWorkflow,
@@ -112,11 +116,12 @@ export class AtlasCompositionRoot {
     const selectorMatcher = new RuleSelectorMatcher(ownershipResolver);
     const architectureValidator = new ArchitectureValidator([
       new CircularDependencyRuleEvaluator(selectorMatcher),
-      new RuntimeToSupportRuleEvaluator(ownershipResolver),
       new DependencyDirectionRuleEvaluator(selectorMatcher),
-      new ForbiddenImportRuleEvaluator(selectorMatcher),
-      new ForbiddenExternalRuleEvaluator(selectorMatcher),
-      new ForbidRuleEvaluator(selectorMatcher)
+      new ForbidRuleEvaluator(selectorMatcher),
+      new PublicApiOnlyRuleEvaluator(selectorMatcher),
+      new DependencyBudgetRuleEvaluator(selectorMatcher),
+      new RequiredDependencyRuleEvaluator(selectorMatcher),
+      new NoOrphansRuleEvaluator(selectorMatcher)
     ]);
     const layoutService = new DeterministicLayoutService();
     const diagramArtifactWriter = new NodeDiagramArtifactWriter(layoutService);
@@ -125,7 +130,8 @@ export class AtlasCompositionRoot {
       workspaceLoader,
       new NodeDependencyAnalysisArtifactWriter(),
       architectureValidator,
-      new FederatedDependencyAnalysisAdapter(federatedGraphAdapter)
+      new FederatedDependencyAnalysisAdapter(federatedGraphAdapter),
+      new NodeValidationReportWriter()
     );
     const projectionService = new DiagramProjectionService();
     const generationWorkflow = new GenerateArchitecture(

@@ -302,9 +302,10 @@ field, so the normalized target module or label is the specifier available to
 that rule. Prefer stable module/package patterns when a policy must behave the
 same across language adapters.
 
-An `error` violation makes `validate` fail and prevents normal generation. A
-`warning` is reported but does not fail the command. `generate --no-validate`
-only bypasses enforcement for that generation run; it does not alter policy.
+An `error` violation makes `validate` fail. Artifact-producing commands always
+write diagrams and a validation report; they only fail after writing when
+`--fail-on-violations` is supplied. A `warning` is reported but never fails the
+command.
 
 ## How the intermediate model becomes a diagram
 

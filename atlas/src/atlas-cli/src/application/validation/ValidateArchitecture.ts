@@ -2,6 +2,7 @@ import type { ArchitectureValidator } from '#application/validation/Architecture
 import { ValidationCommandResult } from '#application/validation/model/ValidationCommandResult.js';
 import type { ArchitectureValidationWorkflow } from '#application/validation/ports/ArchitectureValidationWorkflow.js';
 import type { DependencyAnalysisArtifactWriter } from '#application/validation/ports/DependencyAnalysisArtifactWriter.js';
+import type { ValidationReportWriter } from '#application/validation/ports/ValidationReportWriter.js';
 import type { WorkspaceLoadingRequest } from '#application/workspace/model/WorkspaceLoadingRequest.js';
 import type { WorkspaceLoadingWorkflow } from '#application/workspace/ports/WorkspaceLoadingWorkflow.js';
 import type { FederatedDependencyAnalysisAdapter } from '#application/federation/FederatedDependencyAnalysisAdapter.js';
@@ -24,7 +25,8 @@ export class ValidateArchitecture implements ArchitectureValidationWorkflow {
     private readonly workspaceLoader: WorkspaceLoadingWorkflow,
     private readonly analysisArtifactWriter: DependencyAnalysisArtifactWriter,
     private readonly architectureValidator: ArchitectureValidator,
-    private readonly federatedDependencyAnalysisAdapter: FederatedDependencyAnalysisAdapter
+    private readonly federatedDependencyAnalysisAdapter: FederatedDependencyAnalysisAdapter,
+    private readonly validationReportWriter?: ValidationReportWriter
   ) {}
 
   /**
@@ -33,11 +35,15 @@ export class ValidateArchitecture implements ArchitectureValidationWorkflow {
    * @param request - Workspace path options supplied by the command presentation boundary.
    * @returns Complete analysis and validation outcome.
    */
-  public async execute(request: WorkspaceLoadingRequest): Promise<ValidationCommandResult> {
+  public async execute(
+    request: WorkspaceLoadingRequest,
+    enforcementEnabled: boolean = true
+  ): Promise<ValidationCommandResult> {
     const workspace = await this.workspaceLoader.load(request);
     const analysisResults = this.analyze(workspace);
     await this.analysisArtifactWriter.write(workspace, analysisResults);
     const validation = this.architectureValidator.validate(workspace, analysisResults);
+    await this.validationReportWriter?.write(workspace, validation, enforcementEnabled);
 
     return new ValidationCommandResult(workspace, analysisResults, validation);
   }

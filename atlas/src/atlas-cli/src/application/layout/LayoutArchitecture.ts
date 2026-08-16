@@ -47,12 +47,10 @@ export class LayoutArchitecture implements ArchitectureLayoutWorkflow {
     request: WorkspaceLoadingRequest,
     scope: string,
     overrides: LayoutOverrides,
-    generateArtifacts: boolean
+    generateArtifacts: boolean,
+    failOnViolations: boolean = false
   ): Promise<ArchitectureLayoutResult> {
-    const validationResult = await this.validationWorkflow.execute(request);
-    if (validationResult.validation.hasErrors()) {
-      return new ArchitectureLayoutResult(validationResult, undefined, undefined, undefined, 0, 0);
-    }
+    const validationResult = await this.validationWorkflow.execute(request, failOnViolations);
 
     let diagram: DiagramGraph | undefined;
     if (generateArtifacts) {

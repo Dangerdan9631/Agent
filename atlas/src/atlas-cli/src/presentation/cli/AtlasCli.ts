@@ -5,6 +5,7 @@ import type {
 } from '#application/shared/logging/AtlasLogLevelController.js';
 import type { RuntimeOutputWriter } from '#application/shared/output/RuntimeOutputWriter.js';
 import type { ArchitectureValidationWorkflow } from '#application/validation/ports/ArchitectureValidationWorkflow.js';
+import type { ArchitectureValidationResult } from '#application/validation/model/ArchitectureValidationResult.js';
 import type { ArchitectureGenerationWorkflow } from '#application/diagram/ports/ArchitectureGenerationWorkflow.js';
 import type { ArchitectureDiagramWorkflow } from '#application/diagram/ports/ArchitectureDiagramWorkflow.js';
 import { LayoutOverrides } from '#application/layout/model/LayoutDocument.js';
@@ -90,12 +91,12 @@ export class AtlasCli {
     program
       .command('generate')
       .description('Generate all configured architecture artifacts.')
-      .option('--no-validate')
+      .option('--fail-on-violations')
       .action(this.generateArchitecture.bind(this, program));
     program
       .command('diagram <scope>')
       .description('Generate one diagram scope.')
-      .option('--no-validate')
+      .option('--fail-on-violations')
       .action(this.generateDiagram.bind(this, program));
     program
       .command('layout <scope>')
@@ -106,6 +107,7 @@ export class AtlasCli {
       .option('--orientation <orientation>')
       .option('--force')
       .option('--generate')
+      .option('--fail-on-violations')
       .action(this.layoutArchitecture.bind(this, program));
     program
       .command('clean')
@@ -118,6 +120,7 @@ export class AtlasCli {
       .option('--host <host>', 'Host interface for the local viewer.', '127.0.0.1')
       .option('--port <port>', 'Port for the local viewer. Use 0 for an available port.', '4173')
       .option('--open', 'Open the viewer in the default browser.')
+      .option('--fail-on-violations')
       .action(this.viewArtifacts.bind(this, program));
 
     return program;
@@ -139,19 +142,11 @@ export class AtlasCli {
       outputOption: globalOptions?.output
     });
 
-    for (const violation of commandResult.validation.violations) {
-      this.outputWriter.writeErrorLine(
-        `[${violation.severity}] ${violation.ruleId}: ${violation.sourcePath} -> ${violation.targetPath}. ${violation.message}`
-      );
-    }
+    this.presentValidation(commandResult.validation);
 
     if (commandResult.validation.hasErrors()) {
       throw new ValidationCommandFailure();
     }
-
-    this.outputWriter.writeLine(
-      `Validated ${commandResult.workspace.packages.length} module(s) with ${commandResult.validation.violations.length} warning(s).`
-    );
   }
 
   /**
@@ -174,21 +169,19 @@ export class AtlasCli {
         configurationOption: globalOptions.config,
         outputOption: globalOptions.output
       },
-      options.validate === false
+      options.failOnViolations ?? false
     );
-
-    for (const violation of generationResult.validationResult.validation.violations) {
-      this.outputWriter.writeErrorLine(
-        `[${violation.severity}] ${violation.ruleId}: ${violation.sourcePath} -> ${violation.targetPath}. ${violation.message}`
-      );
-    }
-
+    this.presentValidation(generationResult.validationResult.validation);
     if (!generationResult.generated()) {
       throw new ValidationCommandFailure();
     }
 
     this.outputWriter.writeLine(
       `Generated ${generationResult.diagrams.length} diagram scope(s) under ${generationResult.validationResult.workspace.paths.artifactRootPath}.`
+    );
+    this.failAfterArtifactsIfRequired(
+      generationResult.validationResult.validation,
+      options.failOnViolations ?? false
     );
   }
 
@@ -216,14 +209,10 @@ export class AtlasCli {
       },
       scope,
       this.toLayoutOverrides(options),
-      options.generate ?? false
+      options.generate ?? false,
+      options.failOnViolations ?? false
     );
-
-    for (const violation of layoutResult.validationResult.validation.violations) {
-      this.outputWriter.writeErrorLine(
-        `[${violation.severity}] ${violation.ruleId}: ${violation.sourcePath} -> ${violation.targetPath}. ${violation.message}`
-      );
-    }
+    this.presentValidation(layoutResult.validationResult.validation);
     const layout = layoutResult.layout;
     if (!layoutResult.completed() || layout === undefined) {
       throw new ValidationCommandFailure();
@@ -234,6 +223,10 @@ export class AtlasCli {
     }
     this.outputWriter.writeLine(
       `Persisted layout for '${scope}': ${layoutResult.retainedNodeCount} retained, ${layoutResult.movedNodeCount} placed; ${settings.orientation}, rows ${settings.rows}, gaps ${settings.horizontalGap}/${settings.verticalGap}.`
+    );
+    this.failAfterArtifactsIfRequired(
+      layoutResult.validationResult.validation,
+      options.failOnViolations ?? false
     );
   }
 
@@ -260,17 +253,17 @@ export class AtlasCli {
         outputOption: globalOptions.output
       },
       scope,
-      options.validate === false
+      options.failOnViolations ?? false
     );
-    for (const violation of generationResult.validationResult.validation.violations) {
-      this.outputWriter.writeErrorLine(
-        `[${violation.severity}] ${violation.ruleId}: ${violation.sourcePath} -> ${violation.targetPath}. ${violation.message}`
-      );
-    }
+    this.presentValidation(generationResult.validationResult.validation);
     if (!generationResult.generated()) {
       throw new ValidationCommandFailure();
     }
     this.outputWriter.writeLine(`Generated diagram scope '${scope}'.`);
+    this.failAfterArtifactsIfRequired(
+      generationResult.validationResult.validation,
+      options.failOnViolations ?? false
+    );
   }
 
   /**
@@ -385,7 +378,8 @@ export class AtlasCli {
       },
       options.host,
       this.toPort(options.port),
-      options.open ?? false
+      options.open ?? false,
+      options.failOnViolations ?? false
     );
     this.outputWriter.writeLine(`Atlas viewer running at ${location.url}`);
     this.outputWriter.writeLine('Press Ctrl+C to stop the viewer.');
@@ -403,6 +397,53 @@ export class AtlasCli {
       throw new Error('Atlas --port must be an integer from 0 through 65535.');
     }
     return port;
+  }
+
+  /**
+   * Prints validation diagnostics consistently for every validation-capable command.
+   *
+   * @param validation - Completed deterministic policy outcome.
+   * @returns Nothing after user-facing findings have been written.
+   */
+  private presentValidation(validation: ArchitectureValidationResult): void {
+    for (const violation of validation.violations) {
+      this.outputWriter.writeErrorLine(
+        `[${violation.severity}] ${violation.ruleId}: ${violation.sourcePath} -> ${violation.targetPath}. ${violation.message}`
+      );
+    }
+    this.outputWriter.writeLine(this.validationSummary(validation, false));
+  }
+
+  /**
+   * Creates accurate count text that separates policy state from command enforcement.
+   *
+   * @param validation - Completed deterministic policy outcome.
+   * @param enforcing - Indicates whether this command always enforces errors.
+   * @returns Concise diagnostic summary.
+   */
+  private validationSummary(validation: ArchitectureValidationResult, enforcing: boolean): string {
+    const errors = validation.violations.filter(
+      (violation) => violation.severity === 'error'
+    ).length;
+    const warnings = validation.violations.length - errors;
+    const state = errors === 0 ? 'Policy passed' : 'Policy violations found';
+    return `${state}: ${errors} error(s), ${warnings} warning(s).${enforcing && errors > 0 ? ' Enforcement is enabled.' : ''} Report: validation/report.json.`;
+  }
+
+  /**
+   * Ends an artifact-producing command only after it has persisted requested outputs.
+   *
+   * @param validation - Completed policy outcome.
+   * @param failOnViolations - Indicates whether error violations must produce exit status one.
+   * @returns Nothing when no enforced error exists.
+   */
+  private failAfterArtifactsIfRequired(
+    validation: ArchitectureValidationResult,
+    failOnViolations: boolean
+  ): void {
+    if (failOnViolations && validation.hasErrors()) {
+      throw new ValidationCommandFailure();
+    }
   }
 
   /**
@@ -492,7 +533,7 @@ interface AtlasGenerateOptions {
   /**
    * Allows artifact regeneration despite error-severity architecture violations.
    */
-  readonly validate?: boolean;
+  readonly failOnViolations?: boolean;
 }
 
 /**
@@ -528,6 +569,11 @@ interface AtlasLayoutOptions {
    * Determines whether graph and viewer artifacts are regenerated first.
    */
   readonly generate?: boolean;
+
+  /**
+   * Determines whether error violations fail after layout persistence.
+   */
+  readonly failOnViolations?: boolean;
 }
 
 /**
@@ -552,6 +598,11 @@ interface AtlasViewOptions {
 
   /** Determines whether the default browser opens after the server is ready. */
   readonly open?: boolean;
+
+  /**
+   * Determines whether error violations prevent server startup after generation.
+   */
+  readonly failOnViolations?: boolean;
 }
 
 /**

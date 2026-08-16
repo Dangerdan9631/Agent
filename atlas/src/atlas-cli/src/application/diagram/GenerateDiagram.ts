@@ -32,18 +32,15 @@ export class GenerateDiagram implements ArchitectureDiagramWorkflow {
    *
    * @param request - Workspace path options supplied by the command presentation boundary.
    * @param scope - Stable landscape or package scope identifier.
-   * @param skipValidation - Allows diagram regeneration despite error-severity policy violations.
+   * @param failOnViolations - Marks report enforcement state for this artifact-producing command.
    * @returns Validation outcome with the requested generated diagram when successful.
    */
   public async execute(
     request: WorkspaceLoadingRequest,
     scope: string,
-    skipValidation: boolean
+    failOnViolations: boolean
   ): Promise<ArchitectureGenerationResult> {
-    const validationResult = await this.validationWorkflow.execute(request);
-    if (!skipValidation && validationResult.validation.hasErrors()) {
-      return new ArchitectureGenerationResult(validationResult, undefined, []);
-    }
+    const validationResult = await this.validationWorkflow.execute(request, failOnViolations);
 
     const graph = this.buildGraph(validationResult.workspace);
     const diagrams = this.projectionService.project(validationResult.workspace, graph);

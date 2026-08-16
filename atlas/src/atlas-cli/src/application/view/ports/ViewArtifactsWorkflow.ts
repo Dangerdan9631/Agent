@@ -12,12 +12,14 @@ export interface ViewArtifactsWorkflow {
    * @param host - Interface hostname or address to bind.
    * @param port - TCP port to bind.
    * @param openBrowser - Determines whether the ready local URL should open in the user's default browser.
+   * @param failOnViolations - Prevents server startup after artifact generation when errors exist.
    * @returns Active local server location.
    */
   execute(
     request: WorkspaceLoadingRequest,
     host: string,
     port: number,
-    openBrowser: boolean
+    openBrowser: boolean,
+    failOnViolations?: boolean
   ): Promise<ArtifactServerLocation>;
 }

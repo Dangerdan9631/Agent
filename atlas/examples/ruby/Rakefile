@@ -21,7 +21,7 @@ end
 
 desc "Generate Atlas project artifacts"
 task generate: :validate do
-  sh "atlas-cli generate --config atlas.config.yml --no-validate"
+  sh "atlas-cli generate --config atlas.config.yml"
 end
 
 namespace :atlas do

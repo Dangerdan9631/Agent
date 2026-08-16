@@ -136,7 +136,8 @@ export class NodeDiagramArtifactWriter implements DiagramArtifactWriter {
     await this.writeAtomically(
       this.resolveContainedPath(artifactRootPath, 'atlas-diagrams.json'),
       this.serialize({
-        schemaVersion: 1,
+        schemaVersion: 2,
+        validationReportPath: 'validation/report.json',
         diagrams: diagrams.map((diagram) => ({
           scope: diagram.scope,
           title: diagram.title,
@@ -1464,13 +1465,15 @@ void loadLayout();
     navigation: readonly DiagramNavigationItem[],
     activePath?: string
   ): string {
-    return navigation
+    const reportCurrent = activePath === 'validation/index.html' ? ' current' : '';
+    const reportLink = `<section><div class="navigation-group-title">Validation</div><div class="navigation-children"><a class="navigation-link${reportCurrent}" href="/validation/index.html">Validation Report</a></div></section>`;
+    return `${reportLink}${navigation
       .map((item) => {
         const graphCurrent = item.graphPath === activePath ? ' current' : '';
         const matrixCurrent = item.matrixPath === activePath ? ' current' : '';
         return `<section><div class="navigation-group-title">${this.escapeHtml(item.title)}</div><div class="navigation-children"><a class="navigation-link${graphCurrent}" href="/${this.escapeHtml(item.graphPath)}">Diagram</a><a class="navigation-link${matrixCurrent}" href="/${this.escapeHtml(item.matrixPath)}">Matrix</a></div></section>`;
       })
-      .join('');
+      .join('')}`;
   }
 
   /**
