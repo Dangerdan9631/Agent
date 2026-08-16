@@ -27,6 +27,7 @@
     "build:example:ruby": "node ./src/tools/rb/scripts/RunBundler.mjs --project examples/ruby exec rake build",
     "build:example:csharp": "dotnet build ./examples/csharp/Atlas.Example.slnx --configuration Release",
     "view:examples": "npm run view:example:typescript && npm run view:example:kotlin && npm run view:example:ruby && npm run view:example:csharp",
+    "images:examples": "npm run build:examples && atlas images --workspace examples/typescript && atlas images --workspace examples/kotlin && atlas images --workspace examples/ruby && atlas images --workspace examples/csharp",
     "view:example:typescript": "npm run build:example:typescript && npm run architecture:view --workspace=@atlas-example/typescript-workspace",
     "view:example:kotlin": "npm run build:example:kotlin && atlas --config examples/kotlin/atlas.config.yml",
     "view:example:ruby": "node ./src/tools/rb/scripts/RunBundler.mjs --project examples/ruby exec rake atlas:view",

@@ -43,6 +43,14 @@ class AtlasDesktopApplication {
     this.artifactUrl = await this.artifactHost.start(
       this.toArtifactHostOptions(options, invocationDirectoryPath)
     );
+    if (options.generateImages === true) {
+      try {
+        await this.generateImages();
+      } finally {
+        await this.stopAndQuit();
+      }
+      return;
+    }
     await this.createWindow();
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) void this.createWindow();
@@ -72,6 +80,40 @@ class AtlasDesktopApplication {
       }
     });
     await window.loadURL(this.artifactUrl);
+  }
+
+  /**
+   * Exports every diagram through the same browser routine used by the viewer's Export All button.
+   */
+  private async generateImages(): Promise<void> {
+    if (this.artifactUrl === undefined) {
+      throw new Error('Atlas desktop cannot generate images before its artifact host is ready.');
+    }
+    const window = new BrowserWindow({
+      show: false,
+      width: 1280,
+      height: 720,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
+      }
+    });
+    try {
+      await window.loadURL(this.artifactUrl);
+      await window.webContents.executeJavaScript(`
+        (() => {
+          if (typeof window.exportAllDiagramImages !== 'function') {
+            throw new Error('Atlas viewer image exporter was unavailable.');
+          }
+          return window.exportAllDiagramImages();
+        })();
+      `);
+    } finally {
+      if (!window.isDestroyed()) {
+        window.destroy();
+      }
+    }
   }
 
   /** Maps validated presentation arguments to the platform-neutral artifact host contract. */

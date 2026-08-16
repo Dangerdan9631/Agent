@@ -302,6 +302,7 @@ describe('NodeDiagramArtifactWriter', () => {
       'contents.union(selected.ancestors()).union(directRelationships).union(directNodes).union(directNodes.ancestors())'
     );
     expect(landscapeViewer).toContain("full: true, output: 'blob', scale: 1");
+    expect(landscapeViewer).toContain('window.exportAllDiagramImages = exportAllImages;');
     expect(landscapeViewer).not.toContain('full: false');
     expect(landscapeViewer).not.toContain('maxWidth:');
     expect(landscapeViewer).not.toContain('maxHeight:');

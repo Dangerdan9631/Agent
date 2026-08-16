@@ -12,11 +12,16 @@ the legacy-compatible `view` prefix:
 ```sh
 atlas atlas.config.yml
 atlas view --config atlas.config.yml --workspace .
+atlas images --config atlas.config.yml --workspace .
 ```
 
 The desktop process starts the same path-contained local artifact server used
 by `atlas-cli view`, loads its landscape URL in a sandboxed browser window, and
 stops the server when Electron exits.
+
+`atlas images` instead loads that landscape in a hidden Electron window,
+invokes the viewer's own Export All routine, and exits after every image has
+been persisted.
 
 ## Contents
 

@@ -10,8 +10,13 @@ export class AtlasDesktopArgumentParser {
    */
   public parse(argumentsToParse: readonly string[]): AtlasDesktopLaunchOptions {
     const values = [...argumentsToParse];
-    if (values[0] === 'view') values.shift();
     const options: MutableAtlasDesktopLaunchOptions = {};
+    if (values[0] === 'view') {
+      values.shift();
+    } else if (values[0] === 'images') {
+      values.shift();
+      options.generateImages = true;
+    }
     while (values.length > 0) {
       const argument = values.shift()!;
       if (argument === '--open' || argument === '--no-open') continue;
@@ -67,6 +72,10 @@ export class AtlasDesktopArgumentParser {
  * Allows the parser to build one launch option value before exposing it as immutable state.
  */
 interface MutableAtlasDesktopLaunchOptions {
+  /**
+   * Whether the desktop host must export all diagram images without creating a visible window.
+   */
+  generateImages?: true | undefined;
   /** Optional workspace root override. */
   workspacePath?: string | undefined;
   /** Optional Atlas configuration path override. */

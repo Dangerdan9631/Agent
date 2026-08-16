@@ -13,4 +13,4 @@ Electron desktop application.
 
 ## Contents
 
-- `AtlasElectronLauncher.mjs` locates Electron and starts the desktop host.
+- `AtlasElectronLauncher.mjs` locates Electron, starts the desktop host, and keeps image exports attached until they finish.

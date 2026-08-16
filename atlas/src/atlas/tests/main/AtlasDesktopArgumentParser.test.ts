@@ -33,6 +33,22 @@ describe('AtlasDesktopArgumentParser', () => {
     });
   });
 
+  it('selects the non-interactive image generation command', () => {
+    expect(
+      new AtlasDesktopArgumentParser().parse([
+        'images',
+        '--workspace',
+        'examples/typescript',
+        '--config',
+        'atlas.config.yml'
+      ])
+    ).toEqual({
+      generateImages: true,
+      workspacePath: 'examples/typescript',
+      configurationPath: 'atlas.config.yml'
+    });
+  });
+
   it('rejects unknown arguments and ports outside the TCP range', () => {
     const parser = new AtlasDesktopArgumentParser();
     expect(() => parser.parse(['--unknown'])).toThrow("does not recognize argument '--unknown'");

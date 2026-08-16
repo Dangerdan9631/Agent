@@ -35,7 +35,7 @@ class AtlasElectronLauncher {
       );
     }
 
-    const foreground = userArguments.includes('--foreground');
+    const foreground = userArguments.includes('--foreground') || userArguments[0] === 'images';
     const electronArguments = [
       applicationPath,
       ...userArguments.filter((argument) => argument !== '--foreground')
@@ -124,11 +124,13 @@ class AtlasElectronLauncher {
     process.stdout.write(
       [
         'Usage: atlas [configPath] [--foreground]',
+        '       atlas images [--config <path>] [--workspace <path>] [--output <path>]',
         '',
-        'Open generated Atlas diagrams in the Electron desktop application.',
+        'Open generated Atlas diagrams in the Electron desktop application, or export all diagram images.',
         '',
         'Arguments:',
         '  configPath      Path to atlas.config.yml. Defaults to ./atlas.config.yml.',
+        '  images          Export every generated diagram image without opening a window.',
         '',
         'Options:',
         '  -h, --help      Show this help message and exit.',
