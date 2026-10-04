@@ -1,0 +1,149 @@
+CREATE TABLE duplicate_group (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    member_key TEXT NOT NULL UNIQUE,
+    keeper_id INTEGER,
+    review_state TEXT NOT NULL,
+    detected_at INTEGER NOT NULL,
+    confirmed_run INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX duplicate_group_kind_state_idx ON duplicate_group(kind, review_state);
+
+CREATE TABLE duplicate_group_member (
+    group_id INTEGER NOT NULL REFERENCES duplicate_group(id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL,
+    score REAL NOT NULL,
+    PRIMARY KEY(group_id, member_id)
+);
+
+CREATE INDEX duplicate_group_member_member_idx ON duplicate_group_member(member_id);
+
+insertGroup:
+INSERT INTO duplicate_group(kind, reason, confidence, member_key, keeper_id, review_state, detected_at, confirmed_run)
+VALUES (?, ?, ?, ?, NULL, 'OPEN', ?, ?);
+
+lastInsertedId:
+SELECT last_insert_rowid();
+
+selectByMemberKey:
+SELECT * FROM duplicate_group WHERE member_key = ?;
+
+refreshGroup:
+UPDATE duplicate_group SET reason = ?, confidence = ?, confirmed_run = ? WHERE id = ?;
+
+stampConfirmed:
+UPDATE duplicate_group SET confirmed_run = ? WHERE id = ?;
+
+clearOpenConfirmation:
+UPDATE duplicate_group SET confirmed_run = 0 WHERE review_state = 'OPEN';
+
+deleteOpenUnconfirmed:
+DELETE FROM duplicate_group WHERE review_state = 'OPEN' AND confirmed_run != ?;
+
+selectOpenIdsSharingMembers:
+SELECT DISTINCT g.id
+FROM duplicate_group g
+JOIN duplicate_group_member m ON m.group_id = g.id
+WHERE g.kind = ? AND g.review_state = 'OPEN' AND g.id != ? AND m.member_id IN ?;
+
+insertMember:
+INSERT OR REPLACE INTO duplicate_group_member(group_id, member_id, score) VALUES (?, ?, ?);
+
+selectOpenKeysOfKind:
+SELECT id, member_key FROM duplicate_group WHERE kind = ? AND review_state = 'OPEN';
+
+deleteGroup:
+DELETE FROM duplicate_group WHERE id = ?;
+
+deleteFileGroupsWithMissingMembers:
+DELETE FROM duplicate_group WHERE kind IN ('EXACT', 'PROBABLE') AND id IN (
+    SELECT m.group_id FROM duplicate_group_member m
+    LEFT JOIN file_entry f ON f.id = m.member_id
+    WHERE f.id IS NULL OR f.presence != 'PRESENT'
+);
+
+deleteFolderGroupsWithMissingMembers:
+DELETE FROM duplicate_group WHERE kind = 'FOLDER' AND id IN (
+    SELECT m.group_id FROM duplicate_group_member m
+    LEFT JOIN directory_entry d ON d.id = m.member_id
+    WHERE d.id IS NULL
+);
+
+changes:
+SELECT changes();
+
+selectById:
+SELECT * FROM duplicate_group WHERE id = ?;
+
+selectFileSummaries:
+SELECT g.*, COUNT(m.member_id) AS member_count, COALESCE(SUM(f.size), 0) AS total_bytes, MIN(f.name) AS sample_name
+FROM duplicate_group g
+JOIN duplicate_group_member m ON m.group_id = g.id
+LEFT JOIN file_entry f ON f.id = m.member_id
+WHERE g.kind = ?
+GROUP BY g.id
+ORDER BY total_bytes DESC, g.id
+LIMIT ? OFFSET ?;
+
+selectFileSummariesInState:
+SELECT g.*, COUNT(m.member_id) AS member_count, COALESCE(SUM(f.size), 0) AS total_bytes, MIN(f.name) AS sample_name
+FROM duplicate_group g
+JOIN duplicate_group_member m ON m.group_id = g.id
+LEFT JOIN file_entry f ON f.id = m.member_id
+WHERE g.kind = ? AND g.review_state = ?
+GROUP BY g.id
+ORDER BY total_bytes DESC, g.id
+LIMIT ? OFFSET ?;
+
+selectFolderSummaries:
+SELECT g.*, COUNT(m.member_id) AS member_count, COALESCE(SUM(d.byte_count), 0) AS total_bytes, MIN(d.relative_path) AS sample_name
+FROM duplicate_group g
+JOIN duplicate_group_member m ON m.group_id = g.id
+LEFT JOIN directory_entry d ON d.id = m.member_id
+WHERE g.kind = 'FOLDER'
+GROUP BY g.id
+ORDER BY total_bytes DESC, g.id
+LIMIT ? OFFSET ?;
+
+selectFolderSummariesInState:
+SELECT g.*, COUNT(m.member_id) AS member_count, COALESCE(SUM(d.byte_count), 0) AS total_bytes, MIN(d.relative_path) AS sample_name
+FROM duplicate_group g
+JOIN duplicate_group_member m ON m.group_id = g.id
+LEFT JOIN directory_entry d ON d.id = m.member_id
+WHERE g.kind = 'FOLDER' AND g.review_state = ?
+GROUP BY g.id
+ORDER BY total_bytes DESC, g.id
+LIMIT ? OFFSET ?;
+
+countGroups:
+SELECT COUNT(*) FROM duplicate_group WHERE kind = ?;
+
+countGroupsInState:
+SELECT COUNT(*) FROM duplicate_group WHERE kind = ? AND review_state = ?;
+
+selectMembers:
+SELECT * FROM duplicate_group_member WHERE group_id = ? ORDER BY score DESC, member_id;
+
+selectGroupsForFile:
+SELECT g.* FROM duplicate_group g
+JOIN duplicate_group_member m ON m.group_id = g.id
+WHERE m.member_id = ? AND g.kind IN ('EXACT', 'PROBABLE')
+ORDER BY g.kind, g.id;
+
+selectAllOfKind:
+SELECT * FROM duplicate_group WHERE kind = ? ORDER BY id;
+
+selectOpenOfKind:
+SELECT * FROM duplicate_group WHERE kind = ? AND review_state = 'OPEN' ORDER BY id;
+
+selectMembersOfKind:
+SELECT m.* FROM duplicate_group_member m
+JOIN duplicate_group g ON g.id = m.group_id
+WHERE g.kind = ?
+ORDER BY m.group_id, m.score DESC, m.member_id;
+
+setResolution:
+UPDATE duplicate_group SET keeper_id = ?, review_state = ? WHERE id = ?;

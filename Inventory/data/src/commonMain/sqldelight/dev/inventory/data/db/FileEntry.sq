@@ -1,0 +1,247 @@
+CREATE TABLE file_entry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    volume_id INTEGER NOT NULL REFERENCES volume(id) ON DELETE CASCADE,
+    relative_path TEXT NOT NULL,
+    name TEXT NOT NULL,
+    extension TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    modified_at INTEGER NOT NULL,
+    created_at INTEGER,
+    quick_hash TEXT,
+    full_hash TEXT,
+    fingerprint TEXT,
+    fingerprint_kind TEXT,
+    fingerprint_attempted INTEGER NOT NULL DEFAULT 0,
+    presence TEXT NOT NULL,
+    last_seen_scan_id INTEGER NOT NULL,
+    UNIQUE(volume_id, relative_path)
+);
+
+CREATE INDEX file_entry_size_quick_idx ON file_entry(size, quick_hash);
+CREATE INDEX file_entry_full_hash_idx ON file_entry(full_hash);
+CREATE INDEX file_entry_name_size_idx ON file_entry(name, size);
+CREATE INDEX file_entry_relative_path_idx ON file_entry(relative_path);
+CREATE INDEX file_entry_fingerprint_idx ON file_entry(fingerprint_kind, fingerprint);
+CREATE INDEX file_entry_presence_kind_idx ON file_entry(presence, kind);
+CREATE INDEX file_entry_volume_presence_idx ON file_entry(volume_id, presence);
+
+insertEntry:
+INSERT INTO file_entry(volume_id, relative_path, name, extension, kind, size, modified_at, created_at, quick_hash, full_hash, fingerprint, fingerprint_kind, fingerprint_attempted, presence, last_seen_scan_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 0, 'PRESENT', ?);
+
+updateChanged:
+UPDATE file_entry
+SET size = ?, modified_at = ?, created_at = ?, quick_hash = ?, full_hash = NULL, fingerprint = NULL, fingerprint_kind = NULL, fingerprint_attempted = 0, presence = 'PRESENT', last_seen_scan_id = ?
+WHERE id = ?;
+
+markSeen:
+UPDATE file_entry SET presence = 'PRESENT', last_seen_scan_id = ? WHERE id = ?;
+
+markMissingNotSeenBy:
+UPDATE file_entry SET presence = 'MISSING' WHERE volume_id = ? AND last_seen_scan_id != ? AND presence = 'PRESENT';
+
+markMissing:
+UPDATE file_entry SET presence = 'MISSING' WHERE id = ?;
+
+changes:
+SELECT changes();
+
+selectObservationsForVolume:
+SELECT id, relative_path, size, modified_at, quick_hash FROM file_entry WHERE volume_id = ?;
+
+selectById:
+SELECT * FROM file_entry WHERE id = ?;
+
+selectByIds:
+SELECT * FROM file_entry WHERE id IN ?;
+
+selectPresentForVolume:
+SELECT * FROM file_entry WHERE volume_id = ? AND presence = 'PRESENT';
+
+selectPresentUnder:
+SELECT * FROM file_entry
+WHERE volume_id = ?
+AND presence = 'PRESENT'
+AND (
+    ? = ''
+    OR substr(relative_path, 1, ?) = ?
+)
+ORDER BY relative_path;
+
+selectDistinctExtensions:
+SELECT DISTINCT extension FROM file_entry WHERE presence = 'PRESENT' AND extension != '' ORDER BY extension;
+
+updateFullHash:
+UPDATE file_entry SET full_hash = ? WHERE id = ?;
+
+updateFingerprint:
+UPDATE file_entry SET fingerprint = ?, fingerprint_kind = ?, fingerprint_attempted = 1 WHERE id = ?;
+
+selectNeedingFullHash:
+SELECT f.* FROM file_entry f
+JOIN (
+    SELECT size, quick_hash FROM file_entry
+    WHERE presence = 'PRESENT' AND quick_hash IS NOT NULL AND size > 0
+    GROUP BY size, quick_hash HAVING COUNT(*) > 1
+) c ON c.size = f.size AND c.quick_hash = f.quick_hash
+WHERE f.presence = 'PRESENT' AND f.full_hash IS NULL
+LIMIT ?;
+
+selectNeedingFingerprint:
+SELECT * FROM file_entry
+WHERE presence = 'PRESENT' AND fingerprint_attempted = 0 AND kind IN ?
+LIMIT ?;
+
+selectWithSharedFullHash:
+SELECT f.* FROM file_entry f
+JOIN (
+    SELECT full_hash FROM file_entry WHERE presence = 'PRESENT' AND full_hash IS NOT NULL
+    GROUP BY full_hash HAVING COUNT(*) > 1
+) c ON c.full_hash = f.full_hash
+WHERE f.presence = 'PRESENT'
+ORDER BY f.full_hash;
+
+selectWithSharedNameAndSize:
+SELECT f.* FROM file_entry f
+JOIN (
+    SELECT name, size FROM file_entry WHERE presence = 'PRESENT' AND size > 0
+    GROUP BY name, size HAVING COUNT(*) > 1
+) c ON c.name = f.name AND c.size = f.size
+WHERE f.presence = 'PRESENT'
+ORDER BY f.name, f.size;
+
+selectWithSharedRelativePath:
+SELECT f.* FROM file_entry f
+JOIN (
+    SELECT relative_path FROM file_entry WHERE presence = 'PRESENT'
+    GROUP BY relative_path HAVING COUNT(DISTINCT volume_id) > 1
+) c ON c.relative_path = f.relative_path
+WHERE f.presence = 'PRESENT'
+ORDER BY f.relative_path;
+
+selectWithSharedName:
+SELECT f.* FROM file_entry f
+JOIN (
+    SELECT name FROM file_entry WHERE presence = 'PRESENT' AND size > 0
+    GROUP BY name HAVING COUNT(*) > 1 AND COUNT(*) <= ?
+) c ON c.name = f.name
+WHERE f.presence = 'PRESENT'
+ORDER BY f.name, f.size;
+
+selectWithSharedFingerprint:
+SELECT f.* FROM file_entry f
+JOIN (
+    SELECT fingerprint FROM file_entry WHERE presence = 'PRESENT' AND fingerprint_kind = ? AND fingerprint IS NOT NULL
+    GROUP BY fingerprint HAVING COUNT(*) > 1
+) c ON c.fingerprint = f.fingerprint
+WHERE f.presence = 'PRESENT' AND f.fingerprint_kind = ?
+ORDER BY f.fingerprint;
+
+selectFingerprintsOfKind:
+SELECT id, fingerprint FROM file_entry
+WHERE presence = 'PRESENT' AND fingerprint_kind = ? AND fingerprint IS NOT NULL;
+
+selectCopiesWithFullHash:
+SELECT * FROM file_entry WHERE full_hash = ?;
+
+selectCopiesWithQuickHash:
+SELECT * FROM file_entry WHERE size = ? AND quick_hash = ?;
+
+lastInsertedId:
+SELECT last_insert_rowid();
+
+selectObservationsForPaths:
+SELECT id, relative_path, size, modified_at, quick_hash
+FROM file_entry
+WHERE volume_id = ? AND relative_path IN ?;
+
+selectPresentContentPage:
+SELECT relative_path, name, size, full_hash, quick_hash
+FROM file_entry
+WHERE volume_id = ? AND presence = 'PRESENT' AND relative_path > ?
+ORDER BY relative_path
+LIMIT ?;
+
+countNeedingFingerprint:
+SELECT COUNT(*) FROM file_entry
+WHERE presence = 'PRESENT' AND fingerprint_attempted = 0 AND kind IN ?;
+
+selectSharedFullHashKeys:
+SELECT full_hash
+FROM file_entry
+WHERE presence = 'PRESENT' AND full_hash IS NOT NULL AND full_hash > ?
+GROUP BY full_hash
+HAVING COUNT(*) > 1
+ORDER BY full_hash
+LIMIT ?;
+
+selectSharedNameSizeKeys:
+SELECT lower(name) AS name_key, size AS size_key
+FROM file_entry
+WHERE presence = 'PRESENT' AND size > 0
+AND (lower(name) > ? OR (lower(name) = ? AND size > ?))
+GROUP BY lower(name), size
+HAVING COUNT(*) > 1
+ORDER BY lower(name), size
+LIMIT ?;
+
+selectSharedPathKeys:
+SELECT relative_path
+FROM file_entry
+WHERE presence = 'PRESENT' AND relative_path > ?
+GROUP BY relative_path
+HAVING COUNT(DISTINCT volume_id) > 1
+ORDER BY relative_path
+LIMIT ?;
+
+selectSharedNameKeys:
+SELECT lower(name) AS name_key
+FROM file_entry
+WHERE presence = 'PRESENT' AND size > 0 AND lower(name) > ?
+GROUP BY lower(name)
+HAVING COUNT(*) > 1 AND COUNT(*) <= ?
+ORDER BY lower(name)
+LIMIT ?;
+
+selectSharedFingerprintKeys:
+SELECT fingerprint
+FROM file_entry
+WHERE presence = 'PRESENT' AND fingerprint_kind = ? AND fingerprint IS NOT NULL AND fingerprint > ?
+GROUP BY fingerprint
+HAVING COUNT(*) > 1
+ORDER BY fingerprint
+LIMIT ?;
+
+selectMatchByNameAndSize:
+SELECT id, volume_id, relative_path, name, size, modified_at, quick_hash, full_hash, fingerprint
+FROM file_entry
+WHERE presence = 'PRESENT' AND lower(name) = lower(?) AND size = ?;
+
+selectMatchByPath:
+SELECT id, volume_id, relative_path, name, size, modified_at, quick_hash, full_hash, fingerprint
+FROM file_entry
+WHERE presence = 'PRESENT' AND relative_path = ?;
+
+selectMatchByName:
+SELECT id, volume_id, relative_path, name, size, modified_at, quick_hash, full_hash, fingerprint
+FROM file_entry
+WHERE presence = 'PRESENT' AND lower(name) = lower(?) AND size > 0
+ORDER BY size
+LIMIT ?;
+
+selectMatchByFullHash:
+SELECT id, volume_id, relative_path, name, size, modified_at, quick_hash, full_hash, fingerprint
+FROM file_entry
+WHERE presence = 'PRESENT' AND full_hash = ?;
+
+selectMatchByFingerprint:
+SELECT id, volume_id, relative_path, name, size, modified_at, quick_hash, full_hash, fingerprint
+FROM file_entry
+WHERE presence = 'PRESENT' AND fingerprint_kind = ? AND fingerprint = ?;
+
+selectFingerprintSibling:
+SELECT fingerprint, fingerprint_kind
+FROM file_entry
+WHERE presence = 'PRESENT' AND full_hash = ? AND fingerprint IS NOT NULL AND id != ?
+LIMIT 1;

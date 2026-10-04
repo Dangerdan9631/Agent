@@ -1,0 +1,21 @@
+CREATE TABLE file_decision (
+    file_id INTEGER PRIMARY KEY REFERENCES file_entry(id) ON DELETE CASCADE,
+    decision TEXT NOT NULL,
+    note TEXT,
+    decided_at INTEGER NOT NULL
+);
+
+CREATE INDEX file_decision_decision_idx ON file_decision(decision);
+
+selectForFiles:
+SELECT * FROM file_decision WHERE file_id IN ?;
+
+upsertDecision:
+INSERT INTO file_decision(file_id, decision, note, decided_at) VALUES (?, ?, ?, ?)
+ON CONFLICT(file_id) DO UPDATE SET decision = excluded.decision, note = excluded.note, decided_at = excluded.decided_at;
+
+clearForFile:
+DELETE FROM file_decision WHERE file_id = ?;
+
+selectAllWith:
+SELECT * FROM file_decision WHERE decision = ?;

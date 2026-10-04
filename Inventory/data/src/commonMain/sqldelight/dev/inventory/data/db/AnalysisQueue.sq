@@ -1,0 +1,57 @@
+CREATE TABLE analysis_inbox (
+    file_id INTEGER PRIMARY KEY REFERENCES file_entry(id) ON DELETE CASCADE
+);
+
+CREATE TABLE full_hash_queue (
+    file_id INTEGER PRIMARY KEY REFERENCES file_entry(id) ON DELETE CASCADE
+);
+
+enqueueInbox:
+INSERT OR IGNORE INTO analysis_inbox(file_id) VALUES (?);
+
+selectInbox:
+SELECT file_id FROM analysis_inbox ORDER BY file_id LIMIT ?;
+
+countInbox:
+SELECT COUNT(*) FROM analysis_inbox;
+
+deleteInbox:
+DELETE FROM analysis_inbox WHERE file_id IN ?;
+
+purgeFullHashQueue:
+DELETE FROM full_hash_queue
+WHERE file_id IN (
+    SELECT q.file_id FROM full_hash_queue q
+    JOIN file_entry f ON f.id = q.file_id
+    WHERE f.full_hash IS NOT NULL OR f.presence != 'PRESENT' OR f.quick_hash IS NULL
+);
+
+seedFullHashQueue:
+INSERT OR IGNORE INTO full_hash_queue(file_id)
+SELECT f.id
+FROM file_entry f
+INNER JOIN (
+    SELECT size, quick_hash
+    FROM file_entry
+    WHERE presence = 'PRESENT' AND quick_hash IS NOT NULL AND size > 0
+    GROUP BY size, quick_hash
+    HAVING COUNT(*) > 1
+) c ON c.size = f.size AND c.quick_hash = f.quick_hash
+WHERE f.presence = 'PRESENT' AND f.full_hash IS NULL;
+
+enqueueFullHashCollisions:
+INSERT OR IGNORE INTO full_hash_queue(file_id)
+SELECT id FROM file_entry
+WHERE presence = 'PRESENT' AND full_hash IS NULL AND size = ? AND quick_hash = ?;
+
+selectFullHashQueue:
+SELECT file_id FROM full_hash_queue ORDER BY file_id LIMIT ?;
+
+countFullHashQueue:
+SELECT COUNT(*) FROM full_hash_queue;
+
+deleteFullHashQueue:
+DELETE FROM full_hash_queue WHERE file_id IN ?;
+
+rowsChanged:
+SELECT changes();

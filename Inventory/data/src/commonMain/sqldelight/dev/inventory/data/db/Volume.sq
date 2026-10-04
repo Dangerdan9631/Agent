@@ -1,0 +1,27 @@
+CREATE TABLE volume (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    root_path TEXT NOT NULL UNIQUE,
+    last_scan_at INTEGER
+);
+
+insertVolume:
+INSERT INTO volume(label, root_path, last_scan_at) VALUES (?, ?, NULL);
+
+lastInsertedId:
+SELECT last_insert_rowid();
+
+selectAll:
+SELECT * FROM volume ORDER BY label COLLATE NOCASE;
+
+selectById:
+SELECT * FROM volume WHERE id = ?;
+
+updateLabel:
+UPDATE volume SET label = ? WHERE id = ?;
+
+updateLastScanAt:
+UPDATE volume SET last_scan_at = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM volume WHERE id = ?;

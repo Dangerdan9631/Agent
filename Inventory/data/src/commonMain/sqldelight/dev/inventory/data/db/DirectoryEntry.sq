@@ -1,0 +1,40 @@
+CREATE TABLE directory_entry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    volume_id INTEGER NOT NULL REFERENCES volume(id) ON DELETE CASCADE,
+    relative_path TEXT NOT NULL,
+    tree_hash TEXT,
+    file_count INTEGER NOT NULL,
+    byte_count INTEGER NOT NULL,
+    UNIQUE(volume_id, relative_path)
+);
+
+CREATE INDEX directory_entry_tree_hash_idx ON directory_entry(tree_hash);
+
+deleteForVolume:
+DELETE FROM directory_entry WHERE volume_id = ?;
+
+insertDirectory:
+INSERT INTO directory_entry(volume_id, relative_path, tree_hash, file_count, byte_count) VALUES (?, ?, ?, ?, ?);
+
+selectWithSharedTreeHash:
+SELECT d.* FROM directory_entry d
+JOIN (
+    SELECT tree_hash FROM directory_entry WHERE tree_hash IS NOT NULL AND file_count > 0
+    GROUP BY tree_hash HAVING COUNT(*) > 1
+) c ON c.tree_hash = d.tree_hash
+ORDER BY d.tree_hash;
+
+selectByIds:
+SELECT * FROM directory_entry WHERE id IN ?;
+
+selectSharedTreeHashKeys:
+SELECT tree_hash
+FROM directory_entry
+WHERE tree_hash IS NOT NULL AND file_count > 0 AND tree_hash > ?
+GROUP BY tree_hash
+HAVING COUNT(*) > 1
+ORDER BY tree_hash
+LIMIT ?;
+
+selectByTreeHash:
+SELECT * FROM directory_entry WHERE tree_hash = ?;

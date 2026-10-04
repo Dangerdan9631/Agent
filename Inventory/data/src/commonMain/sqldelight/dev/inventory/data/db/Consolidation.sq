@@ -1,0 +1,76 @@
+CREATE TABLE consolidation_plan (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    destination_root TEXT NOT NULL,
+    layout_strategy TEXT NOT NULL,
+    conflict_policy TEXT NOT NULL,
+    remove_redundant_exact INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE consolidation_action (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id INTEGER NOT NULL REFERENCES consolidation_plan(id) ON DELETE CASCADE,
+    file_id INTEGER NOT NULL,
+    source_path TEXT NOT NULL,
+    destination_path TEXT,
+    kind TEXT NOT NULL,
+    state TEXT NOT NULL,
+    message TEXT,
+    depends_on_action_id INTEGER,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX consolidation_action_plan_state_idx ON consolidation_action(plan_id, state, id);
+
+insertPlan:
+INSERT INTO consolidation_plan(destination_root, layout_strategy, conflict_policy, remove_redundant_exact, status, created_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+lastInsertedId:
+SELECT last_insert_rowid();
+
+selectPlans:
+SELECT * FROM consolidation_plan ORDER BY created_at DESC;
+
+selectPlan:
+SELECT * FROM consolidation_plan WHERE id = ?;
+
+updatePlanStatus:
+UPDATE consolidation_plan SET status = ? WHERE id = ?;
+
+deletePlan:
+DELETE FROM consolidation_plan WHERE id = ?;
+
+insertAction:
+INSERT INTO consolidation_action(plan_id, file_id, source_path, destination_path, kind, state, message, depends_on_action_id, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAction:
+SELECT * FROM consolidation_action WHERE id = ?;
+
+selectMoveActionIds:
+SELECT id, file_id FROM consolidation_action WHERE plan_id = ? AND kind = 'MOVE';
+
+selectActions:
+SELECT * FROM consolidation_action WHERE plan_id = ? ORDER BY id LIMIT ? OFFSET ?;
+
+selectActionsInStates:
+SELECT * FROM consolidation_action WHERE plan_id = ? AND state IN ? ORDER BY id LIMIT ? OFFSET ?;
+
+countsByState:
+SELECT state, COUNT(*) AS n FROM consolidation_action WHERE plan_id = ? GROUP BY state;
+
+selectNextActionable:
+SELECT * FROM consolidation_action
+WHERE plan_id = ? AND state IN ('PENDING', 'COPIED', 'VERIFIED')
+ORDER BY id LIMIT ?;
+
+updateActionState:
+UPDATE consolidation_action SET state = ?, message = ?, updated_at = ? WHERE id = ?;
+
+resetFailed:
+UPDATE consolidation_action SET state = 'PENDING', message = NULL, updated_at = ? WHERE plan_id = ? AND state = 'FAILED';
+
+changes:
+SELECT changes();

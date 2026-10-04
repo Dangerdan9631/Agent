@@ -1,0 +1,40 @@
+CREATE TABLE tag (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    color INTEGER NOT NULL
+);
+
+CREATE TABLE file_tag (
+    file_id INTEGER NOT NULL REFERENCES file_entry(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
+    PRIMARY KEY(file_id, tag_id)
+);
+
+CREATE INDEX file_tag_tag_idx ON file_tag(tag_id);
+
+selectAll:
+SELECT * FROM tag ORDER BY name COLLATE NOCASE;
+
+insertTag:
+INSERT INTO tag(name, color) VALUES (?, ?);
+
+lastInsertedId:
+SELECT last_insert_rowid();
+
+updateTag:
+UPDATE tag SET name = ?, color = ? WHERE id = ?;
+
+deleteTag:
+DELETE FROM tag WHERE id = ?;
+
+selectTagsForFiles:
+SELECT ft.file_id, t.* FROM file_tag ft
+JOIN tag t ON t.id = ft.tag_id
+WHERE ft.file_id IN ?
+ORDER BY t.name COLLATE NOCASE;
+
+attach:
+INSERT OR IGNORE INTO file_tag(file_id, tag_id) VALUES (?, ?);
+
+detach:
+DELETE FROM file_tag WHERE file_id = ? AND tag_id = ?;
